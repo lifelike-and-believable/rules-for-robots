@@ -4,6 +4,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-10-05
+
 ### Fixed
 
 - RfrSample Automation Spec: creates the subsystem inside a transient `UGameInstance`; outered to the transient package it raised an ensure that failed the first test on every engine.
@@ -11,7 +13,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- Unreal guide records the editor's exit code on failing tests (255 on UE 5.6 and 5.8), and how to give test objects the outer their class requires.
+- Unreal guide records the editor's exit codes (0 when tests pass, 255 when one fails, UE 5.6 to 5.8), that Launcher builds do not ship the BuildPlugin source, and how to give test objects the outer their class requires.
+- `profile-unreal-plugin` no longer claims the runner probe confirmed Insights headless flags; it could not.
 
 ## [0.12.0] - 2026-10-05
 
