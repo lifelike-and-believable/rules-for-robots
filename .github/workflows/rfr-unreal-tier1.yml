@@ -8,6 +8,12 @@ name: rules-for-robots Unreal Tier 1
 #       with:
 #         plugin-path: Plugins/MyPlugin
 #         copyright: Example Studio
+#
+# For more than one copyright holder (for example code taken from an upstream
+# project), give one holder per line:
+#         copyright: |
+#           Example Studio
+#           Upstream Contributors
 on:
   workflow_call:
     inputs:
@@ -15,6 +21,7 @@ on:
         type: string
         required: true
       copyright:
+        description: Copyright holder named in source file headers; one per line for several
         type: string
         required: true
       project-path:
@@ -45,8 +52,16 @@ jobs:
         with:
           node-version: 22
       - name: Unreal Tier 1 checks
+        env:
+          PLUGIN_PATH: ${{ inputs.plugin-path }}
+          PROJECT_PATH: ${{ inputs.project-path }}
+          COPYRIGHT: ${{ inputs.copyright }}
         run: |
-          args=("${{ inputs.plugin-path }}" --copyright "${{ inputs.copyright }}")
-          if [ -n "${{ inputs.project-path }}" ]; then args+=(--project "${{ inputs.project-path }}"); fi
+          args=("$PLUGIN_PATH")
+          while IFS= read -r holder; do
+            holder="${holder#"${holder%%[![:space:]]*}"}"; holder="${holder%"${holder##*[![:space:]]}"}"
+            if [ -n "$holder" ]; then args+=(--copyright "$holder"); fi
+          done <<< "$COPYRIGHT"
+          if [ -n "$PROJECT_PATH" ]; then args+=(--project "$PROJECT_PATH"); fi
           if [ "${{ inputs.allow-missing-fab-url }}" = "true" ]; then args+=(--allow-missing-fab-url); fi
           node .rfr/checks/unreal/tier1.mjs "${args[@]}"

@@ -2,7 +2,7 @@
 // Unreal Tier 1 checks: run on any machine, no engine needed (PLAN.md section 7).
 // Enforces UE-002, UE-005, UE-006, FAB-001, FAB-002, FAB-003.
 //
-// Usage: node checks/unreal/tier1.mjs <plugin-dir> --copyright "<holder>"
+// Usage: node checks/unreal/tier1.mjs <plugin-dir> --copyright "<holder>" [--copyright "<holder>" ...]
 //          [--project <example-project-dir>] [--allow-missing-fab-url]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,12 +19,14 @@ const SOURCE_EXT = new Set(['.h', '.cpp', '.inl', '.cs']);
 const SEGMENT = /^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*$/;
 const MAX_PATH = 170;
 
+// Lists everything under dir. Build-output folders at the root are listed but not
+// descended into: one finding (delete the folder) covers everything inside them.
 function walk(dir, base = dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name === '.git' || entry.name === 'node_modules') continue;
     const full = path.join(dir, entry.name);
     out.push({ rel: path.relative(base, full).split(path.sep).join('/'), dir: entry.isDirectory() });
-    if (entry.isDirectory()) walk(full, base, out);
+    if (entry.isDirectory() && !(dir === base && FORBIDDEN_TOP.has(entry.name))) walk(full, base, out);
   }
   return out;
 }
@@ -52,6 +54,7 @@ export function checkPlugin(pluginDir, { copyright, project, allowMissingFabUrl 
   const errors = [];
   const warnings = [];
   const err = (code, msg) => errors.push(`${code}: ${msg}`);
+  const holders = [copyright].flat().filter(Boolean);
 
   const descriptors = fs.readdirSync(pluginDir).filter(f => f.endsWith('.uplugin'));
   if (descriptors.length !== 1) {
@@ -109,12 +112,13 @@ export function checkPlugin(pluginDir, { copyright, project, allowMissingFabUrl 
 
   // FAB-002 and UE-002: source files.
   for (const e of entries.filter(e => !e.dir && e.rel.startsWith('Source/') && SOURCE_EXT.has(path.extname(e.rel)))) {
-    if (e.rel.startsWith('Source/ThirdParty/')) continue;
+    // Third-party code keeps its authors' notices and conventions (Source/ThirdParty/ or Source/<Module>/ThirdParty/).
+    if (/(^|\/)ThirdParty\//.test(e.rel)) continue;
     const text = fs.readFileSync(path.join(pluginDir, e.rel), 'utf8');
     const first = text.split('\n').find(l => l.trim()) ?? '';
     if (/Fill out your copyright notice/i.test(text)) err('FAB-002', `${e.rel}: replace Epic's default copyright placeholder`);
-    else if (!/^\s*\/\/.*copyright/i.test(first) || (copyright && !first.includes(copyright))) {
-      err('FAB-002', `${e.rel}: first line must be a // copyright comment${copyright ? ` naming ${copyright}` : ''}`);
+    else if (!/^\s*\/\/.*copyright/i.test(first) || (holders.length && !holders.some(h => first.includes(h)))) {
+      err('FAB-002', `${e.rel}: first line must be a // copyright comment${holders.length ? ` naming ${holders.join(' or ')}` : ''}`);
     }
     if (e.rel.endsWith('.h')) {
       for (const line of unreflectedObjectPtrs(text)) err('UE-002', `${e.rel}:${line}: TObjectPtr member without UPROPERTY()`);
@@ -135,13 +139,14 @@ export function checkPlugin(pluginDir, { copyright, project, allowMissingFabUrl 
 function main() {
   const args = process.argv.slice(2);
   const opt = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
+  const opts = name => args.flatMap((a, i) => (a === name && i + 1 < args.length ? [args[i + 1]] : []));
   const pluginDir = args.find((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--'));
   if (!pluginDir) {
-    console.error('usage: tier1.mjs <plugin-dir> --copyright "<holder>" [--project <dir>] [--allow-missing-fab-url]');
+    console.error('usage: tier1.mjs <plugin-dir> --copyright "<holder>" [--copyright "<holder>" ...] [--project <dir>] [--allow-missing-fab-url]');
     process.exit(2);
   }
   const { errors, warnings } = checkPlugin(path.resolve(pluginDir), {
-    copyright: opt('--copyright'),
+    copyright: opts('--copyright'),
     project: opt('--project') && path.resolve(opt('--project')),
     allowMissingFabUrl: args.includes('--allow-missing-fab-url'),
   });

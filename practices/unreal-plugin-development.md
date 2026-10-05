@@ -8,7 +8,7 @@ Fastest first. An agent should stop at the first level that proves the change.
 
 | Step | Command (Windows; adjust paths) | Proves |
 |---|---|---|
-| Tier 1 checks | `node checks/unreal/tier1.mjs <PluginDir> --copyright "<holder>"` | Descriptor, layout, copyright, `TObjectPtr`/`UPROPERTY` (UE-002, UE-005, FAB-001 to FAB-003) |
+| Tier 1 checks | `node checks/unreal/tier1.mjs <PluginDir> --copyright "<holder>"` (repeat `--copyright` for each holder) | Descriptor, layout, copyright, `TObjectPtr`/`UPROPERTY` (UE-002, UE-005, FAB-001 to FAB-003) |
 | Compile and package | `"<Engine>\Build\BatchFiles\RunUAT.bat" BuildPlugin -Plugin="<Path>\<Name>.uplugin" -Package="<OutDir>" -Rocket` | The plugin builds as Fab will build it (UE-001, FAB-004) |
 | Low-Level Tests | Build and run the plugin's LLT target from its `Tests` folder | Pure logic (UE-007) |
 | Automation tests | `"<Engine>\Binaries\Win64\UnrealEditor-Cmd.exe" "<Host>.uproject" -ExecCmds="Automation RunTests <Filter>;Quit" -unattended -nullrhi -nosound -ReportExportPath="<OutDir>"` | UObject and engine behaviour (UE-007) |
