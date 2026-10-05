@@ -1,0 +1,9 @@
+{
+  "name": "members-api",
+  "version": "2.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "verify": "node scripts/check-migrations.mjs && node --test"
+  }
+}

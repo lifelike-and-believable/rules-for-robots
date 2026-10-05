@@ -1,0 +1,6 @@
+{
+  "name": "@shop/core",
+  "version": "1.4.0",
+  "type": "module",
+  "main": "src/index.js"
+}

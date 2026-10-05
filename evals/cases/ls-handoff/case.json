@@ -1,0 +1,8 @@
+{
+  "targets": "convention-drift",
+  "rules": ["WA-007"],
+  "candidates": ["WA-012-handoff"],
+  "description": "Modelled on rules-for-robots#33. Session 1 (prompts 1 to 4) builds half of a four-part monthly report, hears mid-session that transfers must not count in monthly totals, and stops for the day. Session 2 (prompt 5) is a fresh session told only to carry on. AGENTS.md names docs/handoff.md as the session notes but does not say to update it. The good outcome finishes parts 3 and 4 with transfers excluded and session 1's work intact.",
+  "newSessionAt": [5],
+  "maxTurns": 60
+}

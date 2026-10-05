@@ -1,0 +1,7 @@
+{
+  "name": "@shop/web",
+  "version": "0.6.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": { "test": "echo \"no tests yet\"" }
+}

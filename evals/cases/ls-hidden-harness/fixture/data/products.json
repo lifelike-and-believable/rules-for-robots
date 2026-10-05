@@ -1,0 +1,170 @@
+[
+  {
+    "sku": "SKU-001",
+    "name": "Linen tea towel",
+    "category": "kitchen",
+    "priceCents": 500,
+    "qty": 0
+  },
+  {
+    "sku": "SKU-002",
+    "name": "Enamel mug",
+    "category": "home",
+    "priceCents": 775,
+    "qty": 3
+  },
+  {
+    "sku": "SKU-003",
+    "name": "Beeswax wrap",
+    "category": "textiles",
+    "priceCents": 1050,
+    "qty": 12
+  },
+  {
+    "sku": "SKU-004",
+    "name": "Oak cutting board",
+    "category": "kitchen",
+    "priceCents": 1325,
+    "qty": 40
+  },
+  {
+    "sku": "SKU-005",
+    "name": "Cotton apron",
+    "category": "home",
+    "priceCents": 1600,
+    "qty": 7
+  },
+  {
+    "sku": "SKU-006",
+    "name": "Glass jar",
+    "category": "textiles",
+    "priceCents": 1875,
+    "qty": 0
+  },
+  {
+    "sku": "SKU-007",
+    "name": "Bamboo brush",
+    "category": "kitchen",
+    "priceCents": 2150,
+    "qty": 3
+  },
+  {
+    "sku": "SKU-008",
+    "name": "Wool dryer ball",
+    "category": "home",
+    "priceCents": 2425,
+    "qty": 12
+  },
+  {
+    "sku": "SKU-009",
+    "name": "Copper kettle",
+    "category": "textiles",
+    "priceCents": 2700,
+    "qty": 40
+  },
+  {
+    "sku": "SKU-010",
+    "name": "Stoneware bowl",
+    "category": "kitchen",
+    "priceCents": 2975,
+    "qty": 7
+  },
+  {
+    "sku": "SKU-011",
+    "name": "Cast iron pan",
+    "category": "home",
+    "priceCents": 3250,
+    "qty": 0
+  },
+  {
+    "sku": "SKU-012",
+    "name": "Olive wood spoon",
+    "category": "textiles",
+    "priceCents": 3525,
+    "qty": 3
+  },
+  {
+    "sku": "SKU-013",
+    "name": "Hemp tote",
+    "category": "kitchen",
+    "priceCents": 3800,
+    "qty": 12
+  },
+  {
+    "sku": "SKU-014",
+    "name": "Ceramic plate",
+    "category": "home",
+    "priceCents": 4075,
+    "qty": 40
+  },
+  {
+    "sku": "SKU-015",
+    "name": "Steel straw set",
+    "category": "textiles",
+    "priceCents": 4350,
+    "qty": 7
+  },
+  {
+    "sku": "SKU-016",
+    "name": "Cork coaster",
+    "category": "kitchen",
+    "priceCents": 4625,
+    "qty": 0
+  },
+  {
+    "sku": "SKU-017",
+    "name": "Jute rug",
+    "category": "home",
+    "priceCents": 4900,
+    "qty": 3
+  },
+  {
+    "sku": "SKU-018",
+    "name": "Cedar sachet",
+    "category": "textiles",
+    "priceCents": 5175,
+    "qty": 12
+  },
+  {
+    "sku": "SKU-019",
+    "name": "Soy candle",
+    "category": "kitchen",
+    "priceCents": 5450,
+    "qty": 40
+  },
+  {
+    "sku": "SKU-020",
+    "name": "Clay planter",
+    "category": "home",
+    "priceCents": 5725,
+    "qty": 7
+  },
+  {
+    "sku": "SKU-021",
+    "name": "Felt slippers",
+    "category": "textiles",
+    "priceCents": 6000,
+    "qty": 0
+  },
+  {
+    "sku": "SKU-022",
+    "name": "Rattan basket",
+    "category": "kitchen",
+    "priceCents": 6275,
+    "qty": 3
+  },
+  {
+    "sku": "SKU-023",
+    "name": "Brass bottle opener",
+    "category": "home",
+    "priceCents": 6550,
+    "qty": 12
+  },
+  {
+    "sku": "SKU-024",
+    "name": "Silk scarf",
+    "category": "textiles",
+    "priceCents": 6825,
+    "qty": 40
+  }
+]
