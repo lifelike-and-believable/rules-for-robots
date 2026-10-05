@@ -179,3 +179,17 @@ test('guard-commands asks before changing machine-wide git configuration (#31)',
     assert.equal(findRisk(command), null, command);
   }
 });
+
+test('guard-commands asks when an editor -ExecCmds list does not quit (#56)', () => {
+  for (const command of [
+    '"C:/UE_5.7/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" Host.uproject -ExecCmds="Automation RunTests RfrSample" -unattended',
+    'UnrealEditor-Cmd Host.uproject -ExecCmds="py run.py" -nullrhi',
+    "& UnrealEditor.exe Host.uproject '-ExecCmds=DumpConsoleCommands' -unattended",
+  ]) assert.ok(findRisk(command), command);
+  for (const command of [
+    '"C:/UE_5.7/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" Host.uproject -ExecCmds="Automation RunTests RfrSample;Quit" -unattended',
+    'UnrealEditor-Cmd Host.uproject -ExecCmds="py run.py; quit" -nullrhi',
+    'UnrealEditor-Cmd Host.uproject -run=ResavePackages',
+    'grep -n ExecCmds Scripts/Verify.ps1',
+  ]) assert.equal(findRisk(command), null, command);
+});
