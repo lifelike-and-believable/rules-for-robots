@@ -2,9 +2,33 @@
 
 Core plugin from [rules-for-robots](../../README.md).
 
+## Agents
+
+| Agent | Model, effort | Tools | Use for |
+|---|---|---|---|
+| `web-engineer` | Sonnet, medium | Read and write | Scoped implementation in TypeScript web repos |
+| `unreal-engineer` | Opus, medium | Read and write | Scoped implementation in Unreal 5.6+ plugins |
+| `code-reviewer` | Opus, high | Read-only | Correctness and requirement gaps in a diff |
+| `security-reviewer` | Opus, high | Read-only | Secrets, injection, authorization, dependencies, CI, migrations |
+| `accessibility-reviewer` | Sonnet, medium | Read-only | WCAG 2.2 AA for web; editor and in-game accessibility for Unreal |
+| `performance-reviewer` | Sonnet, medium | Read-only | Web budgets and queries; per-frame cost for Unreal |
+
+Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals.
+
 ## Skills
 
-- `/rfr-core:install-rules [profile | pack ...]` copies rule packs into the current repo's `.claude/rules/`. Profiles: `web-app`, `static-site`, `unreal-plugin`.
+| Skill | Purpose | Invoked by |
+|---|---|---|
+| `/rfr-core:install-rules [profile \| pack ...]` | Copy rule packs into `.claude/rules/` (profiles: `web-app`, `static-site`, `unreal-plugin`) | User only |
+| `/rfr-core:plan-feature` | Spec with user stories, acceptance criteria, scope, and verification plan | User or Claude |
+| `/rfr-core:review-pr` | Parallel reviewer agents, then confirm or refute each finding | User or Claude |
+| `/rfr-core:a11y-audit` | axe plus scripted checks for WCAG 2.2 criteria axe misses | User or Claude |
+| `/rfr-core:perf-audit` | Lighthouse median of 3 against budgets, biggest wins | User or Claude |
+| `/rfr-core:security-audit` | Scanners, entry points, agent tooling risks | User or Claude |
+| `/rfr-core:write-adr` | One-page architecture decision record | User or Claude |
+| `/rfr-core:release` | Version, changelog, verify, tag after confirmation | User only |
+| `/rfr-core:profile-unreal-plugin` | Unreal Insights capture and analysis | User or Claude |
+| `/rfr-core:package-unreal-plugin` | Fab packages per engine version | User only |
 
 ## Hooks
 

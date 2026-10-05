@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.9 (2026-10-05). Phases 0 to 2 and 4 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 5 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.9 (2026-10-05). Phases 0 to 2, 4, and 5 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 6 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -237,7 +237,9 @@ Delivered: six guides in `practices/` (working with agents; testing and code qua
 - Longer `practices/` guides linked to rule IDs, with short good/bad examples. Point agents at exemplar files rather than describing patterns where possible.
 - **Exit criteria:** every rule file links to at least one guide; every guide is referenced by at least one rule.
 
-### Phase 5: Agents, skills, and hooks
+### Phase 5: Agents, skills, and hooks (complete)
+Delivered: six agents and ten skills in `rfr-core`, plus the hooks from Phases 2 and 3. Each agent and skill passed two smoke tasks (26 of 26; [results](evals/results/2026-10-05-smoke/summary.md)); `install-rules` was tested end to end in Phase 1.
+
 - Agents per section 8.
 - Skills: `plan-feature`, `implement-feature`, `review-pr`, `a11y-audit`, `perf-audit`, `security-review`, `write-adr`, `install-rules`, `release`, `profile-unreal-plugin`, `package-unreal-plugin`. Side-effecting skills set `disable-model-invocation: true` (R23). Critical content stays in each skill's first 5,000 tokens.
 - Hooks in `hooks/hooks.json`, including agent-specific filters and the database (R49) and Vercel MCP (R43) guards.
@@ -278,7 +280,7 @@ Delivered: six guides in `practices/` (working with agents; testing and code qua
 | M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Done |
 | M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done (Tier 2 run pending) |
 | M4 | Remaining web packs + practice guides | Done |
-| M5 | Agents, skills, hooks | |
+| M5 | Agents, skills, hooks | Done |
 | M6 | GitHub integration, CI workflows, template repos | |
 | M7 | Reference projects, full evals, revisions, v1.0 | |
 
