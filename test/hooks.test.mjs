@@ -95,3 +95,18 @@ test('guard-mcp asks before Vercel actions that change or expose the account', a
     assert.ok(!vercelToolNeedsApproval(t), t);
   }
 });
+
+test('guard-commands asks before shell edits to test files', async () => {
+  const { findRisk } = await import('../plugins/core/scripts/guard-commands.mjs');
+  for (const command of [
+    "python3 -c \"p='e2e/accessibility.spec.ts'; s=open(p).read(); open(p,'w').write(s)\"",
+    'sed -i "s/a/b/" src/a.test.ts',
+    'echo x >> tests/test_api.py',
+    'cat new > src/__snapshots__/a.snap',
+    'mv src/a.spec.ts /tmp/',
+    'rm tests/old_test.py',
+  ]) assert.ok(findRisk(command), command);
+  for (const command of ['npm test', 'npx vitest run src/a.test.ts', 'cat src/a.test.ts', 'grep -n foo tests/x.py', 'node --test test/']) {
+    assert.equal(findRisk(command), null, command);
+  }
+});

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 // WEB-001: axe with WCAG 2.2 AA tags. target-size is the only WCAG 2.2 rule in axe-core
 // and is off by default, so it is enabled explicitly and checked to have run.
-const pages = ['/'];
+const pages = ['/', '/products', '/products/headlamp'];
 
 for (const route of pages) {
   test(`no axe violations on ${route}`, async ({ page }) => {

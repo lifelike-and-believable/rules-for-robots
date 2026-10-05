@@ -5,7 +5,7 @@ Wiring for a Next.js 16 web app with a Node and Postgres backend on Vercel, gene
 ## Start a project
 
 1. Create the app: `npx create-next-app@latest my-app --ts --eslint --app`.
-2. Copy this folder's contents into it, keeping the app's own `package.json`.
+2. Copy this folder's contents into it, keeping the app's own `package.json` and `eslint.config.mjs`. `create-next-app` writes an `AGENTS.md` containing a `nextjs-agent-rules` block: keep that block and append this template's `AGENTS.md` below it.
 3. Add the development dependencies: `npm i -D @types/node@^22 vitest @playwright/test @axe-core/playwright size-limit @size-limit/file`. (`create-next-app` pins `@types/node@^20`, which conflicts with Vitest 5; the template targets Node 22.)
 4. Add these scripts to `package.json`:
 
@@ -18,11 +18,12 @@ Wiring for a Next.js 16 web app with a Node and Postgres backend on Vercel, gene
 }
 ```
 
-5. Fill in `AGENTS.md`: what the app does and any project decisions an agent cannot infer.
+5. In `eslint.config.mjs`, add `"playwright-report/**"`, `"test-results/**"`, and `".lighthouseci/**"` to `globalIgnores`, so generated reports are not linted.
+6. Fill in `AGENTS.md`: what the app does and any project decisions an agent cannot infer.
 `next typegen` generates the global route types (such as `LayoutProps`) that `tsc` needs before the first build.
 
-6. Connect the repository to Vercel, add the `VERCEL_AUTOMATION_BYPASS_SECRET` repository secret if deployment protection is on, and create a `tests-reviewed` label.
-7. In Claude Code, accept the project's `rfr-core` plugin when prompted.
+7. Connect the repository to Vercel, add the `VERCEL_AUTOMATION_BYPASS_SECRET` repository secret if deployment protection is on, and create a `tests-reviewed` label.
+8. In Claude Code, accept the project's `rfr-core` plugin when prompted.
 
 ## What is included
 
@@ -36,3 +37,5 @@ Wiring for a Next.js 16 web app with a Node and Postgres backend on Vercel, gene
 | `lighthouserc.json`, `.size-limit.json`, `playwright.config.ts`, `e2e/`, `vitest.config.ts` | Budgets and checks behind WEB-001 to WEB-003; Vitest skips `e2e/` |
 
 Adjust budgets and routes to the project, and record the choices in `AGENTS.md`.
+
+A complete example built from this template is in [`examples/web-app/`](https://github.com/lifelike-and-believable/rules-for-robots/tree/main/examples/web-app).
