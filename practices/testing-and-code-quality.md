@@ -52,4 +52,4 @@ Agent-written code tends toward duplication and speculative structure. Published
 - CODE-003: comments explain why, and none are added to unchanged code.
 - CODE-004: dependencies are added deliberately, after confirming the package exists. About a fifth of model-suggested package names in one large study did not exist, and recurring invented names can be registered by attackers.
 
-Leave formatting and mechanical style to the formatter and linter (the `format-on-edit` hook runs the project's own formatter).
+Leave formatting and mechanical style to the formatter and linter (the `format-on-edit` hook runs the project's own formatter on the files edited in a turn, once, when the turn ends).
