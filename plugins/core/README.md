@@ -38,7 +38,7 @@ Reviewers report every finding in one format (severity, file and line, rule ID, 
 | PreToolUse (Edit, Write) | `guard-test-edits` | Asks before changing an existing test file; new test files are allowed | TEST-001 |
 | PreToolUse (Edit, Write) | `guard-owned-paths` | When `AGENTS.md` has a `## Owned paths` list, asks before editing a file in the project that is not on it; does nothing otherwise | #47 |
 | PreToolUse (Vercel MCP tools) | `guard-mcp` | Asks before Vercel MCP tools other than reads (deploy, environment variables, decrypt, delete, purchase, and so on) and before reads that return tokens | NODE-002 |
-| PostToolUse (Edit, Write) | `format-on-edit` | Runs the project's Prettier (from `node_modules/.bin`) or `clang-format` (when a `.clang-format` file exists) on the edited file; does nothing otherwise | |
+| PostToolUse (Edit, Write), Stop, SubagentStop | `format-on-edit` | After each edit, notes the edited file in a per-session list in the OS temp directory and leaves the file alone. When the turn (or a subagent) ends, runs the project's Prettier (from `node_modules/.bin`) or `clang-format` (when a `.clang-format` file exists) once on each noted file, then clears the list; does nothing otherwise and never keeps Claude from stopping | |
 
 The guards ask rather than block outright, so you can approve a command you intend. In headless runs (`claude -p`) a request for approval counts as a denial.
 

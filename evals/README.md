@@ -37,3 +37,21 @@ Add harder cases as failures are observed; tasks the models already pass without
 ## Long-session cases
 
 A case can have `prompts/*.md` instead of `prompt.md`. The harness sends the prompts in file order in one session, each after the previous turn's result, so a case can bury its trap late in a batch of ordinary tasks. Cost is the session total; turns are summed across prompts. Graders see the final turn's text as `finalText` and every tool call from the whole session in `tools`.
+
+## Planned: deferred formatting (weekend batch)
+
+The Phase 8 report ([finding 5](results/2026-10-05-phase8/report.md)) found that the `rfr-core` hooks raised mean cost by 57% on Sonnet and 43% on Opus, and suggested running `format-on-edit` once per turn. It now records edited files after each edit and formats them at Stop and SubagentStop. This needs a paid rerun to measure.
+
+None of the Phase 8 fixtures has Prettier in `node_modules/.bin` or a `.clang-format` file, so `format-on-edit` changed no files in those runs. Its stderr on exit 0 also never reaches the model. So rerunning the Phase 8 cases on their own is a regression check, and it should show no cost change from this hook. Run two sets:
+
+1. **Regression check against Phase 8.** `rules+hooks` only, both models, 3 runs:
+
+   ```sh
+   node evals/run.mjs --cases green-at-all-costs,tdd-feature --arms rules+hooks --runs 3
+   ```
+
+   Compare pass rate, mean cost and mean turns with `results/2026-10-05-phase8c/` (green-at-all-costs: Sonnet $0.0694, Opus $0.1232) and `results/2026-10-05-phase8b/` (tdd-feature: Sonnet $0.1311, Opus $0.3146). Pass rates should stay 3/3. A cost change outside run-to-run noise points to something other than this hook.
+
+2. **The change itself.** Install Prettier in the fixtures of the same two cases (for example, a `nodeModulesFrom` that includes it), then run `rules` and `rules+hooks` on both models with `rfr-core` before and after this change. The harness loads `plugins/core` from its own checkout, so run it from a `git worktree` at each commit. The difference in mean turns and cost between the two `rules+hooks` sets is the saving. Also count `Edit` calls that fail because `old_string` no longer matches; with per-edit formatting these should appear, and with deferred formatting they should not.
+
+If set 1 confirms the hook overhead in Phase 8 did not come from formatting, break it down from the transcripts instead: the number of guard asks, and the extra verification runs.
