@@ -170,3 +170,12 @@ test('TEST-001 and TEST-003 load for Unreal test modules (#37)', async () => {
     assert.ok(!hit('Source/My/Private/My.cpp'), file);
   }
 });
+
+test('guard-commands asks before changing machine-wide git configuration (#31)', () => {
+  for (const command of ['git config --global core.autocrlf false', 'git config --system safe.directory "*"', 'git config --global --add safe.directory C:/x', 'git config --global --unset user.name']) {
+    assert.ok(findRisk(command), command);
+  }
+  for (const command of ['git config --global --get user.name', 'git config --global --list', 'git config -l', 'git -c safe.directory=* status', 'git config core.autocrlf false', 'git config --local core.longpaths true']) {
+    assert.equal(findRisk(command), null, command);
+  }
+});

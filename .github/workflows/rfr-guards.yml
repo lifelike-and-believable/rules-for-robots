@@ -4,7 +4,8 @@ name: rules-for-robots guards
 #   jobs:
 #     guards:
 #       uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-guards.yml@main
-# Runs the secret scan (SEC-001) and, for pull requests, the test change guard (TEST-001).
+# Runs the secret scan (SEC-001), the instruction-file lint (paths and npm scripts named in
+# AGENTS.md and CLAUDE.md exist), and, for pull requests, the test change guard (TEST-001).
 on:
   workflow_call:
     inputs:
@@ -12,6 +13,10 @@ on:
         description: rules-for-robots ref to take the guard scripts from
         type: string
         default: main
+      instruction-lint:
+        description: Check that paths and npm scripts named in AGENTS.md and CLAUDE.md exist
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -45,3 +50,19 @@ jobs:
           node-version: 22
       - name: Test change guard
         run: node .rfr/checks/ci/test-change-guard.mjs "${{ github.event.pull_request.base.sha }}" ${{ contains(github.event.pull_request.labels.*.name, 'tests-reviewed') && '--approved' || '' }}
+
+  instruction-lint:
+    if: inputs.instruction-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Instruction-file lint
+        run: node .rfr/checks/ci/instruction-lint.mjs
