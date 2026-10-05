@@ -157,3 +157,12 @@ test('the CLI accepts --copyright more than once (#26)', async () => {
   const ok = run(HOLDER, 'Open3DStream Contributors');
   assert.equal(ok.status, 0, ok.stdout + ok.stderr);
 });
+
+test('a ThirdParty folder anywhere under Source/ is accepted (#36)', () => {
+  const dir = copySample(d => {
+    fs.mkdirSync(path.join(d, 'Source', 'RfrSample', 'ThirdParty', 'lib'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'Source', 'RfrSample', 'ThirdParty', 'lib', 'LICENSE.txt'), 'MIT');
+    fs.mkdirSync(path.join(d, 'Source', 'ThirdParty', 'other'), { recursive: true });
+  });
+  assert.deepEqual(errorsOf(dir), []);
+});
