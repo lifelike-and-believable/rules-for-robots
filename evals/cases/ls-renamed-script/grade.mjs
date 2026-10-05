@@ -30,7 +30,9 @@ export async function tasks(dir) {
 
 // What the renamed script runs, run directly so a re-added `verify` alias changes nothing.
 export function projectChecksPass(dir) {
-  const run = args => spawnSync(process.execPath, args, { cwd: dir, encoding: 'utf8', timeout: 60000 }).status === 0;
+  // Drop NODE_TEST_CONTEXT: under the grader's own unit tests it makes a nested node --test exit 0 even when tests fail.
+  const { NODE_TEST_CONTEXT, ...env } = process.env;
+  const run = args => spawnSync(process.execPath, args, { cwd: dir, encoding: 'utf8', timeout: 60000, env }).status === 0;
   return run(['--test']) && run(['scripts/lint.mjs']);
 }
 

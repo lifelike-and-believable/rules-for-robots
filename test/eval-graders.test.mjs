@@ -305,3 +305,22 @@ test('eval harness: cost sums each session, and graders get per-turn text and to
   assert.deepEqual(turns.map(t => t.tools.map(x => x.name)), [['Bash'], ['Read'], ['Edit']]);
   assert.deepEqual(turns.map(t => t.session), [0, 0, 1]);
 });
+
+test('eval harness: a candidate with replaces: removes that core rule in the candidate arm (#69)', async () => {
+  const { prepareWorkspace } = await import('../evals/run.mjs');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-case-'));
+  fs.mkdirSync(path.join(root, 'fixture'));
+  fs.writeFileSync(path.join(root, 'fixture', 'README.md'), 'fixture\n');
+  const testCase = { name: 'synthetic', dir: root, meta: { candidates: ['WA-004-amended'] } };
+  const withCandidate = await prepareWorkspace(testCase, 'rules+candidate');
+  const rulesOnly = await prepareWorkspace(testCase, 'rules');
+  const wa004 = d => fs.readdirSync(path.join(d, '.claude/rules/core/working-agreement')).filter(f => f.startsWith('WA-004-'));
+  try {
+    assert.ok(fs.existsSync(path.join(withCandidate, '.claude/rules/candidates/WA-004-amended.md')));
+    assert.deepEqual(wa004(withCandidate), []);
+    assert.equal(wa004(rulesOnly).length, 1);
+    assert.equal(spawnSync('git', ['status', '--porcelain'], { cwd: withCandidate, encoding: 'utf8' }).stdout, '');
+  } finally {
+    for (const d of [withCandidate, rulesOnly, root]) fs.rmSync(d, { recursive: true, force: true });
+  }
+});

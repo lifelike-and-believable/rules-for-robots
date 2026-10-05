@@ -10,6 +10,7 @@
 //   rules       fixture + core rules in .claude/rules/
 //   rules+hooks rules + the rfr-core plugin (hooks) via --plugin-dir
 //   rules+candidate  rules + the case's draft rules from evals/candidates/ (meta.candidates);
+//               a candidate with `replaces: <ID>` in its frontmatter removes that core rule;
 //               not in the default arms, pass it with --arms
 //
 // A case's bin/ folder, if present, goes first on PATH (for fake CLIs such as gh). It stays
@@ -175,7 +176,16 @@ export async function prepareWorkspace(testCase, arm) {
   if (arm === 'rules+candidate') {
     for (const id of testCase.meta.candidates ?? []) {
       fs.mkdirSync(path.join(dir, '.claude', 'rules', 'candidates'), { recursive: true });
-      fs.copyFileSync(path.join(CANDIDATES, `${id}.md`), path.join(dir, '.claude', 'rules', 'candidates', `${id}.md`));
+      const file = path.join(CANDIDATES, `${id}.md`);
+      fs.copyFileSync(file, path.join(dir, '.claude', 'rules', 'candidates', `${id}.md`));
+      // A candidate that rewrites a core rule names it in `replaces:`; drop the core
+      // version so the agent sees only one.
+      const replaces = /^replaces:\s*(\S+)\s*$/m.exec(fs.readFileSync(file, 'utf8').split(/^---\s*$/m)[1] ?? '')?.[1];
+      if (replaces) {
+        for (const f of fs.readdirSync(path.join(dir, '.claude', 'rules', 'core'), { recursive: true })) {
+          if (path.basename(f).startsWith(`${replaces}-`)) fs.rmSync(path.join(dir, '.claude', 'rules', 'core', f));
+        }
+      }
     }
   }
   // Cases can share an installed node_modules instead of installing per run. Hard-link

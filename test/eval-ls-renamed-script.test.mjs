@@ -250,3 +250,16 @@ test('ls-renamed-script: report wording that does not say the instructions are s
     'Missing the clamp tests at first; added them and npm run check passes. AGENTS.md conventions followed.',
   ]) assert.equal(reportsMismatch(text), false, text);
 });
+
+test('ls-renamed-script: a failing project test fails checksPass, even when graded under node --test', async () => {
+  const { dir } = workspace();
+  try {
+    routine(dir);
+    addClamp(dir);
+    append(dir, 'tests/math.test.js', "\ntest('broken on purpose', () => assert.equal(1, 2));\n");
+    const result = await grade({ dir, turns: [], tools: [], finalText: '', git: () => '' });
+    assert.equal(result.checks.checksPass, false, JSON.stringify(result.checks));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
