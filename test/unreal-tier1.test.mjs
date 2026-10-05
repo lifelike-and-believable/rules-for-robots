@@ -110,3 +110,50 @@ test('automation report summary uses index.json counts', async () => {
     { succeeded: 2, succeededWithWarnings: 0, failed: 1, notRun: 0, total: 3 });
   assert.equal(summarize({ tests: [{ state: 'Success' }, { state: 'Fail' }] }).failed, 1);
 });
+
+test('build output folders are reported once and not descended into (#24)', () => {
+  const dir = copySample(d => {
+    fs.mkdirSync(path.join(d, 'Binaries', 'Win64'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'Binaries', 'Win64', 'UnrealEditor-RfrSample.dll'), '');
+    fs.mkdirSync(path.join(d, 'Intermediate', 'Build', 'Win64'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'Intermediate', 'Build', 'Win64', 'x-y.obj'), '');
+  });
+  assert.deepEqual(errorsOf(dir).sort(), [
+    'FAB-003: remove Binaries/ from the plugin folder; it is build output',
+    'FAB-003: remove Intermediate/ from the plugin folder; it is build output',
+  ]);
+});
+
+test('third-party source in a module ThirdParty folder keeps its own notice (#25)', () => {
+  const dir = copySample(d => {
+    const lib = path.join(d, 'Source', 'RfrSample', 'ThirdParty', 'lib', 'include');
+    fs.mkdirSync(lib, { recursive: true });
+    fs.writeFileSync(path.join(lib, 'lib.h'), '#pragma once\nclass Foo\n{\n\tTObjectPtr<UObject> X;\n};\n');
+  });
+  const errors = errorsOf(dir).filter(e => e.startsWith('FAB-002') || e.startsWith('UE-002'));
+  assert.deepEqual(errors, []);
+});
+
+test('FAB-002 accepts any of several copyright holders (#26)', () => {
+  const dir = copySample(d => {
+    fs.writeFileSync(path.join(d, 'Source/RfrSample/Private/Upstream.cpp'), '// Copyright (c) Open3DStream Contributors\n');
+    fs.writeFileSync(path.join(d, 'Source/RfrSample/Private/Neither.cpp'), '// Copyright Someone Else\n');
+  });
+  const one = errorsOf(dir);
+  assert.ok(one.some(e => e.includes('Upstream.cpp')), one.join('\n'));
+  const both = errorsOf(dir, { copyright: [HOLDER, 'Open3DStream Contributors'] });
+  assert.ok(!both.some(e => e.includes('Upstream.cpp')), both.join('\n'));
+  const neither = both.find(e => e.includes('Neither.cpp'));
+  assert.ok(neither && neither.includes(HOLDER) && neither.includes('Open3DStream Contributors'), both.join('\n'));
+});
+
+test('the CLI accepts --copyright more than once (#26)', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const dir = copySample(d => {
+    fs.writeFileSync(path.join(d, 'Source/RfrSample/Private/Upstream.cpp'), '// Copyright (c) Open3DStream Contributors\n');
+  });
+  const run = (...holders) => spawnSync(process.execPath, ['checks/unreal/tier1.mjs', dir, ...holders.flatMap(h => ['--copyright', h]), '--allow-missing-fab-url'], { encoding: 'utf8' });
+  assert.equal(run(HOLDER).status, 1);
+  const ok = run(HOLDER, 'Open3DStream Contributors');
+  assert.equal(ok.status, 0, ok.stdout + ok.stderr);
+});

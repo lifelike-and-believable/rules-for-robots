@@ -14,6 +14,6 @@ jobs:
     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-unreal-tier1.yml@main
     with:
       plugin-path: Plugins/MyPlugin            # change to your plugin folder
-      copyright: Your Publisher Name           # the name in every source file's copyright line
+      copyright: Your Publisher Name           # the name in every source file's copyright line; one per line (copyright: |) for several
       project-path: .                          # checks Target.cs files of the host project
       allow-missing-fab-url: true              # set to false once the Fab product exists
