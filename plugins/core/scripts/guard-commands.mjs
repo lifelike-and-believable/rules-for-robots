@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PreToolUse (Bash): ask the user before destructive git, file, and database commands
+// PreToolUse (Bash, PowerShell): ask the user before destructive git, file, and database commands
 // (rules WA-003 and, for databases, the node-services pack). Asking keeps the user in
 // control without blocking legitimate use; headless runs treat "ask" as a denial.
 import { fileURLToPath } from 'node:url';
@@ -34,20 +34,51 @@ function isForcedRecursiveRm(command) {
   return false;
 }
 
+// PowerShell's Remove-Item (or an alias) with both -Recurse and -Force, in any order, as
+// any unambiguous prefix (-r, -Rec; -fo, -Force) or with :$true. A bare -f is ambiguous
+// in PowerShell (Filter or Force) and fails to bind, so it does not count.
+const REMOVE_ITEM = new Set(['remove-item', 'rm', 'del', 'erase', 'rd', 'ri', 'rmdir']);
+const PS_RECURSE = /^-r(e(c(u(r(s(e)?)?)?)?)?)?(:\$true)?$/i;
+const PS_FORCE = /^-fo(r(c(e)?)?)?(:\$true)?$/i;
+
+function isForcedRecursiveRemoveItem(command) {
+  for (const segment of command.split(/&&|\|\||;|\||\n/)) {
+    const words = segment.trim().split(/\s+/);
+    if (!REMOVE_ITEM.has(words[0]?.toLowerCase())) continue;
+    if (words.some(w => PS_RECURSE.test(w)) && words.some(w => PS_FORCE.test(w))) return true;
+  }
+  return false;
+}
+
 // A shell command that writes to, moves, or deletes a test file: redirection, in-place
 // editors, scripts that open files for writing, and file moves (TEST-001). Edits through
 // the Edit and Write tools are handled by guard-test-edits.
-const TEST_PATH = /(\.(test|spec)\.\w+|(^|[\s/'"=])(test|tests|Tests|__tests__|__snapshots__|e2e)\/[\w./-]+\.\w+)/;
+// Paths may use / or \ (PowerShell). Unreal test modules (Source/<Name>Tests/) and
+// Unreal test files (*Tests.cpp, *Test.cpp, *Spec.cpp under Source/) count too (#37).
+const TEST_PATH = new RegExp([
+  /\.(test|spec)\.\w+/.source,
+  /(^|[\s/\\'"=])(test|tests|Tests|__tests__|__snapshots__|e2e)[/\\][\w./\\-]+\.\w+/.source,
+  /(^|[\s/\\'"=])Source[/\\]\w+Tests[/\\]/.source,
+  /(^|[\s/\\'"=])Source[/\\][\w./\\-]*\w(Tests?|Spec)\.(cpp|h)\b/.source,
+].join('|'));
 const WRITES = /(>>?|\btee\b|\bsed\s+(-[a-zA-Z]*i|--in-place)|\bperl\s+-[a-zA-Z]*i|\bmv\b|\bcp\b|\brm\b|\btruncate\b|open\([^)]*['"][wa]['"]|writeFile|write_text|\.write\()/;
+// PowerShell cmdlets that write, move, or delete files (anywhere in the command), their
+// common aliases (only as the command word, so prose such as "move" in a commit message
+// does not count), and New-Item only with -Force, which overwrites an existing file.
+const PS_CMDLETS = /\b(Set-Content|Add-Content|Out-File|Move-Item|Copy-Item|Remove-Item|Rename-Item|Clear-Content)\b/i;
+const PS_ALIASES = /(^|[;&|(]|\n)\s*(sc|ac|mi|move|cpi|copy|ri|del|erase|rni|ren|clc)\s/i;
+const PS_NEW_ITEM_FORCE = /\bNew-Item\b[^;&|\n]*\s-fo(r(c(e)?)?)?\b/i;
+const psWrites = command => PS_CMDLETS.test(command) || PS_ALIASES.test(command) || PS_NEW_ITEM_FORCE.test(command);
 
 export function writesTestFile(command) {
-  return TEST_PATH.test(command) && WRITES.test(command);
+  return TEST_PATH.test(command) && (WRITES.test(command) || psWrites(command));
 }
 
 export function findRisk(command) {
   if (typeof command !== 'string') return null;
   if (writesTestFile(command)) return 'this command appears to change a test file outside the Edit tool (TEST-001)';
   if (isForcedRecursiveRm(command)) return 'recursive forced delete (rm -rf)';
+  if (isForcedRecursiveRemoveItem(command)) return 'recursive forced delete (Remove-Item -Recurse -Force)';
   for (const [pattern, reason] of CHECKS) if (pattern.test(command)) return reason;
   return null;
 }

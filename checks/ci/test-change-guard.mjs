@@ -9,11 +9,13 @@ import { fileURLToPath } from 'node:url';
 
 const TEST_FILE = /\.(test|spec)\.[^/]+$/;
 const TEST_DIR = /(^|\/)(test|tests|Tests|__tests__|__snapshots__|e2e)\//;
+// Unreal test modules (Source/<Name>Tests/) and test files (*Tests.cpp, *Test.cpp, *Spec.cpp).
+const UNREAL_TEST = /(^|\/)Source\/(\w+Tests\/|.*\w(Tests?|Spec)\.(cpp|h)$)/;
 const BASELINE = /(-snapshots\/|\.snap$|__screenshots__\/|\.png$)/;
 const IGNORED = /^(\.github\/|docs\/|README|CHANGELOG|AGENTS\.md|CLAUDE\.md|\.claude\/)/;
 
 export function isTestOrBaseline(file) {
-  return TEST_FILE.test(file) || TEST_DIR.test(file) || BASELINE.test(file);
+  return TEST_FILE.test(file) || TEST_DIR.test(file) || UNREAL_TEST.test(file) || BASELINE.test(file);
 }
 
 // changes: [{ status: 'A'|'M'|'D'|'R', file }]
