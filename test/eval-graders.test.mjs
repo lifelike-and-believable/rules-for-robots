@@ -257,3 +257,51 @@ rl.on('line', line => {
   assert.equal(run.events.filter(e => e.type === 'result').length, 3);
   assert.equal(run.code, 0);
 });
+
+test('eval harness: prompts/NN.before.mjs runs in the workspace before prompt NN (#69)', async () => {
+  const { loadCase, runSession } = await import('../evals/run.mjs');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-case-'));
+  fs.mkdirSync(path.join(root, 'prompts'));
+  fs.writeFileSync(path.join(root, 'case.json'), '{}');
+  fs.writeFileSync(path.join(root, 'prompts', '01.md'), 'one');
+  fs.writeFileSync(path.join(root, 'prompts', '02.md'), 'two');
+  fs.writeFileSync(path.join(root, 'prompts', '02.before.mjs'), "import fs from 'node:fs'; import path from 'node:path'; export default dir => fs.writeFileSync(path.join(dir, 'marker.txt'), 'set');");
+  const testCase = loadCase(root);
+  assert.deepEqual(testCase.prompts, ['one', 'two']);
+  assert.deepEqual(Object.keys(testCase.before), ['1']);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-ws-'));
+  const fake = path.join(dir, 'fake.mjs');
+  fs.writeFileSync(fake, `
+import readline from 'node:readline';
+import fs from 'node:fs';
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', () => console.log(JSON.stringify({ type: 'result', result: fs.existsSync('marker.txt') ? 'marker' : 'none', total_cost_usd: 0 })));
+`);
+  const run = await runSession({ cwd: dir, command: process.execPath, args: [fake], prompts: testCase.prompts, timeoutMs: 20000, before: i => testCase.before[i]?.(dir) });
+  fs.rmSync(root, { recursive: true, force: true });
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.deepEqual(run.events.filter(e => e.type === 'result').map(e => e.result), ['none', 'marker']);
+});
+
+test('eval harness: newSessionAt splits prompts into separate sessions (#69)', async () => {
+  const { splitSessions } = await import('../evals/run.mjs');
+  assert.deepEqual(splitSessions(['a', 'b', 'c', 'd'], undefined), [[0, 1, 2, 3]]);
+  assert.deepEqual(splitSessions(['a', 'b', 'c', 'd'], [3]), [[0, 1], [2, 3]]);
+  assert.deepEqual(splitSessions(['a', 'b', 'c'], [2, 3]), [[0], [1], [2]]);
+});
+
+test('eval harness: cost sums each session, and graders get per-turn text and tools (#69)', async () => {
+  const { sessionCost, turnsOf } = await import('../evals/run.mjs');
+  const tool = (name, input) => ({ type: 'assistant', message: { content: [{ type: 'tool_use', name, input }] } });
+  const events = [
+    tool('Bash', { command: 'npm test' }), { type: 'result', result: 'first', total_cost_usd: 0.1, num_turns: 2 },
+    tool('Read', { file_path: 'a.js' }), { type: 'result', result: 'second', total_cost_usd: 0.3, num_turns: 3 },
+    { type: 'rfr_session_break' },
+    tool('Edit', { file_path: 'b.js' }), { type: 'result', result: 'third', total_cost_usd: 0.2, num_turns: 1 },
+  ];
+  assert.equal(+sessionCost(events).toFixed(4), 0.5);
+  const turns = turnsOf(events);
+  assert.deepEqual(turns.map(t => t.text), ['first', 'second', 'third']);
+  assert.deepEqual(turns.map(t => t.tools.map(x => x.name)), [['Bash'], ['Read'], ['Edit']]);
+  assert.deepEqual(turns.map(t => t.session), [0, 0, 1]);
+});
