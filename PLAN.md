@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.5 (2026-10-05). Phase 0 complete. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.6 (2026-10-05). Phase 0 complete; Phase 1 in progress (rule format specified). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -147,7 +147,7 @@ rationale: Claude models game tasks mainly by editing tests.
 Leave existing tests unchanged when making them pass, because ...
 ```
 
-Phase 1 tests whether frontmatter and HTML comments reach the model (R7). If frontmatter is sent, the rendered files move metadata into a stripped comment block. CI validates YAML, because invalid YAML makes a scoped rule load everywhere (R6).
+Frontmatter and HTML comments do not reach the model ([experiment R7](docs/research/experiments/r7-rule-loading.md)), so rendered files keep full metadata at no context cost. CI validates YAML, because invalid YAML makes a scoped rule load everywhere (R6). The full specification is [docs/rule-format.md](docs/rule-format.md).
 
 ## 7. Stack packs
 
@@ -278,7 +278,7 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 ## 12. Open questions
 
-1. Does Claude Code send rule-file frontmatter and HTML comments to the model? Test in Phase 1 (R7).
+1. ~~Does Claude Code send rule-file frontmatter and HTML comments to the model?~~ Answered in Phase 1: no, both are stripped; path-scoped rules load on Read/Edit but not on Grep ([experiment R7](docs/research/experiments/r7-rule-loading.md)).
 2. Which `BuildPlugin` and Unreal Insights headless flags exist in the installed engines? Verify on the runner in Phase 3 (R55).
 3. What process exit code does `UnrealEditor-Cmd` return when automation tests fail? Verify on the runner; gate on the report regardless (R31, R55).
 4. Do behavioural rules (as opposed to repository descriptions) measurably help 5.5-class models? No published study has tested this; answered by Phase 2 and Phase 8 evals.
