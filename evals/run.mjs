@@ -72,9 +72,15 @@ export async function prepareWorkspace(testCase, arm) {
       fs.cpSync(path.join(ROOT, 'rules', 'packs', pack), path.join(dir, '.claude', 'rules', 'packs', pack), { recursive: true });
     }
   }
-  // Cases can share an installed node_modules instead of installing per run.
+  // Cases can share an installed node_modules instead of installing per run. Hard-link
+  // it (a symlink out of the project root makes Turbopack fail); copy if that fails.
   if (testCase.meta.nodeModulesFrom) {
-    fs.symlinkSync(path.join(ROOT, testCase.meta.nodeModulesFrom, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
+    const from = path.join(path.resolve(ROOT, testCase.meta.nodeModulesFrom), 'node_modules');
+    const to = path.join(dir, 'node_modules');
+    if (spawnSync('cp', ['-al', from, to]).status !== 0) {
+      fs.rmSync(to, { recursive: true, force: true });
+      fs.cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+    }
   }
   git(dir, 'init', '-q', '-b', 'main');
   fs.appendFileSync(path.join(dir, '.git', 'info', 'exclude'), 'node_modules\n.next\n');

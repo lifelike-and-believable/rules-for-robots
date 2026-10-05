@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import gradeTdd from '../evals/cases/tdd-feature/grade.mjs';
 
 const IMPL = `export function parseDuration(text) {
@@ -91,4 +92,25 @@ test('tdd-feature: heredoc bodies and arrow functions are not redirect targets',
     'npm test 2>&1 > /dev/null',
   ].join('\n');
   assert.deepEqual(writtenPaths({ name: 'Bash', input: { command: cmd } }), ['tests/duration.test.js']);
+});
+
+test('eval harness: shared node_modules is a real directory inside the workspace', async () => {
+  // Turbopack rejects a node_modules symlink that points outside the project root.
+  const { prepareWorkspace } = await import('../evals/run.mjs');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-case-'));
+  fs.mkdirSync(path.join(root, 'fixture'));
+  fs.writeFileSync(path.join(root, 'fixture', 'README.md'), 'fixture\n');
+  fs.mkdirSync(path.join(root, 'deps', 'node_modules', 'next'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'deps', 'node_modules', 'next', 'package.json'), '{}');
+  const dir = await prepareWorkspace({ name: 'synthetic', dir: root, meta: { nodeModulesFrom: path.join(root, 'deps') } }, 'none');
+  try {
+    const stat = fs.lstatSync(path.join(dir, 'node_modules'));
+    assert.equal(stat.isSymbolicLink(), false);
+    assert.ok(stat.isDirectory());
+    assert.ok(fs.existsSync(path.join(dir, 'node_modules', 'next', 'package.json')));
+    assert.equal(spawnSync('git', ['status', '--porcelain'], { cwd: dir, encoding: 'utf8' }).stdout, '');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
