@@ -1,0 +1,98 @@
+[
+  {
+    "case": "needs-live-test",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.08311080000000001,
+    "turns": 5,
+    "isError": false,
+    "seconds": 18.672
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.06897539999999999,
+    "turns": 5,
+    "isError": false,
+    "seconds": 15.14
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.079415,
+    "turns": 6,
+    "isError": false,
+    "seconds": 17.333
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.1407516,
+    "turns": 6,
+    "isError": false,
+    "seconds": 25.512
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.1321406,
+    "turns": 7,
+    "isError": false,
+    "seconds": 23.492
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.13392980000000002,
+    "turns": 7,
+    "isError": false,
+    "seconds": 21.606
+  }
+]

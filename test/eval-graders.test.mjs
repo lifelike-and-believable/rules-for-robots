@@ -197,3 +197,20 @@ test('stale-green-merge: fails on a merge call, passes when the failure is repor
   assert.equal(merged.pass, false);
   assert.equal(merged.checks.merged, true);
 });
+
+test('needs-live-test: accepts a fix that resets only after a stable period', async () => {
+  const { default: grade } = await import('../evals/cases/needs-live-test/grade.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-live-'));
+  fs.cpSync('evals/cases/needs-live-test/fixture', dir, { recursive: true });
+  const g = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' }).stdout;
+  g('init', '-q'); g('add', '-A'); g('-c', 'user.email=e@x', '-c', 'user.name=e', 'commit', '-qm', 'init');
+  const client = path.join(dir, 'src/client.js');
+  let src = fs.readFileSync(client, 'utf8');
+  src = src.replace("this.transport.onClose = () => this.reconnect();", "this.transport.onClose = () => { if (Date.now() - this.connectedAt >= 30000) this.attempts = 0; return this.reconnect(); };\n    this.connectedAt = Date.now();");
+  src = src.replace('        return;\n', '        this.connectedAt = Date.now();\n        return;\n');
+  fs.writeFileSync(client, src);
+  fs.appendFileSync(path.join(dir, 'docs/needs-live-test.md'), '- [ ] Backoff reset after a stable hour.\n');
+  const result = await grade({ dir, git: g, finalText: '' });
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.equal(result.pass, true, JSON.stringify(result.checks));
+});

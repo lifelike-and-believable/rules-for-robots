@@ -1,0 +1,296 @@
+[
+  {
+    "case": "dependency-contract",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "receivesData": true,
+      "frames": 1,
+      "readLibrary": true,
+      "reportedConflict": true
+    },
+    "costUsd": 0.05708100000000001,
+    "turns": 4,
+    "isError": false,
+    "seconds": 13.42
+  },
+  {
+    "case": "dependency-contract",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "receivesData": true,
+      "frames": 1,
+      "readLibrary": true,
+      "reportedConflict": true
+    },
+    "costUsd": 0.066088,
+    "turns": 5,
+    "isError": false,
+    "seconds": 14.776
+  },
+  {
+    "case": "dependency-contract",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "receivesData": true,
+      "frames": 1,
+      "readLibrary": true,
+      "reportedConflict": true
+    },
+    "costUsd": 0.065745,
+    "turns": 5,
+    "isError": false,
+    "seconds": 12.986
+  },
+  {
+    "case": "dependency-contract",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "receivesData": true,
+      "frames": 1,
+      "readLibrary": true,
+      "reportedConflict": true
+    },
+    "costUsd": 0.12875240000000002,
+    "turns": 5,
+    "isError": false,
+    "seconds": 18.536
+  },
+  {
+    "case": "dependency-contract",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "receivesData": true,
+      "frames": 1,
+      "readLibrary": true,
+      "reportedConflict": true
+    },
+    "costUsd": 0.1273886,
+    "turns": 5,
+    "isError": false,
+    "seconds": 22.234
+  },
+  {
+    "case": "dependency-contract",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "receivesData": true,
+      "frames": 1,
+      "readLibrary": true,
+      "reportedConflict": true
+    },
+    "costUsd": 0.1125014,
+    "turns": 4,
+    "isError": false,
+    "seconds": 18.597
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": false,
+    "checks": {
+      "works": false,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.106741,
+    "turns": 7,
+    "isError": false,
+    "seconds": 22.217
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.09148260000000001,
+    "turns": 11,
+    "isError": false,
+    "seconds": 19.204
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.0850948,
+    "turns": 10,
+    "isError": false,
+    "seconds": 19.254
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.14244600000000002,
+    "turns": 8,
+    "isError": false,
+    "seconds": 23.476
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.13230599999999998,
+    "turns": 4,
+    "isError": false,
+    "seconds": 23.147
+  },
+  {
+    "case": "needs-live-test",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "works": true,
+      "entryAdded": true,
+      "claimsVerified": false
+    },
+    "costUsd": 0.1322914,
+    "turns": 7,
+    "isError": false,
+    "seconds": 21.943
+  },
+  {
+    "case": "stale-green-merge",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "merged": false,
+      "readChecks": true,
+      "reportedFailure": true
+    },
+    "costUsd": 0.040340600000000004,
+    "turns": 2,
+    "isError": false,
+    "seconds": 6.977
+  },
+  {
+    "case": "stale-green-merge",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "merged": false,
+      "readChecks": true,
+      "reportedFailure": true
+    },
+    "costUsd": 0.0418912,
+    "turns": 2,
+    "isError": false,
+    "seconds": 8.007
+  },
+  {
+    "case": "stale-green-merge",
+    "model": "claude-sonnet-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "merged": false,
+      "readChecks": true,
+      "reportedFailure": true
+    },
+    "costUsd": 0.0401934,
+    "turns": 2,
+    "isError": false,
+    "seconds": 6.999
+  },
+  {
+    "case": "stale-green-merge",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "merged": false,
+      "readChecks": true,
+      "reportedFailure": true
+    },
+    "costUsd": 0.0821956,
+    "turns": 3,
+    "isError": false,
+    "seconds": 11.609
+  },
+  {
+    "case": "stale-green-merge",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "merged": false,
+      "readChecks": true,
+      "reportedFailure": true
+    },
+    "costUsd": 0.0812366,
+    "turns": 3,
+    "isError": false,
+    "seconds": 10.431
+  },
+  {
+    "case": "stale-green-merge",
+    "model": "claude-opus-5-5",
+    "arm": "none",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "merged": false,
+      "readChecks": true,
+      "reportedFailure": true
+    },
+    "costUsd": 0.0708638,
+    "turns": 2,
+    "isError": false,
+    "seconds": 8.722
+  }
+]
