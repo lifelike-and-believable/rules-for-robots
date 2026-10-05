@@ -4,6 +4,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-10-05
+
+### Added
+
+- `/rfr-core:merge-when-green <pr>` (user only): waits for CI with one blocking call or pull request events instead of polling, confirms every check on the head commit, merges with `--match-head-commit`, updates the base branch, and continues.
+- `.github/workflows/rfr-ci-status.yml`, a reusable workflow that keeps one comment on the pull request with each job's result and the head commit's full SHA, so whoever waits on CI is notified. The template repos' merge-gating workflows (web app and static site CI, Unreal Tier 1 and Tier 2) call it as their last job.
+
+### Changed
+
+- `web-engineer` and `unreal-engineer` wait for CI with a blocking call or notifications, never a sleep loop, confirm checks on the head commit, and merge only when asked.
+- Working with agents: the pull request section explains merging on green and continuing, and why a "CI passed" comment is a signal, not proof. The adoption guide shows how to add the status job.
+
 ## [1.0.4] - 2026-10-05
 
 ### Changed

@@ -17,3 +17,15 @@ jobs:
       copyright: Your Publisher Name           # the name in every source file's copyright line; one per line (copyright: |) for several
       project-path: .                          # checks Target.cs files of the host project
       allow-missing-fab-url: true              # set to false once the Fab product exists
+
+  status:
+    # One comment on the pull request when CI finishes, naming the head commit, so whoever
+    # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
+    needs: [tier1]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-ci-status.yml@main
+    with:
+      results: ${{ toJSON(needs) }}
