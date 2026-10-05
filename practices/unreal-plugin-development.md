@@ -18,6 +18,8 @@ Notes:
 - `-Package` must point outside the plugin, engine, and project folders. Fab documents only `-Plugin`, `-Package`, and `-Rocket`. Other flags, including whether `-StrictIncludes` is the default, are defined in `Engine/Source/Programs/AutomationTool/Scripts/BuildPlugin.Automation.cs`, which Launcher-installed engines do not ship; use the documented flags, or read that file in a source build, rather than relying on memory (R55).
 - Decide pass or fail from `<OutDir>/index.json` (`failed` and `notRun` must be 0) or the log line `**** TEST COMPLETE. EXIT CODE: <n> ****`. On UE 5.6 to 5.8 the editor exits with 0 when all tests pass and 255 when a test fails (the log line reads `EXIT CODE: -1`), but this is not documented, so gate on the report.
 - In Automation Specs, create objects with the outer their class requires. A game-instance subsystem has `ClassWithin` `UGameInstance`, so `NewObject<UMySubsystem>()` in the transient package raises an ensure ("created in invalid Outer") that fails the first test to hit it, while later tests pass with a warning. Create a transient `UGameInstance` and use it as the outer. This one-pass, one-fail pattern points to an ensure, which fires once per session.
+- End every `-ExecCmds` string with `Quit`. Exit conditions such as the test queue finishing apply only to `Automation RunTests`; any other command leaves the editor running and the script hanging. Run long editor jobs in the background with a timeout, and check that the process has exited.
+- Data validation results (`IsDataValid`) default to `NotValidated`. Treat that as "not checked", not as a pass, when a check gates on the result.
 - To test a packaged plugin, copy the `-Package` output into a host project's `Plugins/` folder. A content-only host `.uproject` that enables the plugin is enough.
 - Generate `compile_commands.json` for clangd once with `UnrealBuildTool -mode=GenerateClangDatabase` after a first build, not in the inner loop.
 
@@ -50,7 +52,7 @@ Other projects and other agent sessions may build on the same machine, and distr
 ## Giving agents engine context
 
 - Point the agent at the installed engine's `Source/` folder for each supported version and ask it to grep declarations before using an API (UE-001).
-- Epic's Claude Code plugin and the editor MCP server exist for UE 5.8 only. Treat them as optional for 5.8 projects: commit before long sessions, never share one editor MCP between agents, and remember the MCP server has no authentication and can run Python.
+- Epic's Claude Code plugin and the editor MCP server exist for UE 5.8 only. Treat them as optional for 5.8 projects: commit before long sessions, never share one editor MCP between agents, and remember the MCP server has no authentication and can run Python. Its calls run one at a time on the editor's game thread: call it serially, keep query limits small (100 results or fewer), and if a call times out or the connection closes, stop the batch, check the connection once, and report the partial results.
 
 ## Fab release checklist
 

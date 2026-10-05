@@ -15,4 +15,6 @@ Follow the Epic coding standard points in the rules, hold UObjects in `UPROPERTY
 
 After any header, reflection macro, `.Build.cs`, `.Target.cs`, or `.uplugin` change, do a full command-line build; do not rely on Live Coding. Run the Tier 1 checks and the verify command from AGENTS.md. Read automation results from `index.json`, not the editor's exit code.
 
+Return new scope, architectural choices, and irreversible actions to the caller instead of acting on them.
+
 Your final message lists the files changed, the failing and then passing test runs, the engine versions built, the build and test output (or the failing part), anything you could not verify, and suggestions you did not act on.

@@ -22,6 +22,12 @@ The project works test-driven wherever a test can express the behaviour (TEST-00
 
 Agents should show the red and green runs in their report, which also satisfies WA-001 and WA-005. Acceptance criteria from `/rfr-core:plan-feature` become the first tests. Test-first is skipped for spikes, visual and layout tweaks, and configuration; the agent says so when it skips.
 
+When a test run is expensive (a build, an engine start, a browser), write a cluster of tests for one contract at a time, then run them together. In the red run, check that each test fails for its own expected reason; one that passes is too weak. Pair each rule's passing case with its failing case, and split a cluster that grows past about ten tests.
+
+Some work has no unit test. For content, data, or asset changes, write the validation check first and see it fail. For feel, timing, or visual judgement, say that a person has to check it and add it to the needs-a-live-test list (see [working with agents](working-with-agents.md)). Do not write a test that cannot fail to fill the gap.
+
+Before saying a project has no tests for an area, search for its test module: tests often live somewhere unexpected, such as a separate package or an Unreal `Tests` module. If there really is none, ask before creating a new test module or framework, and keep headless suites headless.
+
 For Unreal plugins, TDD works best at the lowest test level (UE-007): Low-Level Tests for pure logic run in seconds, while editor automation tests are slower and suit fewer, larger steps.
 
 The hook that asks before editing existing tests (TEST-001) does not get in the way of TDD: new tests and new test files are allowed without asking.
