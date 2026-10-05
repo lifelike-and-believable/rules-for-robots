@@ -16,7 +16,7 @@ Fastest first. An agent should stop at the first level that proves the change.
 Notes:
 
 - `-Package` must point outside the plugin, engine, and project folders. Fab documents only `-Plugin`, `-Package`, and `-Rocket`. Other flags, including whether `-StrictIncludes` is the default, are defined in `Engine/Source/Programs/AutomationTool/Scripts/BuildPlugin.Automation.cs` in each installed engine; check there rather than relying on memory (R55).
-- Decide pass or fail from `<OutDir>/index.json` (`failed` and `notRun` must be 0) or the log line `**** TEST COMPLETE. EXIT CODE: <n> ****`. The editor's own process exit code is not documented as reflecting test results.
+- Decide pass or fail from `<OutDir>/index.json` (`failed` and `notRun` must be 0) or the log line `**** TEST COMPLETE. EXIT CODE: <n> ****`. On UE 5.6 and 5.8 the editor exits with 255 when a test fails (the log line reads `EXIT CODE: -1`), but this is not documented, so gate on the report.
 - To test a packaged plugin, copy the `-Package` output into a host project's `Plugins/` folder. A content-only host `.uproject` that enables the plugin is enough.
 - Generate `compile_commands.json` for clangd once with `UnrealBuildTool -mode=GenerateClangDatabase` after a first build, not in the inner loop.
 

@@ -4,6 +4,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Fixed
+
+- Unreal Tier 2 workflow: installs Node for the report reader, prints automation errors when tests fail, and runs the runner probe even when tests fail.
+
+### Changed
+
+- Unreal guide records the editor's exit code on failing tests (255 on UE 5.6 and 5.8).
+
 ## [0.12.0] - 2026-10-05
 
 ### Added

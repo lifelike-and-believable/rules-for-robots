@@ -296,7 +296,7 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 1. ~~Does Claude Code send rule-file frontmatter and HTML comments to the model?~~ Answered in Phase 1: no, both are stripped; path-scoped rules load on Read/Edit but not on Grep ([experiment R7](docs/research/experiments/r7-rule-loading.md)).
 2. Which `BuildPlugin` and Unreal Insights headless flags exist in the installed engines? Verify on the runner in Phase 3 (R55).
-3. What process exit code does `UnrealEditor-Cmd` return when automation tests fail? Verify on the runner; gate on the report regardless (R31, R55).
+3. ~~What process exit code does `UnrealEditor-Cmd` return when automation tests fail?~~ Answered on the runner (Tier 2 run 37324987694, UE 5.6 and 5.8): exit code 255, with the log line `TEST COMPLETE. EXIT CODE: -1`. CI still gates on `index.json`, which also catches tests that did not run (R31, R55).
 4. ~~Do behavioural rules (as opposed to repository descriptions) measurably help 5.5-class models?~~ Answered in Phase 8: yes, for some. Without rules, both models edited a wrong test to get CI green in 6 of 6 runs; with TEST-001 and WA-002, in none. TEST-004 made Sonnet work test-first (0/3 to 6/6); Opus already did. On data-loss, over-engineering, and Next.js 16 tasks the models behaved well without rules. Rules cost about 40% more per run, and hooks add more ([report](evals/results/2026-10-05-phase8/report.md)).
 
 ## 13. Risks and mitigations

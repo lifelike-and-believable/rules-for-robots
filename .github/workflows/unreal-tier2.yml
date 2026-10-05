@@ -36,6 +36,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The runner's service account has no Node on its PATH; the report reader needs it.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
       - name: Locate engine
         shell: powershell
         run: |
@@ -85,11 +90,14 @@ jobs:
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$hostDir\Host.uproject" "-ExecCmds=Automation RunTests RfrSample.Subsystem;Quit" -unattended -nullrhi -nosound -nopause -stdout "-ReportExportPath=$report" "-abslog=$env:RFR_WORK\editor.log" | Out-Null
           Write-Host "Editor exit code: $LASTEXITCODE"
           Select-String -Path "$env:RFR_WORK\editor.log" -Pattern 'TEST COMPLETE' | ForEach-Object { Write-Host $_.Line }
+          # Show why tests failed: automation errors, failed expectations, ensures, and errors logged during tests.
+          Select-String -Path "$env:RFR_WORK\editor.log" -Pattern 'LogAutomationController: Error|Expected .* to be|Ensure condition failed|: Error: ' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
           node checks\unreal\ci\read-automation-report.mjs $report
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Runner probe (open questions R55)
-        if: ${{ inputs.probe }}
+        # Run even when the tests above fail, so the probe still answers its questions.
+        if: ${{ always() && inputs.probe && env.UE_ROOT != '' }}
         shell: powershell
         run: |
           $summary = $env:GITHUB_STEP_SUMMARY
