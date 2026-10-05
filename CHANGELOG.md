@@ -4,6 +4,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-05
+
+First stable release. The rule set, the `rfr-core` plugin, and the template repos are complete for the scope in `PLAN.md`: a stack-independent core, six stack packs (Unreal plugin, TypeScript, web platform, React and Next.js, Node services, static sites), six agents, ten skills, default hooks, reusable CI workflows, and three template repos. Both reference projects, a Next.js web app and an Unreal plugin, were built from the templates by the agents and pass their own checks. From this release on, a stricter or new MUST rule, or a removed or renamed rule, needs a major version (see [docs/maintenance.md](docs/maintenance.md)).
+
+### Changed
+
+- No rule changes since 0.13.2. `PLAN.md` records Phases 0 to 7 and 9 as complete; the remaining Phase 8 evals continue after 1.0.
+
 ## [0.13.2] - 2026-10-05
 
 ### Added
