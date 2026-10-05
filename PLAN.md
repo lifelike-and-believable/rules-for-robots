@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.6 (2026-10-05). Phase 0 complete; Phase 1 in progress (rule format specified). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.7 (2026-10-05). Phases 0 and 1 complete; Phase 2 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -198,7 +198,9 @@ Instruction files are concatenated and conflicts resolve arbitrarily, so every l
 ### Phase 0: Research (complete)
 Delivered `docs/research/findings.md`, `docs/research/recommendations.md` (R1 to R64, all accepted), `docs/research/notes/`, and `docs/research/sources/fab-requirements.md`.
 
-### Phase 1: Foundations
+### Phase 1: Foundations (complete)
+Delivered: [docs/rule-format.md](docs/rule-format.md), [experiment R7](docs/research/experiments/r7-rule-loading.md), `TEST-001` as the worked example, the rule lint, the template repo build with budget and staleness checks, the `rfr-core` plugin and marketplace with the `install-rules` skill (installed and run end to end against a demo repo), and CI running `npm run verify`. Finding: writes to `.claude/` need user approval, which the installer skill now explains.
+
 - Finalize the rule file format (section 6) and ID scheme.
 - Test whether rule frontmatter and HTML comments reach the model, using the `InstructionsLoaded` hook (R7).
 - Repo skeleton, `AGENTS.md` and thin `CLAUDE.md` for this repo, `docs/contributing.md`.
@@ -267,7 +269,7 @@ Delivered `docs/research/findings.md`, `docs/research/recommendations.md` (R1 to
 | Milestone | Contents | Status |
 |---|---|---|
 | M1 | Phase 0 research, recommendations, plan update | Done |
-| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Next |
+| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Phase 1 done; Phase 2 next |
 | M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | |
 | M4 | Remaining web packs + practice guides | |
 | M5 | Agents, skills, hooks | |
