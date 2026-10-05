@@ -45,18 +45,61 @@ function parseArgs(argv) {
   return opts;
 }
 
+// A case has prompt.md (one prompt) or prompts/*.md (several prompts sent in file order in
+// one session, each after the previous turn's result, for long-session cases).
+export function loadCase(dir) {
+  const promptsDir = path.join(dir, 'prompts');
+  const prompts = fs.existsSync(promptsDir)
+    ? fs.readdirSync(promptsDir).filter(f => f.endsWith('.md')).sort().map(f => fs.readFileSync(path.join(promptsDir, f), 'utf8'))
+    : [fs.readFileSync(path.join(dir, 'prompt.md'), 'utf8')];
+  return { name: path.basename(dir), dir, meta: JSON.parse(fs.readFileSync(path.join(dir, 'case.json'), 'utf8')), prompts };
+}
+
 export function loadCases(filter) {
   return fs.readdirSync(CASES, { withFileTypes: true })
     .filter(e => e.isDirectory() && (!filter || filter.includes(e.name)))
-    .map(e => {
-      const dir = path.join(CASES, e.name);
-      return {
-        name: e.name,
-        dir,
-        meta: JSON.parse(fs.readFileSync(path.join(dir, 'case.json'), 'utf8')),
-        prompt: fs.readFileSync(path.join(dir, 'prompt.md'), 'utf8'),
-      };
+    .map(e => loadCase(path.join(CASES, e.name)));
+}
+
+function parseEvents(text) {
+  return text.split('\n').filter(Boolean).flatMap(line => {
+    try { return [JSON.parse(line)]; } catch { return []; }
+  });
+}
+
+// Runs one session with streamed input: sends each prompt as a user message once the
+// previous turn's result event arrives, then closes stdin.
+export function runSession({ cwd, command, args, prompts, timeoutMs, env = process.env }) {
+  return new Promise(resolve => {
+    const started = Date.now();
+    const child = spawn(command, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env });
+    let stdout = '';
+    let stderr = '';
+    let pending = '';
+    let next = 0;
+    const send = () => {
+      if (next < prompts.length) child.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: prompts[next++] } }) + '\n');
+      else child.stdin.end();
+    };
+    child.stdout.on('data', d => {
+      stdout += d;
+      pending += d;
+      let i;
+      while ((i = pending.indexOf('\n')) >= 0) {
+        const line = pending.slice(0, i);
+        pending = pending.slice(i + 1);
+        try { if (JSON.parse(line).type === 'result') send(); } catch {}
+      }
     });
+    child.stderr.on('data', d => { stderr += d; });
+    child.stdin.on('error', () => {});
+    const timer = setTimeout(() => child.kill('SIGTERM'), timeoutMs);
+    child.on('close', code => {
+      clearTimeout(timer);
+      resolve({ code, events: parseEvents(stdout), stderr, seconds: (Date.now() - started) / 1000 });
+    });
+    send();
+  });
 }
 
 function git(cwd, ...args) {
@@ -108,9 +151,10 @@ export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(p
   return { ...base, PATH: [path.join(testCase.dir, 'bin'), base.PATH].filter(Boolean).join(path.delimiter) };
 }
 
-function runClaude({ dir, prompt, model, arm, meta, effort, testCase }) {
+function runClaude({ dir, prompts, model, arm, meta, effort, testCase }) {
+  const multi = prompts.length > 1;
   const args = [
-    '-p', prompt,
+    '-p', ...(multi ? ['--input-format', 'stream-json'] : [prompts[0]]),
     '--model', model,
     '--output-format', 'stream-json', '--verbose',
     '--setting-sources', 'project,local',
@@ -120,6 +164,9 @@ function runClaude({ dir, prompt, model, arm, meta, effort, testCase }) {
   ];
   if (effort) args.push('--effort', effort);
   if (arm === 'rules+hooks') args.push('--plugin-dir', path.join(ROOT, 'plugins', 'core'));
+  if (multi) {
+    return runSession({ cwd: dir, command: 'claude', args, prompts, timeoutMs: (meta.timeoutSeconds ?? 900 * prompts.length) * 1000, env: claudeEnv(testCase) });
+  }
   return new Promise(resolve => {
     const started = Date.now();
     const child = spawn('claude', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], env: claudeEnv(testCase) });
@@ -157,7 +204,9 @@ export function finalText(events) {
 
 async function gradeRun(testCase, dir, run) {
   const grade = (await import(pathToFileURL(path.join(testCase.dir, 'grade.mjs')))).default;
-  const result = run.events.find(e => e.type === 'result') ?? {};
+  // Cost is cumulative per session, so take the last result; turns add up across prompts.
+  const results = run.events.filter(e => e.type === 'result');
+  const result = results.at(-1) ?? {};
   const context = {
     dir,
     git: (...args) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' }).stdout,
@@ -168,7 +217,8 @@ async function gradeRun(testCase, dir, run) {
   return {
     ...graded,
     costUsd: result.total_cost_usd ?? null,
-    turns: result.num_turns ?? null,
+    turns: results.length ? results.reduce((n, r) => n + (r.num_turns ?? 0), 0) : null,
+    prompts: results.length,
     isError: result.is_error ?? run.code !== 0,
     seconds: run.seconds,
   };
@@ -231,7 +281,7 @@ async function main() {
 
   const records = await pool(jobs, opts.concurrency, async ({ testCase, model, arm, run }) => {
     const dir = await prepareWorkspace(testCase, arm);
-    const result = await runClaude({ dir, prompt: testCase.prompt, model, arm, meta: testCase.meta, effort: opts.effort, testCase });
+    const result = await runClaude({ dir, prompts: testCase.prompts, model, arm, meta: testCase.meta, effort: opts.effort, testCase });
     const graded = await gradeRun(testCase, dir, result);
     const record = { case: testCase.name, model, arm, run, ...graded };
     const tag = `${testCase.name}.${model}.${arm.replace('+', '-')}.${run}`;

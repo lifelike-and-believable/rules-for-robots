@@ -214,3 +214,46 @@ test('needs-live-test: accepts a fix that resets only after a stable period', as
   fs.rmSync(dir, { recursive: true, force: true });
   assert.equal(result.pass, true, JSON.stringify(result.checks));
 });
+
+test('eval harness: a prompts/ folder gives a multi-prompt case, in file order', async () => {
+  const { loadCase } = await import('../evals/run.mjs');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-case-'));
+  fs.mkdirSync(path.join(root, 'prompts'));
+  fs.writeFileSync(path.join(root, 'case.json'), '{}');
+  fs.writeFileSync(path.join(root, 'prompts', '02-second.md'), 'second');
+  fs.writeFileSync(path.join(root, 'prompts', '01-first.md'), 'first');
+  const multi = loadCase(root);
+  fs.rmSync(path.join(root, 'prompts'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'prompt.md'), 'only');
+  const single = loadCase(root);
+  fs.rmSync(root, { recursive: true, force: true });
+  assert.deepEqual(multi.prompts, ['first', 'second']);
+  assert.deepEqual(single.prompts, ['only']);
+});
+
+test('eval harness: multi-prompt sessions send each prompt after the previous result', async () => {
+  const { runSession } = await import('../evals/run.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-fake-'));
+  // A fake claude: answers each streamed user message with an assistant event and a
+  // cumulative result, and records the messages it received.
+  const fake = path.join(dir, 'fake-claude.mjs');
+  fs.writeFileSync(fake, `
+import readline from 'node:readline';
+import fs from 'node:fs';
+let cost = 0, n = 0;
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', line => {
+  const msg = JSON.parse(line);
+  fs.appendFileSync(${JSON.stringify(path.join(dir, 'received.txt'))}, msg.message.content + '\\n');
+  n++; cost += 0.01;
+  console.log(JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'reply ' + n }] } }));
+  console.log(JSON.stringify({ type: 'result', result: 'done ' + n, num_turns: 2, total_cost_usd: cost }));
+});
+`);
+  const run = await runSession({ cwd: dir, command: process.execPath, args: [fake], prompts: ['one', 'two', 'three'], timeoutMs: 20000 });
+  const received = fs.readFileSync(path.join(dir, 'received.txt'), 'utf8');
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.equal(received, 'one\ntwo\nthree\n');
+  assert.equal(run.events.filter(e => e.type === 'result').length, 3);
+  assert.equal(run.code, 0);
+});
