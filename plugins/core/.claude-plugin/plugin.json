@@ -1,6 +1,6 @@
 {
   "name": "rfr-core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Core skills and hooks from rules-for-robots, including a skill that installs rule packs into a repo's .claude/rules/.",
   "author": {
     "name": "Lifelike & Believable Animation Design"

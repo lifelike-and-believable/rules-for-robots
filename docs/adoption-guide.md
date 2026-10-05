@@ -24,6 +24,31 @@ jobs:
 
 5. Commit `.claude/` so the rules and plugin settings apply to everyone working in the repository.
 
+### Owned paths
+
+If your repository takes regular integrations from an upstream branch, edits to upstream-owned files are overwritten at the next integration. List the paths your branch owns in `AGENTS.md`:
+
+```markdown
+## Owned paths
+
+- `Plugins/MyPlugin/**`
+- `Source/MyGameTests/**`
+- `AGENTS.md`
+- `.github/`
+```
+
+Each bullet is a backticked glob relative to the repository root; a trailing `/` covers a whole folder. Once the section exists, the `rfr-core` hook `guard-owned-paths` asks before an agent edits any other file in the project. To also fail pull requests that touch other paths, turn on the job in the reusable guards:
+
+```yaml
+jobs:
+  guards:
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-guards.yml@main
+    with:
+      owned-paths: true
+```
+
+The job is off by default. When it is on and `AGENTS.md` has no `## Owned paths` section, it passes and prints a note. The list is read from the pull request's own `AGENTS.md`, so a change to the list shows up in review. See [working with agents](../practices/working-with-agents.md#scope) for the guidance behind it.
+
 ## Team
 
 - Commit `.claude/settings.json` with `extraKnownMarketplaces` and `enabledPlugins` (the template repos already do), so every collaborator gets the same plugin.
