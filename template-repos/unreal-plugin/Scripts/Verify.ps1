@@ -27,7 +27,12 @@ $descriptor = "$WorkDir\src\$PluginName\$PluginName.uplugin"
 $log = "$WorkDir\buildplugin.log"
 & $runUat BuildPlugin "-Plugin=$descriptor" "-Package=$WorkDir\pkg\$PluginName" -Rocket 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0) { throw "BuildPlugin failed with exit code $LASTEXITCODE" }
-$warnings = Select-String -Path $log -Pattern ': warning [A-Z]+\d+|warning CS\d+'
+# Count only warnings in the plugin's own source (FAB-004). Engine headers emit deprecation
+# warnings (C4996) that the plugin cannot fix.
+$pluginSrc = [regex]::Escape("\$PluginName\Source\")
+$all = Select-String -Path $log -Pattern ': warning [A-Z]+\d+|warning CS\d+'
+$warnings = $all | Where-Object { $_.Line -match $pluginSrc }
+Write-Host "Compiler warnings: $($all.Count) total, $($warnings.Count) in plugin source"
 if ($warnings) { $warnings | ForEach-Object { Write-Host $_.Line }; throw "$($warnings.Count) compiler warning(s); Fab requires none (FAB-004)" }
 
 $hostDir = "$WorkDir\host"
