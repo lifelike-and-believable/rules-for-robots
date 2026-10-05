@@ -22,3 +22,15 @@ jobs:
       - run: npm run verify
       # per-route JavaScript budgets (WEB-003)
       - run: npx size-limit
+
+  status:
+    # One comment on the pull request when CI finishes, naming the head commit, so whoever
+    # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
+    needs: [verify]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-ci-status.yml@main
+    with:
+      results: ${{ toJSON(needs) }}

@@ -27,6 +27,7 @@ Reviewers report every finding in one format (severity, file and line, rule ID, 
 | `/rfr-core:security-audit` | Scanners, entry points, agent tooling risks | User or Claude |
 | `/rfr-core:write-adr` | One-page architecture decision record | User or Claude |
 | `/rfr-core:release` | Version, changelog, verify, tag after confirmation | User only |
+| `/rfr-core:merge-when-green <pr>` | Wait for CI without polling, confirm checks on the head commit, merge with a head-SHA guard, continue | User only |
 | `/rfr-core:profile-unreal-plugin` | Unreal Insights capture and analysis | User or Claude |
 | `/rfr-core:package-unreal-plugin` | Fab packages per engine version | User only |
 

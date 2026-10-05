@@ -71,7 +71,11 @@ Agents treat instruction files as true, so stale paths and tool names send them 
 ## Pull requests and CI
 
 - Merge only when the user asked for a merge, and only after reading every check on the head commit (`gh pr view --json headRefOid,statusCheckRollup,mergeStateStatus`): all successful or skipped, state clean. A bot comment saying a run succeeded can refer to an older commit.
-- Wait for CI through notifications or a single long fallback check, not a sleep loop.
+- Merging on green and carrying on is what lets an agent work through a queue of changes. Make the wait cheap and the check exact:
+  - Wait without polling. A cloud session subscribed to the pull request gets CI results as events; elsewhere, one blocking call (`gh pr checks <pr> --watch --fail-fast`, or `gh run watch`) returns when the checks finish. Never loop with `sleep` or guess a long timeout.
+  - Have CI announce itself. The reusable `rfr-ci-status.yml` workflow, called as the last job of the workflow that gates merging, keeps one comment on the pull request with the result and the head commit's full SHA. It notifies people and agents, and helps most with long self-hosted runs such as Unreal Tier 2. The template repos call it.
+  - Treat any "CI passed" comment as a signal to look, not proof; it may describe an older commit. Confirm the checks on the current head, then merge with `gh pr merge --match-head-commit <sha>` so a push that lands meanwhile stops the merge.
+  - `/rfr-core:merge-when-green <pr>` does all of this, then updates the base branch and continues.
 - Fix failures with new commits on the branch, and resolve conflicts by merging the base branch in. Do not rebase or force-push a branch that has been pushed (the `guard-commands` hook asks before a force-push).
 - Required checks and path filters interact badly. A workflow skipped by `on.<event>.paths` never reports, so a required check from it blocks the pull request forever. A job skipped by `if:` reports as skipped and counts as passed, so when a change-detection job decides whether real jobs run, require the change-detection job too. A job in a reusable workflow reports as `<caller> / <called>` when it runs but as `<caller>` when skipped, so a required check has to match both, or the job has to always run.
 - With a single self-hosted runner, leave "require branches to be up to date" off; otherwise every pull request waits behind a full rebuild.

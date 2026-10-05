@@ -49,6 +49,24 @@ jobs:
 
 The job is off by default. When it is on and `AGENTS.md` has no `## Owned paths` section, it passes and prints a note. The list is read from the pull request's own `AGENTS.md`, so a change to the list shows up in review. See [working with agents](../practices/working-with-agents.md#scope) for the guidance behind it.
 
+### CI status comment
+
+To let agents (and you) merge on green without polling, end the workflow that gates merging with the reusable status job. It keeps one comment on the pull request with each job's result and the head commit's full SHA:
+
+```yaml
+  status:
+    needs: [verify]            # every other job in this workflow
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-ci-status.yml@main
+    with:
+      results: ${{ toJSON(needs) }}
+```
+
+The template repos already include it. It never fails the workflow, and pull requests from forks get no comment because their token is read-only. Agents still confirm the checks on the current head commit before merging; `/rfr-core:merge-when-green <pr>` does the whole wait, check, merge, and continue sequence.
+
 ## Team
 
 - Commit `.claude/settings.json` with `extraKnownMarketplaces` and `enabledPlugins` (the template repos already do), so every collaborator gets the same plugin.

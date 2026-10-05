@@ -30,3 +30,16 @@ jobs:
           fetch-depth: 0
       - name: gitleaks
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose
+
+  status:
+    # One comment on the pull request when CI finishes, naming the head commit, so whoever
+    # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
+    needs: [verify, secret-scan]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/rfr-ci-status.yml
+    with:
+      results: ${{ toJSON(needs) }}
+      rules-ref: ${{ github.event.pull_request.head.sha || github.sha }}
