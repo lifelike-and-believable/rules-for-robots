@@ -4,6 +4,16 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-05
+
+### Added
+
+- Owned paths (#47), opt-in. A project that lists the paths it owns in `AGENTS.md` under `## Owned paths` gets:
+  - the `guard-owned-paths` hook, which asks before an edit to a project file outside the list;
+  - an `owned-paths` job in the reusable `rfr-guards.yml` (`owned-paths: true`), which fails a pull request that changes files outside the list.
+
+  Projects without the section see no change.
+
 ## [1.0.2] - 2026-10-05
 
 ### Changed

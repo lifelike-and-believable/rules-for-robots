@@ -121,3 +121,13 @@ test('CI script reads the diff against the base ref and AGENTS.md from the worki
   assert.match(r.stdout, /no "## Owned paths" section/);
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('the owned-paths glob matcher agrees with path.matchesGlob without needing it (#47)', async () => {
+  const path = (await import('node:path')).default;
+  const { globToRegExp } = await import('../plugins/core/scripts/owned-paths.mjs');
+  const globs = ['Plugins/MyPlugin/**', 'docs/**', '*.md', 'src/**/*.test.js', 'a?c.txt', '.github/**', 'Source/My.Module/**'];
+  const files = ['Plugins/MyPlugin/Source/A.cpp', 'Plugins/Other/A.cpp', 'docs/x/y.md', 'README.md', 'docs/README.md', 'src/a.test.js', 'src/x/y/a.test.js', 'src/a.js', 'abc.txt', 'abbc.txt', '.github/workflows/ci.yml', 'Source/My.Module/a.h', 'Source/MyXModule/a.h'];
+  for (const g of globs) for (const f of files) {
+    assert.equal(globToRegExp(g).test(f), path.posix.matchesGlob(f, g), `${g} vs ${f}`);
+  }
+});

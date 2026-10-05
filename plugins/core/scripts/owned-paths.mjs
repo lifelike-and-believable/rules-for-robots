@@ -10,7 +10,6 @@
 // Used by the guard-owned-paths hook and by checks/ci/owned-paths.mjs. It lives in the
 // plugin because an installed plugin cannot import from outside its own folder;
 // checks/lib/owned-paths.mjs re-exports it.
-import path from 'node:path';
 
 // Globs listed under "## Owned paths", or null when there is no such section. The section
 // runs to the next heading of level 1 or 2; subheadings inside it are allowed.
@@ -35,11 +34,27 @@ export function parseOwnedPaths(text) {
   return globs;
 }
 
+// Glob to regular expression: ** crosses folders, * and ? stay within one. Written out
+// rather than using path.matchesGlob, which Node 18 and 20 do not have.
+export function globToRegExp(glob) {
+  let re = '';
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === '*' && glob[i + 1] === '*') {
+      i++;
+      if (glob[i + 1] === '/') { i++; re += '(?:.*/)?'; } else re += '.*';
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^${re}$`);
+}
+
 // file: a path relative to the project root, with / or \ separators.
 export function isOwned(file, globs) {
   const rel = file.replace(/\\/g, '/').replace(/^\.\//, '');
   return globs.some(glob => {
     const g = glob.replace(/^\.\//, '');
-    return path.posix.matchesGlob(rel, g.endsWith('/') ? `${g}**` : g);
+    return globToRegExp(g.endsWith('/') ? `${g}**` : g).test(rel);
   });
 }
