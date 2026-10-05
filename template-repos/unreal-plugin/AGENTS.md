@@ -12,6 +12,7 @@
 
 <!-- List only choices an agent cannot infer from the code. Delete this comment when done. -->
 - Supported engine versions: 5.6, 5.7, 5.8. Distributed on Fab.
+- Include order in `*.Target.cs`: `EngineIncludeOrderVersion.Latest` (builds against several engine versions). A project pinned to one engine version can name that version instead, for example `Unreal5_7`.
 - Copyright holders for source headers: <publisher name> (list any upstream holders whose code the plugin includes).
 
 Rules for this project are in `.claude/rules/`. Check unfamiliar engine APIs against the installed engine headers for each supported version.

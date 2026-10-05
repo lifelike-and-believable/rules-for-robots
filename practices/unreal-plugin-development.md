@@ -36,6 +36,7 @@ Live Coding patches function bodies in `.cpp` files only. Any change to a header
 | 5.7 | 2022 17.14 or later | 14.44 (14.50 unsupported) |
 | 5.8 | 2026 recommended | 14.50 recommended, 14.38 minimum |
 
+- Target files need `DefaultBuildSettings = BuildSettingsVersion.V6` on 5.7 and later (UE-006, checked by Tier 1). The include order is a project decision recorded in AGENTS.md: `EngineIncludeOrderVersion.Latest` for a plugin built against several versions, or a pinned version such as `Unreal5_7` for a project on one engine.
 - Guard newer APIs with `ENGINE_MAJOR_VERSION` / `ENGINE_MINOR_VERSION` checks or a small wrapper (UE-001). Examples that differ across 5.6 to 5.8: `UE_LOGF` and `UE_PLATFORM_*` macros (5.8), `FCoreDelegates::OnPostEngineInit` (deprecated in 5.8), and APIs deprecated in 5.0 to 5.6 that 5.8 removed.
 
 ## Giving agents engine context
