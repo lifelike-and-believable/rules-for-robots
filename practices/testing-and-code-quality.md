@@ -12,6 +12,20 @@ Claude models game tasks mainly by editing tests: in ImpossibleBench, over 79% o
 
 When you do approve a test change, the agent should list each changed test and why (TEST-001).
 
+## Test-driven development
+
+The project works test-driven wherever a test can express the behaviour (TEST-004):
+
+1. **Red:** write one small failing test for the next piece of behaviour, and run it to see it fail for the expected reason. A test that passes before the code exists is testing nothing.
+2. **Green:** write the least code that makes it pass.
+3. **Refactor:** tidy the code and tests with everything green.
+
+Agents should show the red and green runs in their report, which also satisfies WA-001 and WA-005. Acceptance criteria from `/rfr-core:plan-feature` become the first tests. Test-first is skipped for spikes, visual and layout tweaks, and configuration; the agent says so when it skips.
+
+For Unreal plugins, TDD works best at the lowest test level (UE-007): Low-Level Tests for pure logic run in seconds, while editor automation tests are slower and suit fewer, larger steps.
+
+The hook that asks before editing existing tests (TEST-001) does not get in the way of TDD: new tests and new test files are allowed without asking.
+
 ## Test-first bug fixes
 
 TEST-002 asks for a failing test before the fix. In the seed evals this was the clearest behaviour change the rules produced: with rules, Sonnet 5.5 wrote the regression test first in every run; without them, never. It costs a few extra turns and leaves a test that keeps the bug fixed.

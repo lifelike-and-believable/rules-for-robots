@@ -65,7 +65,12 @@ jobs:
           $log = "$env:RFR_WORK\buildplugin.log"
           & "$env:UE_ROOT\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin "-Plugin=$env:RFR_WORK\src\RfrSample\RfrSample.uplugin" "-Package=$env:RFR_WORK\pkg\RfrSample" -Rocket 2>&1 | Tee-Object -FilePath $log
           if ($LASTEXITCODE -ne 0) { Write-Error "BuildPlugin failed ($LASTEXITCODE)"; exit 1 }
-          $warnings = Select-String -Path $log -Pattern ': warning [A-Z]+\d+|warning CS\d+' | Where-Object { $_.Line -notmatch 'warning(s)? treated' }
+          # Count only warnings in the plugin's own source (FAB-004). Engine headers emit
+          # deprecation warnings (C4996) that the plugin cannot fix.
+          $pluginSrc = [regex]::Escape("\RfrSample\Source\")
+          $all = Select-String -Path $log -Pattern ': warning [A-Z]+\d+|warning CS\d+'
+          $warnings = $all | Where-Object { $_.Line -match $pluginSrc }
+          Write-Host "Compiler warnings: $($all.Count) total, $($warnings.Count) in plugin source"
           Select-String -Path $log -Pattern 'Using Visual Studio|Using MSVC|toolchain' | Select-Object -First 5 | ForEach-Object { Write-Host "Toolchain: $($_.Line)" }
           if ($warnings) { $warnings | ForEach-Object { Write-Host $_.Line }; Write-Error "$($warnings.Count) compiler warning(s)"; exit 1 }
 
