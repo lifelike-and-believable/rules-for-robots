@@ -85,3 +85,13 @@ test('format-on-edit uses only formatters the project has', () => {
   assert.equal(chooseFormatter(path.join(dir, 'Source/a.cpp'), dir).cmd, 'clang-format');
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('guard-mcp asks before Vercel actions that change or expose the account', async () => {
+  const { vercelToolNeedsApproval } = await import('../plugins/core/scripts/guard-mcp.mjs');
+  for (const t of ['mcp__Vercel__create_deployment', 'mcp__vercel__edit_project_env', 'mcp__plugin_vercel_vercel__delete_project', 'mcp__Vercel__buy_domain', 'mcp__Vercel__get_auth_token', 'mcp__Vercel__request_rollback', 'mcp__Vercel__update_project_protection_bypass']) {
+    assert.ok(vercelToolNeedsApproval(t), t);
+  }
+  for (const t of ['mcp__Vercel__get_deployment', 'mcp__Vercel__list_projects', 'mcp__Vercel__get_runtime_logs', 'mcp__Vercel__search_vercel_documentation', 'mcp__github__create_pull_request', 'Bash']) {
+    assert.ok(!vercelToolNeedsApproval(t), t);
+  }
+});
