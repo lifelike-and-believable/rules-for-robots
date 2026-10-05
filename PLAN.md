@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: Draft v0.3 (2026-10-05). Adds the target-model assumptions (section 5) and a research phase (Phase 0).
+Status: Draft v0.4 (2026-10-05). Records answers on engine versions, CI runner, web stack, hosting, and licence holder.
 
 ## 1. Goal
 
@@ -29,6 +29,11 @@ Security, privacy, and observability are treated as cross-cutting requirements u
 | 6 | Spelling | Canadian English (e.g. "centre", "colour", "behaviour", "organize", "licence" as noun). |
 | 7 | Target models | Opus 5.5 and Sonnet 5.5-class agents. Structure and wording are designed for highly capable models (section 5). |
 | 8 | Research first | A research phase (Phase 0) precedes the format spec, so structure decisions are grounded in current best practice. |
+| 9 | Unreal versions | Unreal Engine 5.6 and later. The CI matrix and API guidance cover every supported 5.x release from 5.6 onward. |
+| 10 | Unreal build machine | A self-hosted GitHub Actions runner is available (Windows, x64, labels `self-hosted`, `Windows`, `X64`, `ue5`). Tier 2 checks run on it. |
+| 11 | Web frameworks | React/Next.js for web apps; Astro for content-heavy static sites. |
+| 12 | Backend and hosting | Node runtime, Postgres, deployed on Vercel. |
+| 13 | Licence holder | MIT licence, copyright Lifelike & Believable Animation Design. |
 
 ## 3. Scope
 
@@ -127,14 +132,14 @@ Each pack adds rules, practices, CI checks, and agent guidance for its stack. Pa
 | `typescript` | Strict typing, module boundaries, error handling, dependency hygiene | `tsc --noEmit` (strict), ESLint, Prettier, Vitest |
 | `react-nextjs` | Component design, state management, server/client rendering choices, data fetching, caching | React-specific lint rules, Playwright end-to-end tests, bundle analysis |
 | `static-sites` | Content-heavy sites (e.g. Astro), content modelling, image pipelines, minimal JavaScript | Link checking, image budgets, Lighthouse |
-| `node-services` | APIs, auth, validation, background jobs, Postgres, migrations, caching, rate limiting | Schema validation, migration checks, contract tests, load-test baselines |
+| `node-services` | APIs, auth, validation, background jobs, Postgres, migrations, caching, rate limiting; deployment on Vercel (serverless and edge function limits, connection pooling, preview deployments, environment variables and secrets) | Schema validation, migration checks, contract tests, load-test baselines, preview-deployment smoke tests |
 | `unreal-plugin` | Plugin and module structure (`.uplugin`, runtime vs. editor modules), Epic C++ coding standard, UObject and GC rules, Blueprint API design, subsystems, replication, asset and content conventions, editor tooling UX, packaging for Fab and multiple engine versions | clang-format, include-what-you-use style checks, `.uplugin` validation, Automation Spec tests, BuildPlugin/RunUAT packaging, Unreal Insights profiling checklists |
 
 Unreal CI constraint: building and testing plugins needs an engine installation, which hosted GitHub runners do not have. The plan provides two tiers:
 - **Tier 1 (any runner):** formatting, static checks, `.uplugin` and config validation, documentation checks.
-- **Tier 2 (self-hosted runner with the engine):** compile against each supported engine version, run Automation tests, package the plugin.
+- **Tier 2 (self-hosted runner with the engine):** compile against each supported engine version (5.6 and later), run Automation tests headless, package the plugin with `RunUAT BuildPlugin`. Targets the existing Windows x64 runner via the `[self-hosted, Windows, X64, ue5]` labels.
 
-MUST rules that depend on Tier 2 are marked so a solo developer without a build machine can run them locally through a skill instead.
+Tier 2 design points: workflows run only on trusted events (pushes and PRs from the repo itself, not forks) because self-hosted runners execute repo code; engine install paths per version come from runner configuration rather than being hard-coded; build output is cleaned between runs. MUST rules that depend on Tier 2 are marked, and a skill lets adopters without a build machine run the same checks locally.
 
 ## 8. Agent roster (draft)
 
@@ -254,13 +259,9 @@ Deliverables:
 
 Each milestone lands as one or more PRs so the work stays reviewable.
 
-## 12. Remaining open questions
+## 12. Open questions
 
-1. **Unreal engine versions.** Which versions should plugins target (e.g. the latest two 5.x releases)? This sets the CI matrix and API guidance.
-2. **Unreal build machine.** Is a self-hosted runner with the engine available, or should Tier 2 checks run locally for now?
-3. **Web framework preferences.** Confirm React/Next.js and Astro as the first framework packs, or name the ones you use.
-4. **Backend and hosting.** Preferred database, runtime, and hosting (e.g. Postgres, Node, Vercel), so the `node-services` pack matches real use.
-5. **Copyright holder** for the MIT licence (currently set to the `lifelike-and-believable` organization).
+None at present. Questions raised during Phase 0 will be recorded here.
 
 ## 13. Risks and mitigations
 
@@ -268,7 +269,8 @@ Each milestone lands as one or more PRs so the work stays reviewable.
 |---|---|
 | Rules become too long for agents to follow reliably | Word budget for always-on files; path-scoped loading; evals to prune |
 | Rules conflict (e.g. performance vs. extensibility) | Priority order in the working agreement; `tech-lead` resolves; ADRs record trade-offs |
-| Unreal checks can't run on hosted CI | Two-tier CI; local skill fallback for Tier 2 |
+| Unreal checks can't run on hosted CI | Two-tier CI on the self-hosted `ue5` runner; local skill fallback for adopters without one |
+| Self-hosted runner executes untrusted code from fork PRs | Tier 2 workflows restricted to trusted events; documented runner hardening |
 | Guidance goes stale (engine, framework, and standard updates) | Cite sources with dates; quarterly reviews; versioned releases |
 | Overly prescriptive rules block reasonable choices | MUST reserved for genuine requirements; waiver format for exceptions |
 | Hard to show value | Phase 8 evals with before/after comparisons |
@@ -277,6 +279,5 @@ Each milestone lands as one or more PRs so the work stays reviewable.
 
 ## 14. Immediate next steps
 
-1. Answer the remaining questions in section 12 (none block Phase 0).
-2. Start Phase 0 research.
-3. Use the research report to confirm or revise sections 4 to 8, then start Phase 1.
+1. Start Phase 0 research.
+2. Use the research report to confirm or revise sections 4 to 8, then start Phase 1.
