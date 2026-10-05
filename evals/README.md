@@ -33,3 +33,7 @@ Add harder cases as failures are observed; tasks the models already pass without
 ## Agent and skill smoke tests
 
 `node evals/agents/smoke.mjs` runs each `rfr-core` agent and skill on two small tasks (planted bugs, injection, inaccessible markup, N+1 queries, Unreal per-frame work, and so on) and checks that the output has the declared format and catches the planted problem. Use `--only <name>` to run a subset.
+
+## Long-session cases
+
+A case can have `prompts/*.md` instead of `prompt.md`. The harness sends the prompts in file order in one session, each after the previous turn's result, so a case can bury its trap late in a batch of ordinary tasks. Cost is the session total; turns are summed across prompts. Graders see the final turn's text as `finalText` and every tool call from the whole session in `tools`.
