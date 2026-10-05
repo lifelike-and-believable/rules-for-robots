@@ -9,4 +9,4 @@ observed-on: []
 rationale: Pointing at an existing example is cheaper and more accurate than describing a pattern, and agent code otherwise drifts from local conventions.
 sources: ["practices/testing-and-code-quality.md", "docs/research/findings.md"]
 ---
-Before writing new code, find the most similar existing file in this repository and follow its structure, naming, error handling, and test layout. Name that file in your report. Reuse existing helpers instead of writing near-duplicates; search for one before adding a new function.
+Before writing new code, find the most similar existing file in this repository and follow its structure, naming, error handling, and test layout. Prefer code the shipped product uses over prototypes, samples, or deprecated code. Name that file in your report, and say if it may be legacy. Reuse existing helpers instead of writing near-duplicates; search for one before adding a new function.

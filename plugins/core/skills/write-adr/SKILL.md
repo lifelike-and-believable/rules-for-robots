@@ -6,6 +6,8 @@ argument-hint: "<decision title>"
 
 # Write an architecture decision record
 
+If you are not acting on a request from the user, offer the ADR in one sentence and wait for a yes before drafting it.
+
 1. Find where the project keeps ADRs (commonly `docs/adr/`). If none exist, propose `docs/adr/` and number from `0001`.
 2. Fill in `${CLAUDE_SKILL_DIR}/adr-template.md`. Keep it to one page. Describe at least two real options, including the one not chosen, with the trade-offs that decided it.
 3. If the decision waives a rule, name the rule ID and link the waiver file.

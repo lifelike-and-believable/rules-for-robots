@@ -4,6 +4,21 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-05
+
+Responses to the second external review (#47 to #64). None of the proposals had eval evidence, so none became a new rule. The advice went into the practice guides, skills, and agents, and two rules gained a clarifying sentence.
+
+### Changed
+
+- WA-006: examples from blogs, forums, or other versions do not count as a check (#54).
+- CODE-001: prefer code the shipped product uses over prototypes, samples, or deprecated code, and say if the followed file may be legacy (#48).
+- `plan-feature` spec template: named test cases, the APIs used and where each was checked, and assumptions that could be wrong (#49).
+- `write-adr` offers an ADR before drafting one unasked (#62). `web-engineer` and `unreal-engineer` return new scope, architectural choices, and irreversible actions to the caller (#59).
+- Practice guides:
+  - Working with agents: evidence for claims (#48, #53, #54, and the dependency and fake advice from #28 and #29), delegating to subagents (#58, #59), ownership boundaries (#47), phases (#60), one question or a stated assumption (#61), decisions linked to ADRs (#62), glossaries (#63), and reviewer severities (#64).
+  - Testing: test clusters for expensive runs (#50), validation-first for content and data (#51), and finding the existing test harness (#52).
+  - Unreal: ending `-ExecCmds` with `Quit` (#56), `NotValidated` results (#51), and driving the editor MCP serially (#55).
+
 ## [1.0.0] - 2026-10-05
 
 First stable release. The rule set, the `rfr-core` plugin, and the template repos are complete for the scope in `PLAN.md`: a stack-independent core, six stack packs (Unreal plugin, TypeScript, web platform, React and Next.js, Node services, static sites), six agents, ten skills, default hooks, reusable CI workflows, and three template repos. Both reference projects, a Next.js web app and an Unreal plugin, were built from the templates by the agents and pass their own checks. From this release on, a stricter or new MUST rule, or a removed or renamed rule, needs a major version (see [docs/maintenance.md](docs/maintenance.md)).

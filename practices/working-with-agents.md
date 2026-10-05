@@ -5,10 +5,10 @@ Practice guide for the working agreement (`WA-*`) and the git and documentation 
 ## The loop
 
 1. **Explore** with a subagent when the area is unfamiliar, so the main session keeps only the conclusions (WA-007).
-2. **Plan** when the change is bigger than one sentence can describe. Name the files, the interfaces, what is out of scope, and how the result will be verified. Skip the plan for small, obvious changes.
+2. **Plan** when the change is bigger than one sentence can describe. Name the files, the interfaces, what is out of scope, the assumptions that could be wrong, the APIs it relies on and where each was checked, and the named test cases that will verify it. Skip the plan for small, obvious changes.
 3. **Implement** in the main session, one writer at a time. Parallel agents are for reading and review.
 4. **Verify** with the project's own command and include its output (WA-001). Ground every claim in this session's evidence (WA-005).
-5. **Review** in a fresh context: a reviewer sees the diff and the criteria, not the author's reasoning, and reports every finding with its severity. Filter findings in a separate pass, because reviewers asked for "only important issues" drop real ones.
+5. **Review** in a fresh context: a reviewer sees the diff and the criteria, not the author's reasoning, and reports every finding with its severity (the `code-reviewer` agent uses blocker, major, minor, and nit). Filter findings in a separate pass, because reviewers asked for "only important issues" drop real ones.
 
 ## Where a solo developer's attention pays off
 
@@ -21,11 +21,36 @@ Watch the inputs and outputs, not every step:
 
 ## Stops the agent should make
 
-The working agreement names exactly when to stop and ask (WA-003): before irreversible actions, before a material change of scope, and when the task or a test looks wrong (WA-002). Everything else should continue to completion. Naming the stops works better on current models than "ask when unsure", which they either ignore or over-apply.
+The working agreement names exactly when to stop and ask (WA-003): before irreversible actions, before a material change of scope, and when the task or a test looks wrong (WA-002). Everything else should continue to completion. Naming the stops works better on current models than "ask when unsure", which they either ignore or over-apply. When a request is ambiguous, the agent asks the one question whose answer changes the result most, or states its assumption and continues.
 
 ## Scope
 
 Current models widen tasks: extra refactors, features, files, and reviewer subagents. WA-004 uses Anthropic's tested scope wording. If you want more than was asked, ask for it explicitly; ideas the agent has go at the end of its report (WA-004, GIT-001).
+
+Some boundaries are not visible in the code. If part of the tree belongs to someone else (vendored code, a submodule, an upstream that integration overwrites), list the paths your project owns in `AGENTS.md`. An agent then finds the boundary while planning, reads upstream code only through its existing public interfaces, keeps its own tests in code you own, and reports a missing interface instead of editing around it.
+
+When you are working in phases, such as requirements before design, say which phase you are in. An agent answers at that level and keeps code references and implementation detail for later, unless you ask for them.
+
+## Evidence for claims
+
+An agent's report is only as good as what it checked this session (WA-005, WA-006).
+
+- Build on the code the shipped product uses. A prototype, sample, or deprecated class can be a closer name match than the live one; check which is in use and say so if the pattern you followed may be legacy (CODE-001). When a claim turns out wrong, say what was wrong, cite the file and line, and rework from there.
+- Examples from blogs, forums, or other versions of a library or engine are leads, not evidence. Confirm against the installed source or version-matched docs, and check experimental or pre-release modules every time, because they change between minor versions.
+- Confirm how a dependency behaves, not only that its API exists: read the code path you rely on. A fake or mock in the tests should follow the real library's contract; a fake that is more forgiving than the library hides exactly the bugs it should catch.
+- In design answers and plans, label the claims that matter as checked this session, inferred, or recalled from memory, next to the claim rather than in a closing note. Keep these labels out of committed code.
+- When a live tool connection drops in the middle of a batch (an editor bridge, a browser, a database console), stop the batch, check the connection once, and report what was collected. Missing results are not a negative finding.
+
+## Delegating to subagents
+
+A subagent starts with none of the main session's context, so the hand-off has to carry it.
+
+- Keep broad searches and sweeps in subagents, so the main session holds conclusions rather than file dumps (WA-007).
+- Treat the hand-off as a contract: the files in scope, the APIs already checked and where, the named tests that define done, and what is out of scope. A plan from `/rfr-core:plan-feature` is a good hand-off.
+- State the subagent's authority: the task, its scope, and that the user approved it. Ask it to return new scope, architectural choices, and irreversible actions to you instead of acting on them. Permission prompts and hooks apply inside subagents too, so the prompt cannot grant more than the session has.
+- Ask for a structured result: files changed, test runs, verification output, and what it could not verify. The `web-engineer`, `unreal-engineer`, and `code-reviewer` agents already report this way.
+- Match the model to the stage. One team's experience: a larger model for planning and review, a faster one for well-specified implementation and searches. Override the model per call rather than duplicating agent definitions.
+- Long build-and-fix loops fill a session with failed attempts; run them in their own session (see Long sessions).
 
 ## Long sessions
 
@@ -33,11 +58,13 @@ Rule adherence declines as a session grows, and a session full of failed attempt
 
 ## Work that spans sessions
 
-Multi-week work needs state that outlives a session. Keep a handoff file (named in `AGENTS.md`, for example `docs/handoff.md`) with sections for current state, open items, what still needs a live test, decisions, and lessons. A session reads it first and updates it at the end, separating "unit tests pass" from "verified": changes that only a person can verify (live services, hardware, two-machine sessions) stay on the needs-a-live-test list, with exact steps, until someone runs them. Keep status edits out of code pull requests and update the file in one docs change per batch; when every pull request edits the same status line, each one conflicts with the others.
+Multi-week work needs state that outlives a session. Keep a handoff file (named in `AGENTS.md`, for example `docs/handoff.md`) with sections for current state, open items, what still needs a live test, decisions, and lessons. List decisions there with a link to their ADR; the reasoning belongs in the ADR (`/rfr-core:write-adr`), which an agent should offer to write when a significant decision is settled, not write unasked. A session reads it first and updates it at the end, separating "unit tests pass" from "verified": changes that only a person can verify (live services, hardware, two-machine sessions) stay on the needs-a-live-test list, with exact steps, until someone runs them. Keep status edits out of code pull requests and update the file in one docs change per batch; when every pull request edits the same status line, each one conflicts with the others.
 
 ## Docs that agents read
 
 `AGENTS.md` is the canonical instruction file, and `CLAUDE.md` imports it. Keep `AGENTS.md` to what an agent cannot infer: the verify command, project decisions, and where things are. When a change makes it wrong, update it in the same change (DOC-001). Leave tool-managed blocks, such as Next.js's `nextjs-agent-rules`, alone.
+
+If the project has a glossary, name it in `AGENTS.md` (for example `docs/glossary.md`). Agents then use its terms exactly, without synonyms, and ask before introducing a new one. A glossary with a column of rejected synonyms can also be checked in CI.
 
 Agents treat instruction files as true, so stale paths and tool names send them looking for things that do not exist. Keep history and "last updated" dates out of them; those belong in the changelog or the handoff file. `checks/ci/instruction-lint.mjs` (run by the reusable `rfr-guards.yml` workflow) fails when a backticked path or `npm run` script named in `AGENTS.md` or `CLAUDE.md` does not exist, and warns about absolute paths and MCP tool names it cannot check.
 
