@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // Lints rule files against docs/rule-format.md.
-// Usage: node checks/lint-rules.mjs [rules-dir] [--allow-waivers] [--no-practice-links]
+// Usage: node checks/lint-rules.mjs [rules-dir] [--adopting-repo | --allow-waivers] [--no-practice-links]
+// --adopting-repo validates an adopting repo's .claude/rules/: waivers plus project rules
+// (scope: project, in project/, with the project's own ID prefix).
 import path from 'node:path';
 import { checkPracticeLinks, validateTree } from './lib/rules.mjs';
 
 const args = process.argv.slice(2);
-const allowWaivers = args.includes('--allow-waivers');
+const adoptingRepo = args.includes('--adopting-repo');
+const allowWaivers = adoptingRepo || args.includes('--allow-waivers');
 const root = path.resolve(args.find(a => !a.startsWith('--')) ?? 'rules');
 
-const results = validateTree(root, { allowWaivers });
+const results = validateTree(root, { allowWaivers, adoptingRepo });
 let failures = 0;
 for (const { file, errors } of results) {
   for (const error of errors) {
