@@ -4,6 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [0.13.2] - 2026-10-05
+
+### Added
+
+- `examples/unreal-plugin/`: RfrCooldowns, a reference Unreal plugin built by an agent from the Unreal template with `rfr-core` installed. Tier 2 builds and tests it on UE 5.6, 5.7 and 5.8, then stages and zips it as a Fab package rehearsal.
+
+### Changed
+
+- UE-007 says to create each spec object with the outer its class requires, for example a game-instance subsystem inside a transient `UGameInstance`. The agent that built the reference plugin missed this; the advice had been only in a practice guide.
+- The Unreal template's `.clang-format` now produces Epic-style braces, lambdas, and access specifiers.
+
 ## [0.13.1] - 2026-10-05
 
 ### Changed

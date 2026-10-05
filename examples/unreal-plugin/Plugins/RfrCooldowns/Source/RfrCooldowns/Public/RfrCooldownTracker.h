@@ -7,12 +7,14 @@
 
 /**
  * Named cooldowns stored as end times. Callers pass the current time to every query, so the tracker never ticks
- * and tests can control time directly. A cooldown is running while Now is before its end time.
+ * and tests can control time directly. A cooldown is running while Now is before its end time. Expired
+ * cooldowns stay in the map until restarted or cleared, so use a bounded set of names (ability names, not
+ * per-actor names).
  */
 class RFRCOOLDOWNS_API FRfrCooldownTracker
 {
   public:
-	/** Starts or restarts the named cooldown. A duration of zero or less clears it. */
+	/** Starts or restarts the named cooldown. A duration of zero or less, or NaN, clears it. */
 	void Start(FName Name, float DurationSeconds, double Now);
 
 	bool IsRunning(FName Name, double Now) const;

@@ -4,7 +4,8 @@
 
 void FRfrCooldownTracker::Start(FName Name, float DurationSeconds, double Now)
 {
-	if (DurationSeconds <= 0.f)
+	// Written as !(x > 0) so that NaN clears the cooldown too.
+	if (!(DurationSeconds > 0.f))
 	{
 		Clear(Name);
 		return;

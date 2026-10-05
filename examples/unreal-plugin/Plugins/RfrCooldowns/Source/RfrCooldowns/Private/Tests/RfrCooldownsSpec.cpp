@@ -4,8 +4,12 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+#include "Engine/GameInstance.h"
 #include "RfrCooldownSubsystem.h"
 #include "RfrCooldownTracker.h"
+#include "UObject/Package.h"
+
+#include <limits>
 
 namespace RfrCooldownsSpec
 {
@@ -13,6 +17,14 @@ namespace RfrCooldownsSpec
 	const FName DashName(TEXT("Dash"));
 	constexpr double StartTime = 1000.0;
 	constexpr float RemainingTolerance = 1.e-4f;
+
+	// A game-instance subsystem's ClassWithin is UGameInstance. Creating it in the transient package raises an
+	// ensure ("created in invalid Outer") that fails the first test to do so.
+	URfrCooldownSubsystem* NewTestSubsystem()
+	{
+		UGameInstance* GameInstance = NewObject<UGameInstance>(GetTransientPackage());
+		return NewObject<URfrCooldownSubsystem>(GameInstance);
+	}
 } // namespace RfrCooldownsSpec
 
 BEGIN_DEFINE_SPEC(FRfrCooldownTrackerSpec, "RfrCooldowns.Tracker", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
@@ -77,6 +89,13 @@ void FRfrCooldownTrackerSpec::Define()
 			TestEqual(TEXT("Remaining"), Tracker.GetRemaining(FireName, StartTime + 1.0), 0.f);
 		});
 
+		It(TEXT("is cleared by starting it with a duration that is not a number"), [this]()
+		{
+			Tracker.Start(FireName, std::numeric_limits<float>::quiet_NaN(), StartTime + 1.0);
+			TestFalse(TEXT("Running"), Tracker.IsRunning(FireName, StartTime + 1.0));
+			TestEqual(TEXT("Remaining"), Tracker.GetRemaining(FireName, StartTime + 1.0), 0.f);
+		});
+
 		It(TEXT("is cleared by starting it with a negative duration"), [this]()
 		{
 			Tracker.Start(FireName, -3.f, StartTime + 1.0);
@@ -126,7 +145,7 @@ void FRfrCooldownSubsystemSpec::Define()
 	// The subsystem reads real time, so durations are long enough that a slow test machine cannot expire them mid-test.
 	It(TEXT("starts and queries a cooldown"), [this]()
 	   {
-		URfrCooldownSubsystem* Subsystem = NewObject<URfrCooldownSubsystem>();
+		URfrCooldownSubsystem* Subsystem = NewTestSubsystem();
 		TestFalse(TEXT("Running before start"), Subsystem->IsCooldownRunning(FireName));
 		TestEqual(TEXT("Remaining before start"), Subsystem->GetCooldownRemaining(FireName), 0.f);
 
@@ -138,21 +157,31 @@ void FRfrCooldownSubsystemSpec::Define()
 
 	It(TEXT("clears one cooldown"), [this]()
 	   {
-		URfrCooldownSubsystem* Subsystem = NewObject<URfrCooldownSubsystem>();
+		URfrCooldownSubsystem* Subsystem = NewTestSubsystem();
 		Subsystem->StartCooldown(FireName, 60.f);
 		Subsystem->StartCooldown(DashName, 60.f);
 		Subsystem->ClearCooldown(FireName);
 		TestFalse(TEXT("Cleared cooldown running"), Subsystem->IsCooldownRunning(FireName));
+		TestEqual(TEXT("Cleared cooldown remaining"), Subsystem->GetCooldownRemaining(FireName), 0.f);
 		TestTrue(TEXT("Other cooldown running"), Subsystem->IsCooldownRunning(DashName)); });
 
 	It(TEXT("clears all cooldowns"), [this]()
 	   {
-		URfrCooldownSubsystem* Subsystem = NewObject<URfrCooldownSubsystem>();
+		URfrCooldownSubsystem* Subsystem = NewTestSubsystem();
 		Subsystem->StartCooldown(FireName, 60.f);
 		Subsystem->StartCooldown(DashName, 60.f);
 		Subsystem->ClearAllCooldowns();
 		TestFalse(TEXT("Fire running"), Subsystem->IsCooldownRunning(FireName));
 		TestFalse(TEXT("Dash running"), Subsystem->IsCooldownRunning(DashName)); });
+
+	It(TEXT("clears a running cooldown when started with zero duration"), [this]()
+	{
+		URfrCooldownSubsystem* Subsystem = NewTestSubsystem();
+		Subsystem->StartCooldown(FireName, 60.f);
+		Subsystem->StartCooldown(FireName, 0.f);
+		TestFalse(TEXT("Running"), Subsystem->IsCooldownRunning(FireName));
+		TestEqual(TEXT("Remaining"), Subsystem->GetCooldownRemaining(FireName), 0.f);
+	});
 }
 
 #endif
