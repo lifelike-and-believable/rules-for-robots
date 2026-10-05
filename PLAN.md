@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v1.0.0 (2026-10-05). Phases 0 to 7 and 9 complete. Phase 8 has two eval rounds done; long-session cases, ablations, and the wording experiments continue after 1.0. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v1.0.2 (2026-10-05). Phases 0 to 7 and 9 complete. Phase 8 has two eval rounds done; long-session cases, ablations, and the wording experiments continue after 1.0. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -276,7 +276,7 @@ Status: first round done ([report](evals/results/2026-10-05-phase8/report.md)). 
 Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested the rules proposed from the Open3DBroadcast adoption (#28 to #35) with three single-task cases. The no-rules baseline passed 18/18, so the candidate rules (in `evals/candidates/`) were not added; the advice went into the practice guides instead. Discriminating cases need multi-prompt, long-session support in the harness, which now exists (`prompts/*.md` per case). The long-session cases (#28 to #35, #33) and the rest of this phase continue after 1.0.
 
 ### Phase 9: Release and maintenance (v1.0.0 released)
-Delivered: semantic versioning shared by the rule set and `rfr-core`, checked by `checks/release.mjs`; [changelog](CHANGELOG.md); [maintenance guide](docs/maintenance.md); v1.0.0 tagged. The plugins install from this repository's marketplace, and the template repos are published as generated folders in `template-repos/`.
+Delivered: semantic versioning shared by the rule set and `rfr-core`, checked by `checks/release.mjs`; [changelog](CHANGELOG.md); [maintenance guide](docs/maintenance.md); releases tagged `rfr-v<version>` (`rfr-v1.0.0`, `rfr-v1.0.2`). After 1.0, two external review rounds (#23 to #38, #47 to #64) were answered mostly with practice-guide text, hooks, and checks, since none of their proposals had eval evidence for a new rule. The plugins install from this repository's marketplace, and the template repos are published as generated folders in `template-repos/`.
 
 - Semantic versioning for the rule set and plugins; plugin `version` bumped every release; changelog.
 - Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
@@ -319,7 +319,8 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 ## 14. Immediate next steps
 
-1. Triage the external review issues #47 to #64.
-2. Long-session eval cases for #28 to #35 and #33, using the multi-prompt harness.
-3. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.
-4. The first real Fab submission, which answers #36.
+1. The long-session eval round (#69): seven multi-prompt cases for the candidate rules from #28 to #35, #52, and #57. Cases and graders are built and unit-tested first; the paid runs are staged, baseline first.
+2. Hook cost: format edited files once per turn instead of after every edit, then measure the change against the Phase 8 numbers.
+3. An opt-in owned-paths hook and CI check (#47).
+4. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.
+5. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.

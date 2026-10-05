@@ -4,6 +4,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-05
+
+### Changed
+
+- `format-on-edit` formats the files edited in a turn once, when the turn ends (Stop, or SubagentStop for a subagent's own edits), instead of rewriting each file straight after every edit. Files no longer change under the agent mid-turn, so a later Edit's `old_string` still matches. Whether this lowers hook cost is measured in the next eval round; the Phase 8 fixtures had no formatter, so formatting did not cause the cost found there.
+
+## [1.0.3] - 2026-10-05
+
+### Added
+
+- Owned paths (#47), opt-in. A project that lists the paths it owns in `AGENTS.md` under `## Owned paths` gets:
+  - the `guard-owned-paths` hook, which asks before an edit to a project file outside the list;
+  - an `owned-paths` job in the reusable `rfr-guards.yml` (`owned-paths: true`), which fails a pull request that changes files outside the list.
+
+  Projects without the section see no change.
+
 ## [1.0.2] - 2026-10-05
 
 ### Changed
