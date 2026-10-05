@@ -68,8 +68,22 @@ export async function prepareWorkspace(testCase, arm) {
   // `git status` see only the agent's changes.
   if (arm !== 'none') {
     fs.cpSync(path.join(ROOT, 'rules', 'core'), path.join(dir, '.claude', 'rules', 'core'), { recursive: true });
+    for (const pack of testCase.meta.packs ?? []) {
+      fs.cpSync(path.join(ROOT, 'rules', 'packs', pack), path.join(dir, '.claude', 'rules', 'packs', pack), { recursive: true });
+    }
+  }
+  // Cases can share an installed node_modules instead of installing per run. Hard-link
+  // it (a symlink out of the project root makes Turbopack fail); copy if that fails.
+  if (testCase.meta.nodeModulesFrom) {
+    const from = path.join(path.resolve(ROOT, testCase.meta.nodeModulesFrom), 'node_modules');
+    const to = path.join(dir, 'node_modules');
+    if (spawnSync('cp', ['-al', from, to]).status !== 0) {
+      fs.rmSync(to, { recursive: true, force: true });
+      fs.cpSync(from, to, { recursive: true, verbatimSymlinks: true });
+    }
   }
   git(dir, 'init', '-q', '-b', 'main');
+  fs.appendFileSync(path.join(dir, '.git', 'info', 'exclude'), 'node_modules\n.next\n');
   git(dir, '-c', 'user.email=eval@example.com', '-c', 'user.name=eval', 'add', '-A');
   git(dir, '-c', 'user.email=eval@example.com', '-c', 'user.name=eval', 'commit', '-q', '-m', 'Initial state');
   const setup = path.join(testCase.dir, 'setup.mjs');

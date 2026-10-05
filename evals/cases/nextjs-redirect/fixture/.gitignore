@@ -1,0 +1,15 @@
+node_modules/
+.next/
+dist/
+.astro/
+out/
+coverage/
+playwright-report/
+test-results/
+.lighthouseci/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+.env
+.env.*
+!.env.example
