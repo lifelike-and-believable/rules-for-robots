@@ -1,0 +1,51 @@
+# Unreal plugin development with agents
+
+Practice guide for the `unreal-plugin` pack (rules `UE-*` and `FAB-*`). It covers the verification loop an agent can run without the editor UI, multi-version support, and the Fab release flow. Sources: [findings](../docs/research/findings.md), [Unreal follow-up notes](../docs/research/notes/unreal_followup.md), and [Fab requirements](../docs/research/sources/fab-requirements.md).
+
+## The verification loop
+
+Fastest first. An agent should stop at the first level that proves the change.
+
+| Step | Command (Windows; adjust paths) | Proves |
+|---|---|---|
+| Tier 1 checks | `node checks/unreal/tier1.mjs <PluginDir> --copyright "<holder>"` | Descriptor, layout, copyright, `TObjectPtr`/`UPROPERTY` (UE-002, UE-005, FAB-001 to FAB-003) |
+| Compile and package | `"<Engine>\Build\BatchFiles\RunUAT.bat" BuildPlugin -Plugin="<Path>\<Name>.uplugin" -Package="<OutDir>" -Rocket` | The plugin builds as Fab will build it (UE-001, FAB-004) |
+| Low-Level Tests | Build and run the plugin's LLT target from its `Tests` folder | Pure logic (UE-007) |
+| Automation tests | `"<Engine>\Binaries\Win64\UnrealEditor-Cmd.exe" "<Host>.uproject" -ExecCmds="Automation RunTests <Filter>;Quit" -unattended -nullrhi -nosound -ReportExportPath="<OutDir>"` | UObject and engine behaviour (UE-007) |
+
+Notes:
+
+- `-Package` must point outside the plugin, engine, and project folders. Fab documents only `-Plugin`, `-Package`, and `-Rocket`. Other flags, including whether `-StrictIncludes` is the default, are defined in `Engine/Source/Programs/AutomationTool/Scripts/BuildPlugin.Automation.cs` in each installed engine; check there rather than relying on memory (R55).
+- Decide pass or fail from `<OutDir>/index.json` (`failed` and `notRun` must be 0) or the log line `**** TEST COMPLETE. EXIT CODE: <n> ****`. The editor's own process exit code is not documented as reflecting test results.
+- To test a packaged plugin, copy the `-Package` output into a host project's `Plugins/` folder. A content-only host `.uproject` that enables the plugin is enough.
+- Generate `compile_commands.json` for clangd once with `UnrealBuildTool -mode=GenerateClangDatabase` after a first build, not in the inner loop.
+
+## Live Coding versus full builds
+
+Live Coding patches function bodies in `.cpp` files only. Any change to a header, a reflection macro (`UCLASS`, `USTRUCT`, `UPROPERTY`, `UFUNCTION`), a `.Build.cs`, a `.Target.cs`, or the `.uplugin` needs the editor closed and a full build (UE-004). Agents cannot see the editor, so they should default to full command-line builds.
+
+## Supporting several engine versions
+
+- Fab needs one package per engine version, each with its own `EngineVersion` (FAB-001). Epic builds against the three latest versions by default.
+- Build and test against every supported version in CI (Tier 2). Keep the toolchain matched per version:
+
+| Engine | Visual Studio | MSVC |
+|---|---|---|
+| 5.6 | 2022 17.8 or later | 14.38 or later |
+| 5.7 | 2022 17.14 or later | 14.44 (14.50 unsupported) |
+| 5.8 | 2026 recommended | 14.50 recommended, 14.38 minimum |
+
+- Guard newer APIs with `ENGINE_MAJOR_VERSION` / `ENGINE_MINOR_VERSION` checks or a small wrapper (UE-001). Examples that differ across 5.6 to 5.8: `UE_LOGF` and `UE_PLATFORM_*` macros (5.8), `FCoreDelegates::OnPostEngineInit` (deprecated in 5.8), and APIs deprecated in 5.0 to 5.6 that 5.8 removed.
+
+## Giving agents engine context
+
+- Point the agent at the installed engine's `Source/` folder for each supported version and ask it to grep declarations before using an API (UE-001).
+- Epic's Claude Code plugin and the editor MCP server exist for UE 5.8 only. Treat them as optional for 5.8 projects: commit before long sessions, never share one editor MCP between agents, and remember the MCP server has no authentication and can run Python.
+
+## Fab release checklist
+
+1. Tier 1 passes with `FabURL` set.
+2. Tier 2 builds every supported version with zero warnings and all automation tests passing.
+3. Each version's package has the right `EngineVersion`, no `Binaries`/`Intermediate`/`Saved`, and `FilterPlugin.ini` lists any extra folders.
+4. English documentation is available, and the example project references the plugin without containing it.
+5. Third-party software is declared on the listing.

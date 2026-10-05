@@ -4,7 +4,9 @@
 
 ## Commands
 
-- Verify (run before reporting work as done, and include its output): `<build-and-test command, added in Phase 3>`
+- Tier 1 checks (fast, no engine): `node <path-to-rules-for-robots>/checks/unreal/tier1.mjs <PluginDir> --copyright "<publisher name>"`
+- Verify (run before reporting work as done, and include its output): `<RunUAT BuildPlugin and automation test command for each supported version; see the unreal-plugin practice guide>`
+- Engine source for API lookups: `<path to each installed engine's Engine/Source>`
 
 ## Project decisions
 
