@@ -1,0 +1,123 @@
+name: Unreal Tier 2
+
+# Builds and tests examples/unreal/RfrSample against each supported engine version on the
+# self-hosted Windows runner (PLAN.md section 7). Self-hosted runners execute repository
+# code, so this workflow never runs for pull requests from forks.
+on:
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: Also run the runner probe (BuildPlugin flags, Insights flags, editor exit code on failing tests)
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - examples/unreal/**
+      - checks/unreal/**
+      - .github/workflows/unreal-tier2.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: [self-hosted, Windows, X64, ue5]
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ['5.6', '5.7', '5.8']
+    env:
+      ENGINE_VERSION: ${{ matrix.engine }}
+      # Engine roots come from repository variables, e.g. UE_5_6_ROOT, falling back to the
+      # Epic Games Launcher default location.
+      ENGINE_ROOT_VAR: ${{ matrix.engine == '5.6' && vars.UE_5_6_ROOT || matrix.engine == '5.7' && vars.UE_5_7_ROOT || vars.UE_5_8_ROOT }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Locate engine
+        shell: powershell
+        run: |
+          $root = $env:ENGINE_ROOT_VAR
+          if (-not $root) { $root = "C:\Program Files\Epic Games\UE_$env:ENGINE_VERSION" }
+          if (-not (Test-Path "$root\Engine\Build\BatchFiles\RunUAT.bat")) {
+            Write-Error "Unreal Engine $env:ENGINE_VERSION not found at $root. Set the repository variable UE_$($env:ENGINE_VERSION -replace '\.','_')_ROOT to the engine folder."
+            exit 1
+          }
+          "UE_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Using $root"
+
+      - name: Prepare plugin copy for this engine version
+        shell: powershell
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "rfr-$env:ENGINE_VERSION"
+          if (Test-Path $work) { Remove-Item -Recurse -Force $work }
+          New-Item -ItemType Directory -Path "$work\src" | Out-Null
+          Copy-Item -Recurse examples\unreal\RfrSample "$work\src\RfrSample"
+          $desc = "$work\src\RfrSample\RfrSample.uplugin"
+          (Get-Content $desc -Raw) -replace '"EngineVersion": "[^"]*"', ('"EngineVersion": "' + $env:ENGINE_VERSION + '.0"') | Set-Content $desc -Encoding utf8
+          "RFR_WORK=$work" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build plugin (zero warnings, FAB-004)
+        shell: powershell
+        run: |
+          $log = "$env:RFR_WORK\buildplugin.log"
+          & "$env:UE_ROOT\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin "-Plugin=$env:RFR_WORK\src\RfrSample\RfrSample.uplugin" "-Package=$env:RFR_WORK\pkg\RfrSample" -Rocket 2>&1 | Tee-Object -FilePath $log
+          if ($LASTEXITCODE -ne 0) { Write-Error "BuildPlugin failed ($LASTEXITCODE)"; exit 1 }
+          $warnings = Select-String -Path $log -Pattern ': warning [A-Z]+\d+|warning CS\d+' | Where-Object { $_.Line -notmatch 'warning(s)? treated' }
+          Select-String -Path $log -Pattern 'Using Visual Studio|Using MSVC|toolchain' | Select-Object -First 5 | ForEach-Object { Write-Host "Toolchain: $($_.Line)" }
+          if ($warnings) { $warnings | ForEach-Object { Write-Host $_.Line }; Write-Error "$($warnings.Count) compiler warning(s)"; exit 1 }
+
+      - name: Run automation tests against the packaged plugin
+        shell: powershell
+        run: |
+          $hostDir = "$env:RFR_WORK\host"
+          New-Item -ItemType Directory -Path "$hostDir\Plugins" -Force | Out-Null
+          Copy-Item -Recurse "$env:RFR_WORK\pkg\RfrSample" "$hostDir\Plugins\RfrSample"
+          '{ "FileVersion": 3, "EngineAssociation": "", "Plugins": [ { "Name": "RfrSample", "Enabled": true } ] }' | Set-Content "$hostDir\Host.uproject" -Encoding utf8
+          $report = "$env:RFR_WORK\report"
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$hostDir\Host.uproject" "-ExecCmds=Automation RunTests RfrSample.Subsystem;Quit" -unattended -nullrhi -nosound -nopause -stdout "-ReportExportPath=$report" "-abslog=$env:RFR_WORK\editor.log" | Out-Null
+          Write-Host "Editor exit code: $LASTEXITCODE"
+          Select-String -Path "$env:RFR_WORK\editor.log" -Pattern 'TEST COMPLETE' | ForEach-Object { Write-Host $_.Line }
+          node checks\unreal\ci\read-automation-report.mjs $report
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Runner probe (open questions R55)
+        if: ${{ inputs.probe }}
+        shell: powershell
+        run: |
+          $summary = $env:GITHUB_STEP_SUMMARY
+          "## Runner probe: UE $env:ENGINE_VERSION" | Out-File $summary -Append -Encoding utf8
+          $bp = "$env:UE_ROOT\Engine\Source\Programs\AutomationTool\Scripts\BuildPlugin.Automation.cs"
+          if (Test-Path $bp) {
+            $flags = Select-String -Path $bp -Pattern 'Param(Value)?\("([A-Za-z]+)"' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[2].Value } | Sort-Object -Unique
+            "BuildPlugin parameters: $($flags -join ', ')" | Out-File $summary -Append -Encoding utf8
+            Select-String -Path $bp -Pattern 'StrictIncludes' | ForEach-Object { "StrictIncludes line: $($_.Line.Trim())" } | Out-File $summary -Append -Encoding utf8
+          } else { "BuildPlugin.Automation.cs not found (installed builds may omit AutomationTool sources)" | Out-File $summary -Append -Encoding utf8 }
+          $insights = Get-ChildItem "$env:UE_ROOT\Engine\Source\Developer\TraceInsights*", "$env:UE_ROOT\Engine\Source\Programs\UnrealInsights" -Recurse -Include *.cpp -ErrorAction SilentlyContinue
+          $iflags = $insights | Select-String -Pattern 'TEXT\("-?(NoUI|AutoQuit|ExecOnAnalysisCompleteCmd|OpenTraceFile|ABSLOG|Log)[^"]*"\)' -AllMatches | ForEach-Object { $_.Matches.Value } | Sort-Object -Unique
+          "Insights command-line strings: $($iflags -join ', ')" | Out-File $summary -Append -Encoding utf8
+          $report = "$env:RFR_WORK\probe-report"
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_WORK\host\Host.uproject" "-ExecCmds=Automation RunTests RfrSampleProbe;Quit" -unattended -nullrhi -nosound -nopause "-ReportExportPath=$report" "-abslog=$env:RFR_WORK\probe.log" | Out-Null
+          "Editor exit code with a failing test: $LASTEXITCODE" | Out-File $summary -Append -Encoding utf8
+          Select-String -Path "$env:RFR_WORK\probe.log" -Pattern 'TEST COMPLETE' | ForEach-Object { "Log: $($_.Line.Trim())" } | Out-File $summary -Append -Encoding utf8
+          $counts = node checks\unreal\ci\read-automation-report.mjs $report --expect-failures
+          "index.json: $counts" | Out-File $summary -Append -Encoding utf8
+          Get-Content $summary | Write-Host
+
+      - name: Upload logs and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unreal-tier2-${{ matrix.engine }}
+          path: |
+            ${{ env.RFR_WORK }}/*.log
+            ${{ env.RFR_WORK }}/report/**
+            ${{ env.RFR_WORK }}/probe-report/**
+          if-no-files-found: ignore
+
+      - name: Clean up
+        if: always()
+        shell: powershell
+        run: if ($env:RFR_WORK -and (Test-Path $env:RFR_WORK)) { Remove-Item -Recurse -Force $env:RFR_WORK }
