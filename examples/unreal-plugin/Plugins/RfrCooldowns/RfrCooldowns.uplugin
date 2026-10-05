@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "RFR Cooldowns",
+	"Description": "Ability cooldowns for Blueprint and C++, kept per game instance.",
+	"Category": "Gameplay",
+	"CreatedBy": "Lifelike & Believable Animation Design",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"SupportURL": "",
+	"EngineVersion": "5.6.0",
+	"CanContainContent": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "RfrCooldowns",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": ["Win64", "Mac", "Linux"]
+		}
+	]
+}
