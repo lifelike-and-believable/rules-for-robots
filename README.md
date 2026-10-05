@@ -8,7 +8,7 @@ Status: early development. Phases 0 (research) and 1 (foundations) are complete;
 
 - **Rules** live in `rules/`, one per file, in the format described in [docs/rule-format.md](docs/rule-format.md). Each rule records the failure it prevents and how compliance is checked.
 - **Template repos** in `template-repos/` are generated from the rules for three profiles: a Next.js web app, an Astro static site, and an Unreal Engine plugin. They carry `AGENTS.md`, a thin `CLAUDE.md`, and `.claude/rules/`.
-- **Plugins** carry skills, agents, and hooks. The `rfr-core` plugin currently provides `/rfr-core:install-rules`, which copies rule packs into an existing repo (plugins cannot ship rules directly). Agents and hooks arrive in Phases 2 and 5.
+- **Plugins** carry skills, agents, and hooks. The `rfr-core` plugin provides `/rfr-core:install-rules`, which copies rule packs into an existing repo (plugins cannot ship rules directly), and default hooks that ask before destructive commands and edits to existing tests. See [plugins/core/README.md](plugins/core/README.md).
 - **Evals** (from Phase 2) keep only rules that measurably improve agent output.
 
 The research behind these choices is in [docs/research/findings.md](docs/research/findings.md).
@@ -28,6 +28,7 @@ Profiles: `web-app`, `static-site`, `unreal-plugin`. For a new project, copy the
 ## Requirements
 
 - Claude Code 2.1.288 or later.
+- Node on the PATH for the `rfr-core` hooks.
 - Node 22 or later to build and verify this repo.
 
 ## Contributing
