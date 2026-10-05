@@ -9,6 +9,11 @@
 //   none        fixture only
 //   rules       fixture + core rules in .claude/rules/
 //   rules+hooks rules + the rfr-core plugin (hooks) via --plugin-dir
+//   rules+candidate  rules + the case's draft rules from evals/candidates/ (meta.candidates);
+//               not in the default arms, pass it with --arms
+//
+// A case's bin/ folder, if present, goes first on PATH (for fake CLIs such as gh). It stays
+// outside the workspace so the agent sees the commands, not their source.
 //
 // Usage:
 //   node evals/run.mjs [--cases a,b] [--models claude-sonnet-5-5,claude-opus-5-5]
@@ -22,6 +27,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CASES = path.join(ROOT, 'evals', 'cases');
+const CANDIDATES = path.join(ROOT, 'evals', 'candidates');
 const ALL_ARMS = ['none', 'rules', 'rules+hooks'];
 
 function parseArgs(argv) {
@@ -72,6 +78,12 @@ export async function prepareWorkspace(testCase, arm) {
       fs.cpSync(path.join(ROOT, 'rules', 'packs', pack), path.join(dir, '.claude', 'rules', 'packs', pack), { recursive: true });
     }
   }
+  if (arm === 'rules+candidate') {
+    for (const id of testCase.meta.candidates ?? []) {
+      fs.mkdirSync(path.join(dir, '.claude', 'rules', 'candidates'), { recursive: true });
+      fs.copyFileSync(path.join(CANDIDATES, `${id}.md`), path.join(dir, '.claude', 'rules', 'candidates', `${id}.md`));
+    }
+  }
   // Cases can share an installed node_modules instead of installing per run. Hard-link
   // it (a symlink out of the project root makes Turbopack fail); copy if that fails.
   if (testCase.meta.nodeModulesFrom) {
@@ -91,7 +103,12 @@ export async function prepareWorkspace(testCase, arm) {
   return dir;
 }
 
-function runClaude({ dir, prompt, model, arm, meta, effort }) {
+export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(path.join(testCase.dir, 'bin'))) {
+  if (!hasBin) return { ...base };
+  return { ...base, PATH: [path.join(testCase.dir, 'bin'), base.PATH].filter(Boolean).join(path.delimiter) };
+}
+
+function runClaude({ dir, prompt, model, arm, meta, effort, testCase }) {
   const args = [
     '-p', prompt,
     '--model', model,
@@ -105,7 +122,7 @@ function runClaude({ dir, prompt, model, arm, meta, effort }) {
   if (arm === 'rules+hooks') args.push('--plugin-dir', path.join(ROOT, 'plugins', 'core'));
   return new Promise(resolve => {
     const started = Date.now();
-    const child = spawn('claude', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('claude', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], env: claudeEnv(testCase) });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', d => { stdout += d; });
@@ -214,7 +231,7 @@ async function main() {
 
   const records = await pool(jobs, opts.concurrency, async ({ testCase, model, arm, run }) => {
     const dir = await prepareWorkspace(testCase, arm);
-    const result = await runClaude({ dir, prompt: testCase.prompt, model, arm, meta: testCase.meta, effort: opts.effort });
+    const result = await runClaude({ dir, prompt: testCase.prompt, model, arm, meta: testCase.meta, effort: opts.effort, testCase });
     const graded = await gradeRun(testCase, dir, result);
     const record = { case: testCase.name, model, arm, run, ...graded };
     const tag = `${testCase.name}.${model}.${arm.replace('+', '-')}.${run}`;

@@ -273,6 +273,8 @@ Web app: `examples/web-app` built from the template by the `rfr-core` agents, pa
 
 Status: first round done ([report](evals/results/2026-10-05-phase8/report.md)). Five harder cases, 2 models, 3 arms, 3 runs: test-gaming and test-first cases show clear rule effects; data-loss, over-engineering, and Next.js 16 cases do not. NEXT-001 narrowed. Graders now have unit tests. Still to do: an Unreal API-change case, leave-one-pack-out and single-rule ablations, the wording experiments, and harder variants of the cases that showed no effect.
 
+Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested the rules proposed from the Open3DBroadcast adoption (#28 to #35) with three single-task cases. The no-rules baseline passed 18/18, so the candidate rules (in `evals/candidates/`) were not added; the advice went into the practice guides instead. Discriminating cases need multi-prompt, long-session support in the harness.
+
 ### Phase 9: Release and maintenance
 - Semantic versioning for the rule set and plugins; plugin `version` bumped every release; changelog.
 - Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
