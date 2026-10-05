@@ -106,6 +106,8 @@ MyPlugin
 
 > **4.3.7.3.d** Third-party dependencies may only be used with proof of permission and must be placed in a ThirdParty folder located inside the Source folder. [TR]
 
+*Interpretation (2026-10-05, rules-for-robots#36): the text allows either `Source/ThirdParty/` or a module's own `Source/<Module>/ThirdParty/`; the example tree shows only the first. The project owner decided to accept both and confirm with the first Fab submission that uses per-module folders. Record the reviewer's answer here.*
+
 The documentation page lists what a code plugin must contain:
 
 > All Code Plugin products must contain the following: [AF]

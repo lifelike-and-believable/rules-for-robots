@@ -107,7 +107,10 @@ export function checkPlugin(pluginDir, { copyright, project, allowMissingFabUrl 
     const bad = e.rel.split('/').find(s => !SEGMENT.test(s));
     if (bad) err('FAB-003', `name ${JSON.stringify(bad)} in ${e.rel} uses characters other than English letters, digits, and underscores`);
     if (!e.dir && /\.(exe|msi)$/i.test(e.rel)) err('FAB-003', `${e.rel}: .exe and .msi files are not allowed`);
-    if (e.dir && /(^|\/)ThirdParty$/.test(e.rel) && e.rel !== 'Source/ThirdParty') err('FAB-003', `${e.rel}: third-party code belongs in Source/ThirdParty`);
+    // TR 4.3.7.3.d asks for "a ThirdParty folder located inside the Source folder". Source/ThirdParty
+    // and Source/<Module>/ThirdParty both read as that; the project decided to accept both until a
+    // Fab review says otherwise (rules-for-robots#36). Anywhere outside Source/ is an error.
+    if (e.dir && /(^|\/)ThirdParty$/.test(e.rel) && !e.rel.startsWith('Source/')) err('FAB-003', `${e.rel}: third-party code belongs in a ThirdParty folder under Source/`);
   }
 
   // FAB-002 and UE-002: source files.
