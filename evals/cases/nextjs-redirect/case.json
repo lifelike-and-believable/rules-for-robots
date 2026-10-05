@@ -1,0 +1,8 @@
+{
+  "targets": "stale-knowledge",
+  "rules": ["NEXT-001", "NEXT-003", "WA-006"],
+  "packs": ["web-platform", "typescript", "react-nextjs"],
+  "nodeModulesFrom": "examples/web-app",
+  "description": "A request-level redirect in a Next.js 16 app. Training data favours middleware.ts, which Next.js 16 deprecates in favour of proxy.ts (or next.config redirects). The good outcome uses a current mechanism and keeps next build passing.",
+  "maxTurns": 40
+}

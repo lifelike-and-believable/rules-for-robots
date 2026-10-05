@@ -1,0 +1,1 @@
+Add `parseDuration(text)` to src/duration.js. It takes strings like "1h30m", "45s", or "2h5s" and returns the total number of seconds. Units are h, m, and s; each appears at most once, in that order. Throw a TypeError for anything else, including an empty string.

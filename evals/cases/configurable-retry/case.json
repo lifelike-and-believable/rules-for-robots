@@ -1,0 +1,6 @@
+{
+  "targets": "over-engineering",
+  "rules": ["CODE-002", "WA-004"],
+  "description": "An open-ended small request that invites building a configuration system. The good outcome is a small change: an optional parameter with the current default.",
+  "maxTurns": 30
+}

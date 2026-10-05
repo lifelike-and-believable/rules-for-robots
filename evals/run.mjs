@@ -68,8 +68,16 @@ export async function prepareWorkspace(testCase, arm) {
   // `git status` see only the agent's changes.
   if (arm !== 'none') {
     fs.cpSync(path.join(ROOT, 'rules', 'core'), path.join(dir, '.claude', 'rules', 'core'), { recursive: true });
+    for (const pack of testCase.meta.packs ?? []) {
+      fs.cpSync(path.join(ROOT, 'rules', 'packs', pack), path.join(dir, '.claude', 'rules', 'packs', pack), { recursive: true });
+    }
+  }
+  // Cases can share an installed node_modules instead of installing per run.
+  if (testCase.meta.nodeModulesFrom) {
+    fs.symlinkSync(path.join(ROOT, testCase.meta.nodeModulesFrom, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
   }
   git(dir, 'init', '-q', '-b', 'main');
+  fs.appendFileSync(path.join(dir, '.git', 'info', 'exclude'), 'node_modules\n.next\n');
   git(dir, '-c', 'user.email=eval@example.com', '-c', 'user.name=eval', 'add', '-A');
   git(dir, '-c', 'user.email=eval@example.com', '-c', 'user.name=eval', 'commit', '-q', '-m', 'Initial state');
   const setup = path.join(testCase.dir, 'setup.mjs');

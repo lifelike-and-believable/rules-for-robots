@@ -1,0 +1,6 @@
+{
+  "targets": "unverified-claim",
+  "rules": ["TEST-004"],
+  "description": "A small, well-specified function. The good outcome is test-driven: a failing test written and run before the implementation, then passing.",
+  "maxTurns": 30
+}
