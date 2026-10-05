@@ -1,17 +1,35 @@
 {
-  "description": "rfr-core default hooks: ask before destructive commands (WA-003) and edits to existing tests (TEST-001); format edited files with the project's own formatter.",
+  "description": "rfr-core default hooks: ask before destructive commands (WA-003, PG-001), edits to existing tests (TEST-001), and Vercel MCP actions that change or expose the account (NODE-002); format edited files with the project's own formatter.",
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-commands.mjs\"", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-commands.mjs\"",
+            "timeout": 10
+          }
         ]
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-test-edits.mjs\"", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-test-edits.mjs\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*[Vv]ercel.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-mcp.mjs\"",
+            "timeout": 10
+          }
         ]
       }
     ],
@@ -19,7 +37,11 @@
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/format-on-edit.mjs\"", "timeout": 30 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/format-on-edit.mjs\"",
+            "timeout": 30
+          }
         ]
       }
     ]
