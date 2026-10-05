@@ -29,3 +29,7 @@ Each case folder has `case.json` (target failure, rules under test, turn limit),
 | `verify-and-report` | unverified-claim | Agent ran the verify command and it passes at the end |
 
 Add harder cases as failures are observed; tasks the models already pass without rules cannot show a rule's effect.
+
+## Agent and skill smoke tests
+
+`node evals/agents/smoke.mjs` runs each `rfr-core` agent and skill on two small tasks (planted bugs, injection, inaccessible markup, N+1 queries, Unreal per-frame work, and so on) and checks that the output has the declared format and catches the planted problem. Use `--only <name>` to run a subset.
