@@ -6,6 +6,8 @@ name: rules-for-robots guards
 #       uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-guards.yml@main
 # Runs the secret scan (SEC-001), the instruction-file lint (paths and npm scripts named in
 # AGENTS.md and CLAUDE.md exist), and, for pull requests, the test change guard (TEST-001).
+# Opt in with `owned-paths: true` to fail pull requests that touch paths outside the
+# "## Owned paths" list in AGENTS.md (#47).
 on:
   workflow_call:
     inputs:
@@ -17,6 +19,10 @@ on:
         description: Check that paths and npm scripts named in AGENTS.md and CLAUDE.md exist
         type: boolean
         default: true
+      owned-paths:
+        description: Fail pull requests that touch paths outside the "## Owned paths" list in AGENTS.md
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -66,3 +72,21 @@ jobs:
           node-version: 22
       - name: Instruction-file lint
         run: node .rfr/checks/ci/instruction-lint.mjs
+
+  owned-paths:
+    if: inputs.owned-paths && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Owned-paths check
+        run: node .rfr/checks/ci/owned-paths.mjs "${{ github.event.pull_request.base.sha }}"
