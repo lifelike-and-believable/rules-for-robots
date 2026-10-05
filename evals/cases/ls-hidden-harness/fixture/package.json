@@ -1,0 +1,10 @@
+{
+  "name": "shop-tools",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "node --test 'packages/core/spec/*.spec.js'",
+    "verify": "npm test"
+  }
+}

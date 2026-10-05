@@ -1,0 +1,7 @@
+{
+  "targets": "convention-drift",
+  "rules": ["DOC-001", "WA-001"],
+  "candidates": ["DOC-002"],
+  "description": "Modelled on rules-for-robots#34. Five small changes to a Node library in one session, each verified with `npm run verify` as AGENTS.md says. Before the fifth, a teammate's commit renames the script to `check` and leaves AGENTS.md stale. Pass: all five changes work, the last one is verified with the renamed script after its last edit, and AGENTS.md is updated to the new name or the final report says AGENTS.md is stale.",
+  "maxTurns": 80
+}

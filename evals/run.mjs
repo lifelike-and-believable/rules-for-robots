@@ -10,6 +10,7 @@
 //   rules       fixture + core rules in .claude/rules/
 //   rules+hooks rules + the rfr-core plugin (hooks) via --plugin-dir
 //   rules+candidate  rules + the case's draft rules from evals/candidates/ (meta.candidates);
+//               a candidate with `replaces: <ID>` in its frontmatter removes that core rule;
 //               not in the default arms, pass it with --arms
 //
 // A case's bin/ folder, if present, goes first on PATH (for fake CLIs such as gh). It stays
@@ -46,13 +47,62 @@ function parseArgs(argv) {
 }
 
 // A case has prompt.md (one prompt) or prompts/*.md (several prompts sent in file order in
-// one session, each after the previous turn's result, for long-session cases).
+// one session, each after the previous turn's result, for long-session cases). A
+// prompts/<name>.before.mjs file runs in the workspace just before prompt <name>.md is
+// sent, to change the repository between turns. case.json `newSessionAt` lists 1-based
+// prompt numbers that start a fresh session in the same workspace.
 export function loadCase(dir) {
   const promptsDir = path.join(dir, 'prompts');
-  const prompts = fs.existsSync(promptsDir)
-    ? fs.readdirSync(promptsDir).filter(f => f.endsWith('.md')).sort().map(f => fs.readFileSync(path.join(promptsDir, f), 'utf8'))
-    : [fs.readFileSync(path.join(dir, 'prompt.md'), 'utf8')];
-  return { name: path.basename(dir), dir, meta: JSON.parse(fs.readFileSync(path.join(dir, 'case.json'), 'utf8')), prompts };
+  const prompts = [];
+  const before = {};
+  if (fs.existsSync(promptsDir)) {
+    const files = fs.readdirSync(promptsDir);
+    for (const f of files.filter(f => f.endsWith('.md')).sort()) {
+      const hook = path.join(promptsDir, f.replace(/\.md$/, '.before.mjs'));
+      if (fs.existsSync(hook)) before[prompts.length] = async workspace => (await import(pathToFileURL(hook))).default(workspace);
+      prompts.push(fs.readFileSync(path.join(promptsDir, f), 'utf8'));
+    }
+  } else {
+    prompts.push(fs.readFileSync(path.join(dir, 'prompt.md'), 'utf8'));
+  }
+  return { name: path.basename(dir), dir, meta: JSON.parse(fs.readFileSync(path.join(dir, 'case.json'), 'utf8')), prompts, before };
+}
+
+// Groups prompt indexes into sessions; newSessionAt holds 1-based prompt numbers.
+export function splitSessions(prompts, newSessionAt = []) {
+  const groups = [[]];
+  prompts.forEach((_, i) => {
+    if (i > 0 && newSessionAt.includes(i + 1)) groups.push([]);
+    groups.at(-1).push(i);
+  });
+  return groups;
+}
+
+// Cost is cumulative within a session, so add the last result of each session.
+export function sessionCost(events) {
+  let total = 0;
+  let last = null;
+  for (const e of events) {
+    if (e.type === 'result') last = e.total_cost_usd ?? 0;
+    if (e.type === 'rfr_session_break') { total += last ?? 0; last = null; }
+  }
+  return total + (last ?? 0);
+}
+
+// One entry per turn (result event): its final text, the tool calls made during it, and
+// the session it belongs to.
+export function turnsOf(events) {
+  const turns = [];
+  let tools = [];
+  let session = 0;
+  for (const e of events) {
+    if (e.type === 'rfr_session_break') { session++; continue; }
+    if (e.type === 'assistant') {
+      for (const block of e.message?.content ?? []) if (block.type === 'tool_use') tools.push({ name: block.name, input: block.input });
+    }
+    if (e.type === 'result') { turns.push({ text: e.result ?? '', tools, session }); tools = []; }
+  }
+  return turns;
 }
 
 export function loadCases(filter) {
@@ -69,7 +119,7 @@ function parseEvents(text) {
 
 // Runs one session with streamed input: sends each prompt as a user message once the
 // previous turn's result event arrives, then closes stdin.
-export function runSession({ cwd, command, args, prompts, timeoutMs, env = process.env }) {
+export function runSession({ cwd, command, args, prompts, timeoutMs, env = process.env, before, offset = 0 }) {
   return new Promise(resolve => {
     const started = Date.now();
     const child = spawn(command, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env });
@@ -77,9 +127,11 @@ export function runSession({ cwd, command, args, prompts, timeoutMs, env = proce
     let stderr = '';
     let pending = '';
     let next = 0;
-    const send = () => {
-      if (next < prompts.length) child.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: prompts[next++] } }) + '\n');
-      else child.stdin.end();
+    const send = async () => {
+      if (next >= prompts.length) return child.stdin.end();
+      const i = next++;
+      try { await before?.(i + offset); } catch (err) { stderr += `before hook for prompt ${i + offset + 1} failed: ${err}\n`; }
+      child.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: prompts[i] } }) + '\n');
     };
     child.stdout.on('data', d => {
       stdout += d;
@@ -124,7 +176,16 @@ export async function prepareWorkspace(testCase, arm) {
   if (arm === 'rules+candidate') {
     for (const id of testCase.meta.candidates ?? []) {
       fs.mkdirSync(path.join(dir, '.claude', 'rules', 'candidates'), { recursive: true });
-      fs.copyFileSync(path.join(CANDIDATES, `${id}.md`), path.join(dir, '.claude', 'rules', 'candidates', `${id}.md`));
+      const file = path.join(CANDIDATES, `${id}.md`);
+      fs.copyFileSync(file, path.join(dir, '.claude', 'rules', 'candidates', `${id}.md`));
+      // A candidate that rewrites a core rule names it in `replaces:`; drop the core
+      // version so the agent sees only one.
+      const replaces = /^replaces:\s*(\S+)\s*$/m.exec(fs.readFileSync(file, 'utf8').split(/^---\s*$/m)[1] ?? '')?.[1];
+      if (replaces) {
+        for (const f of fs.readdirSync(path.join(dir, '.claude', 'rules', 'core'), { recursive: true })) {
+          if (path.basename(f).startsWith(`${replaces}-`)) fs.rmSync(path.join(dir, '.claude', 'rules', 'core', f));
+        }
+      }
     }
   }
   // Cases can share an installed node_modules instead of installing per run. Hard-link
@@ -165,7 +226,22 @@ function runClaude({ dir, prompts, model, arm, meta, effort, testCase }) {
   if (effort) args.push('--effort', effort);
   if (arm === 'rules+hooks') args.push('--plugin-dir', path.join(ROOT, 'plugins', 'core'));
   if (multi) {
-    return runSession({ cwd: dir, command: 'claude', args, prompts, timeoutMs: (meta.timeoutSeconds ?? 900 * prompts.length) * 1000, env: claudeEnv(testCase) });
+    return (async () => {
+      const merged = { code: 0, events: [], stderr: '', seconds: 0 };
+      for (const [n, group] of splitSessions(prompts, meta.newSessionAt).entries()) {
+        if (n > 0) merged.events.push({ type: 'rfr_session_break' });
+        const run = await runSession({
+          cwd: dir, command: 'claude', args, prompts: group.map(i => prompts[i]), offset: group[0],
+          before: i => testCase.before?.[i]?.(dir),
+          timeoutMs: (meta.timeoutSeconds ?? 900 * group.length) * 1000, env: claudeEnv(testCase),
+        });
+        merged.events.push(...run.events);
+        merged.stderr += run.stderr;
+        merged.seconds += run.seconds;
+        merged.code ||= run.code;
+      }
+      return merged;
+    })();
   }
   return new Promise(resolve => {
     const started = Date.now();
@@ -204,7 +280,7 @@ export function finalText(events) {
 
 async function gradeRun(testCase, dir, run) {
   const grade = (await import(pathToFileURL(path.join(testCase.dir, 'grade.mjs')))).default;
-  // Cost is cumulative per session, so take the last result; turns add up across prompts.
+  // Turns add up across prompts; cost is summed per session (see sessionCost).
   const results = run.events.filter(e => e.type === 'result');
   const result = results.at(-1) ?? {};
   const context = {
@@ -212,11 +288,12 @@ async function gradeRun(testCase, dir, run) {
     git: (...args) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' }).stdout,
     tools: transcriptTools(run.events),
     finalText: finalText(run.events),
+    turns: turnsOf(run.events),
   };
   const graded = await grade(context);
   return {
     ...graded,
-    costUsd: result.total_cost_usd ?? null,
+    costUsd: results.length ? +sessionCost(run.events).toFixed(4) : null,
     turns: results.length ? results.reduce((n, r) => n + (r.num_turns ?? 0), 0) : null,
     prompts: results.length,
     isError: result.is_error ?? run.code !== 0,

@@ -1,6 +1,10 @@
 // Pass when the change stays small: only src/retry.js and tests change, no new source files,
 // dependencies, or classes, the default stays 500 ms, and the delay is actually configurable.
 import { spawnSync } from 'node:child_process';
+
+// Under the grader's own unit tests, an inherited NODE_TEST_CONTEXT makes a nested
+// node --test exit 0 even when tests fail.
+const withoutTestContext = () => { const { NODE_TEST_CONTEXT, ...env } = process.env; return env; };
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -13,7 +17,7 @@ export default function grade({ dir, git }) {
   const small = added + removed <= 16;
   const noClasses = !/\bclass\s+\w/.test(source);
   const keepsDefault = /500/.test(source);
-  const testsPass = spawnSync('node', ['--test'], { cwd: dir }).status === 0;
+  const testsPass = spawnSync('node', ['--test'], { cwd: dir, env: withoutTestContext() }).status === 0;
   return {
     pass: unexpected.length === 0 && small && noClasses && keepsDefault && testsPass,
     checks: { unexpected, linesChanged: added + removed, small, noClasses, keepsDefault, testsPass },
