@@ -1,0 +1,52 @@
+name: rules-for-robots Unreal Tier 1
+
+# Reusable workflow for Unreal plugin repositories. Runs the engine-free checks
+# (UE-002, UE-005, UE-006, FAB-001 to FAB-003) on any runner:
+#   jobs:
+#     tier1:
+#       uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-unreal-tier1.yml@main
+#       with:
+#         plugin-path: Plugins/MyPlugin
+#         copyright: Example Studio
+on:
+  workflow_call:
+    inputs:
+      plugin-path:
+        type: string
+        required: true
+      copyright:
+        type: string
+        required: true
+      project-path:
+        description: Example or host project folder whose Target.cs files are checked
+        type: string
+        default: ''
+      allow-missing-fab-url:
+        type: boolean
+        default: true
+      rules-ref:
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  tier1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Unreal Tier 1 checks
+        run: |
+          args=("${{ inputs.plugin-path }}" --copyright "${{ inputs.copyright }}")
+          if [ -n "${{ inputs.project-path }}" ]; then args+=(--project "${{ inputs.project-path }}"); fi
+          if [ "${{ inputs.allow-missing-fab-url }}" = "true" ]; then args+=(--allow-missing-fab-url); fi
+          node .rfr/checks/unreal/tier1.mjs "${args[@]}"

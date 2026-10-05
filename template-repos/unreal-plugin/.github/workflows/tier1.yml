@@ -1,0 +1,19 @@
+name: Unreal Tier 1
+
+# Engine-free checks (UE-002, UE-005, UE-006, FAB-001 to FAB-003) on a GitHub-hosted runner.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tier1:
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-unreal-tier1.yml@main
+    with:
+      plugin-path: Plugins/MyPlugin            # change to your plugin folder
+      copyright: Your Publisher Name           # the name in every source file's copyright line
+      project-path: .                          # checks Target.cs files of the host project
+      allow-missing-fab-url: true              # set to false once the Fab product exists
