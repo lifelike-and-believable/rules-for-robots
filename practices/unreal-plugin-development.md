@@ -39,6 +39,14 @@ Live Coding patches function bodies in `.cpp` files only. Any change to a header
 - Target files need `DefaultBuildSettings = BuildSettingsVersion.V6` on 5.7 and later (UE-006, checked by Tier 1). The include order is a project decision recorded in AGENTS.md: `EngineIncludeOrderVersion.Latest` for a plugin built against several versions, or a pinned version such as `Unreal5_7` for a project on one engine.
 - Guard newer APIs with `ENGINE_MAJOR_VERSION` / `ENGINE_MINOR_VERSION` checks or a small wrapper (UE-001). Examples that differ across 5.6 to 5.8: `UE_LOGF` and `UE_PLATFORM_*` macros (5.8), `FCoreDelegates::OnPostEngineInit` (deprecated in 5.8), and APIs deprecated in 5.0 to 5.6 that 5.8 removed.
 
+## Shared build machines
+
+Other projects and other agent sessions may build on the same machine, and distributed build tools such as Incredibuild (XGE) are a shared, limited resource.
+
+- Before an engine build, check for running builds (`xgConsole`, `AutomationTool`, `UnrealBuildTool`, `dotnet UnrealBuildTool.dll`). If one is running, wait and say so. Never stop another project's build.
+- "Maximum number of concurrent builds reached", or `OtherCompilationError` with no compiler errors in the log, means the machine is busy, not that the code is wrong. Wait, or retry once with `-NoXGE`; do not change code to "fix" it.
+- Use a separate git worktree for each parallel branch rather than switching branches under a running build.
+
 ## Giving agents engine context
 
 - Point the agent at the installed engine's `Source/` folder for each supported version and ask it to grep declarations before using an API (UE-001).

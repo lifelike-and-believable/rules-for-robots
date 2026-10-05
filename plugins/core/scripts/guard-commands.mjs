@@ -14,6 +14,7 @@ const CHECKS = [
   [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work'],
   [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history'],
   [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)'],
+  [/\bgit\s+config\b(?![^;&|\n]*\s(--get\S*|--list|-l)\b)[^;&|\n]*\s--(global|system)\b/, 'changing machine-wide git configuration (pass the setting for one command with git -c instead)'],
   [/\bdrizzle-kit\s+push\b/, 'drizzle-kit push applies schema changes directly to a database'],
   [/\bdrizzle-kit\b[^;&|]*\s--force\b/, 'drizzle-kit --force accepts data-loss statements'],
   [/\bprisma\s+migrate\s+(dev|reset)\b/, 'prisma migrate dev/reset can reset or alter a database'],
