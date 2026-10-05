@@ -14,6 +14,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - UE-007 says to create each spec object with the outer its class requires, for example a game-instance subsystem inside a transient `UGameInstance`. The agent that built the reference plugin missed this; the advice had been only in a practice guide.
 - The Unreal template's `.clang-format` now produces Epic-style braces, lambdas, and access specifiers.
+- Unreal Tier 1 warns about `MarketplaceURL` only when it has a value. BuildPlugin writes an empty one into every packaged descriptor.
 
 ## [0.13.1] - 2026-10-05
 

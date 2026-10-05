@@ -59,9 +59,9 @@ The feature: `FRfrCooldownTracker`, a plain struct of named cooldowns that takes
 | Check | Agent's output | After fixes |
 |---|---|---|
 | Tier 1 (engine-free checks) | 0 errors | 0 errors |
-| BuildPlugin, zero warnings, UE 5.7 | Pass | RESULT_BUILD |
-| Automation Specs, UE 5.7 | 13 of 14 pass | RESULT_TESTS |
-| Fab package rehearsal (staged, Tier 1 on the staged folder, zipped) | Not run | RESULT_FAB |
+| BuildPlugin, zero warnings in plugin source | Pass on 5.7 (5.6 and 5.8 not run) | Pass on 5.6, 5.7, and 5.8 |
+| Automation Specs | 13 of 14 pass on 5.7 | 16 of 16 pass on 5.6, 5.7, and 5.8 |
+| Fab package rehearsal (staged, Tier 1 on the staged folder, zipped) | Not run | Pass on all three; each zip holds `Source/` and the `.uplugin` (about 6 KB) |
 
 ### What it exposed
 
@@ -72,3 +72,5 @@ The feature: `FRfrCooldownTracker`, a plain struct of named cooldowns that takes
 | The reviewer flagged that the template's `.clang-format` produced non-Epic layout (indented access specifiers, lambdas on one line) | The template `.clang-format` now produces Epic-style braces, lambdas, and access specifiers |
 | The template's Tier 2 workflow assumed Node on the runner, and `Verify.ps1` hid the error lines when tests failed | The template workflow sets up Node, and `Verify.ps1` prints the error lines |
 | BuildPlugin's `-Package` output contains a `HostProject` folder, as well as `Binaries` and `Intermediate` | The Fab rehearsal removes them before zipping, and runs Tier 1 on the staged folder |
+| BuildPlugin writes the packaged `.uplugin` with `EngineVersion` set to the building engine (`5.8.0` on 5.8) and an empty `MarketplaceURL`, so Tier 1 warned about the old Marketplace field on every package | Tier 1 warns only when `MarketplaceURL` has a value |
+| The package has no `Resources/Icon128.png`, so the editor's plugin browser shows a default icon | Left as is for the reference plugin; add an icon before a real submission |
