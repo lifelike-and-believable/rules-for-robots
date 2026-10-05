@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: Draft v0.2 (2026-10-05). Updated with decisions from the initial review.
+Status: Draft v0.3 (2026-10-05). Adds the target-model assumptions (section 5) and a research phase (Phase 0).
 
 ## 1. Goal
 
@@ -27,12 +27,14 @@ Security, privacy, and observability are treated as cross-cutting requirements u
 | 4 | Strictness | MUST-level rules are enforced by CI where practical and relevant. |
 | 5 | Distribution | Both a Claude Code plugin and a GitHub template repo. MIT licence. |
 | 6 | Spelling | Canadian English (e.g. "centre", "colour", "behaviour", "organize", "licence" as noun). |
+| 7 | Target models | Opus 5.5 and Sonnet 5.5-class agents. Structure and wording are designed for highly capable models (section 5). |
+| 8 | Research first | A research phase (Phase 0) precedes the format spec, so structure decisions are grounded in current best practice. |
 
 ## 3. Scope
 
 ### In scope
 - Stack-independent core rules and best practices.
-- Stack packs for the three primary use cases (section 6).
+- Stack packs for the three primary use cases (section 7).
 - Agent definitions (Claude Code sub-agents) for the main stages of delivery.
 - Reusable skills (e.g. "plan a feature", "review a PR", "accessibility audit", "profile a plugin").
 - GitHub integration: issue and PR templates, CI workflows that enforce MUST rules, CODEOWNERS guidance.
@@ -55,7 +57,21 @@ Security, privacy, and observability are treated as cross-cutting requirements u
 6. **Stable IDs.** Rules have IDs (e.g. `A11Y-003`, `UE-PERF-002`) so reviews, PR comments, and agents can cite them precisely.
 7. **Layered.** Core, then stack pack, then organization, then team, then project, then personal. Later layers may add rules or relax SHOULD/MAY rules; relaxing a MUST requires a recorded exception (ADR or inline waiver citing the rule ID).
 
-## 5. Proposed repository structure
+## 5. Designing for Opus/Sonnet 5.5-class agents
+
+The rules target highly capable models. These are working assumptions; Phase 0 research will confirm, refine, or replace them before the format spec is fixed.
+
+1. **Don't restate what the model already knows.** These models already know what WCAG, OWASP, or the Epic coding standard are. Rules name the standard, the threshold, and the project's decision (e.g. "WCAG 2.2 AA", "LCP under 2.5 s at p75"), not tutorials. Instruction space goes to project-specific choices, non-obvious constraints, and known failure modes.
+2. **Explain intent, then trust judgement.** Give the goal and the reason, and let the agent choose the steps. Reserve step-by-step procedures for things that must happen in a fixed order (releases, migrations, packaging).
+3. **Calibrated, plain wording.** Capable models follow instructions closely and literally, so emphatic wording ("CRITICAL", "NEVER EVER", all caps) can cause over-application. Use RFC 2119 levels and normal sentences; state scope precisely so a rule is not applied where it doesn't belong.
+4. **Say what to do, not only what to avoid.** Positive instructions with a short example are followed more reliably than lists of prohibitions.
+5. **Target known failure modes of strong agents.** Examples to check in research: over-engineering and speculative abstraction, changes wider than the request, editing or weakening tests to make them pass, declaring work done without running checks, and inventing APIs (a real risk with Unreal's large and version-specific API).
+6. **Verification loops over trust.** Give agents concrete ways to check their own work (commands to run, screenshots via a browser tool, Automation tests, profiling captures) and require evidence in their reports.
+7. **Context as a resource.** Long context windows still have costs: attention dilution, slower and more expensive runs. Use progressive disclosure (short always-on core, path-scoped rules, skills loaded on demand) and sub-agents to keep the main context focused.
+8. **Model choice per agent.** Agent definitions set a model where it matters. Starting assumption: Opus for planning, architecture, and difficult review; Sonnet for well-scoped implementation and routine checks. Evals decide the final mapping.
+9. **Parallelism.** Structure reviews and audits so independent agents can run concurrently and report in a common findings format the `tech-lead` can merge.
+
+## 6. Proposed repository structure
 
 ```
 rules-for-robots/
@@ -87,7 +103,7 @@ rules-for-robots/
 │   │   ├── observability.md
 │   │   ├── documentation.md
 │   │   └── git-and-github.md
-│   └── packs/                    # Stack-pack rules (see section 6)
+│   └── packs/                    # Stack-pack rules (see section 7)
 ├── practices/                    # Longer best-practice guides with examples
 ├── templates/                    # Feature spec, ADR, PR, issue forms, runbook, CLAUDE.md starters
 ├── checks/                       # Reusable CI workflows, lint presets, scripts
@@ -101,7 +117,7 @@ rules-for-robots/
 
 How the two distribution channels relate: `rules/`, `practices/`, and `templates/` are the source of truth. The plugins package agents, skills, and hooks that reference them. The template repos are pre-wired starting points (CLAUDE.md, CI workflows, PR template) for new projects, and they install the plugins.
 
-## 6. Stack packs
+## 7. Stack packs
 
 Each pack adds rules, practices, CI checks, and agent guidance for its stack. Packs can be combined (a web app typically uses `web-platform` + `typescript` + one framework pack + `node-services`).
 
@@ -120,7 +136,7 @@ Unreal CI constraint: building and testing plugins needs an engine installation,
 
 MUST rules that depend on Tier 2 are marked so a solo developer without a build machine can run them locally through a skill instead.
 
-## 7. Agent roster (draft)
+## 8. Agent roster (draft)
 
 Each agent has a focused remit, a minimal tool set, the rules it must load, a step-by-step method, and a defined output format (e.g. findings with rule IDs and severity). Engineers and reviewers load stack-pack rules based on the files they are working on.
 
@@ -142,7 +158,7 @@ Each agent has a focused remit, a minimal tool set, the rules it must load, a st
 
 Open design question: separate reviewer agents (sharper focus, can run in parallel) or one `code-reviewer` with checklists (less overhead). Start separate and merge if evals show no benefit.
 
-## 8. Adapting for teams and organizations
+## 9. Adapting for teams and organizations
 
 - **Personal layer:** `CLAUDE.local.md` and user-level settings for individual preferences.
 - **Project layer:** a project's `CLAUDE.md` picks packs and records project-specific rules and waivers.
@@ -151,70 +167,94 @@ Open design question: separate reviewer agents (sharper focus, can run in parall
 
 `docs/layering-and-overrides.md` will document the precedence order and the waiver format.
 
-## 9. Delivery phases
+## 10. Delivery phases
 
-### Phase 0: Foundations
-- Rule file format: frontmatter fields (`id`, `title`, `level`, `scope`, `applies-to` path globs, `verified-by`, `rationale`), ID scheme, Canadian spelling note.
-- Repo skeleton, `LICENSE`, `CLAUDE.md` for this repo, `docs/contributing.md`.
+### Phase 0: Research
+Investigate current best practices for agentic development, with emphasis on tips that are not obvious and on what has changed with the latest models. Run before the format spec so structure decisions are grounded in evidence.
+
+Research questions:
+- **Instruction design for current models:** how Opus/Sonnet 5.5-class models respond to tone, emphasis, length, examples, and rationale; what earlier-model habits are now unnecessary or harmful.
+- **Claude Code mechanics:** current behaviour and best use of `CLAUDE.md` and imports, path-scoped rules, skills, sub-agents, hooks, plugins and marketplaces, output styles, permissions, and settings precedence. Which mechanism suits which kind of guidance.
+- **Context engineering:** what to keep always-on vs. on demand; how sub-agents, compaction, and long sessions affect rule adherence.
+- **Workflows that work:** plan-then-implement, test-first, spec-driven development, parallel agents and worktrees, review loops, headless and CI use of agents.
+- **Verification:** how agents can reliably check their own work for web (browser automation, Lighthouse, axe) and Unreal (command-line builds, Automation tests, Insights traces, editor-less workflows).
+- **Unreal-specific agent pitfalls:** API hallucination across engine versions, UObject and reflection macros, Live Coding and build times, binary assets agents can't read, and ways to give agents access to engine source and docs.
+- **Failure modes and guardrails:** known ways capable agents go wrong and which rules, hooks, or checks prevent them.
+- **Evaluating rule sets:** how others measure whether instructions improve output.
+
+Sources: Anthropic documentation and engineering posts, Claude Code docs and changelog, prompting guides for the current models, public rule and agent collections (e.g. AGENTS.md conventions, community Claude Code repos), Epic documentation and community knowledge for Unreal, and small hands-on experiments in this repo where sources disagree.
+
+Deliverables:
+- `docs/research/findings.md`: findings with sources, dates, and an evidence level (official, widely reported, single source, our own experiment).
+- `docs/research/recommendations.md`: concrete changes to this plan (format spec, structure, agent design), each linked to findings.
+- A short list of "tips and tricks" candidates to turn into rules or skills.
+
+**Exit criteria:** recommendations reviewed and accepted, rejected, or deferred; sections 4 to 8 of this plan updated to match.
+
+### Phase 1: Foundations
+- Rule file format, informed by Phase 0 recommendations: frontmatter fields (`id`, `title`, `level`, `scope`, `applies-to` path globs, `verified-by`, `rationale`), ID scheme, Canadian spelling note.
+- Repo skeleton, `CLAUDE.md` for this repo, `docs/contributing.md`.
 - Plugin and marketplace manifests (empty shells) so packaging is tested from the start.
 - **Exit criteria:** format spec plus one fully worked rule file approved; the core plugin installs in Claude Code.
 
-### Phase 1: Core rules
+### Phase 2: Core rules
 - `00-working-agreement.md`: understand before changing, small steps, run checks before declaring done, never weaken or skip tests, ask when blocked, report results honestly.
 - Topic rule files, prioritizing code-quality, testing, security-privacy, architecture, performance, accessibility, user-centred design.
 - Sources: WCAG 2.2, OWASP ASVS and Top 10, web.dev guidance, Twelve-Factor App, Google SRE practices, established API design guides.
 - **Exit criteria:** every rule has an ID, level, rationale, and verification method; the always-on file stays under roughly 1,500 words.
 
-### Phase 2: Stack packs
+### Phase 3: Stack packs
 - Order: `unreal-plugin`, `typescript`, `web-platform`, `react-nextjs`, `node-services`, `static-sites`. (Order is adjustable; Unreal first because it has the least existing agent guidance.)
 - Sources for Unreal: Epic's coding standard, plugin and module documentation, Automation testing documentation, Fab technical requirements.
 - **Exit criteria:** each pack has rules, at least one practice guide, and Tier 1 CI checks.
 
-### Phase 3: Best-practice guides
+### Phase 4: Best-practice guides
 - Longer `practices/` guides linked to rule IDs, with short good/bad examples.
 - **Exit criteria:** every rule file links to at least one guide; every guide is referenced by at least one rule.
 
-### Phase 4: Agents and skills
-- Agent definitions per section 7, with hand-off contracts (what each agent produces and consumes).
+### Phase 5: Agents and skills
+- Agent definitions per section 8, with hand-off contracts (what each agent produces and consumes) and a model setting per section 5.
 - Skills: `plan-feature`, `implement-feature`, `review-pr`, `a11y-audit`, `perf-audit`, `security-review`, `write-adr`, `release`, `profile-unreal-plugin`, `package-unreal-plugin`.
 - Hooks where they add value (e.g. run format and lint after edits).
 - **Exit criteria:** each agent tested on at least two sample tasks with output in its declared format.
 
-### Phase 5: GitHub integration and templates
+### Phase 6: GitHub integration and templates
 - PR template with a rule-ID checklist, issue forms, ADR and feature spec templates.
 - Reusable GitHub Actions workflows in `checks/` that enforce MUST rules, plus the self-hosted Unreal workflow.
 - Template repos for: web app, static site, Unreal plugin.
 - **Exit criteria:** a new repo created from a template is fully wired (CI, plugin, CLAUDE.md) in under an hour by following the adoption guide.
 
-### Phase 6: Reference projects
+### Phase 7: Reference projects
 - A small web app and a small Unreal plugin built with the full set of agents and rules.
 - **Exit criteria:** both pass their own checks and meet declared budgets.
 
-### Phase 7: Validation and evals
+### Phase 8: Validation and evals
 - `evals/` with representative tasks, e.g. "add a search page", "add a paginated API endpoint", "fix an accessibility bug", "add a replicated component to a plugin", "expose a subsystem to Blueprints".
-- Run each task with and without the rule set; score against rubrics tied to the quality attributes.
+- Run each task with and without the rule set, on both Opus 5.5 and Sonnet 5.5; score against rubrics tied to the quality attributes.
+- Test the Phase 0 assumptions directly (e.g. emphatic vs. plain wording, rules with vs. without rationale).
 - Remove or rewrite rules that do not change behaviour or that agents misapply.
 - **Exit criteria:** measurable improvement for most tasks; no rule that consistently makes output worse.
 
-### Phase 8: Release and maintenance
+### Phase 9: Release and maintenance
 - Semantic versioning for the rule set and plugins; changelog.
-- Quarterly review to keep standards current (e.g. new Unreal versions, WCAG updates).
+- Quarterly review to keep standards current (e.g. new Unreal versions, WCAG updates), plus a lighter repeat of Phase 0 research and the eval suite whenever a new model generation ships.
 - **Exit criteria:** v1.0 tagged; plugin installable from the marketplace; template repos published.
 
-## 10. Milestones
+## 11. Milestones
 
 | Milestone | Contents |
 |---|---|
-| M1 | Phase 0 + core working agreement, code-quality, testing |
-| M2 | Remaining core rules + `unreal-plugin` and `typescript` packs |
-| M3 | Remaining web packs + practice guides |
-| M4 | Agents, skills, hooks |
-| M5 | GitHub integration, CI workflows, template repos |
-| M6 | Reference projects, evals, revisions, v1.0 |
+| M1 | Phase 0 research: findings, recommendations, and plan updates |
+| M2 | Phase 1 foundations + core working agreement, code-quality, testing |
+| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs |
+| M4 | Remaining web packs + practice guides |
+| M5 | Agents, skills, hooks |
+| M6 | GitHub integration, CI workflows, template repos |
+| M7 | Reference projects, evals, revisions, v1.0 |
 
 Each milestone lands as one or more PRs so the work stays reviewable.
 
-## 11. Remaining open questions
+## 12. Remaining open questions
 
 1. **Unreal engine versions.** Which versions should plugins target (e.g. the latest two 5.x releases)? This sets the CI matrix and API guidance.
 2. **Unreal build machine.** Is a self-hosted runner with the engine available, or should Tier 2 checks run locally for now?
@@ -222,7 +262,7 @@ Each milestone lands as one or more PRs so the work stays reviewable.
 4. **Backend and hosting.** Preferred database, runtime, and hosting (e.g. Postgres, Node, Vercel), so the `node-services` pack matches real use.
 5. **Copyright holder** for the MIT licence (currently set to the `lifelike-and-believable` organization).
 
-## 12. Risks and mitigations
+## 13. Risks and mitigations
 
 | Risk | Mitigation |
 |---|---|
@@ -231,9 +271,12 @@ Each milestone lands as one or more PRs so the work stays reviewable.
 | Unreal checks can't run on hosted CI | Two-tier CI; local skill fallback for Tier 2 |
 | Guidance goes stale (engine, framework, and standard updates) | Cite sources with dates; quarterly reviews; versioned releases |
 | Overly prescriptive rules block reasonable choices | MUST reserved for genuine requirements; waiver format for exceptions |
-| Hard to show value | Phase 7 evals with before/after comparisons |
+| Hard to show value | Phase 8 evals with before/after comparisons |
+| Model behaviour changes between releases, making some rules redundant or counterproductive | Record which model each eval ran on; re-run evals on new model releases; prefer rationale over model-specific workarounds and tag workarounds so they can be found and removed |
+| Research surfaces popular but unproven tips | Each recommendation records its source and evidence level; anything adopted as a MUST needs an eval or an authoritative source |
 
-## 13. Immediate next steps
+## 14. Immediate next steps
 
-1. Answer the remaining questions in section 11 (none block Phase 0).
-2. Start M1: rule format spec, repo skeleton, `LICENSE`, plugin manifests, and `00-working-agreement.md`.
+1. Answer the remaining questions in section 12 (none block Phase 0).
+2. Start Phase 0 research.
+3. Use the research report to confirm or revise sections 4 to 8, then start Phase 1.
