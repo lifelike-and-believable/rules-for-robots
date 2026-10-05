@@ -3,7 +3,7 @@ id: TEST-003
 title: Test behaviour through public interfaces
 level: SHOULD
 scope: core
-paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/Tests/**", "**/__tests__/**"]
+paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/Tests/**", "**/__tests__/**", "**/Source/*Tests/**", "**/Source/**/*Tests.cpp", "**/Source/**/*Test.cpp", "**/Source/**/*Spec.cpp"]
 verified-by: [review]
 targets-failure: test-gaming
 observed-on: []

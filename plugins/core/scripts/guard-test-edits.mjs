@@ -8,11 +8,13 @@ import { ask, readInput } from './lib.mjs';
 
 const TEST_FILE = /\.(test|spec)\.[^/\\]+$/;
 const TEST_DIR = /(^|[/\\])(test|tests|Tests|__tests__|__snapshots__)[/\\]/;
+// Unreal test modules (Source/<Name>Tests/) and test files (*Tests.cpp, *Test.cpp, *Spec.cpp).
+const UNREAL_TEST = /(^|\/)Source\/(\w+Tests\/|.*\w(Tests?|Spec)\.(cpp|h)$)/;
 
 export function isTestPath(file) {
   if (typeof file !== 'string' || !file) return false;
   const normalized = file.replace(/\\/g, '/');
-  return TEST_FILE.test(normalized) || TEST_DIR.test(normalized);
+  return TEST_FILE.test(normalized) || TEST_DIR.test(normalized) || UNREAL_TEST.test(normalized);
 }
 
 export function shouldAsk(file, cwd = process.cwd()) {

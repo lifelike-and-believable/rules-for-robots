@@ -110,3 +110,63 @@ test('guard-commands asks before shell edits to test files', async () => {
     assert.equal(findRisk(command), null, command);
   }
 });
+
+test('guard-commands catches PowerShell deletes and test writes (#23)', () => {
+  const risky = [
+    'Remove-Item -Recurse -Force build', 'Remove-Item build -Force -Recurse', 'rm -Recurse -Force build',
+    'ri -r -fo build', 'del -Recurse -Force build', 'rm -r -fo build', 'remove-item -rec -forc build',
+    'Remove-Item -Recurse:$true -Force build', 'rmdir C:\\tmp\\x -Recurse -Force',
+    'Set-Content -Path src/a.test.ts -Value x', 'Out-File -FilePath tests/x.py', 'Add-Content tests/x.py y',
+    'Move-Item src/a.spec.ts C:/tmp', 'Copy-Item new.ts src/a.test.ts', 'Remove-Item -LiteralPath Source\\X\\Tests\\Y.cpp',
+    'sed -i s/a/b/ Source\\X\\Tests\\Y.cpp', 'git push --force origin main', 'Clear-Content src\\__tests__\\a.js',
+    'New-Item -Force tests/x.py', 'ren tests\\a_test.py b_test.py', 'cd x; del tests/old_test.py',
+  ];
+  for (const command of risky) assert.ok(findRisk(command), `should flag: ${command}`);
+  const safe = [
+    'Remove-Item -Recurse build', 'Remove-Item file.txt -Force', 'Get-Content tests/x.py', 'Select-String foo tests/x.py',
+    'Get-ChildItem -Recurse -Force', 'Remove-Item -r -f build', 'git commit -m "move helper out of tests/x.py"',
+    'New-Item -ItemType File tests/new_test.py',
+  ];
+  for (const command of safe) assert.equal(findRisk(command), null, `should not flag: ${command}`);
+});
+
+test('guard-commands asks for the PowerShell tool (#23)', () => {
+  const result = runHook('guard-commands.mjs', { tool_name: 'PowerShell', tool_input: { command: 'Remove-Item -Recurse -Force build' } });
+  assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, 'ask');
+});
+
+test('hooks.json runs guard-commands for Bash and PowerShell (#23)', () => {
+  const config = JSON.parse(fs.readFileSync('plugins/core/hooks/hooks.json', 'utf8'));
+  const entry = config.hooks.PreToolUse.find(e => e.hooks.some(h => h.command.includes('guard-commands.mjs')));
+  const matcher = new RegExp(`^(${entry.matcher})$`);
+  assert.ok(matcher.test('Bash') && matcher.test('PowerShell'), entry.matcher);
+});
+
+test('Unreal test modules count as tests in every guard (#37)', async () => {
+  const { isTestOrBaseline } = await import('../checks/ci/test-change-guard.mjs');
+  const tests = [
+    'Plugins/X/Source/XTests/Private/Core/FooTests.cpp', 'Source/Open3DBroadcastTests/Private/Core/CoreSerializationTests.cpp',
+    'Source/My/Private/Tests/WebRTCSecretsTests.cpp', 'Source/My/Private/MySubsystemSpec.cpp',
+  ];
+  for (const p of tests) {
+    assert.ok(isTestPath(p), `guard-test-edits: ${p}`);
+    assert.ok(isTestOrBaseline(p), `test-change-guard: ${p}`);
+    assert.ok(findRisk(`sed -i s/a/b/ ${p}`), `guard-commands: ${p}`);
+  }
+  for (const p of ['src/test-utils.ts', 'src/latest/a.ts', 'contest.md', 'Source/My/Private/Contest.cpp', 'Source/Latest/Private/A.cpp']) {
+    assert.ok(!isTestPath(p), `guard-test-edits: ${p}`);
+    assert.ok(!isTestOrBaseline(p), `test-change-guard: ${p}`);
+    assert.equal(findRisk(`sed -i s/a/b/ ${p}`), null, `guard-commands: ${p}`);
+  }
+});
+
+test('TEST-001 and TEST-003 load for Unreal test modules (#37)', async () => {
+  const { parseRuleFile } = await import('../checks/lib/rules.mjs');
+  for (const file of ['rules/core/testing/TEST-001-keep-tests-honest.md', 'rules/core/testing/TEST-003-test-behaviour-not-implementation.md']) {
+    const { paths } = parseRuleFile(file).meta;
+    const hit = p => paths.some(g => path.posix.matchesGlob(p, g));
+    assert.ok(hit('Plugins/X/Source/XTests/Private/Core/FooTests.cpp'), file);
+    assert.ok(hit('Source/My/Private/MySubsystemSpec.cpp'), file);
+    assert.ok(!hit('Source/My/Private/My.cpp'), file);
+  }
+});

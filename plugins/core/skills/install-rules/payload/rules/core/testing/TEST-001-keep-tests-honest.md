@@ -3,7 +3,7 @@ id: TEST-001
 title: Keep tests honest
 level: MUST
 scope: core
-paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/Tests/**", "**/__snapshots__/**"]
+paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/Tests/**", "**/__snapshots__/**", "**/Source/*Tests/**", "**/Source/**/*Tests.cpp", "**/Source/**/*Test.cpp", "**/Source/**/*Spec.cpp"]
 verified-by: [hook, ci]
 check: "hook: guard-test-edits (asks before any test-file edit); ci: test-change-guard (flags PRs that change tests alongside implementation)"
 targets-failure: test-gaming
