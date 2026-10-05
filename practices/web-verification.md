@@ -55,3 +55,10 @@ The Playwright CLI uses about a quarter of the tokens of the Playwright MCP serv
 | Request APIs | `cookies()`, `headers()`, `params`, `searchParams` are async |
 | Docs | Version-matched docs in `node_modules/next/dist/docs/` (16.2+); `next dev` maintains a `nextjs-agent-rules` block in `AGENTS.md` (16.3+); leave it alone |
 | CSP | Nonce-based CSP forces dynamic rendering; use the experimental SRI option to keep pages static |
+
+## Astro 7 (ASTRO-001 to ASTRO-003)
+
+- When Astro detects an agent, `astro dev` (and, since 7.2, `astro preview`) runs in the background on macOS and Linux. Check `astro dev status` before starting another, and read `astro dev logs`.
+- The Astro docs MCP server is at `mcp.docs.astro.build/mcp`. Astro does not publish `llms.txt`.
+- `security.csp` (stable since 6.0) is hash-based and is not enforced by `astro dev`; verify it with `astro build` and `astro preview`.
+- Ship static HTML by default; hydrate islands with `client:visible` or `client:idle` before `client:load`.

@@ -174,3 +174,24 @@ export function validateTree(rulesRoot, options = {}) {
   }
   return results;
 }
+
+// Phase 4 exit criterion: every rule cites at least one practice guide that exists, and
+// every guide is cited by at least one rule.
+export function checkPracticeLinks(results, practicesDir) {
+  const problems = [];
+  const guides = fs.existsSync(practicesDir)
+    ? fs.readdirSync(practicesDir).filter(f => f.endsWith('.md')).map(f => `practices/${f}`)
+    : [];
+  const cited = new Set();
+  for (const { file, rule } of results) {
+    if (!rule.meta || rule.meta.waiver) continue;
+    const linked = (rule.meta.sources ?? []).filter(s => typeof s === 'string' && s.startsWith('practices/'));
+    if (!linked.length) problems.push({ file, error: 'sources must include a practices/ guide' });
+    for (const g of linked) {
+      if (!guides.includes(g)) problems.push({ file, error: `practice guide ${g} does not exist` });
+      cited.add(g);
+    }
+  }
+  for (const g of guides) if (!cited.has(g)) problems.push({ file: path.join(practicesDir, path.basename(g)), error: 'no rule cites this guide' });
+  return problems;
+}

@@ -8,6 +8,6 @@ check: "hook: rfr-core guard-mcp asks before Vercel MCP tools that deploy, chang
 targets-failure: destructive-action
 observed-on: []
 rationale: The Vercel MCP server acts with the full access of the user's Vercel account, including deployments, secrets, deletions, and purchases.
-sources: ["docs/research/notes/web_followup.md"]
+sources: ["practices/postgres-on-vercel.md", "docs/research/notes/web_followup.md"]
 ---
 Use the Vercel MCP server freely to read deployments, logs, and project settings. Ask before deploying, promoting, rolling back, changing environment variables or protection settings, deleting anything, or buying anything. Decrypt environment variable values only when the user asks for that specific value.

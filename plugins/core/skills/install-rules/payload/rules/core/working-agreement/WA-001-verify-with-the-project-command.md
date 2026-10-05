@@ -8,7 +8,7 @@ check: "ci: the project's verify workflow runs the same command on every pull re
 targets-failure: unverified-claim
 observed-on: [claude-opus-4-6, claude-sonnet-4-6]
 rationale: Agents report success without running checks; a named command gives a concrete check, and generic "verify" instructions cause over-verification on Opus 5 and later.
-sources: ["docs/research/findings.md", "docs/research/recommendations.md#b-working-agreement-phase-2"]
+sources: ["practices/working-with-agents.md", "docs/research/findings.md", "docs/research/recommendations.md#b-working-agreement-phase-2"]
 ---
 Before you report a code change as done, run the verification command listed in AGENTS.md and include its final output in your report. If it fails, say so and show the failing part rather than describing the work as complete.
 

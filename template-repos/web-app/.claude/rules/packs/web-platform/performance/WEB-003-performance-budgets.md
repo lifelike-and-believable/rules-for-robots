@@ -9,6 +9,6 @@ check: "ci: Lighthouse CI (median of 3 runs) on the preview deployment; size-lim
 targets-failure: performance-regression
 observed-on: []
 rationale: Core Web Vitals thresholds are the project's performance definition, and regressions are cheapest to catch per change.
-sources: ["docs/research/findings.md"]
+sources: ["practices/web-verification.md", "docs/research/findings.md"]
 ---
 Keep pages within LCP 2.5 s, INP 200 ms, and CLS 0.1 at the 75th percentile, and within the JavaScript budgets in the project's size-limit config. Give images explicit dimensions and modern formats, lazy-load content below the fold, and avoid adding client-side JavaScript or dependencies for what HTML and CSS can do. When a change adds weight, report the size difference.

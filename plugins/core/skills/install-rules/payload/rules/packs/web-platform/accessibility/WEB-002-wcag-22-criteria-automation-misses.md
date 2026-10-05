@@ -8,7 +8,7 @@ verified-by: [test, review]
 targets-failure: accessibility-regression
 observed-on: []
 rationale: axe-core checks only one WCAG 2.2 criterion (target size, off by default), and automated tools find only 20 to 30% of success criteria.
-sources: ["docs/research/notes/web_followup.md"]
+sources: ["practices/web-verification.md", "docs/research/notes/web_followup.md"]
 ---
 For UI you change, make sure that:
 

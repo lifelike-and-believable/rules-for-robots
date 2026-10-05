@@ -129,3 +129,21 @@ test('waivers are rejected in rules/ and validated in adopting repos', () => {
   const withBody = { 'core/testing/TEST-900-example.md': `${waiver}Some text.\n` };
   assert.ok(errorsFor(withBody, { allowWaivers: true }).includes('a waiver has no body'));
 });
+
+test('every rule cites an existing guide and every guide is cited', async () => {
+  const { checkPracticeLinks } = await import('../checks/lib/rules.mjs');
+  const root = makeTree({
+    'rules/core/testing/TEST-900-example.md': rule(`${GOOD_META}\nsources: ["practices/a.md"]`),
+    'rules/core/testing/TEST-901-example.md': rule(GOOD_META.replace('TEST-900', 'TEST-901')),
+    'rules/core/testing/TEST-902-example.md': rule(`${GOOD_META.replace('TEST-900', 'TEST-902')}\nsources: ["practices/missing.md"]`),
+    'practices/a.md': '# A',
+    'practices/orphan.md': '# Orphan',
+  });
+  const results = validateTree(path.join(root, 'rules'));
+  const problems = checkPracticeLinks(results, path.join(root, 'practices')).map(p => `${path.basename(p.file)}: ${p.error}`);
+  fs.rmSync(root, { recursive: true, force: true });
+  assert.ok(problems.includes('TEST-901-example.md: sources must include a practices/ guide'), problems.join('\n'));
+  assert.ok(problems.includes('TEST-902-example.md: practice guide practices/missing.md does not exist'), problems.join('\n'));
+  assert.ok(problems.includes('orphan.md: no rule cites this guide'), problems.join('\n'));
+  assert.ok(!problems.some(p => p.startsWith('TEST-900')), problems.join('\n'));
+});

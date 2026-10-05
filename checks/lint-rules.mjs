@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Lints rule files against docs/rule-format.md.
-// Usage: node checks/lint-rules.mjs [rules-dir] [--allow-waivers]
+// Usage: node checks/lint-rules.mjs [rules-dir] [--allow-waivers] [--no-practice-links]
 import path from 'node:path';
-import { validateTree } from './lib/rules.mjs';
+import { checkPracticeLinks, validateTree } from './lib/rules.mjs';
 
 const args = process.argv.slice(2);
 const allowWaivers = args.includes('--allow-waivers');
@@ -12,6 +12,13 @@ const results = validateTree(root, { allowWaivers });
 let failures = 0;
 for (const { file, errors } of results) {
   for (const error of errors) {
+    failures++;
+    console.error(`${path.relative(process.cwd(), file)}: ${error}`);
+  }
+}
+
+if (!args.includes('--no-practice-links')) {
+  for (const { file, error } of checkPracticeLinks(results, path.resolve(path.dirname(root), 'practices'))) {
     failures++;
     console.error(`${path.relative(process.cwd(), file)}: ${error}`);
   }

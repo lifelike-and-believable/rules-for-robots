@@ -8,7 +8,7 @@ verified-by: [review]
 targets-failure: convention-drift
 observed-on: []
 rationale: These are the points of Epic's current coding standard that models trained on general C++ most often get wrong; formatting is left to clang-format.
-sources: ["docs/research/notes/unreal_followup.md"]
+sources: ["practices/unreal-plugin-development.md", "docs/research/notes/unreal_followup.md"]
 ---
 Write C++20 in Epic style:
 
