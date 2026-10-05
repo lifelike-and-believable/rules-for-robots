@@ -8,5 +8,5 @@ argument-hint: "[map or scenario]"
 
 1. **Pick a scenario** from `$ARGUMENTS` or ask: a map and an action that exercises the plugin. Agree on the budget (for example, the plugin's share of a 16.6 ms frame).
 2. **Capture** with the engine version under test: run the host project with `-trace=cpu,gpu,frame,memory -tracefile=<out>.utrace` (plus `-statnamedevents` for detail). By default traces go to `<Project>/Saved/Profiling`.
-3. **Analyse.** Open the trace in Unreal Insights. Headless analysis flags (`-NoUI`, `-AutoQuit`, `-ExecOnAnalysisCompleteCmd`) are not in Epic's reference docs; check them against the installed engine (the rules-for-robots runner probe records them) before relying on them.
+3. **Analyse.** Open the trace in Unreal Insights. Headless analysis flags (`-NoUI`, `-AutoQuit`, `-ExecOnAnalysisCompleteCmd`) are not in Epic's reference docs; the rules-for-robots runner probe could not confirm them in Launcher-installed engines. Before relying on one, try it on the installed engine and check that the analysis actually ran; otherwise analyse in the Insights UI.
 4. **Report** the plugin's timers and their cost per frame against the budget, the top three hotspots, and a suggested fix for each. Do not change code unless the user asks.
