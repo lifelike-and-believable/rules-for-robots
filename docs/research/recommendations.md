@@ -1,6 +1,6 @@
 # Phase 0 recommendations
 
-Status: Proposed (2026-10-05), revised the same day after a follow-up verification pass that read most of the previously blocked primary sources (arXiv full texts, Anthropic system cards, Epic docs, Next.js, Vercel, Neon, Drizzle, Prisma and Astro). Each recommendation needs a decision: **accept**, **reject**, or **defer**. Accepted items will be applied to `PLAN.md` before Phase 1 starts.
+Status: **Accepted in full (2026-10-05)** and applied to PLAN.md v0.5. Revised the same day after a follow-up verification pass that read most of the previously blocked primary sources, and after the user supplied the Fab requirements.
 
 Evidence and sources for every item are in [findings.md](findings.md) (section named in the "Basis" column). Raw research notes are in [notes/](notes/), including the follow-up notes [verification_of_secondary_figures.md](notes/verification_of_secondary_figures.md), [unreal_followup.md](notes/unreal_followup.md) and [web_followup.md](notes/web_followup.md).
 

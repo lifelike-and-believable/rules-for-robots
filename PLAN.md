@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: Draft v0.4 (2026-10-05). Records answers on engine versions, CI runner, web stack, hosting, and licence holder.
+Status: v0.5 (2026-10-05). Phase 0 complete. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -21,263 +21,283 @@ Security, privacy, and observability are treated as cross-cutting requirements u
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Target agents/tools | Claude Code first. Keep content in plain Markdown so other tools can be supported later. |
+| 1 | Target agents/tools | Claude Code first. `AGENTS.md` is the canonical instruction file so other tools can be supported later. |
 | 2 | Stack opinion | Stack-independent core, plus optional stack packs covering Unreal Engine plugins, websites, and web apps. |
 | 3 | Audience | A solo developer first, structured so teams and organizations can adopt and override it. |
-| 4 | Strictness | MUST-level rules are enforced by CI where practical and relevant. |
-| 5 | Distribution | Both a Claude Code plugin and a GitHub template repo. MIT licence. |
+| 4 | Strictness | MUST-level rules are enforced by a hook, CI, or both where practical and relevant (R24). |
+| 5 | Distribution | Template repos carry instructions, rules, and settings; Claude Code plugins carry skills, agents, and hooks (R13). MIT licence. |
 | 6 | Spelling | Canadian English (e.g. "centre", "colour", "behaviour", "organize", "licence" as noun). |
-| 7 | Target models | Opus 5.5 and Sonnet 5.5-class agents. Structure and wording are designed for highly capable models (section 5). |
-| 8 | Research first | A research phase (Phase 0) precedes the format spec, so structure decisions are grounded in current best practice. |
-| 9 | Unreal versions | Unreal Engine 5.6 and later. The CI matrix and API guidance cover every supported 5.x release from 5.6 onward. |
-| 10 | Unreal build machine | A self-hosted GitHub Actions runner is available (Windows, x64, labels `self-hosted`, `Windows`, `X64`, `ue5`). Tier 2 checks run on it. |
-| 11 | Web frameworks | React/Next.js for web apps; Astro for content-heavy static sites. |
+| 7 | Target models | Opus 5.5 and Sonnet 5.5-class agents (section 5). |
+| 8 | Research first | Phase 0 research preceded the format spec. Complete; findings and recommendations are in `docs/research/`. |
+| 9 | Unreal versions | Unreal Engine 5.6 and later. This currently matches Fab's default build set (the three latest engine versions). |
+| 10 | Unreal build machine | Self-hosted GitHub Actions runner (Windows, x64, labels `self-hosted`, `Windows`, `X64`, `ue5`). Tier 2 checks run on it. |
+| 11 | Web frameworks | React/Next.js (16.x) for web apps; Astro (7.x) for content-heavy static sites. |
 | 12 | Backend and hosting | Node runtime, Postgres, deployed on Vercel. |
 | 13 | Licence holder | MIT licence, copyright Lifelike & Believable Animation Design. |
+| 14 | Minimum Claude Code version | 2.1.288 (path-scoped rules load on Write/Edit; native `AGENTS.md`) (R15). |
+| 15 | Phase 0 recommendations | R1 to R64 accepted in full. |
 
 ## 3. Scope
 
 ### In scope
 - Stack-independent core rules and best practices.
 - Stack packs for the three primary use cases (section 7).
-- Agent definitions (Claude Code sub-agents) for the main stages of delivery.
-- Reusable skills (e.g. "plan a feature", "review a PR", "accessibility audit", "profile a plugin").
+- Agent definitions (Claude Code sub-agents), skills, and hooks.
 - GitHub integration: issue and PR templates, CI workflows that enforce MUST rules, CODEOWNERS guidance.
-- A validation approach showing the rules improve agent output.
-- Layering so a team or organization can add or override rules without forking the core.
+- Fab-ready packaging and release checks for Unreal plugins.
+- An eval suite that shows which rules improve agent output, built early and run throughout.
+- Layering so a team or organization can add or remove rules without forking the core.
 
 ### Out of scope (initially)
 - Mobile-native (iOS/Android) and desktop-native apps outside Unreal.
 - Full Unreal game projects (the focus is plugins, though most plugin guidance applies to game modules too).
 - Vendor-specific hosting runbooks.
 - First-class support for agents other than Claude Code.
+- Depending on Epic's Unreal MCP tooling (UE 5.8+ only); it is optional for 5.8 projects (R34).
 
 ## 4. Guiding principles for the rules themselves
 
-1. **Actionable and verifiable.** Every rule states what to do and how compliance is checked (CI check, review checklist, or test). Vague guidance goes in best-practice docs, not rules.
-2. **Explained.** Each rule carries a one-line rationale so agents can apply judgement in edge cases.
-3. **Graded.** RFC 2119 levels (MUST / SHOULD / MAY) tell agents what is negotiable.
-4. **Context-budget aware.** Always-loaded instructions stay short. Detail lives in files loaded on demand (by path-scoped rules, skills, or agents), so agents are not flooded with irrelevant text.
-5. **Enforced by tooling where possible.** If a linter, compiler, test, or CI job can enforce a rule, that is preferred over prose. Each MUST rule declares `verified-by: ci`, `review`, or `test`.
-6. **Stable IDs.** Rules have IDs (e.g. `A11Y-003`, `UE-PERF-002`) so reviews, PR comments, and agents can cite them precisely.
-7. **Layered.** Core, then stack pack, then organization, then team, then project, then personal. Later layers may add rules or relax SHOULD/MAY rules; relaxing a MUST requires a recorded exception (ADR or inline waiver citing the rule ID).
+1. **Only what the agent can't infer.** Rules hold project decisions, thresholds, non-obvious constraints, and known failure modes. No rule restates what a linter, formatter, compiler, or the model's general knowledge already covers (R5).
+2. **Plain, scoped sentences with a reason.** Each rule body is an imperative sentence with a short "because" and an explicit scope (R3). No emphatic wording; a lint rejects legacy phrasing such as "CRITICAL", "double-check", "think step by step", "show your reasoning", "if in doubt", and "only report important" (R4).
+3. **Level lives in metadata.** MUST / SHOULD / MAY is recorded in the `level` field, not written as capitals in the body (R3).
+4. **Concrete checks over generic verification.** Rules name the command that proves compliance and require its output as evidence, rather than telling the agent to "verify" (R8).
+5. **Mechanical enforcement for invariants.** Every MUST rule maps to a hook (blocking with exit code 2), a CI job, or both (R24). Text alone is not enough for rules that must always hold.
+6. **Stable IDs and traceability.** Rules have IDs (e.g. `A11Y-003`, `UE-PERF-002`) and record the failure mode they target and the models they were observed on (R2).
+7. **Layered by removal.** Claude Code concatenates instruction files and resolves conflicts arbitrarily, so layers remove or replace rule files; they never add a contradicting line (R17).
+8. **Rules earn their place.** A rule stays only if evals show it lowers its target failure rate without reducing success or adding disproportionate cost (R38). Rules are re-evaluated on every new model generation.
 
 ## 5. Designing for Opus/Sonnet 5.5-class agents
 
-The rules target highly capable models. These are working assumptions; Phase 0 research will confirm, refine, or replace them before the format spec is fixed.
+Phase 0 confirmed or revised each working assumption (see the verdict table in findings.md).
 
-1. **Don't restate what the model already knows.** These models already know what WCAG, OWASP, or the Epic coding standard are. Rules name the standard, the threshold, and the project's decision (e.g. "WCAG 2.2 AA", "LCP under 2.5 s at p75"), not tutorials. Instruction space goes to project-specific choices, non-obvious constraints, and known failure modes.
-2. **Explain intent, then trust judgement.** Give the goal and the reason, and let the agent choose the steps. Reserve step-by-step procedures for things that must happen in a fixed order (releases, migrations, packaging).
-3. **Calibrated, plain wording.** Capable models follow instructions closely and literally, so emphatic wording ("CRITICAL", "NEVER EVER", all caps) can cause over-application. Use RFC 2119 levels and normal sentences; state scope precisely so a rule is not applied where it doesn't belong.
-4. **Say what to do, not only what to avoid.** Positive instructions with a short example are followed more reliably than lists of prohibitions.
-5. **Target known failure modes of strong agents.** Examples to check in research: over-engineering and speculative abstraction, changes wider than the request, editing or weakening tests to make them pass, declaring work done without running checks, and inventing APIs (a real risk with Unreal's large and version-specific API).
-6. **Verification loops over trust.** Give agents concrete ways to check their own work (commands to run, screenshots via a browser tool, Automation tests, profiling captures) and require evidence in their reports.
-7. **Context as a resource.** Long context windows still have costs: attention dilution, slower and more expensive runs. Use progressive disclosure (short always-on core, path-scoped rules, skills loaded on demand) and sub-agents to keep the main context focused.
-8. **Model choice per agent.** Agent definitions set a model where it matters. Starting assumption: Opus for planning, architecture, and difficult review; Sonnet for well-scoped implementation and routine checks. Evals decide the final mapping.
-9. **Parallelism.** Structure reviews and audits so independent agents can run concurrently and report in a common findings format the `tech-lead` can merge.
+1. **Don't restate what the model knows.** Confirmed and strengthened: context files that describe the repo add cost without improving success.
+2. **Explain intent, then trust judgement.** Confirmed. Give the goal and reason; keep fixed procedures for releases, migrations, and packaging.
+3. **Calibrated, plain wording.** Confirmed. Emphatic wording over-triggers on current models; levels move into metadata.
+4. **Say what to do.** Confirmed with nuance: positive framing by default, plus short lists that name concrete patterns to avoid.
+5. **Target known failure modes.** Confirmed. The main ones are editing tests to pass (the dominant gaming route for Claude), scope creep and over-engineering, destructive git and database operations, invented or version-mismatched APIs, and unsupported claims of success.
+6. **Concrete verification, not generic "verify".** Revised. Generic verification lines cause over-verification on Opus 5+, while a concrete command helps Sonnet 5.5 at low effort. Give the command and require its output.
+7. **Context as a resource.** Confirmed, with session hygiene added: adherence drops as sessions grow, so keep sessions focused, start fresh after repeated failed corrections, and use sub-agents for exploration (R12).
+8. **Model and effort per agent.** Confirmed. Set `model` and `effort` in agent frontmatter instead of "think carefully" in the body (R21).
+9. **Parallel reading, single-threaded writing.** Narrowed. Parallel agents for research and review; one writing agent at a time (R20). Never share one Unreal MCP editor between agents.
+10. **Literal reading of filters.** New. Reviewers report every finding with severity; filtering happens in a separate pass, because "only report high severity" suppresses real findings (R19).
 
-## 6. Proposed repository structure
+## 6. Repository structure and distribution
+
+### Repository layout
 
 ```
 rules-for-robots/
 ├── README.md                     # What this is, how to adopt it
 ├── LICENSE                       # MIT
-├── CLAUDE.md                     # Entry point for working on this repo itself
+├── AGENTS.md                     # Instructions for working on this repo (canonical)
+├── CLAUDE.md                     # Thin: imports AGENTS.md
 ├── .claude-plugin/
-│   └── marketplace.json          # Lets the repo act as a Claude Code plugin marketplace
+│   └── marketplace.json          # The repo is a Claude Code plugin marketplace
 ├── plugins/
-│   ├── core/                     # Core plugin: rules, agents, skills, hooks
+│   ├── core/                     # Skills, agents, hooks, rule installer skill
 │   │   ├── .claude-plugin/plugin.json
 │   │   ├── agents/
 │   │   ├── skills/
-│   │   └── hooks/
-│   ├── web/                      # Stack-pack plugins (installed as needed)
+│   │   └── hooks/hooks.json
+│   ├── web/
 │   └── unreal/
-├── rules/                        # Short, enforceable, ID'd rules (source of truth)
+├── rules/                        # Source of truth for all rules
 │   ├── core/
-│   │   ├── 00-working-agreement.md   # Always-on: how agents work
-│   │   ├── architecture.md
-│   │   ├── code-quality.md
-│   │   ├── testing.md
-│   │   ├── user-centred-design.md
-│   │   ├── accessibility.md
-│   │   ├── performance.md
-│   │   ├── security-privacy.md
-│   │   ├── api-design.md
-│   │   ├── data-and-persistence.md
-│   │   ├── observability.md
-│   │   ├── documentation.md
-│   │   └── git-and-github.md
-│   └── packs/                    # Stack-pack rules (see section 7)
+│   └── packs/<pack>/
 ├── practices/                    # Longer best-practice guides with examples
-├── templates/                    # Feature spec, ADR, PR, issue forms, runbook, CLAUDE.md starters
-├── checks/                       # Reusable CI workflows, lint presets, scripts
-├── template-repos/               # Starter layouts for the template-repo distribution
-├── evals/                        # Tasks and rubrics for validating the rules
+├── templates/                    # Feature spec, ADR, PR, issue forms, runbook
+├── template-repos/               # Rendered starter repos (web app, static site, Unreal plugin)
+├── build/                        # Renders rules/ into template repos and the installer payload
+├── checks/                       # Reusable CI workflows, rule-file lint, scripts
+├── evals/                        # Tasks, graders, and results
 └── docs/
-    ├── adoption-guide.md         # Solo, team, and organization adoption paths
+    ├── research/                 # Phase 0 findings, recommendations, sources
+    ├── adoption-guide.md
     ├── layering-and-overrides.md
     └── contributing.md
 ```
 
-How the two distribution channels relate: `rules/`, `practices/`, and `templates/` are the source of truth. The plugins package agents, skills, and hooks that reference them. The template repos are pre-wired starting points (CLAUDE.md, CI workflows, PR template) for new projects, and they install the plugins.
+### What each channel carries (R13, R14)
+
+Claude Code plugins cannot ship `CLAUDE.md` or `.claude/rules/`, so delivery is split:
+
+| Channel | Carries |
+|---|---|
+| Template repos | `AGENTS.md` (canonical), a thin `CLAUDE.md` containing `@AGENTS.md`, rendered `.claude/rules/` files with `paths:` globs, and `.claude/settings.json` (permission rules, `enabledPlugins`, `extraKnownMarketplaces`) |
+| Plugins | Skills, agents, `hooks/hooks.json`, and an installer skill (`disable-model-invocation: true`) that copies selected rule packs into an existing repo's `.claude/rules/` |
+
+`rules/` is the single source of truth. A build step renders it into the template repos and the installer payload, writing outside any tool-managed blocks such as the Next.js `nextjs-agent-rules` markers (R42). A SessionStart hook that injects rules is a fallback only. Plugin `version` is bumped on every release (R16).
+
+### Rule file format (to be finalized in Phase 1)
+
+Source files in `rules/` carry metadata for people and tooling; only `paths` affects loading (R1, R2):
+
+```yaml
+---
+id: TEST-001
+title: Do not edit tests to make them pass
+level: MUST
+scope: core
+paths: ["**/*.test.ts", "**/Tests/**"]
+verified-by: hook, ci
+targets-failure: test-gaming
+observed-on: [opus-4.7, sonnet-4.6]
+rationale: Claude models game tasks mainly by editing tests.
+---
+Leave existing tests unchanged when making them pass, because ...
+```
+
+Phase 1 tests whether frontmatter and HTML comments reach the model (R7). If frontmatter is sent, the rendered files move metadata into a stripped comment block. CI validates YAML, because invalid YAML makes a scoped rule load everywhere (R6).
 
 ## 7. Stack packs
 
-Each pack adds rules, practices, CI checks, and agent guidance for its stack. Packs can be combined (a web app typically uses `web-platform` + `typescript` + one framework pack + `node-services`).
+Each pack adds rules, practices, CI checks, and agent guidance. Packs combine (a web app typically uses `web-platform` + `typescript` + `react-nextjs` + `node-services`).
 
-| Pack | Covers | Example tooling and checks |
+| Pack | Covers | Key checks and rules |
 |---|---|---|
-| `web-platform` | Semantic HTML, CSS architecture, responsive design, browser APIs, SEO basics, accessibility specifics | axe-core, Lighthouse CI budgets, HTML validation, Stylelint |
-| `typescript` | Strict typing, module boundaries, error handling, dependency hygiene | `tsc --noEmit` (strict), ESLint, Prettier, Vitest |
-| `react-nextjs` | Component design, state management, server/client rendering choices, data fetching, caching | React-specific lint rules, Playwright end-to-end tests, bundle analysis |
-| `static-sites` | Content-heavy sites (e.g. Astro), content modelling, image pipelines, minimal JavaScript | Link checking, image budgets, Lighthouse |
-| `node-services` | APIs, auth, validation, background jobs, Postgres, migrations, caching, rate limiting; deployment on Vercel (serverless and edge function limits, connection pooling, preview deployments, environment variables and secrets) | Schema validation, migration checks, contract tests, load-test baselines, preview-deployment smoke tests |
-| `unreal-plugin` | Plugin and module structure (`.uplugin`, runtime vs. editor modules), Epic C++ coding standard, UObject and GC rules, Blueprint API design, subsystems, replication, asset and content conventions, editor tooling UX, packaging for Fab and multiple engine versions | clang-format, include-what-you-use style checks, `.uplugin` validation, Automation Spec tests, BuildPlugin/RunUAT packaging, Unreal Insights profiling checklists |
+| `web-platform` | Semantic HTML, CSS, responsive design, browser APIs, SEO basics, accessibility | axe with WCAG 2.2 tags and `target-size` enabled (R44); scripted checks for 2.4.11, 2.5.7, 3.3.8 (R45); Lighthouse CI median of 3+ runs; Playwright CLI for agent browser checks (R29) |
+| `typescript` | Strict typing, module boundaries, error handling, dependency hygiene | `tsc --noEmit`, ESLint, Prettier, Vitest; no rule restates lint config (R5) |
+| `react-nextjs` | Next.js 16: components, rendering, caching, data fetching | Bundled docs first (R30, R46); `/_next/mcp` and `agent-browser` while iterating; `next build` before done; current defaults (`proxy.ts`, `fetch` uncached, `use cache` with `cacheComponents`); leave the managed `AGENTS.md` block alone (R42); size-limit bundle budgets; e2e tests for async Server Components |
+| `static-sites` | Astro 7: content modelling, images, minimal JavaScript | Astro docs MCP (R46); check for a running dev server (R47); verify CSP with build and preview |
+| `node-services` | APIs, auth, validation, jobs, Postgres, Vercel deployment | No `push`, `migrate dev`, `reset`, or `--force` on shared databases, enforced by hook (R49); squawk and expand-and-contract (R50); Neon previews contain production data (R51); direct connection for migrations, gated production step (R52); pinned ORM major (R53); Vercel limits (R48); Vercel MCP write tools behind prompts (R43) |
+| `unreal-plugin` | Plugin and module structure, Epic coding standard, UObject/GC, Blueprint API, subsystems, replication, editor UX, Fab packaging | Coding-standard rules agents break (R56); headers and compiler as API truth, full build after header/reflection changes (R33); version guards for 5.8-only APIs (R59); no `Developer` module type (R57); `BuildSettingsVersion.V6` for 5.7+ (R58); Epic test ladder (R60); Fab descriptor, packaging, and copyright rules (R61 to R63) |
 
-Unreal CI constraint: building and testing plugins needs an engine installation, which hosted GitHub runners do not have. The plan provides two tiers:
-- **Tier 1 (any runner):** formatting, static checks, `.uplugin` and config validation, documentation checks.
-- **Tier 2 (self-hosted runner with the engine):** compile against each supported engine version (5.6 and later), run Automation tests headless, package the plugin with `RunUAT BuildPlugin`. Targets the existing Windows x64 runner via the `[self-hosted, Windows, X64, ue5]` labels.
+### Unreal CI tiers
 
-Tier 2 design points: workflows run only on trusted events (pushes and PRs from the repo itself, not forks) because self-hosted runners execute repo code; engine install paths per version come from runner configuration rather than being hard-coded; build output is cleaned between runs. MUST rules that depend on Tier 2 are marked, and a skill lets adopters without a build machine run the same checks locally.
+- **Tier 1 (any runner):** clang-format; `.uplugin` checks (every module has a platform list with UE5 names, `EngineVersion`, `FabURL` once known, no `Developer` type, no user-made plugin dependencies); `BuildSettingsVersion.V6`; `TObjectPtr` members without `UPROPERTY`; copyright headers; Fab packaging checks (no Binaries/Intermediate/Saved, `FilterPlugin.ini` for extra folders, paths of 170 characters or less, `Source/ThirdParty` only, no `.exe`/`.msi`, name characters) (R32, R61 to R63).
+- **Tier 2 (self-hosted `ue5` runner):** for each engine version (5.6, 5.7, 5.8), select the matching toolchain (R54), run `RunUAT BuildPlugin` with zero warnings allowed, run automation tests headless, and gate on the exported `index.json` or the `TEST COMPLETE` log line, never the process exit code (R31, R64).
+- **Runner hardening:** trusted events only (no fork PRs), ephemeral or reset runner, low-privilege account, no secrets on the machine, engine paths from runner configuration (R31).
+- **To verify on the runner in Phase 3:** BuildPlugin flags from `BuildPlugin.Automation.cs`, Unreal Insights headless flags, and the editor's exit code on failing tests (R55).
 
-## 8. Agent roster (draft)
+## 8. Agent roster
 
-Each agent has a focused remit, a minimal tool set, the rules it must load, a step-by-step method, and a defined output format (e.g. findings with rule IDs and severity). Engineers and reviewers load stack-pack rules based on the files they are working on.
+Start small and add agents only when evals show benefit (R18).
 
-| Agent | Role | Typical trigger | Output |
+| Agent | Role | Tools | Output |
 |---|---|---|---|
-| `tech-lead` | Breaks work down, sequences agents, resolves conflicting findings | Any multi-step task | Plan and hand-offs |
-| `product-analyst` | Turns a request into user stories, acceptance criteria, and non-functional requirements | New feature or vague request | Feature spec from template |
-| `ux-designer` | Flows, information architecture, content, interaction states; for plugins, editor UX, settings, and Blueprint ergonomics | After spec, before build | UX notes and component inventory |
-| `architect` | System and module design, interfaces, data model, trade-offs | Non-trivial change or new system | Design doc and ADRs |
-| `web-engineer` | Implements frontend and backend web code per the web packs | Build phase (web) | Code and tests |
-| `unreal-engineer` | Implements plugin C++ and Blueprint-facing APIs per the Unreal pack | Build phase (Unreal) | Code and tests |
-| `test-engineer` | Test strategy, missing tests, coverage of acceptance criteria | During and after build | Tests and gap report |
-| `accessibility-reviewer` | WCAG 2.2 AA for web; game and editor accessibility guidance for Unreal | Pre-merge for UI changes | Findings with rule IDs |
-| `performance-reviewer` | Web budgets, queries, caching; frame time, memory, tick usage, and loading for Unreal | Pre-merge, pre-release | Findings and measurements |
-| `security-reviewer` | Threat model review, OWASP Top 10, secrets, dependencies, privacy; network trust boundaries for replicated code | Pre-merge for sensitive areas | Findings with severity |
-| `code-reviewer` | Correctness, readability, maintainability, rule compliance | Every PR | Review comments |
-| `docs-writer` | README, API and Blueprint docs, changelogs, runbooks, ADR upkeep | Before merge | Docs updates |
-| `release-engineer` | CI/CD, versioning, feature flags, rollout and rollback; plugin packaging and engine-version matrix | Release | Release checklist |
+| `web-engineer` | Implements web code per the web packs | Read/write, stack commands | Code, tests, and the verification command's output |
+| `unreal-engineer` | Implements plugin C++ and Blueprint-facing APIs; checks symbols against installed engine headers; full build after header, `.Build.cs`, `.uplugin`, or reflection changes (R33) | Read/write, UBT/UAT commands | Code, tests, and build/test evidence |
+| `code-reviewer` | Correctness and requirement gaps, rule compliance | Read-only (R19) | Every finding with file, line, failure scenario, severity, rule ID |
+| `accessibility-reviewer` | WCAG 2.2 AA for web; editor and game accessibility for Unreal | Read-only | Findings in the common format |
+| `performance-reviewer` | Web budgets, queries, caching; frame time, memory, tick, loading for Unreal | Read-only plus measurement commands | Findings and measurements |
+| `security-reviewer` | Threat model, OWASP, secrets, dependencies, privacy, replication trust boundaries, migrations | Read-only | Findings with severity |
 
-Open design question: separate reviewer agents (sharper focus, can run in parallel) or one `code-reviewer` with checklists (less overhead). Start separate and merge if evals show no benefit.
+Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). Candidates to add later if evals justify them: `tech-lead`, `architect`, `product-analyst`, `ux-designer`, `test-engineer`, `docs-writer`, `release-engineer`.
 
 ## 9. Adapting for teams and organizations
 
-- **Personal layer:** `CLAUDE.local.md` and user-level settings for individual preferences.
-- **Project layer:** a project's `CLAUDE.md` picks packs and records project-specific rules and waivers.
-- **Team/organization layer:** an organization can publish its own plugin that adds rules, tightens SHOULD rules to MUST, and sets required CI checks, without editing the core.
-- **Governance:** CODEOWNERS for rule files, ADRs for rule changes, and a changelog so adopters can see what changed between versions.
+Instruction files are concatenated and conflicts resolve arbitrarily, so every layer works by adding, removing, or replacing whole rule files (R17):
 
-`docs/layering-and-overrides.md` will document the precedence order and the waiver format.
+- **Personal layer:** `CLAUDE.local.md` and user settings for preferences that don't conflict with project rules.
+- **Project layer:** choose packs at install time; waive a rule by replacing its file with a waiver that cites the rule ID and reason; exclude files with `claudeMdExcludes`.
+- **Team/organization layer:** an organization plugin adds rules, skills, and hooks; required CI checks enforce MUST rules. Organizations that need guarantees use managed settings and `strictPluginOnlyCustomization`.
+- **Governance:** CODEOWNERS for rule files, ADRs for rule changes, a changelog, and eval results attached to rule changes.
 
 ## 10. Delivery phases
 
-### Phase 0: Research
-Investigate current best practices for agentic development, with emphasis on tips that are not obvious and on what has changed with the latest models. Run before the format spec so structure decisions are grounded in evidence.
-
-Research questions:
-- **Instruction design for current models:** how Opus/Sonnet 5.5-class models respond to tone, emphasis, length, examples, and rationale; what earlier-model habits are now unnecessary or harmful.
-- **Claude Code mechanics:** current behaviour and best use of `CLAUDE.md` and imports, path-scoped rules, skills, sub-agents, hooks, plugins and marketplaces, output styles, permissions, and settings precedence. Which mechanism suits which kind of guidance.
-- **Context engineering:** what to keep always-on vs. on demand; how sub-agents, compaction, and long sessions affect rule adherence.
-- **Workflows that work:** plan-then-implement, test-first, spec-driven development, parallel agents and worktrees, review loops, headless and CI use of agents.
-- **Verification:** how agents can reliably check their own work for web (browser automation, Lighthouse, axe) and Unreal (command-line builds, Automation tests, Insights traces, editor-less workflows).
-- **Unreal-specific agent pitfalls:** API hallucination across engine versions, UObject and reflection macros, Live Coding and build times, binary assets agents can't read, and ways to give agents access to engine source and docs.
-- **Failure modes and guardrails:** known ways capable agents go wrong and which rules, hooks, or checks prevent them.
-- **Evaluating rule sets:** how others measure whether instructions improve output.
-
-Sources: Anthropic documentation and engineering posts, Claude Code docs and changelog, prompting guides for the current models, public rule and agent collections (e.g. AGENTS.md conventions, community Claude Code repos), Epic documentation and community knowledge for Unreal, and small hands-on experiments in this repo where sources disagree.
-
-Deliverables:
-- `docs/research/findings.md`: findings with sources, dates, and an evidence level (official, widely reported, single source, our own experiment).
-- `docs/research/recommendations.md`: concrete changes to this plan (format spec, structure, agent design), each linked to findings.
-- A short list of "tips and tricks" candidates to turn into rules or skills.
-
-**Exit criteria:** recommendations reviewed and accepted, rejected, or deferred; sections 4 to 8 of this plan updated to match.
+### Phase 0: Research (complete)
+Delivered `docs/research/findings.md`, `docs/research/recommendations.md` (R1 to R64, all accepted), `docs/research/notes/`, and `docs/research/sources/fab-requirements.md`.
 
 ### Phase 1: Foundations
-- Rule file format, informed by Phase 0 recommendations: frontmatter fields (`id`, `title`, `level`, `scope`, `applies-to` path globs, `verified-by`, `rationale`), ID scheme, Canadian spelling note.
-- Repo skeleton, `CLAUDE.md` for this repo, `docs/contributing.md`.
-- Plugin and marketplace manifests (empty shells) so packaging is tested from the start.
-- **Exit criteria:** format spec plus one fully worked rule file approved; the core plugin installs in Claude Code.
+- Finalize the rule file format (section 6) and ID scheme.
+- Test whether rule frontmatter and HTML comments reach the model, using the `InstructionsLoaded` hook (R7).
+- Repo skeleton, `AGENTS.md` and thin `CLAUDE.md` for this repo, `docs/contributing.md`.
+- Build step that renders `rules/` into a template repo and the installer payload (R14).
+- Rule-file CI: YAML validation, `paths` check, banned-phrase lint, word and line budgets, ID uniqueness (R4, R6); `claude plugin validate --strict` on plugin manifests.
+- Plugin and marketplace manifests with the installer skill shell.
+- **Exit criteria:** format spec and one fully worked rule file approved; the core plugin installs; the build step renders a working template repo; R7 answered.
 
-### Phase 2: Core rules
-- `00-working-agreement.md`: understand before changing, small steps, run checks before declaring done, never weaken or skip tests, ask when blocked, report results honestly.
-- Topic rule files, prioritizing code-quality, testing, security-privacy, architecture, performance, accessibility, user-centred design.
-- Sources: WCAG 2.2, OWASP ASVS and Top 10, web.dev guidance, Twelve-Factor App, Google SRE practices, established API design guides.
-- **Exit criteria:** every rule has an ID, level, rationale, and verification method; the always-on file stays under roughly 1,500 words.
+### Phase 2: Core rules and eval seed
+- `00-working-agreement` built from (R8 to R12):
+  - a concrete verification command whose output appears in the agent's report;
+  - an escape hatch: stop and report when the task or its tests look wrong or impossible, paired with the test-edit guard;
+  - named required stops: destructive or irreversible actions, material change of scope, a task or test that appears wrong;
+  - Anthropic's tested scope, minimal-change, and comment paragraphs, adapted;
+  - session hygiene.
+- Topic rule files, prioritizing testing, code-quality, security-privacy, architecture, performance, accessibility, user-centred design.
+- Default hooks: block destructive commands; require approval for test-file edits; run formatters after edits (R25).
+- A small eval harness (a handful of failure-targeted tasks, no-rules vs. rules) so each rule is tested as it is written (R39).
+- **Exit criteria:** every rule has full metadata and a verification method; the always-on core stays under 200 lines; each MUST rule maps to a hook or CI job; the seed evals run.
 
 ### Phase 3: Stack packs
-- Order: `unreal-plugin`, `typescript`, `web-platform`, `react-nextjs`, `node-services`, `static-sites`. (Order is adjustable; Unreal first because it has the least existing agent guidance.)
-- Sources for Unreal: Epic's coding standard, plugin and module documentation, Automation testing documentation, Fab technical requirements.
-- **Exit criteria:** each pack has rules, at least one practice guide, and Tier 1 CI checks.
+- Order: `unreal-plugin`, `typescript`, `web-platform`, `react-nextjs`, `node-services`, `static-sites`.
+- Content per section 7.
+- Verify BuildPlugin flags, Insights headless flags, and the editor exit code on the runner (R55).
+- **Exit criteria:** each pack has rules, at least one practice guide, and Tier 1 checks; the Unreal pack's Tier 2 workflow passes on the runner for 5.6, 5.7, and 5.8.
 
 ### Phase 4: Best-practice guides
-- Longer `practices/` guides linked to rule IDs, with short good/bad examples.
+- Longer `practices/` guides linked to rule IDs, with short good/bad examples. Point agents at exemplar files rather than describing patterns where possible.
 - **Exit criteria:** every rule file links to at least one guide; every guide is referenced by at least one rule.
 
-### Phase 5: Agents and skills
-- Agent definitions per section 8, with hand-off contracts (what each agent produces and consumes) and a model setting per section 5.
-- Skills: `plan-feature`, `implement-feature`, `review-pr`, `a11y-audit`, `perf-audit`, `security-review`, `write-adr`, `release`, `profile-unreal-plugin`, `package-unreal-plugin`.
-- Hooks where they add value (e.g. run format and lint after edits).
-- **Exit criteria:** each agent tested on at least two sample tasks with output in its declared format.
+### Phase 5: Agents, skills, and hooks
+- Agents per section 8.
+- Skills: `plan-feature`, `implement-feature`, `review-pr`, `a11y-audit`, `perf-audit`, `security-review`, `write-adr`, `install-rules`, `release`, `profile-unreal-plugin`, `package-unreal-plugin`. Side-effecting skills set `disable-model-invocation: true` (R23). Critical content stays in each skill's first 5,000 tokens.
+- Hooks in `hooks/hooks.json`, including agent-specific filters and the database (R49) and Vercel MCP (R43) guards.
+- **Exit criteria:** each agent and skill tested on at least two sample tasks with output in its declared format.
 
 ### Phase 6: GitHub integration and templates
-- PR template with a rule-ID checklist, issue forms, ADR and feature spec templates.
-- Reusable GitHub Actions workflows in `checks/` that enforce MUST rules, plus the self-hosted Unreal workflow.
-- Template repos for: web app, static site, Unreal plugin.
-- **Exit criteria:** a new repo created from a template is fully wired (CI, plugin, CLAUDE.md) in under an hour by following the adoption guide.
+- PR template with rule-ID checklist, issue forms, ADR and feature spec templates.
+- Reusable workflows in `checks/`:
+  - web CI per R28;
+  - migration checks per R50;
+  - the test, baseline, and budget change guard (R26);
+  - Unreal Tier 1 and Tier 2;
+  - any Claude-in-CI job uses `--bare` and never runs on fork PRs (R27).
+- Template repos for web app, static site, and Unreal plugin, rendered by the build step.
+- **Exit criteria:** a new repo created from a template is fully wired (CI, plugin, `AGENTS.md`) in under an hour by following the adoption guide.
 
 ### Phase 7: Reference projects
-- A small web app and a small Unreal plugin built with the full set of agents and rules.
+- A small web app and a small Unreal plugin built with the full set of agents and rules. The plugin passes the Fab release flow (R64) for all supported engine versions.
 - **Exit criteria:** both pass their own checks and meet declared budgets.
 
-### Phase 8: Validation and evals
-- `evals/` with representative tasks, e.g. "add a search page", "add a paginated API endpoint", "fix an accessibility bug", "add a replicated component to a plugin", "expose a subsystem to Blueprints".
-- Run each task with and without the rule set, on both Opus 5.5 and Sonnet 5.5; score against rubrics tied to the quality attributes.
-- Test the Phase 0 assumptions directly (e.g. emphatic vs. plain wording, rules with vs. without rationale).
-- Remove or rewrite rules that do not change behaviour or that agents misapply.
-- **Exit criteria:** measurable improvement for most tasks; no rule that consistently makes output worse.
+### Phase 8: Evals
+- Arms: no rules, full set, leave-one-pack-out, and single-rule ablations for MUST rules; Opus 5.5 and Sonnet 5.5 at recorded effort levels; Claude Code version recorded (R35).
+- 20 to 50 failure-targeted tasks, including impossible-task variants with and without the escape hatch, over-engineering temptations, a dirty working tree, a Next.js 16 task, an Unreal task using an API changed between 5.6 and 5.8, and a database task where `push` or `--force` is tempting (R36).
+- Graders: held-out tests, deterministic diff and transcript checks, and a calibrated LLM judge for scope and evidence-backed reporting; report pass@1, pass^k (k of 3 or more), cost, and failure-mode rates (R37).
+- Test the Phase 0 open questions directly: plain vs. emphatic wording, rationale vs. none, keywords in body vs. metadata, concrete vs. generic verification, specialist reviewers vs. one checklist reviewer.
+- **Exit criteria:** every rule either shows a measurable effect or is removed or rewritten (R38).
 
 ### Phase 9: Release and maintenance
-- Semantic versioning for the rule set and plugins; changelog.
-- Quarterly review to keep standards current (e.g. new Unreal versions, WCAG updates), plus a lighter repeat of Phase 0 research and the eval suite whenever a new model generation ships.
-- **Exit criteria:** v1.0 tagged; plugin installable from the marketplace; template repos published.
+- Semantic versioning for the rule set and plugins; plugin `version` bumped every release; changelog.
+- Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
+- **Exit criteria:** v1.0 tagged; plugins installable from the marketplace; template repos published.
 
 ## 11. Milestones
 
-| Milestone | Contents |
-|---|---|
-| M1 | Phase 0 research: findings, recommendations, and plan updates |
-| M2 | Phase 1 foundations + core working agreement, code-quality, testing |
-| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs |
-| M4 | Remaining web packs + practice guides |
-| M5 | Agents, skills, hooks |
-| M6 | GitHub integration, CI workflows, template repos |
-| M7 | Reference projects, evals, revisions, v1.0 |
+| Milestone | Contents | Status |
+|---|---|---|
+| M1 | Phase 0 research, recommendations, plan update | Done |
+| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Next |
+| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | |
+| M4 | Remaining web packs + practice guides | |
+| M5 | Agents, skills, hooks | |
+| M6 | GitHub integration, CI workflows, template repos | |
+| M7 | Reference projects, full evals, revisions, v1.0 | |
 
-Each milestone lands as one or more PRs so the work stays reviewable.
+From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 ## 12. Open questions
 
-None at present. Questions raised during Phase 0 will be recorded here.
+1. Does Claude Code send rule-file frontmatter and HTML comments to the model? Test in Phase 1 (R7).
+2. Which `BuildPlugin` and Unreal Insights headless flags exist in the installed engines? Verify on the runner in Phase 3 (R55).
+3. What process exit code does `UnrealEditor-Cmd` return when automation tests fail? Verify on the runner; gate on the report regardless (R31, R55).
+4. Do behavioural rules (as opposed to repository descriptions) measurably help 5.5-class models? No published study has tested this; answered by Phase 2 and Phase 8 evals.
 
 ## 13. Risks and mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Rules become too long for agents to follow reliably | Word budget for always-on files; path-scoped loading; evals to prune |
-| Rules conflict (e.g. performance vs. extensibility) | Priority order in the working agreement; `tech-lead` resolves; ADRs record trade-offs |
-| Unreal checks can't run on hosted CI | Two-tier CI on the self-hosted `ue5` runner; local skill fallback for adopters without one |
-| Self-hosted runner executes untrusted code from fork PRs | Tier 2 workflows restricted to trusted events; documented runner hardening |
-| Guidance goes stale (engine, framework, and standard updates) | Cite sources with dates; quarterly reviews; versioned releases |
-| Overly prescriptive rules block reasonable choices | MUST reserved for genuine requirements; waiver format for exceptions |
-| Hard to show value | Phase 8 evals with before/after comparisons |
-| Model behaviour changes between releases, making some rules redundant or counterproductive | Record which model each eval ran on; re-run evals on new model releases; prefer rationale over model-specific workarounds and tag workarounds so they can be found and removed |
-| Research surfaces popular but unproven tips | Each recommendation records its source and evidence level; anything adopted as a MUST needs an eval or an authoritative source |
+| Rules add cost without improving results (as published studies found for repo context files) | Keep the core short; evals from Phase 2; remove rules without measurable effect (R38, R39) |
+| Agents game tasks by editing tests | Test-edit hook (R25) and deterministic CI guard (R26) as primary defence; escape hatch as support (R9) |
+| Rule adherence drops in long sessions | Session hygiene (R12); mechanical enforcement for invariants (R24) |
+| Conflicting instructions resolve arbitrarily | Layering by removal or replacement only (R17) |
+| Destructive git or database operations | PreToolUse hooks for destructive commands and migration commands (R25, R49) |
+| Privileged tools (Vercel MCP, Unreal MCP) act beyond intent | Permission prompts for write tools (R43); Unreal MCP optional and never shared between agents (R34) |
+| Self-hosted runner executes untrusted code | Trusted events only, ephemeral runner, no secrets (R31) |
+| Guidance goes stale (engine, framework, model updates) | Sources dated; quarterly reviews; `observed-on` metadata; re-run evals on new models |
+| Evidence for some figures is still indirect | Claims from still-blocked sources may not support a MUST rule (R40) |
 
 ## 14. Immediate next steps
 
-1. Start Phase 0 research.
-2. Use the research report to confirm or revise sections 4 to 8, then start Phase 1.
+1. Merge PR #1 (plan and Phase 0 research).
+2. Start Phase 1 on a new branch: rule format spec and the R7 test, repo skeleton, build step, rule-file CI, and plugin manifests.
