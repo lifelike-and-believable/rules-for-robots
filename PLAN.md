@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.9 (2026-10-05). Phases 0 to 2 and 4 to 6 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 7 in progress (web app done). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v1.0.0 (2026-10-05). Phases 0 to 7 and 9 complete. Phase 8 has two eval rounds done; long-session cases, ablations, and the wording experiments continue after 1.0. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -223,8 +223,8 @@ Delivered: working agreement `WA-001` to `WA-007`; core rules `TEST-002`/`003`, 
 - A small eval harness (a handful of failure-targeted tasks, no-rules vs. rules) so each rule is tested as it is written (R39).
 - **Exit criteria:** every rule has full metadata and a verification method; the always-on core stays under 200 lines; each MUST rule maps to a hook or CI job; the seed evals run.
 
-### Phase 3: Stack packs (rules and Tier 1 complete; Tier 2 run pending)
-Delivered: all six packs (`unreal-plugin` 12 rules, `typescript` 2, `web-platform` 4, `react-nextjs` 4, `node-services` 8, `static-sites` 3); `checks/unreal/tier1.mjs`; the `RfrSample` plugin; the Tier 2 workflow with a runner probe for R55; the `guard-mcp` hook for the Vercel MCP server. Remaining: the first Tier 2 run on the `ue5` runner and the probe answers.
+### Phase 3: Stack packs (complete)
+Delivered: all six packs (`unreal-plugin` 12 rules, `typescript` 2, `web-platform` 4, `react-nextjs` 4, `node-services` 8, `static-sites` 3); `checks/unreal/tier1.mjs`; the `RfrSample` plugin; the Tier 2 workflow with a runner probe for R55; the `guard-mcp` hook for the Vercel MCP server. Tier 2 builds and tests `RfrSample` on UE 5.6, 5.7, and 5.8 on the `ue5` runner, and the probe answered open questions 2 and 3.
 
 - Order: `unreal-plugin`, `typescript`, `web-platform`, `react-nextjs`, `node-services`, `static-sites`.
 - Content per section 7.
@@ -258,8 +258,8 @@ Delivered: shared PR template, issue forms, guards workflow, and `.claude/settin
 - Template repos for web app, static site, and Unreal plugin, rendered by the build step.
 - **Exit criteria:** a new repo created from a template is fully wired (CI, plugin, `AGENTS.md`) in under an hour by following the adoption guide.
 
-### Phase 7: Reference projects (web app complete; Unreal plugin waits on Tier 2)
-Web app: `examples/web-app` built from the template by the `rfr-core` agents, passing all checks and budgets; the build exposed seven template and hook gaps, all fixed ([reference projects](docs/reference-projects.md)). Unreal: `examples/unreal/RfrSample` compiles on UE 5.6 on the runner; the full matrix and Fab release flow wait on the Tier 2 rerun.
+### Phase 7: Reference projects (complete)
+Web app: `examples/web-app` built from the template by the `rfr-core` agents, passing all checks and budgets; the build exposed seven template and hook gaps, all fixed. Unreal: `examples/unreal-plugin` (RfrCooldowns) built from the template by the `unreal-engineer` agent for $1.92. Tier 2 builds it with zero warnings, passes its 16 specs, and produces a staged Fab package on UE 5.6, 5.7, and 5.8. The agent's one test failure (a subsystem created without its required outer) moved into UE-007, and the Fab rehearsal exposed a spurious Tier 1 warning, now fixed ([reference projects](docs/reference-projects.md)). A real Fab submission is still to come; #36 waits on it.
 
 - A small web app and a small Unreal plugin built with the full set of agents and rules. The plugin passes the Fab release flow (R64) for all supported engine versions.
 - **Exit criteria:** both pass their own checks and meet declared budgets.
@@ -273,9 +273,11 @@ Web app: `examples/web-app` built from the template by the `rfr-core` agents, pa
 
 Status: first round done ([report](evals/results/2026-10-05-phase8/report.md)). Five harder cases, 2 models, 3 arms, 3 runs: test-gaming and test-first cases show clear rule effects; data-loss, over-engineering, and Next.js 16 cases do not. NEXT-001 narrowed. Graders now have unit tests. Still to do: an Unreal API-change case, leave-one-pack-out and single-rule ablations, the wording experiments, and harder variants of the cases that showed no effect.
 
-Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested the rules proposed from the Open3DBroadcast adoption (#28 to #35) with three single-task cases. The no-rules baseline passed 18/18, so the candidate rules (in `evals/candidates/`) were not added; the advice went into the practice guides instead. Discriminating cases need multi-prompt, long-session support in the harness.
+Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested the rules proposed from the Open3DBroadcast adoption (#28 to #35) with three single-task cases. The no-rules baseline passed 18/18, so the candidate rules (in `evals/candidates/`) were not added; the advice went into the practice guides instead. Discriminating cases need multi-prompt, long-session support in the harness, which now exists (`prompts/*.md` per case). The long-session cases (#28 to #35, #33) and the rest of this phase continue after 1.0.
 
-### Phase 9: Release and maintenance
+### Phase 9: Release and maintenance (v1.0.0 released)
+Delivered: semantic versioning shared by the rule set and `rfr-core`, checked by `checks/release.mjs`; [changelog](CHANGELOG.md); [maintenance guide](docs/maintenance.md); v1.0.0 tagged. The plugins install from this repository's marketplace, and the template repos are published as generated folders in `template-repos/`.
+
 - Semantic versioning for the rule set and plugins; plugin `version` bumped every release; changelog.
 - Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
 - **Exit criteria:** v1.0 tagged; plugins installable from the marketplace; template repos published.
@@ -286,11 +288,11 @@ Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested th
 |---|---|---|
 | M1 | Phase 0 research, recommendations, plan update | Done |
 | M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Done |
-| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done (Tier 2 run pending) |
+| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done |
 | M4 | Remaining web packs + practice guides | Done |
 | M5 | Agents, skills, hooks | Done |
 | M6 | GitHub integration, CI workflows, template repos | Done |
-| M7 | Reference projects, full evals, revisions, v1.0 | |
+| M7 | Reference projects, full evals, revisions, v1.0 | Done for v1.0; the remaining Phase 8 evals continue |
 
 From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
@@ -317,5 +319,7 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 ## 14. Immediate next steps
 
-1. Merge PR #1 (plan and Phase 0 research).
-2. Start Phase 1 on a new branch: rule format spec and the R7 test, repo skeleton, build step, rule-file CI, and plugin manifests.
+1. Triage the external review issues #47 to #64.
+2. Long-session eval cases for #28 to #35 and #33, using the multi-prompt harness.
+3. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.
+4. The first real Fab submission, which answers #36.
