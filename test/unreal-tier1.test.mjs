@@ -103,3 +103,10 @@ test('Target.cs files in the example project need BuildSettingsVersion.V6', () =
   fs.writeFileSync(path.join(project, 'Source', 'Host.Target.cs'), 'DefaultBuildSettings = BuildSettingsVersion.V6;');
   assert.deepEqual(errorsOf(SAMPLE, { project }), []);
 });
+
+test('automation report summary uses index.json counts', async () => {
+  const { summarize } = await import('../checks/unreal/ci/read-automation-report.mjs');
+  assert.deepEqual(summarize({ succeeded: 2, succeededWithWarnings: 0, failed: 1, notRun: 0, tests: [{}, {}, {}] }),
+    { succeeded: 2, succeededWithWarnings: 0, failed: 1, notRun: 0, total: 3 });
+  assert.equal(summarize({ tests: [{ state: 'Success' }, { state: 'Fail' }] }).failed, 1);
+});
