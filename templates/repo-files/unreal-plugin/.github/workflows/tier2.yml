@@ -33,6 +33,10 @@ jobs:
         with:
           repository: lifelike-and-believable/rules-for-robots
           path: .rfr
+      # Self-hosted runner service accounts often have no Node on their PATH; the report reader needs it.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
       - name: Build and test
         shell: powershell
         run: ./Scripts/Verify.ps1 -EngineVersion $env:ENGINE_VERSION -EngineRoot $env:ENGINE_ROOT_VAR -PluginDir $env:PLUGIN_DIR -PluginName $env:PLUGIN_NAME -TestFilter $env:TEST_FILTER -ReportReader .rfr/checks/unreal/ci/read-automation-report.mjs -WorkDir "$env:RUNNER_TEMP\verify-$env:ENGINE_VERSION"

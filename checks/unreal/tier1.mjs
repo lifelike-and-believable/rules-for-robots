@@ -76,7 +76,8 @@ export function checkPlugin(pluginDir, { copyright, project, allowMissingFabUrl 
     if (allowMissingFabUrl) warnings.push('FAB-001: FabURL is not set yet; add it once the Fab product exists');
     else err('FAB-001', 'FabURL is missing');
   }
-  if ('MarketplaceURL' in descriptor) warnings.push('FAB-001: MarketplaceURL is the old Marketplace field; Fab uses FabURL');
+  // BuildPlugin writes an empty MarketplaceURL into packaged descriptors, so only a set value is worth a warning.
+  if (descriptor.MarketplaceURL) warnings.push('FAB-001: MarketplaceURL is the old Marketplace field; Fab uses FabURL');
   const modules = descriptor.Modules ?? [];
   if (!modules.length) err('FAB-003', 'a code plugin needs at least one module');
   for (const m of modules) {

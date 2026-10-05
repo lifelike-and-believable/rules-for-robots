@@ -43,6 +43,8 @@ Copy-Item -Recurse "$WorkDir\pkg\$PluginName" "$hostDir\Plugins\$PluginName"
 $report = "$WorkDir\report"
 & (Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe') "$hostDir\Host.uproject" "-ExecCmds=Automation RunTests $TestFilter;Quit" -unattended -nullrhi -nosound -nopause "-ReportExportPath=$report" "-abslog=$WorkDir\editor.log" | Out-Null
 Select-String -Path "$WorkDir\editor.log" -Pattern 'TEST COMPLETE' | ForEach-Object { Write-Host $_.Line }
+# Show why tests failed: automation errors, failed expectations, ensures, and errors logged during tests.
+Select-String -Path "$WorkDir\editor.log" -Pattern 'LogAutomationController: Error|Expected .* to be|Ensure condition failed|: Error: ' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
 
 if ($ReportReader) {
   node $ReportReader $report

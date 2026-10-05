@@ -14,6 +14,8 @@ on:
     branches: [main]
     paths:
       - examples/unreal/**
+      - examples/unreal-plugin/**
+      - templates/repo-files/unreal-plugin/**
       - checks/unreal/**
       - .github/workflows/unreal-tier2.yml
 
@@ -134,3 +136,60 @@ jobs:
         if: always()
         shell: powershell
         run: if ($env:RFR_WORK -and (Test-Path $env:RFR_WORK)) { Remove-Item -Recurse -Force $env:RFR_WORK }
+
+  # The reference plugin (docs/reference-projects.md), verified with the unreal-plugin
+  # template's own Verify.ps1, so the template script is exercised on every engine too.
+  reference-plugin:
+    needs: build-and-test
+    if: always()
+    runs-on: [self-hosted, Windows, X64, ue5]
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ['5.6', '5.7', '5.8']
+    env:
+      ENGINE_VERSION: ${{ matrix.engine }}
+      ENGINE_ROOT_VAR: ${{ matrix.engine == '5.6' && vars.UE_5_6_ROOT || matrix.engine == '5.7' && vars.UE_5_7_ROOT || vars.UE_5_8_ROOT }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verify RfrCooldowns
+        shell: powershell
+        working-directory: examples/unreal-plugin
+        run: ./Scripts/Verify.ps1 -EngineVersion $env:ENGINE_VERSION -EngineRoot $env:ENGINE_ROOT_VAR -PluginDir Plugins/RfrCooldowns -PluginName RfrCooldowns -TestFilter RfrCooldowns -ReportReader ../../checks/unreal/ci/read-automation-report.mjs -WorkDir "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION"
+      # Fab release rehearsal (practices/unreal-plugin-development.md, Fab release checklist):
+      # stage what would be zipped for this engine version, check it, zip it.
+      - name: Fab package rehearsal
+        shell: powershell
+        run: |
+          $pkg = "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION\pkg\RfrCooldowns"
+          $fab = "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION\fab"
+          New-Item -ItemType Directory -Force -Path $fab | Out-Null
+          Copy-Item -Recurse $pkg "$fab\RfrCooldowns"
+          foreach ($d in 'Binaries', 'Intermediate', 'Saved', 'HostProject') { if (Test-Path "$fab\RfrCooldowns\$d") { Remove-Item -Recurse -Force "$fab\RfrCooldowns\$d" } }
+          Get-ChildItem "$fab\RfrCooldowns" | ForEach-Object { Write-Host "package: $($_.Name)" }
+          Select-String -Path "$fab\RfrCooldowns\RfrCooldowns.uplugin" -Pattern '"EngineVersion"' | ForEach-Object { Write-Host $_.Line.Trim() }
+          node checks/unreal/tier1.mjs "$fab\RfrCooldowns" --copyright "Lifelike & Believable Animation Design" --allow-missing-fab-url
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Compress-Archive -Path "$fab\RfrCooldowns" -DestinationPath "$fab\RfrCooldowns-UE$env:ENGINE_VERSION.zip" -Force
+          Write-Host "Fab package: RfrCooldowns-UE$env:ENGINE_VERSION.zip ($([math]::Round((Get-Item "$fab\RfrCooldowns-UE$env:ENGINE_VERSION.zip").Length / 1KB)) KB)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fab-package-${{ matrix.engine }}
+          path: ${{ runner.temp }}/ref-${{ matrix.engine }}/fab/*.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reference-plugin-${{ matrix.engine }}
+          path: |
+            ${{ runner.temp }}/ref-${{ matrix.engine }}/*.log
+            ${{ runner.temp }}/ref-${{ matrix.engine }}/report/**
+          if-no-files-found: ignore
+      - name: Clean up
+        if: always()
+        shell: powershell
+        run: if (Test-Path "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION") { Remove-Item -Recurse -Force "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION" }

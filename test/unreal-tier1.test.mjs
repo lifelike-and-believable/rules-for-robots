@@ -166,3 +166,11 @@ test('a ThirdParty folder anywhere under Source/ is accepted (#36)', () => {
   });
   assert.deepEqual(errorsOf(dir), []);
 });
+
+test('an empty MarketplaceURL written by BuildPlugin is not a warning; a set one is', () => {
+  const warningsOf = dir => checkPlugin(dir, { copyright: HOLDER, allowMissingFabUrl: true }).warnings;
+  const empty = copySample(d => descriptor(d, x => { x.MarketplaceURL = ''; }));
+  assert.ok(!warningsOf(empty).some(w => w.includes('MarketplaceURL')), warningsOf(empty).join('\n'));
+  const set = copySample(d => descriptor(d, x => { x.MarketplaceURL = 'com.epicgames.launcher://ue/marketplace/content/abc'; }));
+  assert.ok(warningsOf(set).some(w => w.includes('MarketplaceURL')), warningsOf(set).join('\n'));
+});
