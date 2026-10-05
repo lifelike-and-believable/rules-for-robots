@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.9 (2026-10-05). Phases 0 to 2 and 4 to 6 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 7 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.9 (2026-10-05). Phases 0 to 2 and 4 to 6 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 7 in progress (web app done). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -258,7 +258,9 @@ Delivered: shared PR template, issue forms, guards workflow, and `.claude/settin
 - Template repos for web app, static site, and Unreal plugin, rendered by the build step.
 - **Exit criteria:** a new repo created from a template is fully wired (CI, plugin, `AGENTS.md`) in under an hour by following the adoption guide.
 
-### Phase 7: Reference projects
+### Phase 7: Reference projects (web app complete; Unreal plugin waits on Tier 2)
+Web app: `examples/web-app` built from the template by the `rfr-core` agents, passing all checks and budgets; the build exposed seven template and hook gaps, all fixed ([reference projects](docs/reference-projects.md)). Unreal: `examples/unreal/RfrSample` compiles on UE 5.6 on the runner; the full matrix and Fab release flow wait on the Tier 2 rerun.
+
 - A small web app and a small Unreal plugin built with the full set of agents and rules. The plugin passes the Fab release flow (R64) for all supported engine versions.
 - **Exit criteria:** both pass their own checks and meet declared budgets.
 

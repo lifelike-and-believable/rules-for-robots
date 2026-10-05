@@ -34,8 +34,19 @@ function isForcedRecursiveRm(command) {
   return false;
 }
 
+// A shell command that writes to, moves, or deletes a test file: redirection, in-place
+// editors, scripts that open files for writing, and file moves (TEST-001). Edits through
+// the Edit and Write tools are handled by guard-test-edits.
+const TEST_PATH = /(\.(test|spec)\.\w+|(^|[\s/'"=])(test|tests|Tests|__tests__|__snapshots__|e2e)\/[\w./-]+\.\w+)/;
+const WRITES = /(>>?|\btee\b|\bsed\s+(-[a-zA-Z]*i|--in-place)|\bperl\s+-[a-zA-Z]*i|\bmv\b|\bcp\b|\brm\b|\btruncate\b|open\([^)]*['"][wa]['"]|writeFile|write_text|\.write\()/;
+
+export function writesTestFile(command) {
+  return TEST_PATH.test(command) && WRITES.test(command);
+}
+
 export function findRisk(command) {
   if (typeof command !== 'string') return null;
+  if (writesTestFile(command)) return 'this command appears to change a test file outside the Edit tool (TEST-001)';
   if (isForcedRecursiveRm(command)) return 'recursive forced delete (rm -rf)';
   for (const [pattern, reason] of CHECKS) if (pattern.test(command)) return reason;
   return null;
