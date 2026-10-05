@@ -1,0 +1,9 @@
+{
+  "name": "text-kit",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "verify": "node --test && node scripts/check-style.mjs"
+  }
+}

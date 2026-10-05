@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.7 (2026-10-05). Phases 0 and 1 complete; Phase 2 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.8 (2026-10-05). Phases 0 to 2 complete; Phase 3 in progress. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -209,7 +209,9 @@ Delivered: [docs/rule-format.md](docs/rule-format.md), [experiment R7](docs/rese
 - Plugin and marketplace manifests with the installer skill shell.
 - **Exit criteria:** format spec and one fully worked rule file approved; the core plugin installs; the build step renders a working template repo; R7 answered.
 
-### Phase 2: Core rules and eval seed
+### Phase 2: Core rules and eval seed (complete)
+Delivered: working agreement `WA-001` to `WA-007`; core rules `TEST-002`/`003`, `CODE-001` to `004`, `SEC-001` to `003`, `GIT-001`, `DOC-001`; `rfr-core` hooks (destructive-command and test-edit guards, format on edit); the eval harness and seed results ([report](evals/results/2026-10-05-seed/report.md)). Finding: on the seed tasks neither 5.5 model showed the target failures even without rules, and rules added 19 to 40% cost while changing behaviour (test-first fixes). Phase 8 needs harder cases.
+
 - `00-working-agreement` built from (R8 to R12):
   - a concrete verification command whose output appears in the agent's report;
   - an escape hatch: stop and report when the task or its tests look wrong or impossible, paired with the test-edit guard;
@@ -269,7 +271,7 @@ Delivered: [docs/rule-format.md](docs/rule-format.md), [experiment R7](docs/rese
 | Milestone | Contents | Status |
 |---|---|---|
 | M1 | Phase 0 research, recommendations, plan update | Done |
-| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Phase 1 done; Phase 2 next |
+| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Done |
 | M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | |
 | M4 | Remaining web packs + practice guides | |
 | M5 | Agents, skills, hooks | |
@@ -283,7 +285,7 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 1. ~~Does Claude Code send rule-file frontmatter and HTML comments to the model?~~ Answered in Phase 1: no, both are stripped; path-scoped rules load on Read/Edit but not on Grep ([experiment R7](docs/research/experiments/r7-rule-loading.md)).
 2. Which `BuildPlugin` and Unreal Insights headless flags exist in the installed engines? Verify on the runner in Phase 3 (R55).
 3. What process exit code does `UnrealEditor-Cmd` return when automation tests fail? Verify on the runner; gate on the report regardless (R31, R55).
-4. Do behavioural rules (as opposed to repository descriptions) measurably help 5.5-class models? No published study has tested this; answered by Phase 2 and Phase 8 evals.
+4. Do behavioural rules (as opposed to repository descriptions) measurably help 5.5-class models? Partly answered by the Phase 2 seed: the rules change behaviour and add cost, but the seed tasks were too easy to show fewer failures. Phase 8 uses harder cases.
 
 ## 13. Risks and mitigations
 

@@ -12,7 +12,7 @@
     "lint:rules": "node checks/lint-rules.mjs",
     "build": "node build/build.mjs",
     "build:check": "node build/build.mjs --check",
-    "test": "node --test",
+    "test": "node --test 'test/**/*.test.mjs'",
     "verify": "npm run lint:rules && npm test && npm run build:check && npm run check:unreal-sample && npm run validate:plugins",
     "validate:plugins": "claude plugin validate --strict . && claude plugin validate --strict plugins/core",
     "check:unreal-sample": "node checks/unreal/tier1.mjs examples/unreal/RfrSample --copyright \"Lifelike & Believable Animation Design\" --allow-missing-fab-url"
