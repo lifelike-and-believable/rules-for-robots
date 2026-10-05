@@ -70,15 +70,20 @@ export function wordCount(text) {
 }
 
 // Derive the expected scope from a path relative to the rules root, e.g.
-// core/testing/X.md -> core, packs/unreal-plugin/build/X.md -> pack:unreal-plugin.
+// core/testing/X.md -> core, packs/unreal-plugin/build/X.md -> pack:unreal-plugin,
+// project/X.md -> project (an adopting repo's own rules).
 export function scopeFromPath(relPath) {
   const parts = relPath.split(/[\\/]/);
   if (parts[0] === 'core') return 'core';
+  if (parts[0] === 'project') return 'project';
   if (parts[0] === 'packs' && parts[1]) return `pack:${parts[1]}`;
   return null;
 }
 
-export function validateRule(rule, { rulesRoot, allowWaivers = false } = {}) {
+// adoptingRepo: validating an adopting repo's .claude/rules/, which may hold waivers and
+// project rules (scope: project, in project/, with an ID prefix of its own).
+export function validateRule(rule, { rulesRoot, allowWaivers = false, adoptingRepo = false } = {}) {
+  allowWaivers ||= adoptingRepo;
   const errors = [];
   if (rule.error) return [rule.error];
   const { meta, body } = rule;
@@ -100,7 +105,9 @@ export function validateRule(rule, { rulesRoot, allowWaivers = false } = {}) {
   const idMatch = /^([A-Z0-9]+)-(\d{3})$/.exec(id);
   if (meta.id !== undefined && !idMatch) errors.push(`id "${id}" must look like PREFIX-NNN`);
   const prefix = idMatch?.[1];
-  if (prefix && !PREFIXES[prefix]) errors.push(`unknown id prefix "${prefix}"; add it to docs/rule-format.md and checks/lib/rules.mjs`);
+  const projectRule = meta.scope === 'project';
+  if (projectRule && !adoptingRepo) errors.push('project rules belong in adopting repos, under .claude/rules/project/');
+  if (prefix && !PREFIXES[prefix] && !(projectRule && adoptingRepo)) errors.push(`unknown id prefix "${prefix}"; add it to docs/rule-format.md and checks/lib/rules.mjs`);
   if (prefix && PREFIXES[prefix] && meta.scope && PREFIXES[prefix] !== meta.scope) {
     errors.push(`prefix "${prefix}" belongs to ${PREFIXES[prefix]}, not ${meta.scope}`);
   }
@@ -112,7 +119,7 @@ export function validateRule(rule, { rulesRoot, allowWaivers = false } = {}) {
 
   if (meta.level !== undefined && !LEVELS.includes(meta.level)) errors.push(`level must be one of ${LEVELS.join(', ')}`);
 
-  if (meta.scope !== undefined && !/^(core|pack:[a-z0-9-]+)$/.test(meta.scope)) errors.push('scope must be "core" or "pack:<name>"');
+  if (meta.scope !== undefined && !/^(core|project|pack:[a-z0-9-]+)$/.test(meta.scope)) errors.push('scope must be "core", "project", or "pack:<name>"');
   if (rulesRoot && meta.scope) {
     const expected = scopeFromPath(path.relative(rulesRoot, rule.file));
     if (expected && expected !== meta.scope) errors.push(`scope "${meta.scope}" does not match folder (${expected})`);

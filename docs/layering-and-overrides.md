@@ -25,11 +25,11 @@ date: 2026-10-05
 ---
 ```
 
-Waiving a MUST rule should also be recorded in an ADR (`/rfr-core:write-adr`), and its hook or CI check adjusted to match. `node checks/lint-rules.mjs .claude/rules --allow-waivers --no-practice-links` validates rule and waiver files in an adopting repo.
+Waiving a MUST rule should also be recorded in an ADR (`/rfr-core:write-adr`), and its hook or CI check adjusted to match. `node checks/lint-rules.mjs .claude/rules --adopting-repo --no-practice-links` validates rule, waiver, and project rule files in an adopting repo.
 
 ## Adding rules
 
-Follow [rule-format.md](rule-format.md) with your own ID prefix, so IDs never collide with this repo's. Keep always-on text (`AGENTS.md` plus rules without `paths`) under 200 lines.
+Follow [rule-format.md](rule-format.md) with your own ID prefix, so IDs never collide with this repo's. Put project rules in `.claude/rules/project/` with `scope: project`; the lint's `--adopting-repo` mode accepts any prefix there that rules-for-robots does not use. `/rfr-core:install-rules` does not touch `project/`. Keep always-on text (`AGENTS.md` plus rules without `paths`) under 200 lines.
 
 ## Updating
 

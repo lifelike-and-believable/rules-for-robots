@@ -31,6 +31,7 @@ Payload: `${CLAUDE_SKILL_DIR}/payload/`
    - Otherwise, show the user the difference and ask before replacing it.
 
    Leave files for packs the user did not choose in place unless the user asks to remove them.
+   Leave `.claude/rules/project/` alone: it holds the project's own rules (`scope: project`).
 
    Claude Code treats `.claude/` as a sensitive path, so the user is asked to approve these writes. Tell the user which files you are about to write before the first prompt. If a write is refused, stop and give the user the exact copy commands instead of trying another route.
 

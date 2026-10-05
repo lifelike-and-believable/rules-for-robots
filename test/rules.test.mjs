@@ -147,3 +147,39 @@ test('every rule cites an existing guide and every guide is cited', async () => 
   assert.ok(problems.includes('orphan.md: no rule cites this guide'), problems.join('\n'));
   assert.ok(!problems.some(p => p.startsWith('TEST-900')), problems.join('\n'));
 });
+
+const PROJECT_META = GOOD_META.replace('TEST-900', 'O3D-001').replace('scope: core', 'scope: project').replace('targets-failure: test-gaming', 'targets-failure: project-decision');
+
+test('adopting repos can lint project rules with their own prefix (#27)', () => {
+  assert.deepEqual(errorsFor({ 'project/O3D-001-example.md': rule(PROJECT_META) }, { adoptingRepo: true }), []);
+});
+
+test('a project rule cannot reuse a rules-for-robots prefix (#27)', () => {
+  const meta = PROJECT_META.replace('O3D-001', 'TEST-900');
+  const errors = errorsFor({ 'project/TEST-900-example.md': rule(meta) }, { adoptingRepo: true });
+  assert.ok(errors.some(e => e.includes('belongs to core')), errors.join('; '));
+});
+
+test('a project rule must live in project/ (#27)', () => {
+  const errors = errorsFor({ 'core/testing/O3D-001-example.md': rule(PROJECT_META) }, { adoptingRepo: true });
+  assert.ok(errors.some(e => e.includes('does not match folder')), errors.join('; '));
+});
+
+test('project rules are rejected in this repository (#27)', () => {
+  const errors = errorsFor({ 'project/O3D-001-example.md': rule(PROJECT_META) });
+  assert.ok(errors.some(e => e.includes('project rules belong in adopting repos')), errors.join('; '));
+});
+
+test('adopting-repo mode also accepts waivers (#27)', () => {
+  const waiver = '---\nid: TEST-001\nwaiver: true\nreason: Covered by our own guard.\napproved-by: A. Person\ndate: 2026-10-05\n---\n';
+  assert.deepEqual(errorsFor({ 'core/testing/TEST-001-keep-tests-honest.md': waiver, 'project/O3D-001-example.md': rule(PROJECT_META) }, { adoptingRepo: true }), []);
+});
+
+test('the CLI validates an adopting repo with --adopting-repo (#27)', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const root = makeTree({ 'project/O3D-001-example.md': rule(PROJECT_META) });
+  const run = (...flags) => spawnSync(process.execPath, ['checks/lint-rules.mjs', root, ...flags], { encoding: 'utf8' });
+  const ok = run('--adopting-repo', '--no-practice-links');
+  fs.rmSync(root, { recursive: true, force: true });
+  assert.equal(ok.status, 0, ok.stdout + ok.stderr);
+});

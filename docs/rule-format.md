@@ -43,7 +43,7 @@ sources: ["docs/research/findings.md#agents-cheat-mainly-by-editing-tests"]
 | `id` | Yes | `<PREFIX>-<NNN>`, unique across the repo | Stable reference for reviews, waivers, and evals |
 | `title` | Yes | Short sentence-case phrase | Index and review output |
 | `level` | Yes | `MUST`, `SHOULD`, `MAY` | How negotiable the rule is. Kept here, not in the body |
-| `scope` | Yes | `core` or `pack:<pack-name>` | Which layer the rule belongs to; must match the folder |
+| `scope` | Yes | `core` or `pack:<pack-name>`; `project` only in adopting repos | Which layer the rule belongs to; must match the folder (`core/`, `packs/<pack-name>/`, or `project/`) |
 | `paths` | No | List of glob strings | Loads the rule only when the agent reads or edits a matching file. Omit for always-on rules |
 | `verified-by` | Yes | List of `hook`, `ci`, `test`, `review` | How compliance is checked. A `MUST` rule needs `hook` or `ci` |
 | `check` | When `verified-by` has `hook` or `ci` | Free text naming the hook or CI job | Lets people find the enforcement |
