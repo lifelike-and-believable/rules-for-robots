@@ -8,7 +8,7 @@ check: "hook: rfr-core guard-commands asks for approval before destructive git, 
 targets-failure: destructive-action
 observed-on: [claude-opus-4-6]
 rationale: Agents have destroyed uncommitted work and run destructive commands; naming the specific stops works better than a general "ask when unsure".
-sources: ["docs/research/findings.md"]
+sources: ["practices/working-with-agents.md", "docs/research/findings.md"]
 ---
 Keep working until the task is done, and stop to ask the user only in these cases:
 

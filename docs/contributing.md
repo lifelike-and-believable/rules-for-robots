@@ -17,10 +17,11 @@ npm run verify
 2. Create `rules/<core|packs/<pack>>/<area>/<ID>-<slug>.md` with the next free ID for its prefix.
 3. Fill in every required field. Set `targets-failure` to the failure the rule prevents, or `project-decision`.
 4. Write the body as plain imperative sentences with a reason, under 120 words.
-5. For a MUST rule, name the enforcing hook or CI job in `check` and link the evidence in `sources`. Evidence that came only from a blocked or secondary source cannot support a MUST rule (R40).
-6. Run `npm run build` to regenerate `template-repos/`, then `npm run verify`.
-7. Bump `version` in `plugins/core/.claude-plugin/plugin.json`, because the install-rules payload changed (R16).
-8. Commit the rule, the regenerated output, and the version bump together.
+5. Add the practice guide that explains the rule to `sources` (the lint requires one, and every guide must be cited by at least one rule).
+6. For a MUST rule, name the enforcing hook or CI job in `check` and link the evidence in `sources`. Evidence that came only from a blocked or secondary source cannot support a MUST rule (R40).
+7. Run `npm run build` to regenerate `template-repos/`, then `npm run verify`.
+8. Bump `version` in `plugins/core/.claude-plugin/plugin.json`, because the install-rules payload changed (R16).
+9. Commit the rule, the regenerated output, and the version bump together.
 
 To add an ID prefix, update the table in `docs/rule-format.md` and `PREFIXES` in `checks/lib/rules.mjs` in the same change.
 

@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.8 (2026-10-05). Phases 0 to 2 complete; Phase 3 in progress. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.9 (2026-10-05). Phases 0 to 2 and 4 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 5 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -223,13 +223,17 @@ Delivered: working agreement `WA-001` to `WA-007`; core rules `TEST-002`/`003`, 
 - A small eval harness (a handful of failure-targeted tasks, no-rules vs. rules) so each rule is tested as it is written (R39).
 - **Exit criteria:** every rule has full metadata and a verification method; the always-on core stays under 200 lines; each MUST rule maps to a hook or CI job; the seed evals run.
 
-### Phase 3: Stack packs
+### Phase 3: Stack packs (rules and Tier 1 complete; Tier 2 run pending)
+Delivered: all six packs (`unreal-plugin` 12 rules, `typescript` 2, `web-platform` 4, `react-nextjs` 4, `node-services` 8, `static-sites` 3); `checks/unreal/tier1.mjs`; the `RfrSample` plugin; the Tier 2 workflow with a runner probe for R55; the `guard-mcp` hook for the Vercel MCP server. Remaining: the first Tier 2 run on the `ue5` runner and the probe answers.
+
 - Order: `unreal-plugin`, `typescript`, `web-platform`, `react-nextjs`, `node-services`, `static-sites`.
 - Content per section 7.
 - Verify BuildPlugin flags, Insights headless flags, and the editor exit code on the runner (R55).
 - **Exit criteria:** each pack has rules, at least one practice guide, and Tier 1 checks; the Unreal pack's Tier 2 workflow passes on the runner for 5.6, 5.7, and 5.8.
 
-### Phase 4: Best-practice guides
+### Phase 4: Best-practice guides (complete)
+Delivered: six guides in `practices/` (working with agents; testing and code quality; security; Unreal plugin development; web verification including Astro; Postgres on Vercel). The rule lint now fails when a rule cites no existing guide or a guide is cited by no rule.
+
 - Longer `practices/` guides linked to rule IDs, with short good/bad examples. Point agents at exemplar files rather than describing patterns where possible.
 - **Exit criteria:** every rule file links to at least one guide; every guide is referenced by at least one rule.
 
@@ -272,8 +276,8 @@ Delivered: working agreement `WA-001` to `WA-007`; core rules `TEST-002`/`003`, 
 |---|---|---|
 | M1 | Phase 0 research, recommendations, plan update | Done |
 | M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Done |
-| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | |
-| M4 | Remaining web packs + practice guides | |
+| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done (Tier 2 run pending) |
+| M4 | Remaining web packs + practice guides | Done |
 | M5 | Agents, skills, hooks | |
 | M6 | GitHub integration, CI workflows, template repos | |
 | M7 | Reference projects, full evals, revisions, v1.0 | |

@@ -9,7 +9,7 @@ check: "hook: guard-test-edits (asks before any test-file edit); ci: test-change
 targets-failure: test-gaming
 observed-on: [claude-opus-4-1, claude-opus-4-6, claude-opus-4-7, claude-sonnet-4-6]
 rationale: Claude models game tasks mainly by editing tests, and an anti-hack prompt still leaves 12.5 to 37.5% residual cheating on impossible tasks.
-sources: ["docs/research/findings.md", "docs/research/notes/verification_of_secondary_figures.md"]
+sources: ["practices/testing-and-code-quality.md", "docs/research/findings.md", "docs/research/notes/verification_of_secondary_figures.md"]
 ---
 <!-- Worked example for docs/rule-format.md. Enforcement lands in Phase 2 (hook) and Phase 6 (CI). -->
 Make failing tests pass by changing the implementation. Leave existing assertions, expected values, snapshots, and skip markers as they are, because a weakened test hides the defect it was written to catch.

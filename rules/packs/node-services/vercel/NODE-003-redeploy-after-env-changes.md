@@ -8,6 +8,6 @@ verified-by: [review]
 targets-failure: unverified-claim
 observed-on: []
 rationale: Vercel applies environment variable changes only to new deployments, so testing an existing preview checks the old values.
-sources: ["docs/research/notes/web_followup.md"]
+sources: ["practices/postgres-on-vercel.md", "docs/research/notes/web_followup.md"]
 ---
 After changing an environment variable on Vercel, trigger a new deployment and test that deployment. Mark variables holding secrets as sensitive so their values cannot be read back.
