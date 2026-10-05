@@ -6,11 +6,12 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Fixed
 
+- RfrSample Automation Spec: creates the subsystem inside a transient `UGameInstance`; outered to the transient package it raised an ensure that failed the first test on every engine.
 - Unreal Tier 2 workflow: installs Node for the report reader, prints automation errors when tests fail, and runs the runner probe even when tests fail.
 
 ### Changed
 
-- Unreal guide records the editor's exit code on failing tests (255 on UE 5.6 and 5.8).
+- Unreal guide records the editor's exit code on failing tests (255 on UE 5.6 and 5.8), and how to give test objects the outer their class requires.
 
 ## [0.12.0] - 2026-10-05
 
