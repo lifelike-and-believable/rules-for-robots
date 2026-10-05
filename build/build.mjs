@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Renders rules/ into template-repos/<profile>/ (R13, R14).
+// Renders rules/ into template-repos/<profile>/ and the install-rules skill payload (R13, R14).
 // Usage: node build/build.mjs          write output
 //        node build/build.mjs --check  fail if committed output is stale or over budget
 import fs from 'node:fs';
@@ -56,6 +56,42 @@ export function renderProfile(name, profile, { rulesRoot = RULES, root = ROOT, d
   return { ruleCount: ruleFiles.length, alwaysOn: alwaysOnLines(agentsMd, ruleFiles) };
 }
 
+// Installer skill payload: every rule plus the profile map (R13).
+export const PAYLOAD = path.join(ROOT, 'plugins', 'core', 'skills', 'install-rules', 'payload');
+
+export function renderPayload({ rulesRoot = RULES, root = ROOT, dest }) {
+  fs.rmSync(dest, { recursive: true, force: true });
+  const files = listRuleFiles(rulesRoot);
+  for (const file of files) {
+    const target = path.join(dest, 'rules', path.relative(rulesRoot, file));
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(file, target);
+  }
+  fs.mkdirSync(dest, { recursive: true });
+  fs.copyFileSync(path.join(root, 'build', 'profiles.json'), path.join(dest, 'profiles.json'));
+  return files.length;
+}
+
+function listAll(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true, recursive: true })
+    .filter(e => e.isFile())
+    .map(e => path.relative(dir, path.join(e.parentPath ?? e.path, e.name)))
+    .sort();
+}
+
+export function diffDirs(expectedDir, actualDir, list = listAll) {
+  const expected = list(expectedDir);
+  const actual = list(actualDir);
+  const problems = [];
+  for (const f of expected) {
+    if (!actual.includes(f)) problems.push(`missing ${f}`);
+    else if (!fs.readFileSync(path.join(expectedDir, f)).equals(fs.readFileSync(path.join(actualDir, f)))) problems.push(`stale ${f}`);
+  }
+  for (const f of actual) if (!expected.includes(f)) problems.push(`unexpected ${f}`);
+  return problems;
+}
+
 function listOwned(dir) {
   const files = [];
   for (const owned of OWNED) {
@@ -70,15 +106,7 @@ function listOwned(dir) {
 }
 
 export function diffOwned(expectedDir, actualDir) {
-  const expected = listOwned(expectedDir);
-  const actual = listOwned(actualDir);
-  const problems = [];
-  for (const f of expected) {
-    if (!actual.includes(f)) problems.push(`missing ${f}`);
-    else if (!fs.readFileSync(path.join(expectedDir, f)).equals(fs.readFileSync(path.join(actualDir, f)))) problems.push(`stale ${f}`);
-  }
-  for (const f of actual) if (!expected.includes(f)) problems.push(`unexpected ${f}`);
-  return problems;
+  return diffDirs(expectedDir, actualDir, listOwned);
 }
 
 function main() {
@@ -102,6 +130,15 @@ function main() {
         failed = true;
         console.error(`template-repos/${name}: ${problem} (run npm run build)`);
       }
+    }
+  }
+
+  const payloadDest = check ? path.join(tmp, 'payload') : PAYLOAD;
+  console.log(`install-rules payload: ${renderPayload({ dest: payloadDest })} rule(s)`);
+  if (check) {
+    for (const problem of diffDirs(payloadDest, PAYLOAD)) {
+      failed = true;
+      console.error(`${path.relative(ROOT, PAYLOAD)}: ${problem} (run npm run build)`);
     }
   }
 

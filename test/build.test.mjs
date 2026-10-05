@@ -83,3 +83,24 @@ test('diffOwned reports missing, stale, and unexpected files', () => {
   fs.rmSync(a, { recursive: true, force: true });
   fs.rmSync(b, { recursive: true, force: true });
 });
+
+test('payload holds every rule and the profile map', async () => {
+  const { renderPayload } = await import('../build/build.mjs');
+  const root = tmpdir();
+  const write = (rel, content) => {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), content);
+  };
+  write('build/profiles.json', '{"demo": {"packs": ["typescript"]}}');
+  write('rules/core/testing/TEST-900-a.md', META('TEST-900'));
+  write('rules/packs/unreal-plugin/x/UE-001-c.md', META('UE-001'));
+  const dest = path.join(root, 'payload');
+  fs.mkdirSync(dest);
+  fs.writeFileSync(path.join(dest, 'stale.md'), 'old');
+  assert.equal(renderPayload({ rulesRoot: path.join(root, 'rules'), root, dest }), 2);
+  assert.ok(fs.existsSync(path.join(dest, 'rules/core/testing/TEST-900-a.md')));
+  assert.ok(fs.existsSync(path.join(dest, 'rules/packs/unreal-plugin/x/UE-001-c.md')));
+  assert.ok(fs.existsSync(path.join(dest, 'profiles.json')));
+  assert.ok(!fs.existsSync(path.join(dest, 'stale.md')));
+  fs.rmSync(root, { recursive: true, force: true });
+});

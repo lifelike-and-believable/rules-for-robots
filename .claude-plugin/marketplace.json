@@ -1,0 +1,16 @@
+{
+  "name": "rules-for-robots",
+  "owner": {
+    "name": "Lifelike & Believable Animation Design"
+  },
+  "metadata": {
+    "description": "Rules, skills, agents, and hooks for agentic development of web apps, static sites, and Unreal Engine plugins with Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "rfr-core",
+      "source": "./plugins/core",
+      "description": "Core skills and hooks, including a skill that installs rules-for-robots rule packs into a repo."
+    }
+  ]
+}

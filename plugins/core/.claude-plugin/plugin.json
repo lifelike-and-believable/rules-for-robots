@@ -1,0 +1,12 @@
+{
+  "name": "rfr-core",
+  "version": "0.1.0",
+  "description": "Core skills and hooks from rules-for-robots, including a skill that installs rule packs into a repo's .claude/rules/.",
+  "author": {
+    "name": "Lifelike & Believable Animation Design"
+  },
+  "homepage": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "repository": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "license": "MIT",
+  "keywords": ["rules", "quality", "unreal", "nextjs", "astro"]
+}

@@ -13,7 +13,8 @@
     "build": "node build/build.mjs",
     "build:check": "node build/build.mjs --check",
     "test": "node --test",
-    "verify": "npm run lint:rules && npm test && npm run build:check"
+    "verify": "npm run lint:rules && npm test && npm run build:check && npm run validate:plugins",
+    "validate:plugins": "claude plugin validate --strict . && claude plugin validate --strict plugins/core"
   },
   "devDependencies": {
     "yaml": "^2.9.1"
