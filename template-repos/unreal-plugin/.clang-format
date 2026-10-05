@@ -1,0 +1,12 @@
+# Approximation of Epic's C++ style for clang-format. Adjust to match your team.
+BasedOnStyle: Microsoft
+UseTab: Always
+TabWidth: 4
+IndentWidth: 4
+ColumnLimit: 0
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: All
+PointerAlignment: Left
+NamespaceIndentation: All
+SortIncludes: Never

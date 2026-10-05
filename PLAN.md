@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v0.9 (2026-10-05). Phases 0 to 2, 4, and 5 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 6 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v0.9 (2026-10-05). Phases 0 to 2 and 4 to 6 complete; Phase 3 complete except the first Tier 2 run on the self-hosted runner; Phase 7 next. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -245,7 +245,9 @@ Delivered: six agents and ten skills in `rfr-core`, plus the hooks from Phases 2
 - Hooks in `hooks/hooks.json`, including agent-specific filters and the database (R49) and Vercel MCP (R43) guards.
 - **Exit criteria:** each agent and skill tested on at least two sample tasks with output in its declared format.
 
-### Phase 6: GitHub integration and templates
+### Phase 6: GitHub integration and templates (complete)
+Delivered: shared PR template, issue forms, guards workflow, and `.claude/settings.json` for every template repo; per-profile CI (web: verify, bundle budgets, squawk, preview checks with Playwright, axe, and Lighthouse CI; Unreal: Tier 1 via a reusable workflow, Tier 2 via `Scripts/Verify.ps1`); reusable `rfr-guards.yml` (gitleaks, test change guard) and `rfr-unreal-tier1.yml`; the build now generates entire template repos from `templates/`; [adoption guide](docs/adoption-guide.md) and [layering and overrides](docs/layering-and-overrides.md). The under-an-hour check is part of Phase 7, which builds real projects from the templates.
+
 - PR template with rule-ID checklist, issue forms, ADR and feature spec templates.
 - Reusable workflows in `checks/`:
   - web CI per R28;
@@ -281,7 +283,7 @@ Delivered: six agents and ten skills in `rfr-core`, plus the hooks from Phases 2
 | M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done (Tier 2 run pending) |
 | M4 | Remaining web packs + practice guides | Done |
 | M5 | Agents, skills, hooks | Done |
-| M6 | GitHub integration, CI workflows, template repos | |
+| M6 | GitHub integration, CI workflows, template repos | Done |
 | M7 | Reference projects, full evals, revisions, v1.0 | |
 
 From Phase 1 on, each milestone lands as one or more PRs on its own branch.

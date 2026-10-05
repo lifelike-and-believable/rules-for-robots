@@ -1,0 +1,44 @@
+name: Unreal Tier 2
+
+# Builds and tests the plugin against each supported engine version on a self-hosted
+# Windows runner with the engines installed (UE-001, FAB-004, UE-007). Self-hosted runners
+# execute repository code, so this never runs for pull requests from forks.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PLUGIN_DIR: Plugins/MyPlugin          # change to your plugin folder
+  PLUGIN_NAME: MyPlugin                 # the .uplugin file name without extension
+  TEST_FILTER: MyPlugin                 # automation test name prefix
+
+jobs:
+  build-and-test:
+    runs-on: [self-hosted, Windows, X64, ue5]
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ['5.6', '5.7', '5.8']
+    env:
+      ENGINE_VERSION: ${{ matrix.engine }}
+      ENGINE_ROOT_VAR: ${{ matrix.engine == '5.6' && vars.UE_5_6_ROOT || matrix.engine == '5.7' && vars.UE_5_7_ROOT || vars.UE_5_8_ROOT }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          path: .rfr
+      - name: Build and test
+        shell: powershell
+        run: ./Scripts/Verify.ps1 -EngineVersion $env:ENGINE_VERSION -EngineRoot $env:ENGINE_ROOT_VAR -PluginDir $env:PLUGIN_DIR -PluginName $env:PLUGIN_NAME -TestFilter $env:TEST_FILTER -ReportReader .rfr/checks/unreal/ci/read-automation-report.mjs -WorkDir "$env:RUNNER_TEMP\verify-$env:ENGINE_VERSION"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tier2-${{ matrix.engine }}
+          path: ${{ runner.temp }}/verify-${{ matrix.engine }}/*.log
+          if-no-files-found: ignore

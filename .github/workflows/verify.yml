@@ -21,3 +21,12 @@ jobs:
       # Plugin validation needs the Claude Code CLI; no API key is used.
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
       - run: npm run verify
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose

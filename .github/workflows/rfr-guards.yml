@@ -1,0 +1,47 @@
+name: rules-for-robots guards
+
+# Reusable workflow for adopting repositories:
+#   jobs:
+#     guards:
+#       uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-guards.yml@main
+# Runs the secret scan (SEC-001) and, for pull requests, the test change guard (TEST-001).
+on:
+  workflow_call:
+    inputs:
+      rules-ref:
+        description: rules-for-robots ref to take the guard scripts from
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose \
+            ${{ github.event_name == 'pull_request' && format('--log-opts={0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || '' }}
+
+  test-change-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Test change guard
+        run: node .rfr/checks/ci/test-change-guard.mjs "${{ github.event.pull_request.base.sha }}" ${{ contains(github.event.pull_request.labels.*.name, 'tests-reviewed') && '--approved' || '' }}

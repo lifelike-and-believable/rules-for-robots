@@ -13,8 +13,6 @@ const ROOT = path.resolve(path.dirname(SELF), '..');
 const RULES = path.join(ROOT, 'rules');
 const OUT = path.join(ROOT, 'template-repos');
 
-// Paths inside each template repo that the build owns. Everything else is hand-written.
-const OWNED = ['AGENTS.md', 'CLAUDE.md', '.claude/rules'];
 
 export function loadProfiles(root = ROOT) {
   const raw = JSON.parse(fs.readFileSync(path.join(root, 'build', 'profiles.json'), 'utf8'));
@@ -44,8 +42,14 @@ export function renderProfile(name, profile, { rulesRoot = RULES, root = ROOT, d
   const agentsMd = fs.readFileSync(path.join(root, 'templates', 'agents-md', `${name}.md`), 'utf8');
   const ruleFiles = selectRules(rulesRoot, profile.packs);
 
+  // The build owns the whole template repo: shared files, then profile files, then
+  // AGENTS.md, CLAUDE.md, and the rules.
+  fs.rmSync(dest, { recursive: true, force: true });
   fs.mkdirSync(dest, { recursive: true });
-  fs.rmSync(path.join(dest, '.claude', 'rules'), { recursive: true, force: true });
+  for (const layer of ['common', name]) {
+    const dir = path.join(root, 'templates', 'repo-files', layer);
+    if (fs.existsSync(dir)) fs.cpSync(dir, dest, { recursive: true });
+  }
   fs.writeFileSync(path.join(dest, 'AGENTS.md'), agentsMd);
   fs.writeFileSync(path.join(dest, 'CLAUDE.md'), '@AGENTS.md\n');
   for (const file of ruleFiles) {
@@ -92,21 +96,8 @@ export function diffDirs(expectedDir, actualDir, list = listAll) {
   return problems;
 }
 
-function listOwned(dir) {
-  const files = [];
-  for (const owned of OWNED) {
-    const full = path.join(dir, owned);
-    if (!fs.existsSync(full)) continue;
-    if (fs.statSync(full).isFile()) { files.push(owned); continue; }
-    for (const entry of fs.readdirSync(full, { withFileTypes: true, recursive: true })) {
-      if (entry.isFile()) files.push(path.relative(dir, path.join(entry.parentPath ?? entry.path, entry.name)));
-    }
-  }
-  return files.sort();
-}
-
 export function diffOwned(expectedDir, actualDir) {
-  return diffDirs(expectedDir, actualDir, listOwned);
+  return diffDirs(expectedDir, actualDir);
 }
 
 function main() {

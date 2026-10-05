@@ -61,12 +61,14 @@ test('renders core plus selected packs and nothing else', () => {
   assert.ok(!fs.existsSync(path.join(dest, '.claude/rules/packs/unreal-plugin')));
   assert.ok(!fs.existsSync(path.join(root, 'rules/packs/static-sites')), 'rendering must not create pack folders');
 
-  // A second render replaces rules but leaves hand-written files alone.
-  fs.writeFileSync(path.join(dest, '.claude/rules/core/stale.md'), 'old');
-  fs.writeFileSync(path.join(dest, 'README.md'), 'hand-written');
+  // Shared and profile repo files are copied, and a second render replaces everything.
+  write('templates/repo-files/common/.github/pull_request_template.md', 'common');
+  write('templates/repo-files/demo/ci.yml', 'profile');
+  fs.writeFileSync(path.join(dest, 'stale.txt'), 'old');
   renderProfile('demo', { packs: ['typescript'] }, { rulesRoot: path.join(root, 'rules'), root, dest });
-  assert.ok(!fs.existsSync(path.join(dest, '.claude/rules/core/stale.md')));
-  assert.equal(fs.readFileSync(path.join(dest, 'README.md'), 'utf8'), 'hand-written');
+  assert.ok(!fs.existsSync(path.join(dest, 'stale.txt')));
+  assert.equal(fs.readFileSync(path.join(dest, '.github/pull_request_template.md'), 'utf8'), 'common');
+  assert.equal(fs.readFileSync(path.join(dest, 'ci.yml'), 'utf8'), 'profile');
   fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -78,7 +80,6 @@ test('diffOwned reports missing, stale, and unexpected files', () => {
   fs.writeFileSync(path.join(a, 'CLAUDE.md'), '@AGENTS.md\n');
   fs.mkdirSync(path.join(b, '.claude/rules'), { recursive: true });
   fs.writeFileSync(path.join(b, '.claude/rules/extra.md'), 'x');
-  fs.writeFileSync(path.join(b, 'README.md'), 'not owned');
   assert.deepEqual(diffOwned(a, b).sort(), ['missing CLAUDE.md', 'stale AGENTS.md', 'unexpected .claude/rules/extra.md']);
   fs.rmSync(a, { recursive: true, force: true });
   fs.rmSync(b, { recursive: true, force: true });

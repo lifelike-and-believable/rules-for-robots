@@ -5,7 +5,7 @@
 ## Commands
 
 - Tier 1 checks (fast, no engine): `node <path-to-rules-for-robots>/checks/unreal/tier1.mjs <PluginDir> --copyright "<publisher name>"`
-- Verify (run before reporting work as done, and include its output): `<RunUAT BuildPlugin and automation test command for each supported version; see the unreal-plugin practice guide>`
+- Verify (run before reporting work as done, and include its output): `./Scripts/Verify.ps1 -EngineVersion <5.6|5.7|5.8> -PluginDir Plugins/<Name> -PluginName <Name> -TestFilter <Name>` for each supported version
 - Engine source for API lookups: `<path to each installed engine's Engine/Source>`
 
 ## Project decisions
