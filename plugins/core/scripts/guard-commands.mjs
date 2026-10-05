@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // PreToolUse (Bash, PowerShell): ask the user before destructive git, file, and database commands
 // (rules WA-003 and, for databases, the node-services pack). Asking keeps the user in
-// control without blocking legitimate use; headless runs treat "ask" as a denial.
+// control without blocking legitimate use; headless runs treat "ask" as a denial. Also asks
+// when an Unreal editor run's -ExecCmds list never quits, which leaves the editor hanging.
 import { fileURLToPath } from 'node:url';
 import { ask, readInput } from './lib.mjs';
 
@@ -71,6 +72,14 @@ const PS_ALIASES = /(^|[;&|(]|\n)\s*(sc|ac|mi|move|cpi|copy|ri|del|erase|rni|ren
 const PS_NEW_ITEM_FORCE = /\bNew-Item\b[^;&|\n]*\s-fo(r(c(e)?)?)?\b/i;
 const psWrites = command => PS_CMDLETS.test(command) || PS_ALIASES.test(command) || PS_NEW_ITEM_FORCE.test(command);
 
+// An editor run whose -ExecCmds list never quits keeps running after its commands finish,
+// unless the only command is a test run (#56). Requiring Quit is simpler and always safe.
+export function execCmdsWithoutQuit(command) {
+  if (!/\bUnrealEditor(-Cmd)?(\.exe)?\b/i.test(command)) return false;
+  const match = command.match(/-ExecCmds=("[^"]*"|'[^']*'|\S+)/i);
+  return Boolean(match) && !/\bquit\b/i.test(match[1]);
+}
+
 export function writesTestFile(command) {
   return TEST_PATH.test(command) && (WRITES.test(command) || psWrites(command));
 }
@@ -78,6 +87,7 @@ export function writesTestFile(command) {
 export function findRisk(command) {
   if (typeof command !== 'string') return null;
   if (writesTestFile(command)) return 'this command appears to change a test file outside the Edit tool (TEST-001)';
+  if (execCmdsWithoutQuit(command)) return 'the editor -ExecCmds list does not end with Quit, so the editor will keep running after its commands finish (add ";Quit")';
   if (isForcedRecursiveRm(command)) return 'recursive forced delete (rm -rf)';
   if (isForcedRecursiveRemoveItem(command)) return 'recursive forced delete (Remove-Item -Recurse -Force)';
   for (const [pattern, reason] of CHECKS) if (pattern.test(command)) return reason;
