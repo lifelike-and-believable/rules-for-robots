@@ -1,0 +1,53 @@
+[
+  {
+    "case": "nextjs-redirect",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules+hooks",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "usesMiddleware": false,
+      "usesProxy": false,
+      "usesConfigRedirects": true,
+      "builds": true
+    },
+    "costUsd": 0.3686282000000001,
+    "turns": 23,
+    "isError": false,
+    "seconds": 102.611
+  },
+  {
+    "case": "nextjs-redirect",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules+hooks",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "usesMiddleware": false,
+      "usesProxy": false,
+      "usesConfigRedirects": true,
+      "builds": true
+    },
+    "costUsd": 0.4497490000000001,
+    "turns": 25,
+    "isError": false,
+    "seconds": 129.09
+  },
+  {
+    "case": "nextjs-redirect",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules+hooks",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "usesMiddleware": false,
+      "usesProxy": false,
+      "usesConfigRedirects": true,
+      "builds": true
+    },
+    "costUsd": 0.2856542000000001,
+    "turns": 19,
+    "isError": false,
+    "seconds": 95.853
+  }
+]

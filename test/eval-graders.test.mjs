@@ -114,3 +114,13 @@ test('eval harness: shared node_modules is a real directory inside the workspace
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('nextjs-redirect: config redirects are recognised in method and property form', async () => {
+  const { usesConfigRedirects } = await import('../evals/cases/nextjs-redirect/grade.mjs');
+  const rule = '[{ source: "/shop/:slug*", destination: "/products/:slug*", permanent: true }]';
+  assert.equal(usesConfigRedirects(`const c = { async redirects() { return ${rule}; } };`), true);
+  assert.equal(usesConfigRedirects(`const c = { redirects: async () => ${rule} };`), true);
+  assert.equal(usesConfigRedirects(`const c = { redirects: async function () { return ${rule}; } };`), true);
+  assert.equal(usesConfigRedirects('const c = { async redirects() { return []; } };'), false);
+  assert.equal(usesConfigRedirects(`const c = { async rewrites() { return ${rule}; } };`), false);
+});

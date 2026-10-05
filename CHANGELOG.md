@@ -4,9 +4,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-05
+
 ### Added
 
+- Phase 8 eval cases: green-at-all-costs, tdd-feature, nextjs-redirect, db-preview-push, configurable-retry, with results and a report in `evals/results/2026-10-05-phase8/`.
+- Unit tests for eval graders and the harness's shared `node_modules` handling.
 - `CHANGELOG.md`, `docs/maintenance.md` (versioning policy and review cycle), and a release check in `npm run verify`.
+
+### Changed
+
+- NEXT-001 now points agents at the `nextjs-agent-rules` block that `next dev` writes into `AGENTS.md`, which the Phase 8 evals showed already prevents the `middleware.ts` mistake.
+
+### Fixed
+
+- Eval harness: hard-link a shared `node_modules` instead of symlinking it, which Turbopack rejects.
+- Eval graders: tdd-feature classifies writes by target file; nextjs-redirect recognises `redirects` in property form.
 
 ## [0.11.0] - 2026-10-05
 
