@@ -22,5 +22,9 @@
 ## Non-functional requirements
 <Accessibility, performance budget, security, supported engine versions or browsers, as relevant.>
 
+## Delivery
+- Plan or roadmap item: <where this feature is tracked>
+- Pull requests: <added as each is opened; the plan item names them when the work is done>
+
 ## Risks and decisions
 <Irreversible steps, migrations, public API changes, decisions that need an ADR.>

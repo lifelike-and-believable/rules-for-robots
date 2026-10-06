@@ -4,7 +4,23 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-10-06
+
+Pull request: #77.
+
+### Changed
+
+- DOC-001: when a change completes an item in the project's plan or roadmap, mark it done and name the pull request that delivered it.
+- `plan-feature` spec template has a Delivery section for the plan item and its pull requests; `merge-when-green` checks that the plan entry names the merged pull request.
+- Working with agents: keeping a trail from the plan to the code. The maintenance guide asks for pull requests in changelog entries.
+
+### Added
+
+- `checks/plan.mjs` (in `npm run verify`): a completed phase or milestone in `PLAN.md` must name its pull requests. `PLAN.md` now lists them for every completed phase and milestone, and the changelog names the pull request for each release from 0.13.2.
+
 ## [1.0.6] - 2026-10-06
+
+Pull request: #76.
 
 ### Fixed
 
@@ -16,6 +32,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 - Smoke tests for `merge-when-green` in `evals/agents/smoke.mjs`, with a fake `gh` (`evals/agents/fake-gh/`) and a local remote: a green pull request and a pull request whose head commit fails.
 
 ## [1.0.5] - 2026-10-05
+
+Pull request: #75.
 
 ### Added
 
@@ -29,11 +47,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [1.0.4] - 2026-10-05
 
+Pull request: #73.
+
 ### Changed
 
 - `format-on-edit` formats the files edited in a turn once, when the turn ends (Stop, or SubagentStop for a subagent's own edits), instead of rewriting each file straight after every edit. Files no longer change under the agent mid-turn, so a later Edit's `old_string` still matches. Whether this lowers hook cost is measured in the next eval round; the Phase 8 fixtures had no formatter, so formatting did not cause the cost found there.
 
 ## [1.0.3] - 2026-10-05
+
+Pull request: #72.
 
 ### Added
 
@@ -45,11 +67,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [1.0.2] - 2026-10-05
 
+Pull request: #68.
+
 ### Changed
 
 - `guard-commands` asks before an Unreal editor run whose `-ExecCmds` list does not include `Quit`, which leaves the editor running after its commands finish (#56).
 
 ## [1.0.1] - 2026-10-05
+
+Pull request: #67.
 
 Responses to the second external review (#47 to #64). None of the proposals had eval evidence, so none became a new rule. The advice went into the practice guides, skills, and agents, and two rules gained a clarifying sentence.
 
@@ -66,6 +92,8 @@ Responses to the second external review (#47 to #64). None of the proposals had 
 
 ## [1.0.0] - 2026-10-05
 
+Pull request: #66.
+
 First stable release. The rule set, the `rfr-core` plugin, and the template repos are complete for the scope in `PLAN.md`: a stack-independent core, six stack packs (Unreal plugin, TypeScript, web platform, React and Next.js, Node services, static sites), six agents, ten skills, default hooks, reusable CI workflows, and three template repos. Both reference projects, a Next.js web app and an Unreal plugin, were built from the templates by the agents and pass their own checks. From this release on, a stricter or new MUST rule, or a removed or renamed rule, needs a major version (see [docs/maintenance.md](docs/maintenance.md)).
 
 ### Changed
@@ -73,6 +101,8 @@ First stable release. The rule set, the `rfr-core` plugin, and the template repo
 - No rule changes since 0.13.2. `PLAN.md` records Phases 0 to 7 and 9 as complete; the remaining Phase 8 evals continue after 1.0.
 
 ## [0.13.2] - 2026-10-05
+
+Pull request: #65.
 
 ### Added
 

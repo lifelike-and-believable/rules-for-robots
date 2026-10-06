@@ -17,7 +17,7 @@ Rule IDs are never reused. A removed rule's ID stays retired so waivers and eval
 
 ## Releasing
 
-1. Move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date.
+1. Move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, and name the pull requests the release contains.
 2. Set the same version in `plugins/core/.claude-plugin/plugin.json`.
 3. Run `npm run build` and `npm run verify`. The release check fails if the changelog and plugin version disagree.
 4. Merge, then tag the merge commit `rfr-v<version>` (for example `rfr-v1.0.2`) and create a GitHub release from the changelog entry. Cloud agent sessions can push branches but not tags, so the maintainer pushes the tag.
