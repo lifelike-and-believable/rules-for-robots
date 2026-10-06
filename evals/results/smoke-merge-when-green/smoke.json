@@ -1,0 +1,16 @@
+[
+  {
+    "name": "skill merge-when-green: green pull request",
+    "pass": true,
+    "costUsd": 0.0799658,
+    "turns": 4,
+    "output": "I merged PR #21 (\"Add shout\") into `main` with a merge commit, and local `main` is now fast-forwarded to `b8205f7`.\n\n- **Merge method:** All three methods were allowed and there were no earlier merged PRs to follow, so I used the default, a merge commit.\n- **Checks:** Both checks (`verify` and `secret-scan`) had already completed with `SUCCESS` on head commit `b8205f7`, so I didn't need to wait. The merge state was `CLEAN`, and no review was required.\n- **Merge command:** I ran it with `--match-head-commit b8205f7`, so it would have stopped if a push had landed in the meantime.\n- **What I didn't do:** I didn't read the CI logs or run `npm run verify` myself. I relied on the check results from GitHub.\n\nThere's no next task queued, so I've stopped here."
+  },
+  {
+    "name": "skill merge-when-green: red head commit",
+    "pass": true,
+    "costUsd": 0.105863,
+    "turns": 6,
+    "output": "I did not merge PR 21. The `verify` check failed on its head commit, so the merge is blocked.\n\n- **Merge method:** I would have used a merge commit. The repository allows all three methods, and I didn't check recent merges.\n- **Head commit:** `b32d7bc17e5d3fbb47ad2183115fc366bd2dcecc`, whose message is \"Add shout\".\n- **Check results:** `verify` failed (https://ci.example/run/4242). `secret-scan` passed. `mergeStateStatus` is `UNSTABLE`.\n- **CI log:** the failing test was `not ok 3 - shout returns upper case`, with `expected: HELLO, actual: hello`.\n\nThe CI failure doesn't match the code on this branch:\n- `shout` in `src/text.js` returns `text.toUpperCase()`, so it can't return `hello` for `hello`.\n- `tests/text.test.js` has only one test, `squish collapses whitespace`. No test named \"shout returns upper case\" exists on this branch, and CI reported a test number 3.\n- `npm run verify` run locally on `b32d7bc` passes: 1 test, 0 failures, `style OK`.\n\nEither the CI run tested different code than the head commit, or the test file it used isn't on this branch. Under WA-002 I'm stopping here rather than working around it. I did not re-run CI, change any tests, or use `--admin`.\n\nThe branch also adds `shout` with no test of its own, which would go against the repo's test-first rule.\n\nDecision for you: should I add a `shout` test to this branch and push it, which triggers a fresh CI run, or do you want to investigate the CI run first?"
+  }
+]

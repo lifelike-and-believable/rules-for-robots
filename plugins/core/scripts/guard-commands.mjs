@@ -80,8 +80,12 @@ export function execCmdsWithoutQuit(command) {
   return Boolean(match) && !/\bquit\b/i.test(match[1]);
 }
 
+// Redirects that only join or discard streams (2>&1, >/dev/null, &>/dev/null) write no file.
+const STREAM_REDIRECTS = /\d*>&\d+|&>>?\s*\/dev\/null|\d*>>?\s*\/dev\/null/g;
+
 export function writesTestFile(command) {
-  return TEST_PATH.test(command) && (WRITES.test(command) || psWrites(command));
+  const stripped = command.replace(STREAM_REDIRECTS, ' ');
+  return TEST_PATH.test(stripped) && (WRITES.test(stripped) || psWrites(stripped));
 }
 
 export function findRisk(command) {
