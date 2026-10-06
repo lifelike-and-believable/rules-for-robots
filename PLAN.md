@@ -197,9 +197,11 @@ Instruction files are concatenated and conflicts resolve arbitrarily, so every l
 
 ### Phase 0: Research (complete)
 Delivered `docs/research/findings.md`, `docs/research/recommendations.md` (R1 to R64, all accepted), `docs/research/notes/`, and `docs/research/sources/fab-requirements.md`.
+Pull requests: #1 (plan and research).
 
 ### Phase 1: Foundations (complete)
 Delivered: [docs/rule-format.md](docs/rule-format.md), [experiment R7](docs/research/experiments/r7-rule-loading.md), `TEST-001` as the worked example, the rule lint, the template repo build with budget and staleness checks, the `rfr-core` plugin and marketplace with the `install-rules` skill (installed and run end to end against a demo repo), and CI running `npm run verify`. Finding: writes to `.claude/` need user approval, which the installer skill now explains.
+Pull requests: #2 (rule format and R7), #3 (skeleton, lint, build, CI), #4 (plugin, marketplace, install-rules).
 
 - Finalize the rule file format (section 6) and ID scheme.
 - Test whether rule frontmatter and HTML comments reach the model, using the `InstructionsLoaded` hook (R7).
@@ -211,6 +213,7 @@ Delivered: [docs/rule-format.md](docs/rule-format.md), [experiment R7](docs/rese
 
 ### Phase 2: Core rules and eval seed (complete)
 Delivered: working agreement `WA-001` to `WA-007`; core rules `TEST-002`/`003`, `CODE-001` to `004`, `SEC-001` to `003`, `GIT-001`, `DOC-001`; `rfr-core` hooks (destructive-command and test-edit guards, format on edit); the eval harness and seed results ([report](evals/results/2026-10-05-seed/report.md)). Finding: on the seed tasks neither 5.5 model showed the target failures even without rules, and rules added 19 to 40% cost while changing behaviour (test-first fixes). Phase 8 needs harder cases.
+Pull requests: #5 (working agreement), #6 (hooks), #7 (core rules), #9 (eval harness and seed), #17 (TEST-004).
 
 - `00-working-agreement` built from (R8 to R12):
   - a concrete verification command whose output appears in the agent's report;
@@ -225,6 +228,7 @@ Delivered: working agreement `WA-001` to `WA-007`; core rules `TEST-002`/`003`, 
 
 ### Phase 3: Stack packs (complete)
 Delivered: all six packs (`unreal-plugin` 12 rules, `typescript` 2, `web-platform` 4, `react-nextjs` 4, `node-services` 8, `static-sites` 3); `checks/unreal/tier1.mjs`; the `RfrSample` plugin; the Tier 2 workflow with a runner probe for R55; the `guard-mcp` hook for the Vercel MCP server. Tier 2 builds and tests `RfrSample` on UE 5.6, 5.7, and 5.8 on the `ue5` runner, and the probe answered open questions 2 and 3.
+Pull requests: #8 (unreal-plugin pack, Tier 1, sample), #10 (Tier 2 and runner probe), #11 (TypeScript, web-platform, React and Next.js), #12 (Node services, static sites, Vercel MCP guard), #16, #21, #22 (Tier 2 fixes and first green runs).
 
 - Order: `unreal-plugin`, `typescript`, `web-platform`, `react-nextjs`, `node-services`, `static-sites`.
 - Content per section 7.
@@ -233,12 +237,14 @@ Delivered: all six packs (`unreal-plugin` 12 rules, `typescript` 2, `web-platfor
 
 ### Phase 4: Best-practice guides (complete)
 Delivered: six guides in `practices/` (working with agents; testing and code quality; security; Unreal plugin development; web verification including Astro; Postgres on Vercel). The rule lint now fails when a rule cites no existing guide or a guide is cited by no rule.
+Pull requests: #13.
 
 - Longer `practices/` guides linked to rule IDs, with short good/bad examples. Point agents at exemplar files rather than describing patterns where possible.
 - **Exit criteria:** every rule file links to at least one guide; every guide is referenced by at least one rule.
 
 ### Phase 5: Agents, skills, and hooks (complete)
 Delivered: six agents and ten skills in `rfr-core`, plus the hooks from Phases 2 and 3. Each agent and skill passed two smoke tasks (26 of 26; [results](evals/results/2026-10-05-smoke/summary.md)); `install-rules` was tested end to end in Phase 1.
+Pull requests: #14 (agents and skills), #75 and #76 (`merge-when-green` and its smoke tests).
 
 - Agents per section 8.
 - Skills: `plan-feature`, `implement-feature`, `review-pr`, `a11y-audit`, `perf-audit`, `security-review`, `write-adr`, `install-rules`, `release`, `profile-unreal-plugin`, `package-unreal-plugin`. Side-effecting skills set `disable-model-invocation: true` (R23). Critical content stays in each skill's first 5,000 tokens.
@@ -247,6 +253,7 @@ Delivered: six agents and ten skills in `rfr-core`, plus the hooks from Phases 2
 
 ### Phase 6: GitHub integration and templates (complete)
 Delivered: shared PR template, issue forms, guards workflow, and `.claude/settings.json` for every template repo; per-profile CI (web: verify, bundle budgets, squawk, preview checks with Playwright, axe, and Lighthouse CI; Unreal: Tier 1 via a reusable workflow, Tier 2 via `Scripts/Verify.ps1`); reusable `rfr-guards.yml` (gitleaks, test change guard) and `rfr-unreal-tier1.yml`; the build now generates entire template repos from `templates/`; [adoption guide](docs/adoption-guide.md) and [layering and overrides](docs/layering-and-overrides.md). The under-an-hour check is part of Phase 7, which builds real projects from the templates.
+Pull requests: #15 (integration, template CI, adoption docs), #43 (instruction lint), #72 (owned paths), #75 (CI status comment).
 
 - PR template with rule-ID checklist, issue forms, ADR and feature spec templates.
 - Reusable workflows in `checks/`:
@@ -260,6 +267,7 @@ Delivered: shared PR template, issue forms, guards workflow, and `.claude/settin
 
 ### Phase 7: Reference projects (complete)
 Web app: `examples/web-app` built from the template by the `rfr-core` agents, passing all checks and budgets; the build exposed seven template and hook gaps, all fixed. Unreal: `examples/unreal-plugin` (RfrCooldowns) built from the template by the `unreal-engineer` agent for $1.92. Tier 2 builds it with zero warnings, passes its 16 specs, and produces a staged Fab package on UE 5.6, 5.7, and 5.8. The agent's one test failure (a subsystem created without its required outer) moved into UE-007, and the Fab rehearsal exposed a spurious Tier 1 warning, now fixed ([reference projects](docs/reference-projects.md)). A real Fab submission is still to come; #36 waits on it.
+Pull requests: #18 (web app), #65 (Unreal plugin and Fab rehearsal).
 
 - A small web app and a small Unreal plugin built with the full set of agents and rules. The plugin passes the Fab release flow (R64) for all supported engine versions.
 - **Exit criteria:** both pass their own checks and meet declared budgets.
@@ -270,6 +278,7 @@ Web app: `examples/web-app` built from the template by the `rfr-core` agents, pa
 - Graders: held-out tests, deterministic diff and transcript checks, and a calibrated LLM judge for scope and evidence-backed reporting; report pass@1, pass^k (k of 3 or more), cost, and failure-mode rates (R37).
 - Test the Phase 0 open questions directly: plain vs. emphatic wording, rationale vs. none, keywords in body vs. metadata, concrete vs. generic verification, specialist reviewers vs. one checklist reviewer.
 - **Exit criteria:** every rule either shows a measurable effect or is removed or rewritten (R38).
+Pull requests so far: #20 (harder cases), #44 (round 2), #46 (multi-prompt sessions), #74 (long-session cases).
 
 Status: first round done ([report](evals/results/2026-10-05-phase8/report.md)). Five harder cases, 2 models, 3 arms, 3 runs: test-gaming and test-first cases show clear rule effects; data-loss, over-engineering, and Next.js 16 cases do not. NEXT-001 narrowed. Graders now have unit tests. Still to do: an Unreal API-change case, leave-one-pack-out and single-rule ablations, the wording experiments, and harder variants of the cases that showed no effect.
 
@@ -277,6 +286,7 @@ Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested th
 
 ### Phase 9: Release and maintenance (v1.0.0 released)
 Delivered: semantic versioning shared by the rule set and `rfr-core`, checked by `checks/release.mjs`; [changelog](CHANGELOG.md); [maintenance guide](docs/maintenance.md); releases tagged `rfr-v<version>` (`rfr-v1.0.0`, `rfr-v1.0.2`). After 1.0, two external review rounds (#23 to #38, #47 to #64) were answered mostly with practice-guide text, hooks, and checks, since none of their proposals had eval evidence for a new rule. The plugins install from this repository's marketplace, and the template repos are published as generated folders in `template-repos/`.
+Pull requests: #19 (changelog and release check), #39 to #43 and #45 (first adoption review), #66 (1.0.0), #67 and #68 (second review), #70 (tag prefix), #71 (plan refresh), #73 (formatting once per turn), #76 (1.0.6), #77 (pull request records in the plan).
 
 - Semantic versioning for the rule set and plugins; plugin `version` bumped every release; changelog.
 - Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
@@ -284,15 +294,15 @@ Delivered: semantic versioning shared by the rule set and `rfr-core`, checked by
 
 ## 11. Milestones
 
-| Milestone | Contents | Status |
-|---|---|---|
-| M1 | Phase 0 research, recommendations, plan update | Done |
-| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Done |
-| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done |
-| M4 | Remaining web packs + practice guides | Done |
-| M5 | Agents, skills, hooks | Done |
-| M6 | GitHub integration, CI workflows, template repos | Done |
-| M7 | Reference projects, full evals, revisions, v1.0 | Done for v1.0; the remaining Phase 8 evals continue |
+| Milestone | Contents | Status | Pull requests |
+|---|---|---|---|
+| M1 | Phase 0 research, recommendations, plan update | Done | #1 |
+| M2 | Phase 1 foundations + Phase 2 working agreement, testing and code-quality rules, default hooks, eval seed | Done | #2 to #7, #9 |
+| M3 | Remaining core rules + `unreal-plugin` and `typescript` packs | Done | #8, #10, #11 |
+| M4 | Remaining web packs + practice guides | Done | #12, #13 |
+| M5 | Agents, skills, hooks | Done | #14 |
+| M6 | GitHub integration, CI workflows, template repos | Done | #15 |
+| M7 | Reference projects, full evals, revisions, v1.0 | Done for v1.0; the remaining Phase 8 evals continue | #18, #20, #65, #66 |
 
 From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
