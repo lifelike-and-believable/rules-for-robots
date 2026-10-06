@@ -390,3 +390,12 @@ test("format-on-edit ignores a SubagentStop with no agent_id, such as Claude Cod
   assert.equal(fs.readFileSync(main, 'utf8'), 'm\n// formatted\n');
   t.cleanup();
 });
+
+test('guard-commands ignores stream redirects such as 2>&1 and >/dev/null on test paths', () => {
+  for (const command of ['cat tests/a.test.js 2>&1', 'node --test tests/a.test.js 2>&1 | tail -5', 'cat src/x.spec.ts >/dev/null', 'grep -n foo tests/a.test.js 2> /dev/null', 'cat tests/a.test.js &>/dev/null']) {
+    assert.equal(findRisk(command), null, command);
+  }
+  for (const command of ['echo x > tests/a.test.js', 'cat new.js 2>&1 > tests/a.test.js', 'echo x >> src/a.spec.ts 2>&1']) {
+    assert.ok(findRisk(command), command);
+  }
+});

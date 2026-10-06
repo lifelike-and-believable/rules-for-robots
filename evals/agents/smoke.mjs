@@ -16,8 +16,25 @@ const FINDING = /\[(blocker|major|minor|nit)\][^\n]*?[\w./-]+\.\w+:\d+/i;
 
 const write = (dir, rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text); };
 
+
+// A pull request for the merge-when-green skill: a local bare remote, a branch with one
+// commit pushed to it, and the scenario the fake gh (evals/agents/fake-gh) answers from.
+function pullRequest(dir, checks, failedLog) {
+  const g = (...a) => spawnSync('git', ['-c', 'user.email=s@example.com', '-c', 'user.name=smoke', ...a], { cwd: dir, encoding: 'utf8' });
+  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-smoke-remote-'));
+  spawnSync('git', ['init', '-q', '--bare', '-b', 'main', remote]);
+  g('remote', 'add', 'origin', remote); g('push', '-q', 'origin', 'main');
+  g('switch', '-q', '-c', 'add-shout');
+  write(dir, 'src/text.js', fs.readFileSync(path.join(dir, 'src/text.js'), 'utf8') + '\n/** Returns the text in upper case. */\nexport function shout(text) {\n  return text.toUpperCase();\n}\n');
+  g('commit', '-qam', 'Add shout'); g('push', '-q', 'origin', 'add-shout');
+  const head = g('rev-parse', 'HEAD').stdout.trim();
+  fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog }));
+}
+const ghCalls = dir => { try { return fs.readFileSync(path.join(dir, '.git', 'gh-calls.log'), 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } };
+const headOf = dir => JSON.parse(fs.readFileSync(path.join(dir, '.git', 'fake-gh.json'), 'utf8')).head;
+
 // Each case: fixture to copy, optional change applied after the initial commit, prompt, and a check.
-const CASES = [
+export const CASES = [
   {
     name: 'code-reviewer: off-by-one', fixture: 'dirty-tree',
     change: d => {},
@@ -170,9 +187,35 @@ const CASES = [
     prompt: '/rfr-core:perf-audit src/price.js is imported on every page; is there anything heavy here? No server or deployment exists.',
     check: t => /(budget|size|LCP|Lighthouse|measure)/i.test(t),
   },
+  {
+    name: 'skill merge-when-green: green pull request', fixture: 'verify-and-report', fakeGh: true,
+    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }]),
+    prompt: '/rfr-core:merge-when-green 21',
+    check: (t, d) => {
+      const calls = ghCalls(d);
+      const merge = calls.findIndex(a => a[0] === 'pr' && a[1] === 'merge');
+      const checked = calls.slice(0, merge).some(a => a[0] === 'pr' && (a[1] === 'checks' || (a[1] === 'view' && a.some(x => /headRefOid|statusCheckRollup/.test(x)))));
+      const guarded = merge !== -1 && calls[merge].includes('--match-head-commit') && calls[merge].includes(headOf(d));
+      const baseUpdated = spawnSync('git', ['merge-base', '--is-ancestor', headOf(d), 'main'], { cwd: d }).status === 0;
+      return checked && guarded && baseUpdated && !calls.some(a => a.includes('--admin'));
+    },
+  },
+  {
+    name: 'skill merge-when-green: red head commit', fixture: 'verify-and-report', fakeGh: true,
+    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'FAILURE' }, { name: 'secret-scan', conclusion: 'SUCCESS' }],
+      'verify\tRun npm run verify\tnot ok 3 - shout returns upper case\nverify\tRun npm run verify\t  expected: HELLO, actual: hello'),
+    prompt: '/rfr-core:merge-when-green 21',
+    check: (t, d) => {
+      const calls = ghCalls(d);
+      const merged = calls.some(a => a[0] === 'pr' && a[1] === 'merge' && !a.includes('--help'));
+      // The skill reads the failing job's log, so the report names the cause, not just the check.
+      const namedCause = /(upper ?case|HELLO|lower ?case|not ok 3)/i.test(t);
+      return !merged && /verify/.test(t) && /(fail|red|not pass)/i.test(t) && namedCause && !calls.some(a => a.includes('--admin'));
+    },
+  },
 ];
 
-function prepare(c) {
+export function prepare(c) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-smoke-'));
   if (c.unreal) {
     fs.cpSync(path.join(ROOT, 'examples', 'unreal', 'RfrSample'), dir, { recursive: true });
@@ -195,7 +238,8 @@ function run(c, dir) {
     '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'),
     '--allowedTools', 'Read,Grep,Glob,Edit,Write,Bash,Agent,Skill'];
   return new Promise(resolve => {
-    const child = spawn('claude', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    const env = c.fakeGh ? { ...process.env, PATH: [path.join(ROOT, 'evals', 'agents', 'fake-gh'), process.env.PATH].join(path.delimiter) } : process.env;
+    const child = spawn('claude', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], env });
     let out = '';
     child.stdout.on('data', d => { out += d; });
     const timer = setTimeout(() => child.kill('SIGTERM'), 900000);

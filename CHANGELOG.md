@@ -4,6 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-10-06
+
+### Fixed
+
+- `merge-when-green`: picks a merge method without stopping to ask (argument, the only allowed method, recent merges, then a merge commit); reads the failing job's log before reporting; switches to the base branch and fast-forwards it after merging. Found by its new smoke tests, which now pass 4 of 4 (`evals/results/smoke-merge-when-green/`).
+- `guard-commands` no longer treats stream redirects (`2>&1`, `>/dev/null`) as writes, so read-only commands on test files are not stopped.
+
+### Added
+
+- Smoke tests for `merge-when-green` in `evals/agents/smoke.mjs`, with a fake `gh` (`evals/agents/fake-gh/`) and a local remote: a green pull request and a pull request whose head commit fails.
+
 ## [1.0.5] - 2026-10-05
 
 ### Added
