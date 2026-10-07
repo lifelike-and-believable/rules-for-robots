@@ -13,11 +13,13 @@ try { fs.appendFileSync(path.join(git, 'gh-calls.log'), JSON.stringify(args) + '
 let s;
 try { s = JSON.parse(fs.readFileSync(path.join(git, 'fake-gh.json'), 'utf8')); } catch { console.error('fake gh: no scenario'); process.exit(1); }
 
-const checks = s.checks.map(c => ({ name: c.name, state: c.conclusion, bucket: c.conclusion === 'SUCCESS' ? 'pass' : 'fail', link: `https://ci.example/run/${s.runId}` }));
-const rollup = s.checks.map(c => ({ __typename: 'CheckRun', name: c.name, status: 'COMPLETED', conclusion: c.conclusion, detailsUrl: `https://ci.example/run/${s.runId}` }));
+// A scenario with pendingUntilWatch shows its checks as running until `pr checks --watch` has been called.
+const pending = !!s.pendingUntilWatch && !s.watched;
+const checks = s.checks.map(c => ({ name: c.name, state: pending ? 'PENDING' : c.conclusion, bucket: pending ? 'pending' : c.conclusion === 'SUCCESS' ? 'pass' : 'fail', link: `https://ci.example/run/${s.runId}` }));
+const rollup = s.checks.map(c => ({ __typename: 'CheckRun', name: c.name, status: pending ? 'IN_PROGRESS' : 'COMPLETED', conclusion: pending ? '' : c.conclusion, detailsUrl: `https://ci.example/run/${s.runId}` }));
 const pr = {
   number: s.number, title: s.title, state: s.merged ? 'MERGED' : 'OPEN', headRefName: s.branch, baseRefName: 'main', headRefOid: s.head,
-  mergeStateStatus: s.checks.every(c => c.conclusion === 'SUCCESS') ? 'CLEAN' : 'UNSTABLE', reviewDecision: '', mergeable: 'MERGEABLE',
+  mergeStateStatus: pending ? 'BLOCKED' : s.checks.every(c => c.conclusion === 'SUCCESS') ? 'CLEAN' : 'UNSTABLE', reviewDecision: '', mergeable: 'MERGEABLE',
   statusCheckRollup: rollup, url: `https://github.example/acme/app/pull/${s.number}`,
 };
 const failing = s.checks.some(c => c.conclusion !== 'SUCCESS');
@@ -26,9 +28,15 @@ const jsonIdx = args.indexOf('--json');
 const pick = fields => Object.fromEntries(fields.split(',').map(f => [f, pr[f]]));
 
 if (cmd === 'pr' && sub === 'checks') {
+  const watchedNow = args.includes('--watch') && pending;
+  if (watchedNow) {
+    s.watched = true;
+    fs.writeFileSync(path.join(git, 'fake-gh.json'), JSON.stringify(s));
+    checks.forEach((c, i) => Object.assign(c, { state: s.checks[i].conclusion, bucket: s.checks[i].conclusion === 'SUCCESS' ? 'pass' : 'fail' }));
+  }
   if (jsonIdx !== -1) console.log(JSON.stringify(checks.map(c => ({ name: c.name, state: c.state, bucket: c.bucket, link: c.link }))));
   else for (const c of checks) console.log(`${c.name}\t${c.bucket}\t1m2s\t${c.link}`);
-  process.exitCode = failing ? 1 : 0;
+  process.exitCode = pending && !watchedNow ? 8 : failing ? 1 : 0;
 } else if (cmd === 'pr' && sub === 'view') {
   if (jsonIdx !== -1) console.log(JSON.stringify(pick(args[jsonIdx + 1])));
   else console.log(`${pr.title} #${pr.number}\n${pr.state} • ${pr.headRefName} into main`);
