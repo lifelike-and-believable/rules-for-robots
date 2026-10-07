@@ -12,8 +12,13 @@ Core plugin from [rules-for-robots](../../README.md).
 | `security-reviewer` | Opus, high | Read-only | Secrets, injection, authorization, dependencies, CI, migrations |
 | `accessibility-reviewer` | Sonnet, medium | Read-only | WCAG 2.2 AA for web; editor and in-game accessibility for Unreal |
 | `performance-reviewer` | Sonnet, medium | Read-only | Web budgets and queries; per-frame cost for Unreal |
+| `ci-watcher` | Haiku 5.5, medium | Read-only | Waits for a pull request's checks and returns results and the first error from each failed job's log |
+| `check-runner` | Haiku 5.5, medium | Read-only | Runs named scanners, audits, builds, and tests and returns exit codes and key output verbatim |
+| `citation-checker` | Haiku 5.5, medium | Read-only | Checks that each review finding's file, line, identifiers, and rule ID exist |
 
 Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals.
+
+The three Haiku agents gather or run things and return text copied from tools. They never judge: the calling session decides whether a check is green, a finding is true, or a change can merge. Skills call them (`merge-when-green`, `review-pr`, `security-audit`, `perf-audit`, `a11y-audit`, `package-unreal-plugin`); the implementation agents cannot, because subagents cannot start subagents. They are pinned to `claude-haiku-5-5`. The reasoning is in [the Haiku 5.5 research note](../../docs/research/notes/haiku_5_5_delegation.md).
 
 ## Skills
 

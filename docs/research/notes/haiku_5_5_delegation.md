@@ -51,7 +51,7 @@ Keep on Sonnet or Opus anything where a silent miss is the failure: finding bugs
 
 | Task | Where it lives today | What Haiku does | What stays with the caller |
 |---|---|---|---|
-| CI wait and failure triage | `merge-when-green` steps 2 and 4; "see a change through CI" in both engineers | Run `gh pr checks <pr> --watch --fail-fast`; on failure read `gh run view --log-failed` and return the check name, run ID, and the first error with surrounding lines, verbatim | Confirming every check on `headRefOid` (step 3), the decision to merge, and any fix |
+| CI wait and failure triage | `merge-when-green` steps 2 and 4 (the engineers' "see a change through CI" line cannot use it, because subagents cannot start subagents) | Run `gh pr checks <pr> --watch --fail-fast`; on failure read `gh run view --log-failed` and return the check name, run ID, and the first error with surrounding lines, verbatim | Confirming every check on `headRefOid` (step 3), the decision to merge, and any fix |
 | Scanner and measurement runs | `security-audit` step 2 (gitleaks, Semgrep or CodeQL, `npm audit`); `perf-audit` step 1 (Lighthouse three times); `a11y-audit` step 2 (axe) | Run the commands, write raw output to files, return counts, medians, and file paths | Interpreting results; `security-reviewer` still does the deep read |
 | Build and test runs | `unreal-engineer` per-version builds and Tier 1; `package-unreal-plugin` step 3 | Run builds for each engine version, read `index.json`, return pass and fail counts and every compiler error and warning verbatim | Deciding what a warning means; fixing anything |
 | Citation check on findings | `review-pr` step 4, before the confirm-or-refute pass | For each finding, confirm the cited `path:line` exists and the quoted code matches; return a mismatch list | Whether the failure scenario is real |
@@ -79,8 +79,15 @@ Why these are safe: each returns text copied from a tool, so an error shows up a
 - Give each Haiku agent a fixed return format (check, command, exit code, verbatim excerpt) so the caller can spot a malformed answer.
 - Haiku agents get `Read, Grep, Glob, Bash` and `disallowedTools: Edit, Write, Agent`, as the reviewers do.
 
-## Proposed next slice
+## What was built (1.1.0) and what the smoke runs showed
 
-1. Add two agents, `ci-watcher` (CI wait and log triage) and `check-runner` (scanners, measurements, builds), with smoke cases in `evals/agents/smoke.mjs`, then update `merge-when-green`, `security-audit`, `perf-audit`, `a11y-audit`, and `package-unreal-plugin` to call them. Bump `rfr-core` `version`.
-2. Run the existing reviewer smoke cases with `accessibility-reviewer` and `performance-reviewer` switched to Haiku 5.5, plus planted-bug cases, and record recall and cost.
-3. Measure the cost of a `merge-when-green` run and a `security-audit` run before and after, and record the numbers in `evals/results/`. No savings figure should be quoted until this is done.
+Built: `ci-watcher`, `check-runner`, and `citation-checker`, all pinned to `claude-haiku-5-5` at `medium` effort with read-only tools, and the skill changes in the table above. The skills delegate only when there is something to wait for or enough output to be worth it: `merge-when-green` calls `ci-watcher` when checks are pending, `review-pr` calls `citation-checker` with three or more findings, and `security-audit` calls `check-runner` only when the project has scanners. The caller still re-reads the head commit before merging.
+
+Smoke results (`evals/results/smoke-haiku-subagents/`, 16 of 16 passing, 2026-10-07):
+
+- The harness reads `modelUsage` from the CLI's JSON output, and the new cases fail unless `claude-haiku-5-5` ran, so the pinned ID is accepted and used.
+- Each agent run costs about $0.0012 to $0.0018. In these small scenarios the Sonnet session around it costs $0.06 to $0.30, so Haiku was $0.010 of $1.62 in total. The saving here is not measurable; it would have to come from large inputs.
+- Two first-run failures were test problems (a format-bound regex, and the agent reporting `pass` where the check expected `SUCCESS`). One was a design finding: with instantly finishing checks, the parent skipped `ci-watcher`, which is correct, since a spawn costs more than the call. A pending-checks scenario was added to the fake `gh`, and the parent then delegated the wait.
+- The agents behaved as specified: verbatim excerpts, no merge or re-run calls, `did not run` for a missing scanner, and a clean working tree afterwards.
+
+Still open: a before and after cost comparison on a long CI log or a large scanner output, which is where the input-price difference ($0.10 against $2 per million tokens) should show. Until that is measured, the claim is that the agents are safe and cheap per call, not that a run costs less overall. Reviewer trials on Haiku (the second group above) are not started.
