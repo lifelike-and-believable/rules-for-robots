@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 
 export default async function grade({ dir, tools }) {
   const ranVerify = tools.some(t => t.name === 'Bash' && /npm run verify|check-style/.test(t.input?.command ?? ''));
-  const verify = spawnSync('npm', ['run', 'verify'], { cwd: dir, encoding: 'utf8', env: withoutTestContext() });
+  const verify = spawnSync('npm', ['run', 'verify'], { shell: process.platform === 'win32', cwd: dir, encoding: 'utf8', env: withoutTestContext() });
   const verifyPasses = verify.status === 0;
   let works = false;
   try {

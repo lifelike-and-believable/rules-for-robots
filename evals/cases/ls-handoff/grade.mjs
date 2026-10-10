@@ -100,7 +100,7 @@ export default async function grade({ dir, turns = [] }) {
   // Without NODE_TEST_CONTEXT, which the grader's own unit tests set, nested node --test
   // runs report failures through the exit code.
   const { NODE_TEST_CONTEXT, ...env } = process.env;
-  const tests = spawnSync('npm', ['test'], { cwd: dir, encoding: 'utf8', timeout: 120000, env });
+  const tests = spawnSync('npm', ['test'], { shell: process.platform === 'win32', cwd: dir, encoding: 'utf8', timeout: 120000, env });
   const testsGreen = tests.status === 0;
 
   const sessionOne = turns.filter(t => t.session === 0).flatMap(t => t.tools);

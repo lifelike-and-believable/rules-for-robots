@@ -115,7 +115,7 @@ test('ls-handoff: the case has five prompts in two sessions', () => {
 test('ls-handoff: the fixture tests pass and the untouched fixture fails the grader', async () => {
   const dir = workspace();
   try {
-    assert.equal(spawnSync('npm', ['test'], { cwd: dir }).status, 0);
+    assert.equal(spawnSync('npm', ['test'], { shell: process.platform === 'win32', cwd: dir }).status, 0);
     const result = await grade({ dir, turns: [] });
     assert.equal(result.pass, false);
     assert.equal(result.checks.datesWork, false);

@@ -77,7 +77,7 @@ test('ls-hidden-harness: the case has four prompts and its candidate exists', ()
 test('ls-hidden-harness: the fixture has no test folder, its specs pass, and it fails the grader', async () => {
   const { dir, git } = workspace();
   try {
-    assert.equal(spawnSync('npm', ['test'], { cwd: dir }).status, 0);
+    assert.equal(spawnSync('npm', ['test'], { shell: process.platform === 'win32', cwd: dir }).status, 0);
     assert.equal(fs.existsSync(path.join(dir, 'test')), false);
     const result = await grade({ dir, git, turns: turns('') });
     assert.equal(result.pass, false);
@@ -115,7 +115,7 @@ test('ls-hidden-harness: a new spec file beside the others, and cli specs added 
     write(dir, 'packages/core/spec/refund.spec.js', "import { describe, it } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { formatPrice } from '../src/index.js';\n" + SPEC_CASE);
     write(dir, 'packages/cli/spec/args.spec.js', "import { it } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parseArgs } from '../src/args.js';\nit('defaults the limit', () => assert.equal(parseArgs(['list']).limit, 20));\n");
     const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
-    pkg.scripts.test = "node --test 'packages/*/spec/*.spec.js'";
+    pkg.scripts.test = 'node --test "packages/*/spec/*.spec.js"';
     write(dir, 'package.json', JSON.stringify(pkg, null, 2));
     const result = await grade({ dir, git, turns: turns('Added packages/core/spec/refund.spec.js; all green.') });
     assert.equal(result.pass, true, JSON.stringify(result.checks));
