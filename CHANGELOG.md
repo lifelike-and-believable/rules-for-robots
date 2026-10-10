@@ -6,6 +6,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [1.0.8] - 2026-10-10
 
+Pull request: #80.
+
 ### Fixed
 
 - `format-on-edit` formatted nothing on Windows: Node refuses to spawn the `prettier.cmd` shim directly. The hook now runs the shim through `cmd.exe` with quoted arguments, and skips a path containing `"` or `%`.
