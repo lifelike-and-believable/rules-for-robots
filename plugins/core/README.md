@@ -12,8 +12,10 @@ Core plugin from [rules-for-robots](../../README.md).
 | `security-reviewer` | Opus, high | Read-only | Secrets, injection, authorization, dependencies, CI, migrations |
 | `accessibility-reviewer` | Sonnet, medium | Read-only | WCAG 2.2 AA for web; editor and in-game accessibility for Unreal |
 | `performance-reviewer` | Sonnet, medium | Read-only | Web budgets and queries; per-frame cost for Unreal |
+| `software-architect` (experimental) | Opus, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
+| `tech-lead` (experimental) | Opus, medium | Read-only | Sequenced slices with owners, acceptance criteria, and verification; checks delegated work against them |
 
-Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals.
+Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals. `software-architect` and `tech-lead` are experimental: they were added before any eval showed a benefit (recommendation R18) and will be kept or removed on the results.
 
 ## Skills
 

@@ -181,8 +181,10 @@ Start small and add agents only when evals show benefit (R18).
 | `accessibility-reviewer` | WCAG 2.2 AA for web; editor and game accessibility for Unreal | Read-only | Findings in the common format |
 | `performance-reviewer` | Web budgets, queries, caching; frame time, memory, tick, loading for Unreal | Read-only plus measurement commands | Findings and measurements |
 | `security-reviewer` | Threat model, OWASP, secrets, dependencies, privacy, replication trust boundaries, migrations | Read-only | Findings with severity |
+| `software-architect` (experimental) | Module boundaries, data model, interfaces, build-versus-adopt; ADRs for hard-to-reverse choices | Read-only plus ADR files | Recommended design, rejected options, ADRs |
+| `tech-lead` (experimental) | Slices a goal into sequenced, verifiable steps with an owner each; checks delegated work against acceptance criteria | Read-only | Plan or per-criterion check result |
 
-Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). Candidates to add later if evals justify them: `tech-lead`, `architect`, `product-analyst`, `ux-designer`, `test-engineer`, `docs-writer`, `release-engineer`.
+Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). `software-architect` and `tech-lead` were added in 1.1.0 as experimental, ahead of the evals R18 asks for; an eval round decides whether they stay. Candidates to add later if evals justify them: `product-analyst`, `ux-designer`, `test-engineer`, `docs-writer`, `release-engineer`.
 
 ## 9. Adapting for teams and organizations
 

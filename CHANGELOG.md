@@ -4,6 +4,12 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-10
+
+### Added
+
+- Experimental agents `software-architect` (design choices; may write ADR files) and `tech-lead` (slices work, assigns owners, checks delegated work against acceptance criteria). Added before any eval showed a benefit, which R18 asked for; an eval round decides whether they stay.
+
 ## [1.0.7] - 2026-10-06
 
 Pull request: #77.
