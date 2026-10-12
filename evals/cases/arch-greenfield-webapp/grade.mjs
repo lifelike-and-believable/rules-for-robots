@@ -6,7 +6,7 @@ import { OPTION_WORDS, conflictFlagged, questionCount, requirementsMentioned } f
 
 export const PROBLEMS = {
   anonymousCancel: /(cancel|R4)[^.\n]{0,200}(token|link|magic|signed|secret|no account|without (an )?account|identif|verify)|(token|magic link|signed link)[^.\n]{0,200}(cancel|R4)/i,
-  realTimeAmbiguous: /real-?time[^.\n]{0,240}(poll|refresh|websocket|server-sent|SSE|push|revalidat|eventual|define|mean|ambig|clarif|cost|budget)|(poll|websocket|server-sent|SSE)[^.\n]{0,200}real-?time/i,
+  realTimeAmbiguous: /real[- ]?time[^.\n]{0,240}(poll|refresh|websocket|server-sent|SSE|push|revalidat|eventual|define|mean|ambig|clarif|cost|budget)|(poll|websocket|server-sent|SSE)[^.\n]{0,200}real[- ]?time/i,
   capacityRace: /(capacity|R3|overbook)[^.\n]{0,200}(race|concurren|transaction|atomic|constraint|lock|isolation|simultaneous)|(race|concurren|atomic|transaction|simultaneous)[^.\n]{0,200}(capacity|R3|overbook|sign-?up)/i,
   reminderScheduler: /(remind|R6)[^.\n]{0,200}(cron|schedul|queue|job|background|time ?zone)|(cron|scheduled|queue)[^.\n]{0,200}(remind|R6)/i,
   organizerAuth: /organi[sz]ers?[^.\n]{0,200}(auth|log ?in|sign ?in|password|magic|admin|role|permission)|(auth|admin)[^.\n]{0,100}organi[sz]ers?|rate[- ]limit|spam|abuse|captcha/i,
