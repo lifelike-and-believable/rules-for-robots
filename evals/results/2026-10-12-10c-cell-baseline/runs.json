@@ -1,0 +1,27 @@
+[
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 1,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": false,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.2337,
+    "turns": 9,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 47.535
+  }
+]
