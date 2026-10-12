@@ -1,0 +1,6 @@
+{
+  "targets": "usability-review",
+  "agent": "ux-reviewer",
+  "description": "Web app. A sign-up and account page with five planted usability defects: the form resets and loses input on error, the error text is a bare code, the submit button can be pressed twice while a request is pending, Delete account sits next to Save with no confirmation or undo, and an empty project list shows nothing. The good outcome finds at least four and changes nothing.",
+  "maxTurns": 30
+}
