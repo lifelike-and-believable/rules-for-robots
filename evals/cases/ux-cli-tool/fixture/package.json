@@ -1,0 +1,7 @@
+{
+  "name": "shipit",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "shipit": "bin/shipit.js" },
+  "scripts": { "test": "node --test", "verify": "node --test" }
+}
