@@ -64,6 +64,11 @@ Cases with an `agent` in `case.json` test whether an agent adds anything beyond 
 | `arch-money-storage` | `software-architect` | Float `total` column in production; refunds and JPY (no minor unit) are coming | ADR chooses integer minor units with a currency code and a per-currency exponent, plans the move off the float column, names the steps that are hard to reverse, weighs two options; no code written |
 | `arch-reuse-event-bus` | `software-architect` | An in-process event bus already exists and a broker is tempting for email and SMS | ADR builds on `order.shipped` and the bus, proposes no broker or queue infrastructure, adds no dependency; no code written |
 | `lead-plan-order` | `tech-lead` | Tagging feature with a dependency chain and two "not required" extras | Three to six ordered slices owned by `web-engineer`, real verification commands, a reviewer named, extras left out of the slices; no code written |
+| `ux-signup-flow` | `ux-reviewer` | Web app with five planted usability defects: the form resets on error, a bare "Error 422", a double submit, Delete account next to Save with no confirmation, an empty list that shows nothing | At least four found; no file changed |
+| `ux-landing-page` | `ux-reviewer` | Web page with five planted design defects: a call to action that looks like body text, 12px light-grey text, a fixed 1200px layout, lorem ipsum under "Welcome", one action with three labels | At least four found; no file changed |
+| `ux-cli-tool` | `ux-reviewer` | Command-line tool with five planted defects: no help, exit code 0 on failure, `clean` with no confirmation or dry run, no progress for 30 seconds, a raw ENOENT for a missing config | At least four found; no file changed |
+| `ux-editor-tool` | `ux-reviewer` | Unreal Blueprint library with five planted defects: unclear names and no Category, no tooltips, no progress or cancel, no undo transaction, failures only in a bare log line | At least four found; no file changed |
+| `ux-clean-form` | `ux-reviewer` | Control: a form that already handles labels, inline validation, specific messages, kept input, and a pending state | No blocker or major finding; no file changed |
 | `lead-check-claim` | `tech-lead` | A worker reports all four criteria met; the login handler never calls the limiter | Criterion 1 reported as unmet or unverified; no code changed |
 
 The graders are text and file checks, so a pass is a first filter: read at least one transcript per case and arm before scoring, and read the checks marked "not part of the pass" (refund model, failure isolation, SMS seam, parallel slices, cause named) by hand.
@@ -116,6 +121,17 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
    ```
 3. **With the agents.** The same command with `--arms rules+agents`.
 4. **Decide.** Keep an agent if it raises the pass rate on at least one of its two cases, lowers it on neither, and costs no more than twice the baseline's mean. Otherwise rework its prompt or remove it. A case the baseline passes 6 of 6 shows nothing about the agent; replace it with a harder one.
+
+## Planned: ux-reviewer round
+
+`ux-reviewer` was added in 1.3.0 before any eval showed a benefit (R18). Five cases, one per area (web app, web page, general software, Unreal Editor) and a clean control, both main-session models, arms `rules` and `rules+agents`, 3 runs: 60 runs. Run it after the architect and tech-lead round has shown what a run costs. In the planted cases the grader counts how many of five defects a review mentions (patterns in `evals/cases/ux-*/grade.mjs`), so read one transcript per case and arm before scoring, and check that a pattern did not match for the wrong reason. The control guards against invented findings.
+
+```sh
+node evals/run.mjs --cases ux-signup-flow,ux-landing-page,ux-cli-tool,ux-editor-tool,ux-clean-form --arms rules --runs 3
+node evals/run.mjs --cases ux-signup-flow,ux-landing-page,ux-cli-tool,ux-editor-tool,ux-clean-form --arms rules+agents --runs 3
+```
+
+Keep the agent if, in the agent arm, it finds at least four defects more often than the baseline on at least two of the four planted cases, finds fewer on none, reports no blocker or major finding on the control more often than the baseline does, and costs no more than twice the baseline's mean. The 2 of 4 threshold is because models may already review these defects well alone; a case both arms pass 6 of 6 shows nothing about the agent, so replace it with a harder one.
 
 ## Planned: long-session round (#69, weekend batch)
 

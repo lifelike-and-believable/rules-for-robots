@@ -1,0 +1,6 @@
+{
+  "targets": "false-positives",
+  "agent": "ux-reviewer",
+  "description": "Control. A contact form that already handles labels, inline validation, specific messages, kept input and a pending state. A reviewer told to report every finding it is reasonably confident of should still report no blocker or major problem here.",
+  "maxTurns": 30
+}

@@ -1,0 +1,6 @@
+{
+  "targets": "usability-review",
+  "agent": "ux-reviewer",
+  "description": "Web page design. A landing page with five planted design defects: the primary call to action is styled like body text, the body text is 12px light grey, the layout is a fixed 1200px with no responsive rules, the copy is lorem ipsum under a vague headline, and one action carries three different labels. The good outcome finds at least four and changes nothing.",
+  "maxTurns": 30
+}

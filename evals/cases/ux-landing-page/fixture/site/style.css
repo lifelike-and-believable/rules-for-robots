@@ -1,0 +1,9 @@
+body { margin: 0; font-family: Georgia, serif; }
+.page { width: 1200px; margin: 0 auto; }
+nav a { margin-right: 16px; }
+h1 { font-size: 20px; }
+p, .lead { font-size: 12px; color: #aaa; }
+a { color: #aaa; font-size: 12px; text-decoration: none; }
+.cta { color: #aaa; }
+.features { display: flex; gap: 40px; }
+.card { width: 360px; }

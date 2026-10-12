@@ -24,6 +24,15 @@ Pull request: #85.
 - Spec trace and lock checks (Phase 10a, `docs/specs/spec-test-traceability.md`). `checks/spec-trace.mjs` fails when an approved spec has a `test:` criterion no test cites (as `<spec name>#AC-<n>`) or a test cites a criterion the spec lacks; drafts only warn. `checks/spec-lock.mjs` fails when a test that cites a spec was modified, deleted, or renamed after the spec's `tests-commit`, unless the spec lists an `unlocks:` entry with a reason. Both run in `npm run verify` (`check:specs`), and adopting repositories can turn them on with `spec-checks: true` in the reusable guards workflow.
 - The `plan-feature` spec template has front matter (`status`, `tests-commit`, `unlocks`) and criterion IDs with `test:` markers.
 
+## [1.3.0] - 2026-10-12
+
+Pull request: #83.
+
+### Added
+
+- Experimental agent `ux-reviewer` (read-only, Opus, medium): usability and interface design in three areas, Unreal Editor tools and Blueprint-facing APIs, general software (desktop, command-line, developer tools), and web pages and apps. Accessibility conformance stays with `accessibility-reviewer`. `review-pr` adds it for new or changed flows, screens, forms, messages, and tools.
+- Eval cases for it: `ux-signup-flow`, `ux-landing-page`, `ux-cli-tool`, `ux-editor-tool` (five planted defects each) and the `ux-clean-form` control, with unit-tested graders and a staged run plan in `evals/README.md`. No paid runs yet.
+
 ## [1.2.1] - 2026-10-12
 
 Pull request: #82.
