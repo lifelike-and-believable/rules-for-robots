@@ -1,3 +1,10 @@
+---
+status: draft
+# tests-commit: <sha of the commit that holds the failing tests, once written>
+# unlocks:
+#   - <test path>: <why a locked test had to change>
+---
+
 # <Feature name>
 
 ## Problem
@@ -9,7 +16,10 @@
 ## Acceptance criteria
 | # | Criterion | Verified by |
 |---|---|---|
-| 1 | <Observable behaviour> | <named test case, command, or browser check> |
+| AC-1 | <Observable behaviour> | test: <named test case> |
+| AC-2 | <Observable behaviour> | command: <command> or browser check: <steps> |
+
+A test cites a criterion as `<this file's name without .md>#AC-1` in its title or a comment. Only `test:` criteria need a citing test.
 
 ## Scope
 - In: <files, modules, interfaces>

@@ -31,7 +31,7 @@ function repo(front = (sha) => `tests-commit: ${sha}\n`) {
   const sha = git(root, 'rev-parse', 'HEAD');
   fs.writeFileSync(path.join(root, 'docs/specs/feature.md'), SPEC(front(sha)));
   git(root, 'add', '-A');
-  git(root, 'commit', '-q', '-m', 'record tests-commit');
+  git(root, 'commit', '-q', '--allow-empty', '-m', 'record tests-commit');
   return { root, sha };
 }
 

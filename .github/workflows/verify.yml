@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the spec lock check reads the commits that specs record
       - uses: actions/setup-node@v5
         with:
           node-version: 22

@@ -49,6 +49,17 @@ jobs:
 
 The job is off by default. When it is on and `AGENTS.md` has no `## Owned paths` section, it passes and prints a note. The list is read from the pull request's own `AGENTS.md`, so a change to the list shows up in review. See [working with agents](../practices/working-with-agents.md#scope) for the guidance behind it.
 
+### Spec checks (opt-in)
+
+If the repository keeps specs in `docs/specs/` (the `plan-feature` template produces them), turn on the trace and lock checks:
+
+```yaml
+    with:
+      spec-checks: true
+```
+
+A criterion whose "Verified by" cell starts with `test:` must be cited by a test as `<spec file name>#AC-<n>`. A spec can record `tests-commit: <sha>`; tests that cite it are then fixed at that commit unless the spec lists an `unlocks:` entry with a reason, until the spec's status is `implemented`. The job needs the full history (it checks out with `fetch-depth: 0`), and a repository that squash-merges should set `status: implemented` in the last pull request, because squashing removes the recorded commit. Drafts only warn. See [the spec](specs/spec-test-traceability.md).
+
 ### CI status comment
 
 To let agents (and you) merge on green without polling, end the workflow that gates merging with the reusable status job. It keeps one comment on the pull request with each job's result and the head commit's full SHA:
