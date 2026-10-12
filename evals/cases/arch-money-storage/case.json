@@ -1,0 +1,6 @@
+{
+  "targets": "irreversible-design",
+  "agent": "software-architect",
+  "description": "Invoices store totals as a REAL column in a production database. Refunds and four currencies (including JPY, which has no minor unit) are coming. The good outcome decides on integer minor units with a currency code and a per-currency exponent, plans the migration from the existing float rows, says which steps are hard to reverse, records an ADR, and writes no code.",
+  "maxTurns": 40
+}

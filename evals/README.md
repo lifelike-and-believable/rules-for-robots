@@ -11,7 +11,7 @@ node evals/run.mjs                         # all cases, both models, all arms, 3
 node evals/run.mjs --cases scoped-fix --models claude-sonnet-5-5 --arms none,rules --runs 1
 ```
 
-Options: `--cases`, `--models`, `--arms` (`none`, `rules`, `rules+hooks`, `rules+candidate`), `--runs`, `--concurrency`, `--effort`, `--out`.
+Options: `--cases`, `--models`, `--arms` (`none`, `rules`, `rules+hooks`, `rules+agents`, `rules+candidate`), `--runs`, `--concurrency`, `--effort`, `--out`.
 
 Each run copies a case's `fixture/` into a temporary git repo, commits it together with the arm's rules (`rules/core` in `.claude/rules/`), applies the case's `setup.mjs` for any uncommitted state, runs headless Claude Code with user settings excluded (`--setting-sources project,local`), and grades the result. The `rules+hooks` arm also loads `plugins/core` with `--plugin-dir`. Results go to `evals/results/<stamp>/`: `runs.json` (per run), `summary.md` (per cell), and transcripts (ignored by git).
 
@@ -55,6 +55,19 @@ Four cases around the spec-to-test checks (`docs/specs/spec-test-traceability.md
 
 `spec-vacuous-tests` names a `skill` in `case.json`, so in the `rules+hooks` arm every prompt starts with `/rfr-core:review-pr`. The cadence candidate `TEST-004-clustered` is attached to `tdd-feature` and compared there with TEST-004.
 
+## Agent cases
+
+Cases with an `agent` in `case.json` test whether an agent adds anything beyond the main session doing the task itself. The `rules+agents` arm loads `plugins/core` and starts every prompt with "Use the <agent> agent for this."; the `rules` arm sends the same task without that line and without the plugin. Graders get the arm and fail a `rules+agents` run in which the main session never called the agent (an `Agent` call with the agent's `subagent_type`). Compare the two arms on pass rate and cost. The main session's model is the `--models` value; the agent uses the model in its own frontmatter.
+
+| Case | Agent | Trap | Pass means |
+|---|---|---|---|
+| `arch-money-storage` | `software-architect` | Float `total` column in production; refunds and JPY (no minor unit) are coming | ADR chooses integer minor units with a currency code and a per-currency exponent, plans the move off the float column, names the steps that are hard to reverse, weighs two options; no code written |
+| `arch-reuse-event-bus` | `software-architect` | An in-process event bus already exists and a broker is tempting for email and SMS | ADR builds on `order.shipped` and the bus, proposes no broker or queue infrastructure, adds no dependency; no code written |
+| `lead-plan-order` | `tech-lead` | Tagging feature with a dependency chain and two "not required" extras | Three to six ordered slices owned by `web-engineer`, real verification commands, a reviewer named, extras left out of the slices; no code written |
+| `lead-check-claim` | `tech-lead` | A worker reports all four criteria met; the login handler never calls the limiter | Criterion 1 reported as unmet or unverified; no code changed |
+
+The graders are text and file checks, so a pass is a first filter: read at least one transcript per case and arm before scoring, and read the checks marked "not part of the pass" (refund model, failure isolation, SMS seam, parallel slices, cause named) by hand.
+
 ## Agent and skill smoke tests
 
 `node evals/agents/smoke.mjs` runs each `rfr-core` agent and skill on two small tasks (planted bugs, injection, inaccessible markup, N+1 queries, Unreal per-frame work, and so on) and checks that the output has the declared format and catches the planted problem. Use `--only <name>` to run a subset.
@@ -86,6 +99,23 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
    node evals/run.mjs --cases spec-vacuous-tests --arms rules+hooks --runs 3
    ```
 3. **Decide.** Per the spec: keep a candidate if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. For TEST-004-clustered also read the transcripts for whether each test failed for the right reason before implementation. Then review the signals for a separate test-author agent. A case the baseline passes 6 of 6 shows nothing about its candidate; replace it with a harder one.
+
+## Planned: architect and tech-lead round
+
+`software-architect` and `tech-lead` were added in 1.2.0 before any eval showed a benefit (R18), so this round decides whether they stay. Four cases, both main-session models, two arms (`rules`, `rules+agents`), 3 runs: 48 runs. Cost is not measured yet; estimate from the first cell before going on. The `claude` CLI must be signed in for headless runs.
+
+1. **One cell.** `arch-money-storage`, `rules+agents`, one model, one run. Confirms the architect's pinned model `claude-fable-5-1` is accepted (check `modelUsage` in the transcript), that the main session calls the agent, and what a run costs:
+
+   ```sh
+   node evals/run.mjs --cases arch-money-storage --models claude-sonnet-5-5 --arms rules+agents --runs 1
+   ```
+2. **Baseline.** `rules` arm, all four cases:
+
+   ```sh
+   node evals/run.mjs --cases arch-money-storage,arch-reuse-event-bus,lead-plan-order,lead-check-claim --arms rules --runs 3
+   ```
+3. **With the agents.** The same command with `--arms rules+agents`.
+4. **Decide.** Keep an agent if it raises the pass rate on at least one of its two cases, lowers it on neither, and costs no more than twice the baseline's mean. Otherwise rework its prompt or remove it. A case the baseline passes 6 of 6 shows nothing about the agent; replace it with a harder one.
 
 ## Planned: long-session round (#69, weekend batch)
 

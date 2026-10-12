@@ -9,6 +9,9 @@
 //   none        fixture only
 //   rules       fixture + core rules in .claude/rules/
 //   rules+hooks rules + the rfr-core plugin (hooks) via --plugin-dir
+//   rules+agents  rules + the rfr-core plugin, and each prompt starts by naming the case's
+//               `agent` (case.json), so the main session delegates to it; compare with `rules`
+//               to see what the agent adds. Not in the default arms, pass it with --arms
 //   rules+candidate  rules + the case's draft rules from evals/candidates/ (meta.candidates);
 //               a candidate with `replaces: <ID>` in its frontmatter removes that core rule;
 //               not in the default arms, pass it with --arms
@@ -207,11 +210,14 @@ export async function prepareWorkspace(testCase, arm) {
   return dir;
 }
 
-// The prompts an arm sends. In the arm that loads the plugin, a case that names a `skill` starts
-// each prompt with that skill's slash command; every other arm sends the case's prompts unchanged.
+// The prompts an arm sends. In the arms that load the plugin, a case that names a `skill` starts
+// each prompt with that skill's slash command; in rules+agents a case that names an `agent` asks
+// the main session to use it. Every other arm sends the case's prompts unchanged.
 export function armPrompts(arm, meta, prompts) {
-  if (arm !== 'rules+hooks' || !meta.skill) return prompts;
-  return prompts.map(p => `/rfr-core:${meta.skill} ${p}`);
+  const plugin = arm === 'rules+hooks' || arm === 'rules+agents';
+  if (plugin && meta.skill) return prompts.map(p => `/rfr-core:${meta.skill} ${p}`);
+  if (arm !== 'rules+agents' || !meta.agent) return prompts;
+  return prompts.map(p => `Use the ${meta.agent} agent for this.\n\n${p}`);
 }
 
 export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(path.join(testCase.dir, 'bin'))) {
@@ -229,10 +235,10 @@ function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCa
     '--setting-sources', 'project,local',
     '--no-session-persistence',
     '--max-turns', String(meta.maxTurns ?? 40),
-    '--allowedTools', (meta.allowedTools ?? ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep']).join(','),
+    '--allowedTools', [...(meta.allowedTools ?? ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep']), ...(arm === 'rules+agents' ? ['Agent', 'Task'] : [])].join(','),
   ];
   if (effort) args.push('--effort', effort);
-  if (arm === 'rules+hooks') args.push('--plugin-dir', path.join(ROOT, 'plugins', 'core'));
+  if (arm === 'rules+hooks' || arm === 'rules+agents') args.push('--plugin-dir', path.join(ROOT, 'plugins', 'core'));
   if (multi) {
     return (async () => {
       const merged = { code: 0, events: [], stderr: '', seconds: 0 };
@@ -286,13 +292,14 @@ export function finalText(events) {
   return result?.result ?? '';
 }
 
-async function gradeRun(testCase, dir, run) {
+async function gradeRun(testCase, dir, run, arm) {
   const grade = (await import(pathToFileURL(path.join(testCase.dir, 'grade.mjs')))).default;
   // Turns add up across prompts; cost is summed per session (see sessionCost).
   const results = run.events.filter(e => e.type === 'result');
   const result = results.at(-1) ?? {};
   const context = {
     dir,
+    arm,
     git: (...args) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' }).stdout,
     tools: transcriptTools(run.events),
     finalText: finalText(run.events),
@@ -367,7 +374,7 @@ async function main() {
   const records = await pool(jobs, opts.concurrency, async ({ testCase, model, arm, run }) => {
     const dir = await prepareWorkspace(testCase, arm);
     const result = await runClaude({ dir, prompts: testCase.prompts, model, arm, meta: testCase.meta, effort: opts.effort, testCase });
-    const graded = await gradeRun(testCase, dir, result);
+    const graded = await gradeRun(testCase, dir, result, arm);
     const record = { case: testCase.name, model, arm, run, ...graded };
     const tag = `${testCase.name}.${model}.${arm.replace('+', '-')}.${run}`;
     fs.writeFileSync(path.join(out, `${tag}.transcript.jsonl`), result.events.map(e => JSON.stringify(e)).join('\n'));
