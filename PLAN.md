@@ -302,9 +302,9 @@ Spec: [docs/specs/spec-test-traceability.md](docs/specs/spec-test-traceability.m
 
 A document-driven and test-driven hybrid. Acceptance criteria get IDs, a check shows which have a citing test, and the agent that writes the tests from the spec is not the one that makes them pass. The phase answers whether tracing criteria to tests changes agent behaviour, and keeps the rule only if the evals say so.
 
-- **10a:** spec template with criterion IDs, the `checks/spec-trace.mjs` check and its tests, opt-in CI step.
-- **10b:** `plan-feature` text and the tests-first split, a candidate rule, and three eval cases (`spec-trace-uncovered`, `spec-trace-wrong-test`, `spec-drift`).
-- **10c:** the paid eval round and the decision to keep or drop the rule.
+- **10a:** spec template with criterion IDs, the `checks/spec-trace.mjs` check, the `checks/spec-lock.mjs` commit lock (tests fixed at a recorded commit, unlocks listed with a reason), their tests, and an opt-in CI step.
+- **10b:** `plan-feature` text and the tests-first split, a sabotage step in `review-pr` (break the behaviour in a throwaway worktree and confirm the citing tests fail), a candidate rule, and four eval cases (`spec-trace-uncovered`, `spec-trace-wrong-test`, `spec-drift`, `spec-vacuous-tests`).
+- **10c:** the paid eval round, the decision to keep or drop the rule, and the review of whether a separate `test-author` agent is needed (the spec lists the signals).
 - **Exit criteria:** the check runs in `npm run verify`; the candidate has an eval result; the rule is promoted or dropped on that result.
 
 ## 11. Milestones
