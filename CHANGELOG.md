@@ -4,6 +4,12 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+Pull request: #92.
+
+### Fixed
+
+- The guards workflow in the template repos and `examples/web-app` runs when a label is added or removed (`types: [opened, synchronize, reopened, labeled, unlabeled]`). The test change guard (TEST-001) reads the `tests-reviewed` label from the event that started the run, so a reviewer who added the label after a failed run saw the check stay red: the default events start no new run, and re-running the failed job reuses the original event. Removing the label now also re-runs the guard, so the check does not stay green after the approval is withdrawn. The adoption guide shows the `on:` block for adopters who call the reusable workflow. Adopters update their own `guards.yml`; the reusable workflow is unchanged.
+
 ## [1.5.0] - 2026-10-12
 
 Pull request: #87.
