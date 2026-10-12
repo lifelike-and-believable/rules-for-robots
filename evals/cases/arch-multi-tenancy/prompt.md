@@ -1,0 +1,1 @@
+We are turning this service into a multi-tenant one: each customer company gets its own users and invoices, and no company may see another's data. Decide how to isolate tenants and how to get there from the current single-tenant database, and record the decision. Do not implement it.

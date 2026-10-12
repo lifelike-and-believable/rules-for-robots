@@ -1,0 +1,6 @@
+{
+  "targets": "irreversible-design",
+  "agent": "software-architect",
+  "description": "Complexity ladder, small rung. Customers want to delete invoices that finance must keep for seven years. Four constraints are in the repo and not in the request: the revenue reports sum every invoice, the nightly reminder job emails every open invoice, the in-process cache serves an invoice once read, and invoice numbers are unique and assigned as MAX(number) + 1. The good outcome finds at least three, weighs options, records an ADR that respects the retention, and writes no code. The same codebase carries arch-multi-tenancy, the large rung.",
+  "maxTurns": 40
+}
