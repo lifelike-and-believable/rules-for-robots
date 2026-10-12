@@ -1,5 +1,8 @@
 ---
-status: draft
+status: approved
+tests-commit: 77f3846098d14c773f1c5c16157bc04d803cb56d
+unlocks:
+  - test/spec-lock.test.mjs: the repo() helper failed when the spec had no tests-commit (nothing to commit); the second commit may now be empty
 ---
 
 # Spec-to-test traceability
@@ -22,16 +25,18 @@ A document-driven and test-driven hybrid: the spec's acceptance criteria are the
 
 | # | Criterion | Verified by |
 |---|---|---|
-| AC-1 | The spec template gives each acceptance criterion an ID (`AC-1`) and marks the ones a test must cover (`test:` in "Verified by"). | Unit test: the template parses with the trace check. |
-| AC-2 | A trace check reads a spec and a test folder and fails when an approved spec has a `test:` criterion no test cites, or a test cites an ID the spec does not have. A draft spec produces warnings only. | Unit tests: complete, missing, unknown-ID, draft, and no-test-folder cases. |
-| AC-3 | Criteria verified by a command or a browser check are skipped by the check, and the report lists them. | Unit test. |
-| AC-4 | The check runs in `npm run verify` against this repo's own specs, and adopting repos can opt in through the guards workflow. | `npm run verify`; a workflow test. |
+| AC-1 | The spec template gives each acceptance criterion an ID (`AC-1`) and marks the ones a test must cover (`test:` in "Verified by"). | test: the template parses with the trace check; IDs are unique. |
+| AC-2 | A trace check reads a spec and a test folder and fails when an approved spec has a `test:` criterion no test cites, or a test cites an ID the spec does not have. A draft spec produces warnings only. | test: complete, missing, unknown-ID, draft, named-folder, and no-test-folder cases. |
+| AC-3 | Criteria verified by a command or a browser check are skipped by the check, and the report lists them. | test: a `command:` criterion and a browser check are skipped and listed. |
+| AC-4 | The check runs in `npm run verify` against this repo's own specs, and adopting repos can opt in through the guards workflow. | test: `package.json` runs the checks in `verify`; the workflow has the opt-in input and job. |
 | AC-5 | `plan-feature` produces IDs, and its text describes a tests-first slice done separately from the implementation slice. | Smoke case for the skill. |
 | AC-6 | A candidate rule asks that approved criteria be traced to tests, and the evals show whether it changes behaviour. | Eval round below. |
-| AC-7 | The spec status moves to `implemented` only with the final pull request, and the check treats a stale `implemented` spec (a cited ID removed from the spec) as an error. | Unit test. |
-| AC-8 | The spec front matter can record `tests-commit: <sha>`. A lock check fails when a test file citing that spec's IDs differs between that commit and `HEAD`, and passes when none changed. A spec without `tests-commit` is not checked. | Unit tests on a temporary git repository: unchanged, changed, added-after, deleted-after, and no-field cases. |
-| AC-9 | A change to a locked test is allowed only when the spec lists an `unlocks:` entry that names the test file and gives a reason; the check reports the entry, so the review sees it. | Unit tests: unlock with reason passes and is reported; unlock without a reason fails. |
+| AC-7 | The spec status moves to `implemented` only with the final pull request, and the check treats a stale `implemented` spec (a cited ID removed from the spec) as an error. | test: an implemented spec fails on a cited ID it no longer has; this repository's specs pass. |
+| AC-8 | The spec front matter can record `tests-commit: <sha>`. A lock check fails when a test file that cites that spec's IDs was modified, deleted, or renamed between that commit and `HEAD`. A test file added after it is allowed and reported, so tests can grow in new files. A spec without `tests-commit` is not checked, an unknown commit is an error, and a spec whose status is `implemented` releases the lock (the lock is for the build, and a squash merge removes the recorded commit from history). | test: on a temporary git repository: unchanged, modified, deleted, renamed, added, unrelated-file, no-field, and unknown-commit cases. |
+| AC-9 | A change to a locked test is allowed only when the spec lists an `unlocks:` entry that names the test file and gives a reason; the check reports the entry, so the review sees it. An unlock for a file that did not change is a warning. | test: an unlock with a reason passes and is reported; one without a reason fails; an unused unlock warns. |
 | AC-10 | `review-pr` has a sabotage step for approved specs: in a throwaway `git worktree` outside the project folder, break the behaviour behind each traced criterion in a small way, run the tests, and report any citing test that still passes. The worktree is removed afterwards and the project tree is never changed. | Smoke case for the skill on a fixture with one vacuous test; eval case `spec-vacuous-tests`. |
+
+**Citation form.** A test cites a criterion as `<spec file name without .md>#AC-<n>`, for example `spec-test-traceability#AC-2`, in a test title or a comment anywhere in the file. The slug keeps IDs from different specs apart in a shared test folder. A criterion needs a citing test when its "Verified by" cell starts with `test:`; any other text (a command, a browser check) is skipped and listed. Front matter fields: `status` (`draft`, `approved`, `implemented`), `tests` (folders searched; default `test`, `tests`, `spec`, `__tests__`), `tests-commit`, and `unlocks` (a list of `path: reason`).
 
 ## Scope
 
