@@ -4,6 +4,19 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-07
+
+Pull request: #79.
+
+### Added
+
+- Three Haiku 5.5 agents for work that gathers or runs things and leaves the judgment to the caller: `ci-watcher` (waits for a pull request's checks and returns results with the first error from each failed job's log), `check-runner` (runs named scanners, audits, builds, and tests and returns exit codes and key output verbatim), and `citation-checker` (confirms that review findings cite real files, lines, identifiers, and rule IDs).
+- Smoke cases for the three agents and for `merge-when-green` with checks still running; the smoke harness records cost by model and can require that a case used a given model. Research note: `docs/research/notes/haiku_5_5_delegation.md`.
+
+### Changed
+
+- `merge-when-green` hands the wait to `ci-watcher` when checks are pending; `review-pr` runs `citation-checker` when there are three or more findings; `security-audit`, `perf-audit`, `a11y-audit`, and `package-unreal-plugin` hand the commands to `check-runner`. The caller still confirms the head commit, judges results, and decides.
+
 ## [1.0.7] - 2026-10-06
 
 Pull request: #77.

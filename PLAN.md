@@ -181,8 +181,11 @@ Start small and add agents only when evals show benefit (R18).
 | `accessibility-reviewer` | WCAG 2.2 AA for web; editor and game accessibility for Unreal | Read-only | Findings in the common format |
 | `performance-reviewer` | Web budgets, queries, caching; frame time, memory, tick, loading for Unreal | Read-only plus measurement commands | Findings and measurements |
 | `security-reviewer` | Threat model, OWASP, secrets, dependencies, privacy, replication trust boundaries, migrations | Read-only | Findings with severity |
+| `ci-watcher` (Haiku 5.5) | Waits for a pull request's checks; reads failed job logs | Read-only plus `gh` | Check results and verbatim failure excerpts |
+| `check-runner` (Haiku 5.5) | Runs named scanners, audits, builds, and tests | Read-only plus shell | Exit codes and verbatim key output |
+| `citation-checker` (Haiku 5.5) | Checks that review findings cite real files, lines, identifiers, and rule IDs | Read-only | One ok or mismatch line per finding |
 
-Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). Candidates to add later if evals justify them: `tech-lead`, `architect`, `product-analyst`, `ux-designer`, `test-engineer`, `docs-writer`, `release-engineer`.
+Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). The three Haiku agents (1.1.0) pass the R18 test on smoke evidence: they gather or run things, return text copied from tools, and leave every judgment to the caller ([note](docs/research/notes/haiku_5_5_delegation.md)). Candidates to add later if evals justify them: `tech-lead`, `architect`, `product-analyst`, `ux-designer`, `test-engineer`, `docs-writer`, `release-engineer`.
 
 ## 9. Adapting for teams and organizations
 
@@ -286,7 +289,7 @@ Round 2 ([report](evals/results/2026-10-05-round2-baseline/report.md)) tested th
 
 ### Phase 9: Release and maintenance (v1.0.0 released)
 Delivered: semantic versioning shared by the rule set and `rfr-core`, checked by `checks/release.mjs`; [changelog](CHANGELOG.md); [maintenance guide](docs/maintenance.md); releases tagged `rfr-v<version>` (`rfr-v1.0.0`, `rfr-v1.0.2`). After 1.0, two external review rounds (#23 to #38, #47 to #64) were answered mostly with practice-guide text, hooks, and checks, since none of their proposals had eval evidence for a new rule. The plugins install from this repository's marketplace, and the template repos are published as generated folders in `template-repos/`.
-Pull requests: #19 (changelog and release check), #39 to #43 and #45 (first adoption review), #66 (1.0.0), #67 and #68 (second review), #70 (tag prefix), #71 (plan refresh), #73 (formatting once per turn), #76 (1.0.6), #77 (pull request records in the plan).
+Pull requests: #19 (changelog and release check), #39 to #43 and #45 (first adoption review), #66 (1.0.0), #67 and #68 (second review), #70 (tag prefix), #71 (plan refresh), #73 (formatting once per turn), #76 (1.0.6), #77 (pull request records in the plan), #79 (Haiku 5.5 subagents, 1.1.0).
 
 - Semantic versioning for the rule set and plugins; plugin `version` bumped every release; changelog.
 - Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
