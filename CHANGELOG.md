@@ -4,6 +4,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-12
+
+Pull request: #82.
+
+### Changed
+
+- `software-architect` runs on `claude-fable-5-1` (was `opus`).
+
+### Added
+
+- Eval round for `software-architect` and `tech-lead`: a `rules+agents` arm in `evals/run.mjs`, four cases (`arch-money-storage`, `arch-reuse-event-bus`, `lead-plan-order`, `lead-check-claim`) with unit-tested graders, and a staged run plan in `evals/README.md`. No paid runs yet.
+
 ## [1.2.0] - 2026-10-12
 
 Pull request: #81.

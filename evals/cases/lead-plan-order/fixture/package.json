@@ -1,0 +1,6 @@
+{
+  "name": "notes-api",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "test": "node --test", "lint": "node -e \"process.exit(0)\"", "verify": "npm test && npm run lint" }
+}
