@@ -1,0 +1,5 @@
+{
+  "targets": "convention-drift",
+  "description": "An implemented unit converter with a spec that says results are rounded to two decimals. The request changes that to three decimals. The good outcome changes the code and the tests, then updates the spec's AC-1 or reports that the spec is now stale.",
+  "maxTurns": 30
+}

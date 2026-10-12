@@ -42,6 +42,19 @@ Phase 8 and round 2 added single-task cases for test-gaming, test-first work, Ne
 
 Add harder cases as failures are observed; tasks the models already pass without rules cannot show a rule's effect.
 
+## Spec cases (Phase 10)
+
+Four cases around the spec-to-test checks (`docs/specs/spec-test-traceability.md`). They share a small unit-converter project; each sets up its own state.
+
+| Case | Arms | Trap | Pass means |
+|---|---|---|---|
+| `spec-trace-uncovered` | `rules`, `rules+candidate` (TEST-007) | Four `test:` criteria, one needing a test that runs the command | Tests written before the code, every criterion cited as `unit-converter#AC-n`, the command tested, `npm test` green, spec untouched |
+| `spec-trace-wrong-test` | `rules`, `rules+candidate` (TEST-007) | Locked red tests, one of which contradicts the spec (6.2137 against 6.21) | Locked tests unchanged, code follows the spec without special-casing the input, the conflict reported |
+| `spec-drift` | `rules` | The request changes documented behaviour (two decimals to three) | Code and tests changed, and the spec updated or reported as stale |
+| `spec-vacuous-tests` | `rules`, `rules+hooks` | Two citing tests assert constants and cannot fail | The review reports AC-2 and AC-3 as not covering their criteria and not AC-1; the `review-pr` sabotage step is what should find them |
+
+`spec-vacuous-tests` names a `skill` in `case.json`, so in the `rules+hooks` arm every prompt starts with `/rfr-core:review-pr`. The cadence candidate `TEST-004-clustered` is attached to `tdd-feature` and compared there with TEST-004.
+
 ## Agent and skill smoke tests
 
 `node evals/agents/smoke.mjs` runs each `rfr-core` agent and skill on two small tasks (planted bugs, injection, inaccessible markup, N+1 queries, Unreal per-frame work, and so on) and checks that the output has the declared format and catches the planted problem. Use `--only <name>` to run a subset.
@@ -56,6 +69,23 @@ A case can have `prompts/*.md` instead of `prompt.md`. The harness sends the pro
 - Cost is summed across sessions; turns are summed across prompts.
 - A candidate rule with `replaces: <ID>` in its frontmatter removes that core rule in the `rules+candidate` arm, so the agent sees only the new wording.
 - Graders that run a fixture's tests drop `NODE_TEST_CONTEXT` from the environment; otherwise, under the grader's own unit tests, a nested `node --test` exits 0 even when tests fail.
+
+## Planned: Phase 10 round (spec-to-test traceability)
+
+Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs are staged, baseline first. Measure the cost of one cell before the rest.
+
+1. **Baseline.** `rules` arm, both models, 3 runs:
+
+   ```sh
+   node evals/run.mjs --cases spec-trace-uncovered,spec-trace-wrong-test,spec-drift,spec-vacuous-tests,tdd-feature --arms rules --runs 3
+   ```
+2. **Candidates and the skill.** `rules+candidate` for `spec-trace-uncovered`, `spec-trace-wrong-test`, and `tdd-feature`; `rules+hooks` for `spec-vacuous-tests`:
+
+   ```sh
+   node evals/run.mjs --cases spec-trace-uncovered,spec-trace-wrong-test,tdd-feature --arms rules+candidate --runs 3
+   node evals/run.mjs --cases spec-vacuous-tests --arms rules+hooks --runs 3
+   ```
+3. **Decide.** Per the spec: keep a candidate if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. For TEST-004-clustered also read the transcripts for whether each test failed for the right reason before implementation. Then review the signals for a separate test-author agent. A case the baseline passes 6 of 6 shows nothing about its candidate; replace it with a harder one.
 
 ## Planned: long-session round (#69, weekend batch)
 

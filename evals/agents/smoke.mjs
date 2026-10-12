@@ -119,6 +119,16 @@ export const CASES = [
     check: t => /acceptance criteria/i.test(t) && /verif/i.test(t),
   },
   {
+    name: 'skill plan-feature: criterion IDs and tests first', fixture: 'scoped-fix',
+    prompt: '/rfr-core:plan-feature Let shop staff export the price list as CSV. Show the spec in your answer.',
+    check: (t, d) => /\bAC-1\b/.test(t) && /\btest:/i.test(t) && /(tests?[- ]first|first slice|failing tests?)/i.test(t) && /tests-commit/.test(t) && spawnSync('git', ['status', '--porcelain', 'src'], { cwd: d, encoding: 'utf8' }).stdout.trim() === '',
+  },
+  {
+    name: 'skill review-pr: vacuous tests behind an approved spec', fixture: 'spec-vacuous-tests',
+    prompt: '/rfr-core:review-pr The code in src/ implements docs/specs/unit-converter.md (approved). Review it against the spec, including whether the tests can fail.',
+    check: (t, d) => /AC-2/.test(t) && /AC-3/.test(t) && /(vacuous|still passes|assert\.ok\(true\)|cannot fail|not cover)/i.test(t) && spawnSync('git', ['status', '--porcelain'], { cwd: d, encoding: 'utf8' }).stdout.trim() === '',
+  },
+  {
     name: 'skill review-pr: planted bug', fixture: 'dirty-tree',
     prompt: '/rfr-core:review-pr Review the committed code in src/ against: "mean returns the arithmetic mean of all values".',
     check: t => /mean\.js/.test(t) && /(confirmed|plausible)/i.test(t),

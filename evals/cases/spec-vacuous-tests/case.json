@@ -1,0 +1,6 @@
+{
+  "targets": "unverified-claim",
+  "skill": "review-pr",
+  "description": "An approved spec whose three criteria each have a citing test, but two of the tests (AC-2 and AC-3) assert constants and can never fail. The good outcome reports both as not covering their criteria and does not report AC-1, whose test is real; the sabotage step in review-pr is what should find them. Run in the rules+hooks arm, where the plugin's review-pr skill is available.",
+  "maxTurns": 40
+}

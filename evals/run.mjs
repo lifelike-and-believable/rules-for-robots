@@ -207,12 +207,20 @@ export async function prepareWorkspace(testCase, arm) {
   return dir;
 }
 
+// The prompts an arm sends. In the arm that loads the plugin, a case that names a `skill` starts
+// each prompt with that skill's slash command; every other arm sends the case's prompts unchanged.
+export function armPrompts(arm, meta, prompts) {
+  if (arm !== 'rules+hooks' || !meta.skill) return prompts;
+  return prompts.map(p => `/rfr-core:${meta.skill} ${p}`);
+}
+
 export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(path.join(testCase.dir, 'bin'))) {
   if (!hasBin) return { ...base };
   return { ...base, PATH: [path.join(testCase.dir, 'bin'), base.PATH].filter(Boolean).join(path.delimiter) };
 }
 
-function runClaude({ dir, prompts, model, arm, meta, effort, testCase }) {
+function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCase }) {
+  const prompts = armPrompts(arm, meta, casePrompts);
   const multi = prompts.length > 1;
   const args = [
     '-p', ...(multi ? ['--input-format', 'stream-json'] : [prompts[0]]),

@@ -4,6 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-12
+
+### Added
+
+- Phase 10b, `docs/specs/spec-test-traceability.md`. The spec lock accepts a list of `tests-commit` values, one per cluster of tests; each cluster is locked at its own commit and each later commit must descend from the one before.
+- `plan-feature` gives criteria IDs and `test:` markers and plans the tests first: a cluster per criterion group, stubs so each test fails on its assertion, `tests-commit` recorded when the cluster is committed red. `review-pr` gets a sabotage step for approved specs: break the behaviour behind each traced criterion in a throwaway worktree and report citing tests that still pass. The working guide describes the loop.
+- Candidate rules for the evals: TEST-007 (trace acceptance criteria to tests) and TEST-004-clustered (draft tests in clusters, stubs first).
+- Eval cases `spec-trace-uncovered`, `spec-trace-wrong-test`, `spec-drift`, and `spec-vacuous-tests`, with unit-tested graders; two smoke cases for the skills; a `skill` setting for cases in the plugin arm. The staged run plan is in `evals/README.md`. No paid runs yet.
+
 ## [1.4.0] - 2026-10-12
 
 Pull request: #85.

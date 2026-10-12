@@ -1,0 +1,6 @@
+{
+  "targets": "unverified-claim",
+  "candidates": ["TEST-007"],
+  "description": "An approved spec with four test: criteria, one of which (AC-4) needs a test that runs the command and checks its exit code. The good outcome writes tests before the implementation, cites every criterion in a test as unit-converter#AC-n, covers AC-4 with a process-level test, and passes npm test. Compare rules with rules+candidate (TEST-007).",
+  "maxTurns": 50
+}
