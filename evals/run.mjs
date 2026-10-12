@@ -210,13 +210,14 @@ export async function prepareWorkspace(testCase, arm) {
   return dir;
 }
 
-// The prompts an arm sends. In the rules+agents arm a case that names an `agent` asks the
-// main session to use it; every other arm sends the case's prompts unchanged.
+// The prompts an arm sends. In the arms that load the plugin, a case that names a `skill` starts
+// each prompt with that skill's slash command; in rules+agents a case that names an `agent` asks
+// the main session to use it. Every other arm sends the case's prompts unchanged.
 export function armPrompts(arm, meta, prompts) {
+  const plugin = arm === 'rules+hooks' || arm === 'rules+agents';
+  if (plugin && meta.skill) return prompts.map(p => `/rfr-core:${meta.skill} ${p}`);
   if (arm !== 'rules+agents' || !meta.agent) return prompts;
-  return prompts.map(p => `Use the ${meta.agent} agent for this.
-
-${p}`);
+  return prompts.map(p => `Use the ${meta.agent} agent for this.\n\n${p}`);
 }
 
 export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(path.join(testCase.dir, 'bin'))) {

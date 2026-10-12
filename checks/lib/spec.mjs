@@ -8,10 +8,11 @@ export const CITATION = /\b([a-z0-9][a-z0-9_-]*)#AC-(\d+)\b/g;
 
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
-// Front matter fields: status, tests (inline list), tests-commit, and unlocks (a block list of
+// Front matter fields: status, tests (inline list), tests-commit (one commit, or an inline list with
+// one commit per cluster of tests), and unlocks (a block list of
 // "path: reason"). Lines starting with # are comments.
 function parseFrontMatter(block) {
-  const out = { status: null, testsCommit: null, testDirs: null, unlocks: [] };
+  const out = { status: null, testsCommits: [], testDirs: null, unlocks: [] };
   let inUnlocks = false;
   for (const raw of block.split(/\r?\n/)) {
     if (!raw.trim() || raw.trim().startsWith('#')) continue;
@@ -25,7 +26,7 @@ function parseFrontMatter(block) {
     inUnlocks = false;
     const [, key, value] = field;
     if (key === 'status') out.status = value.trim() || null;
-    else if (key === 'tests-commit') out.testsCommit = value.trim() || null;
+    else if (key === 'tests-commit') out.testsCommits = value.replace(/^\[|\]$/g, '').split(',').map(s => s.trim()).filter(Boolean);
     else if (key === 'tests') out.testDirs = value.replace(/^\[|\]$/g, '').split(',').map(s => s.trim()).filter(Boolean);
     else if (key === 'unlocks') inUnlocks = true;
   }
@@ -46,7 +47,7 @@ function parseCriteria(body) {
 
 export function parseSpec(text, slug) {
   const match = FRONT_MATTER.exec(text);
-  if (!match) return { slug, status: null, testsCommit: null, testDirs: null, unlocks: [], criteria: [], errors: [`${slug}: no front matter (a --- block with at least "status:")`] };
+  if (!match) return { slug, status: null, testsCommits: [], testDirs: null, unlocks: [], criteria: [], errors: [`${slug}: no front matter (a --- block with at least "status:")`] };
   const front = parseFrontMatter(match[1]);
   const criteria = parseCriteria(match[2]);
   const errors = [];

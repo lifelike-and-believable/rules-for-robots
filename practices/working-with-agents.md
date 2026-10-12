@@ -10,6 +10,12 @@ Practice guide for the working agreement (`WA-*`) and the git and documentation 
 4. **Verify** with the project's own command and include its output (WA-001). Ground every claim in this session's evidence (WA-005).
 5. **Review** in a fresh context: a reviewer sees the diff and the criteria, not the author's reasoning, and reports every finding with its severity (the `code-reviewer` agent uses blocker, major, minor, and nit). Filter findings in a separate pass, because reviewers asked for "only important issues" drop real ones.
 
+## Spec first, tests first
+
+For a feature with a spec in `docs/specs/`, the document and the tests share the work. Each acceptance criterion has an ID, and the ones a test can express are marked `test:`. The first slice of the plan writes the tests for a group of related criteria together, with stubs so each fails on its assertion, and cites each criterion as `<spec file name>#AC-1`. Commit the cluster red and record its commit in the spec's `tests-commit` (a list, one per cluster). Later slices make the tests pass without editing them; if a test is wrong, the spec changes and lists the file under `unlocks:` with a reason, which the review sees.
+
+`checks/spec-trace.mjs` shows which criteria have no citing test, and `checks/spec-lock.mjs` shows locked tests that changed; both run in `npm run verify`. Before merging, the review's sabotage step breaks the behaviour in a throwaway worktree and confirms the citing tests fail. See [the spec](../docs/specs/spec-test-traceability.md).
+
 ## Where a solo developer's attention pays off
 
 Watch the inputs and outputs, not every step:

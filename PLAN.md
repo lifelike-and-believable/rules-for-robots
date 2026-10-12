@@ -300,7 +300,7 @@ Pull requests: #19 (changelog and release check), #39 to #43 and #45 (first adop
 
 ### Phase 10: Spec-to-test traceability (planned)
 Spec: [docs/specs/spec-test-traceability.md](docs/specs/spec-test-traceability.md) (approved).
-Pull requests: #84 (spec), #85 (10a).
+Pull requests: #84 (spec), #85 (10a), #86 (cluster amendment), #87 (10b).
 
 A document-driven and test-driven hybrid. Acceptance criteria get IDs, a check shows which have a citing test, and the agent that writes the tests from the spec is not the one that makes them pass. The phase answers whether tracing criteria to tests changes agent behaviour, and keeps the rule only if the evals say so.
 
