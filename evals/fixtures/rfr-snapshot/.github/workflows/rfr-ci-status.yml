@@ -1,0 +1,63 @@
+name: rules-for-robots CI status
+
+# Reusable workflow: posts or updates one comment on the pull request when a workflow
+# finishes, naming the head commit and each job's result, so an agent or person waiting on
+# CI is notified instead of polling. Call it as the last job of the workflow that gates
+# merging:
+#
+#   status:
+#     needs: [verify, migrations]
+#     if: always()
+#     permissions:
+#       contents: read
+#       pull-requests: write
+#     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-ci-status.yml@main
+#     with:
+#       results: ${{ toJSON(needs) }}
+#
+# The comment names the full SHA because a green comment about an older commit is not a
+# green head (rules-for-robots#30). For push and workflow_dispatch runs it comments on the
+# open pull requests that contain the commit. It never fails the workflow; pull requests
+# from forks get a read-only token, so they get no comment.
+on:
+  workflow_call:
+    inputs:
+      results:
+        description: toJSON(needs) from the calling job
+        type: string
+        required: true
+      workflow-name:
+        description: Name shown in the comment; one comment is kept per name
+        type: string
+        default: ''
+      rules-ref:
+        description: rules-for-robots ref to take the script from
+        type: string
+        default: main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+          sparse-checkout: checks/ci
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Post or update the status comment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RESULTS: ${{ inputs.results }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          WORKFLOW_NAME: ${{ inputs.workflow-name || github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node .rfr/checks/ci/status-comment.mjs

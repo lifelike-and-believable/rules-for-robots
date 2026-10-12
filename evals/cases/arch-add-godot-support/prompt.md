@@ -1,0 +1,1 @@
+We want this repository to support Godot 4 game projects written in GDScript, the way it supports Unreal plugins. Decide the shape of the support (packs, profile, and what ships where) and what has to change in this repository to deliver it, and record the decision. Do not implement it.

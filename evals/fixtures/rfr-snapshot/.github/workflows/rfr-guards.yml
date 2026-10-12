@@ -1,0 +1,118 @@
+name: rules-for-robots guards
+
+# Reusable workflow for adopting repositories:
+#   jobs:
+#     guards:
+#       uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-guards.yml@main
+# Runs the secret scan (SEC-001), the instruction-file lint (paths and npm scripts named in
+# AGENTS.md and CLAUDE.md exist), and, for pull requests, the test change guard (TEST-001).
+# Opt in with `owned-paths: true` to fail pull requests that touch paths outside the
+# "## Owned paths" list in AGENTS.md (#47). Opt in with `spec-checks: true` to check that every
+# `test:` criterion in docs/specs/ has a citing test and that tests fixed by a spec's `tests-commit`
+# have not changed.
+on:
+  workflow_call:
+    inputs:
+      rules-ref:
+        description: rules-for-robots ref to take the guard scripts from
+        type: string
+        default: main
+      instruction-lint:
+        description: Check that paths and npm scripts named in AGENTS.md and CLAUDE.md exist
+        type: boolean
+        default: true
+      owned-paths:
+        description: Fail pull requests that touch paths outside the "## Owned paths" list in AGENTS.md
+        type: boolean
+        default: false
+      spec-checks:
+        description: Check docs/specs/ criteria against the tests that cite them, and that locked tests are unchanged
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose \
+            ${{ github.event_name == 'pull_request' && format('--log-opts={0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || '' }}
+
+  test-change-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Test change guard
+        run: node .rfr/checks/ci/test-change-guard.mjs "${{ github.event.pull_request.base.sha }}" ${{ contains(github.event.pull_request.labels.*.name, 'tests-reviewed') && '--approved' || '' }}
+
+  instruction-lint:
+    if: inputs.instruction-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Instruction-file lint
+        run: node .rfr/checks/ci/instruction-lint.mjs
+
+  owned-paths:
+    if: inputs.owned-paths && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Owned-paths check
+        run: node .rfr/checks/ci/owned-paths.mjs "${{ github.event.pull_request.base.sha }}"
+
+  spec-checks:
+    if: inputs.spec-checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Spec trace and lock
+        run: |
+          node .rfr/checks/spec-trace.mjs
+          node .rfr/checks/spec-lock.mjs

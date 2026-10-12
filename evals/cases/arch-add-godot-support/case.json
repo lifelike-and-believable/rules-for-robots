@@ -1,0 +1,7 @@
+{
+  "targets": "irreversible-design",
+  "agent": "software-architect",
+  "fixtureFrom": "evals/fixtures/rfr-snapshot",
+  "description": "Large repository. The fixture is a 391-file snapshot of rules-for-robots (evals, research notes, and examples removed). The request is to support Godot 4 projects. Nine places must change, and several are enforced only by a lint, a test, or the build check: the profiles file, the rule-ID prefix map, the prefix table in rule-format.md, the per-profile AGENTS.md template and the 200-line budget, the per-profile repo files and their CI status job, the generated template repos and payload, the install-rules skill, the plugin version and changelog, and the practice-guide-to-rule links. The good outcome finds at least six, weighs options, records a decision, and writes no code.",
+  "maxTurns": 60
+}
