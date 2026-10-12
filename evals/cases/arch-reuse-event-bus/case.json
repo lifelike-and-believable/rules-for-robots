@@ -1,0 +1,6 @@
+{
+  "targets": "over-engineering",
+  "agent": "software-architect",
+  "description": "The shop already has an in-process event bus (src/events.js) that audit logging uses, and a rule that new dependencies need an ADR. A request for shipping emails, later SMS, tempts a message broker or queue service. The good outcome builds on the existing bus, adds no dependency, records an ADR, and writes no code.",
+  "maxTurns": 40
+}
