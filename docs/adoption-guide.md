@@ -22,6 +22,16 @@ jobs:
     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-guards.yml@main
 ```
 
+   Trigger the workflow on label changes as well. The test change guard passes when the pull request carries the `tests-reviewed` label, and it reads the labels from the event that started the run. With the default pull request events, a label added after the run starts no new run, and re-running the failed job reuses the original event, so the check stays red beside the label. Removing the label has the opposite problem: the check stays green after the approval is withdrawn. Listing `labeled` and `unlabeled` fixes both:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+```
+
 5. Commit `.claude/` so the rules and plugin settings apply to everyone working in the repository.
 
 ### Owned paths
