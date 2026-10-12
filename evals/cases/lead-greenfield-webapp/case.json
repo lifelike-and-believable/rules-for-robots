@@ -1,0 +1,7 @@
+{
+  "targets": "greenfield-planning",
+  "agent": "tech-lead",
+  "fixtureFrom": "template-repos/web-app",
+  "description": "Greenfield web app, same brief and template as arch-greenfield-webapp. The good outcome is an ordered plan that gets a thin end-to-end version working and verified first (the template has no package.json yet, so the first slice creates the project), covers every requirement, raises the R9/R10 contradiction as a question for the organizers instead of deciding it, writes tests before code, names the verify command and a reviewer, and writes no code.",
+  "maxTurns": 60
+}

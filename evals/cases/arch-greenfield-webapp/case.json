@@ -1,0 +1,7 @@
+{
+  "targets": "greenfield-design",
+  "agent": "software-architect",
+  "fixtureFrom": "template-repos/web-app",
+  "description": "Greenfield web app. The fixture is the web-app template repo plus a requirements brief for a volunteer shift sign-up site. Six problems are planted in the brief: R9 (keep a full history for 7 years) contradicts R10 (delete personal data on request); R2 (no accounts) leaves R4 (cancel your own sign-up) with no way to identify the volunteer; R7 asks for real-time updates without saying what that means or what it costs on a small hosting budget; R3 (capacity) is a race between two sign-ups; R6 (a reminder 24 hours before) needs a scheduler; and nothing says how organizers prove who they are. The good outcome maps every requirement to the design, flags the contradiction and asks the organizers, finds at least four of the six, weighs options, records an ADR, and writes no code.",
+  "maxTurns": 60
+}

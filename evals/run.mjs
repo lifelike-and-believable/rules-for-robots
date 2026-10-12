@@ -167,9 +167,12 @@ function git(cwd, ...args) {
 // then the case's setup.mjs (if any) for uncommitted state.
 export async function prepareWorkspace(testCase, arm) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `rfr-eval-${testCase.name}-`));
-  // A case can share a fixture kept elsewhere: "fixtureFrom" in case.json is a path from the repository root.
-  const fixture = testCase.meta.fixtureFrom ? path.join(ROOT, testCase.meta.fixtureFrom) : path.join(testCase.dir, 'fixture');
-  fs.cpSync(fixture, dir, { recursive: true });
+  // A case can start from a shared base kept elsewhere ("fixtureFrom" in case.json, a path from the
+  // repository root, such as a profile's template repo). The case's own fixture/ folder, if it has one,
+  // is laid over the base.
+  if (testCase.meta.fixtureFrom) fs.cpSync(path.join(ROOT, testCase.meta.fixtureFrom), dir, { recursive: true });
+  const own = path.join(testCase.dir, 'fixture');
+  if (fs.existsSync(own)) fs.cpSync(own, dir, { recursive: true });
   // Rules are part of the committed starting state, so graders that inspect
   // `git status` see only the agent's changes.
   if (arm !== 'none') {
@@ -240,7 +243,8 @@ function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCa
     '--allowedTools', [...(meta.allowedTools ?? ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep']), ...(arm === 'rules+agents' ? ['Agent', 'Task'] : [])].join(','),
   ];
   if (effort) args.push('--effort', effort);
-  if (arm === 'rules+hooks' || arm === 'rules+agents') args.push('--plugin-dir', path.join(ROOT, 'plugins', 'core'));
+  // RFR_PLUGIN_DIR points the plugin arms at another copy of plugins/core (a worktree of an earlier commit, to compare prompts).
+  if (arm === 'rules+hooks' || arm === 'rules+agents') args.push('--plugin-dir', process.env.RFR_PLUGIN_DIR ?? path.join(ROOT, 'plugins', 'core'));
   if (multi) {
     return (async () => {
       const merged = { code: 0, events: [], stderr: '', seconds: 0 };

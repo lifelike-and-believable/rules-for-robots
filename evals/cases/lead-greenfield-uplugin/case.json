@@ -1,0 +1,7 @@
+{
+  "targets": "greenfield-planning",
+  "agent": "tech-lead",
+  "fixtureFrom": "template-repos/unreal-plugin",
+  "description": "Greenfield Unreal plugin, same brief and template as arch-greenfield-uplugin. The good outcome is an ordered plan that gets a thin plugin building and verified first (the template has no plugin source yet, so the first slice creates the descriptor and module), covers every requirement, raises the R9/R10 contradiction as a question for the tools team instead of deciding it, writes tests before code, names the verify script and a reviewer, and writes no code.",
+  "maxTurns": 60
+}
