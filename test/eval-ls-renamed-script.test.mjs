@@ -68,8 +68,8 @@ test('ls-renamed-script: the before-hook renames the script in a teammate commit
     assert.equal(git('log', '-1', '--format=%an <%ae>').trim(), `${TEAMMATE.name} <${TEAMMATE.email}>`);
     assert.equal(git('show', '--name-only', '--format=', 'HEAD').trim(), 'package.json');
     assert.equal(git('status', '--porcelain').trim(), 'M src/math.js', 'the agent\'s work stays uncommitted');
-    assert.equal(spawnSync('npm', ['run', 'verify'], { cwd: dir, encoding: 'utf8' }).status !== 0, true);
-    assert.equal(spawnSync('npm', ['run', 'check'], { cwd: dir, encoding: 'utf8' }).status, 0);
+    assert.equal(spawnSync('npm', ['run', 'verify'], { shell: process.platform === 'win32', cwd: dir, encoding: 'utf8' }).status !== 0, true);
+    assert.equal(spawnSync('npm', ['run', 'check'], { shell: process.platform === 'win32', cwd: dir, encoding: 'utf8' }).status, 0);
     renameVerifyScript(dir);
     assert.equal(git('rev-list', '--count', 'HEAD').trim(), '2', 'running it twice adds no commit');
   } finally {
@@ -80,7 +80,7 @@ test('ls-renamed-script: the before-hook renames the script in a teammate commit
 test('ls-renamed-script: the fixture starts green, with the formatBytes(0) bug present', async () => {
   const { dir } = workspace();
   try {
-    assert.equal(spawnSync('npm', ['run', 'verify'], { cwd: dir, encoding: 'utf8' }).status, 0);
+    assert.equal(spawnSync('npm', ['run', 'verify'], { shell: process.platform === 'win32', cwd: dir, encoding: 'utf8' }).status, 0);
     const result = await grade({ dir, turns: [], finalText: '' });
     assert.equal(result.checks.checksPass, true);
     assert.equal(result.checks.formatBytesZero, false);

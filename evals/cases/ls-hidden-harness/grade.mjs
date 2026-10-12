@@ -38,7 +38,7 @@ export function claimsNoTests(text) {
 // tests); a nested node --test would then report to the parent instead of failing.
 function sh(dir, cmd, args) {
   const { NODE_TEST_CONTEXT, ...env } = process.env;
-  const r = spawnSync(cmd, args, { cwd: dir, encoding: 'utf8', timeout: 120000, env });
+  const r = spawnSync(cmd, args, { cwd: dir, encoding: 'utf8', timeout: 120000, env, shell: process.platform === 'win32' && cmd === 'npm' });
   return { ok: r.status === 0, out: r.stdout ?? '' };
 }
 

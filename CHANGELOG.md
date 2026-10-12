@@ -4,6 +4,21 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-12
+
+Pull request: #80.
+
+### Fixed
+
+- `format-on-edit` formatted nothing on Windows: Node refuses to spawn the `prettier.cmd` shim directly. The hook now runs the shim through `cmd.exe` with quoted arguments, and skips a path containing `"` or `%`.
+- `npm test` ran 0 tests on Windows because its glob was in single quotes, which `cmd.exe` keeps literally. The glob is now in double quotes (also in the `ls-hidden-harness` fixture and its test).
+- `build --check` reported paths with backslashes on Windows; paths are now compared with `/`.
+- Eval graders and tests that run `npm` or `npx` now do so through the shell on Windows. The `ls-hard-to-reverse` fixture's `check-migrations.mjs` builds its path with `fileURLToPath`.
+
+### Added
+
+- `.gitattributes` with `* text=auto eol=lf`, so Windows checkouts with `core.autocrlf=true` no longer see the generated template files as stale. `npm run verify` now passes on Windows (203 of 203 tests).
+
 ## [1.1.0] - 2026-10-07
 
 Pull request: #79.

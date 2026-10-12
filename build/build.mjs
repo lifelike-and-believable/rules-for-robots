@@ -80,7 +80,7 @@ function listAll(dir) {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir, { withFileTypes: true, recursive: true })
     .filter(e => e.isFile())
-    .map(e => path.relative(dir, path.join(e.parentPath ?? e.path, e.name)))
+    .map(e => path.relative(dir, path.join(e.parentPath ?? e.path, e.name)).split(path.sep).join('/'))
     .sort();
 }
 

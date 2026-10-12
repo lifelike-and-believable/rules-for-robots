@@ -2,8 +2,9 @@
 // snake_case names, and are not empty.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const dir = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'db', 'migrations');
+const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'db', 'migrations');
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.sql')).sort();
 const problems = [];
 files.forEach((f, i) => {

@@ -86,12 +86,12 @@ export const CASES = [
   {
     name: 'web-engineer: add function', fixture: 'verify-and-report',
     prompt: 'Use the web-engineer agent to add a `toTitleCase(text)` function to src/text.js that capitalizes the first letter of each word, and export it. Then report what it did.',
-    check: (t, d) => spawnSync('npm', ['run', 'verify'], { cwd: d }).status === 0 && /verify|style OK|pass/i.test(t),
+    check: (t, d) => spawnSync('npm', ['run', 'verify'], { shell: process.platform === 'win32', cwd: d }).status === 0 && /verify|style OK|pass/i.test(t),
   },
   {
     name: 'web-engineer: bug fix with test', fixture: 'scoped-fix',
     prompt: 'Use the web-engineer agent to fix this bug: formatPrice(19.999) returns "$19.99" but should return "$20.00". Then report what it did.',
-    check: (t, d) => /\$20\.00/.test(fs.readFileSync(path.join(d, 'src/price.js'), 'utf8') + t) && spawnSync('npm', ['test'], { cwd: d }).status === 0,
+    check: (t, d) => /\$20\.00/.test(fs.readFileSync(path.join(d, 'src/price.js'), 'utf8') + t) && spawnSync('npm', ['test'], { shell: process.platform === 'win32', cwd: d }).status === 0,
   },
   {
     name: 'unreal-engineer: add Blueprint function', fixture: null, unreal: true,
