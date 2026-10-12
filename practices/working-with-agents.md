@@ -50,6 +50,7 @@ A subagent starts with none of the main session's context, so the hand-off has t
 - State the subagent's authority: the task, its scope, and that the user approved it. Ask it to return new scope, architectural choices, and irreversible actions to you instead of acting on them. Permission prompts and hooks apply inside subagents too, so the prompt cannot grant more than the session has.
 - Ask for a structured result: files changed, test runs, verification output, and what it could not verify. The `web-engineer`, `unreal-engineer`, and `code-reviewer` agents already report this way.
 - Match the model to the stage. One team's experience: a larger model for planning and review, a faster one for well-specified implementation and searches. Override the model per call rather than duplicating agent definitions.
+- Send the cheapest model work that has a large input, a small output, and no judgment: waiting on CI and reading failed logs, running scanners and builds, checking that review findings cite real lines. `rfr-core` does this with Haiku 5.5 agents (`ci-watcher`, `check-runner`, `citation-checker`) that return verbatim excerpts. Keep the decision (is it green, is it a real bug, may it merge) with the model that has the context, and keep recall-critical review on the larger models.
 - Long build-and-fix loops fill a session with failed attempts; run them in their own session (see Long sessions).
 
 ## Long sessions

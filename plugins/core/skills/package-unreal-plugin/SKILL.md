@@ -9,6 +9,6 @@ argument-hint: "[engine versions]"
 
 1. **Versions.** Use the engine versions in `$ARGUMENTS` or AGENTS.md. Fab needs a separate package per version, and builds the three latest versions by default.
 2. **Tier 1.** Run `checks/unreal/tier1.mjs` from rules-for-robots on the plugin with the publisher's copyright and without `--allow-missing-fab-url`. Fix or report every error before continuing.
-3. **For each version:** copy the plugin to a staging folder outside the engine and project, set `EngineVersion` to `<version>.0`, and run `RunUAT.bat BuildPlugin -Plugin=<staged .uplugin> -Package=<out>/<version>/<Name> -Rocket` with that version's engine. Fail on any compiler warning.
+3. **For each version:** copy the plugin to a staging folder outside the engine and project, set `EngineVersion` to `<version>.0`, and have the `check-runner` agent run `RunUAT.bat BuildPlugin -Plugin=<staged .uplugin> -Package=<out>/<version>/<Name> -Rocket` with that version's engine. It returns the exit code and every compiler warning and error as printed. Fail on any compiler warning, and on any version `check-runner` reports as `did not run`.
 4. **Check each package**: no `Binaries`, `Intermediate`, or `Saved` folders in what you will zip; `Config/FilterPlugin.ini` lists any extra folders; paths are 170 characters or fewer.
 5. **Zip** each package's plugin folder (one plugin per zip) and report the zip paths, the build output summary, and the remaining manual steps: upload, `FabURL`, documentation link, example project link, and third-party declaration.
