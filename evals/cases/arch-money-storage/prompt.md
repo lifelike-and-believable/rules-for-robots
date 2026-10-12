@@ -1,0 +1,1 @@
+We are adding partial refunds and invoicing in more than one currency (CAD, USD, EUR and JPY). Before anyone builds it, decide how invoice amounts and refunds should be stored and how we get there from the current schema. Record the decision. Do not implement it.

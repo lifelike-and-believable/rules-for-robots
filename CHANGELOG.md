@@ -13,6 +13,18 @@ Pull request: #85.
 - Spec trace and lock checks (Phase 10a, `docs/specs/spec-test-traceability.md`). `checks/spec-trace.mjs` fails when an approved spec has a `test:` criterion no test cites (as `<spec name>#AC-<n>`) or a test cites a criterion the spec lacks; drafts only warn. `checks/spec-lock.mjs` fails when a test that cites a spec was modified, deleted, or renamed after the spec's `tests-commit`, unless the spec lists an `unlocks:` entry with a reason. Both run in `npm run verify` (`check:specs`), and adopting repositories can turn them on with `spec-checks: true` in the reusable guards workflow.
 - The `plan-feature` spec template has front matter (`status`, `tests-commit`, `unlocks`) and criterion IDs with `test:` markers.
 
+## [1.2.1] - 2026-10-12
+
+Pull request: #82.
+
+### Changed
+
+- `software-architect` runs on `claude-fable-5-1` (was `opus`).
+
+### Added
+
+- Eval round for `software-architect` and `tech-lead`: a `rules+agents` arm in `evals/run.mjs`, four cases (`arch-money-storage`, `arch-reuse-event-bus`, `lead-plan-order`, `lead-check-claim`) with unit-tested graders, and a staged run plan in `evals/README.md`. No paid runs yet.
+
 ## [1.2.0] - 2026-10-12
 
 Pull request: #81.
