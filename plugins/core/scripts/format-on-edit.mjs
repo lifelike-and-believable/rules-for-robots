@@ -43,6 +43,20 @@ export function chooseFormatter(file, projectDir) {
   return null;
 }
 
+// Node refuses to spawn a .cmd shim directly on Windows (EINVAL), so run it through cmd.exe
+// with each argument in double quotes. NTFS forbids '"' in names; '%' would still expand, so
+// a path containing either is reported as not formatted rather than passed to the shell.
+export function runFormatter(formatter, projectDir, timeout) {
+  const options = { cwd: projectDir, timeout, encoding: 'utf8' };
+  if (process.platform !== 'win32' || !/\.(cmd|bat)$/i.test(formatter.cmd)) {
+    return spawnSync(formatter.cmd, formatter.args, options);
+  }
+  const parts = [formatter.cmd, ...formatter.args];
+  if (parts.some(part => /["%]/.test(part))) return { error: new Error('unsafe path for cmd.exe') };
+  const line = `"${parts.map(part => `"${part}"`).join(' ')}"`;
+  return spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', line], { ...options, windowsVerbatimArguments: true });
+}
+
 const safe = value => String(value).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 100);
 
 // One list per session, and a separate one per subagent so a SubagentStop never formats
@@ -93,7 +107,7 @@ export function formatPending(input, projectDir) {
       leftover.push(file);
       continue;
     }
-    const result = spawnSync(formatter.cmd, formatter.args, { cwd: projectDir, timeout: Math.min(PER_FILE_TIMEOUT_MS, remaining), encoding: 'utf8' });
+    const result = runFormatter(formatter, projectDir, Math.min(PER_FILE_TIMEOUT_MS, remaining));
     if (result.error || result.status !== 0) {
       process.stderr.write(`rfr-core format-on-edit: ${formatter.cmd} did not succeed on ${file}\n`);
     }
