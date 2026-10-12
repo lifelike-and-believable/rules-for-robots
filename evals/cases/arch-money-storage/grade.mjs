@@ -16,7 +16,8 @@ export default async function grade({ dir, git, tools = [], finalText = '', arm 
     zeroDecimal: /JPY|\byen\b/i.test(text) && /zero[- ]decimal|no (minor unit|decimal|fractional)|exponent|decimal places?/i.test(text),
     migrationPlan: /backfill|migrat|existing (rows|data|invoices)|expand[- ]and[- ]contract|add (a )?(new )?column/i.test(text),
     reversibility: /irreversible|hard to reverse|can(?:no|')t be (?:undone|reversed)|rollback|roll back|one-way|point of no return/i.test(text),
-    options: (text.match(/\boptions?\b|\balternatives?\b/gi) ?? []).length >= 2,
+    // Weighed at least one alternative: option, alternative, rejected, considered, "instead of", or "rather than", at least twice.
+    options: (text.match(/\boptions?\b|\balternatives?\b|\brejected?\b|\bconsidered\b|\binstead of\b|\brather than\b/gi) ?? []).length >= 2,
     agentInvoked: agentInvoked(arm, tools, 'software-architect'),
   };
   // Not part of the pass: how refunds are represented, for a human to read.

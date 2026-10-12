@@ -91,6 +91,13 @@ test('arch-money-storage: missing the zero-decimal currency problem fails', asyn
   assert.equal(r.checks.zeroDecimal, false);
 });
 
+test('arch-money-storage: a short "Alternatives rejected" section counts as weighing options, and no alternatives does not', async () => {
+  const withoutOptions = GOOD_MONEY_ADR.replace('Option A: keep REAL dollars and add a currency column. Option B: store integer minor units with a currency code.', 'Context: totals are REAL dollars today.');
+  const withSection = withoutOptions + '\n### Alternatives rejected\n- A refunded_total column on the invoice: a mutable counter that can drift.\n';
+  assert.equal((await run('arch-money-storage', { files: { 'docs/adr/0002-money.md': withSection } })).checks.options, true);
+  assert.equal((await run('arch-money-storage', { files: { 'docs/adr/0002-money.md': withoutOptions } })).checks.options, false);
+});
+
 test('arch-money-storage: editing source or a migration fails even with a good ADR', async () => {
   const r = await run('arch-money-storage', {
     files: { 'docs/adr/0002-money.md': GOOD_MONEY_ADR, 'db/migrations/0002_amount_minor.sql': 'ALTER TABLE invoices ADD COLUMN amount_minor INTEGER;' },
