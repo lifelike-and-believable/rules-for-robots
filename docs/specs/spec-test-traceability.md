@@ -35,12 +35,15 @@ A document-driven and test-driven hybrid: the spec's acceptance criteria are the
 | AC-8 | The spec front matter can record `tests-commit: <sha>`. A lock check fails when a test file that cites that spec's IDs was modified, deleted, or renamed between that commit and `HEAD`. A test file added after it is allowed and reported, so tests can grow in new files. A spec without `tests-commit` is not checked, an unknown commit is an error, and a spec whose status is `implemented` releases the lock (the lock is for the build, and a squash merge removes the recorded commit from history). | test: on a temporary git repository: unchanged, modified, deleted, renamed, added, unrelated-file, no-field, and unknown-commit cases. |
 | AC-9 | A change to a locked test is allowed only when the spec lists an `unlocks:` entry that names the test file and gives a reason; the check reports the entry, so the review sees it. An unlock for a file that did not change is a warning. | test: an unlock with a reason passes and is reported; one without a reason fails; an unused unlock warns. |
 | AC-10 | `review-pr` has a sabotage step for approved specs: in a throwaway `git worktree` outside the project folder, break the behaviour behind each traced criterion in a small way, run the tests, and report any citing test that still passes. The worktree is removed afterwards and the project tree is never changed. | Smoke case for the skill on a fixture with one vacuous test; eval case `spec-vacuous-tests`. |
+| AC-11 | (proposed) `tests-commit` can be a list, one commit per cluster of tests. Each commit locks the test files that cite the spec at that commit; a file in an earlier cluster stays locked when a later cluster is added. | planned test: lists of commits, a later cluster in new files, and a change to an earlier cluster's file. |
+| AC-12 | (proposed) A candidate wording of TEST-004 drafts tests in clusters per criterion group, with stubs first so each test fails on its assertion, and the evals compare it with the current one-test-at-a-time wording. | Eval round (10c). |
 
 **Citation form.** A test cites a criterion as `<spec file name without .md>#AC-<n>`, for example `spec-test-traceability#AC-2`, in a test title or a comment anywhere in the file. The slug keeps IDs from different specs apart in a shared test folder. A criterion needs a citing test when its "Verified by" cell starts with `test:`; any other text (a command, a browser check) is skipped and listed. Front matter fields: `status` (`draft`, `approved`, `implemented`), `tests` (folders searched; default `test`, `tests`, `spec`, `__tests__`), `tests-commit`, and `unlocks` (a list of `path: reason`).
 
 ## Scope
 
 - In: `plugins/core/skills/plan-feature/` (template and text); `checks/spec-trace.mjs` and `checks/spec-lock.mjs` with their tests; `npm run verify`; an opt-in step in `.github/workflows/rfr-guards.yml`; the sabotage step in `plugins/core/skills/review-pr/`; a candidate rule in `evals/candidates/`; eval cases; `docs/specs/` as the home for this repo's own specs; `practices/working-with-agents.md` (the tests-first split and the lock).
+- In (proposed amendment): a list-valued `tests-commit` in `checks/spec-lock.mjs` (AC-11); a candidate `TEST-004-clustered` in `evals/candidates/` with `replaces: TEST-004`, compared in the 10c round (AC-12).
 - Out: a `test-author` agent (see "Watching whether a test-author agent is needed"); generating tests from prose in CI; requiring specs for small changes (the working guide already skips the plan for those); Unreal Tier 2 integration; a MUST rule; a mutation-testing tool dependency (the sabotage step is a reviewer's manual breakage, not a framework).
 
 How the three safeguards fit: the convention (A) puts the tests first in the plan, the commit lock (C) proves the order and that the tests did not move, and the sabotage step (E) shows the tests can fail. A and C protect against fitting the tests to the code; E protects against tests that never could fail.
@@ -83,6 +86,14 @@ Keep the candidate if it raises the pass rate on at least one case, lowers it on
 - The sabotage step runs code the reviewer has changed. Mitigation: it works only in a throwaway worktree outside the project folder, the existing command guard still asks before destructive commands, and the worktree is removed afterwards. The cost is extra test runs per criterion, which the eval round measures.
 - Decision for an ADR: where specs live and how they are versioned (`docs/specs/` with front-matter status, proposed here).
 - Open question: does separating the test author from the implementer help beyond the existing test-edit guard and the commit lock? The `spec-trace-wrong-test` case is the first evidence.
+
+## Test cadence: one test at a time or clusters
+
+TEST-004 asks for one small failing test, then the least code to pass it, then the next. The maintainer's experience is that agentic work often goes better when a cluster of related tests is drafted together. The spec's tests-first slice already produces a cluster (all tests for a criterion group, committed red together), so the two are compatible at the spec level; they differ in the rule's wording and in how the lock handles successive clusters.
+
+Cluster guidance, as the candidate would word it: draft the tests for one criterion group together; add stubs for the new modules and signatures first, so each test fails on its assertion and not on a missing import; run the cluster and confirm each test fails for the expected reason; commit it as that cluster's `tests-commit`; then implement in small steps with the cluster as the target. A cluster that is red only because nothing exists proves nothing about its assertions.
+
+Comparison in 10c: arms `rules` (TEST-004 as written) and `rules+candidate` (`TEST-004-clustered`, which replaces it), on the Phase 8 `tdd-feature` case and the `spec-trace-*` cases. Measures: pass rate, whether each test failed for the right reason before implementation (from the transcript), turns, and cost.
 
 ## Watching whether a test-author agent is needed
 
