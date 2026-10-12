@@ -6,6 +6,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [1.5.0] - 2026-10-12
 
+Pull request: #87.
+
 ### Added
 
 - Phase 10b, `docs/specs/spec-test-traceability.md`. The spec lock accepts a list of `tests-commit` values, one per cluster of tests; each cluster is locked at its own commit and each later commit must descend from the one before.
