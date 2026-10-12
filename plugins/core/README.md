@@ -16,9 +16,10 @@ Core plugin from [rules-for-robots](../../README.md).
 | `check-runner` | Haiku 5.5, medium | Read-only | Runs named scanners, audits, builds, and tests and returns exit codes and key output verbatim |
 | `citation-checker` | Haiku 5.5, medium | Read-only | Checks that each review finding's file, line, identifiers, and rule ID exist |
 | `software-architect` (experimental) | Fable 5.1, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
+| `ux-reviewer` (experimental) | Opus, medium | Read-only | Usability and interface design for Unreal Editor tools, general software (desktop, command-line, developer tools), and web pages and apps |
 | `tech-lead` (experimental) | Opus, medium | Read-only | Sequenced slices with owners, acceptance criteria, and verification; checks delegated work against them |
 
-Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals. `software-architect` and `tech-lead` are experimental: they were added before any eval showed a benefit (recommendation R18) and will be kept or removed on the results.
+Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals. `software-architect`, `tech-lead`, and `ux-reviewer` are experimental: they were added before any eval showed a benefit (recommendation R18) and will be kept or removed on the results.
 
 The three Haiku agents gather or run things and return text copied from tools. They never judge: the calling session decides whether a check is green, a finding is true, or a change can merge. Skills call them (`merge-when-green`, `review-pr`, `security-audit`, `perf-audit`, `a11y-audit`, `package-unreal-plugin`); the implementation agents cannot, because subagents cannot start subagents. They are pinned to `claude-haiku-5-5`. The reasoning is in [the Haiku 5.5 research note](../../docs/research/notes/haiku_5_5_delegation.md).
 
