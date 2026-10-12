@@ -13,6 +13,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [1.2.1] - 2026-10-12
 
+Pull request: #82.
+
 ### Changed
 
 - `software-architect` runs on `claude-fable-5-1` (was `opus`).
