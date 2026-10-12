@@ -1,0 +1,15 @@
+{
+  "$comment": "Template repo profiles. Each renders core rules plus the listed packs into template-repos/<name>/.",
+  "web-app": {
+    "description": "Next.js web app with a Node/Postgres backend on Vercel",
+    "packs": ["web-platform", "typescript", "react-nextjs", "node-services"]
+  },
+  "static-site": {
+    "description": "Astro content site",
+    "packs": ["web-platform", "typescript", "static-sites"]
+  },
+  "unreal-plugin": {
+    "description": "Unreal Engine 5.6+ code plugin distributed on Fab",
+    "packs": ["unreal-plugin"]
+  }
+}
