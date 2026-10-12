@@ -19,7 +19,7 @@ const write = (dir, rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel
 
 // A pull request for the merge-when-green skill: a local bare remote, a branch with one
 // commit pushed to it, and the scenario the fake gh (evals/agents/fake-gh) answers from.
-function pullRequest(dir, checks, failedLog) {
+function pullRequest(dir, checks, failedLog, extra = {}) {
   const g = (...a) => spawnSync('git', ['-c', 'user.email=s@example.com', '-c', 'user.name=smoke', ...a], { cwd: dir, encoding: 'utf8' });
   const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-smoke-remote-'));
   spawnSync('git', ['init', '-q', '--bare', '-b', 'main', remote]);
@@ -28,7 +28,7 @@ function pullRequest(dir, checks, failedLog) {
   write(dir, 'src/text.js', fs.readFileSync(path.join(dir, 'src/text.js'), 'utf8') + '\n/** Returns the text in upper case. */\nexport function shout(text) {\n  return text.toUpperCase();\n}\n');
   g('commit', '-qam', 'Add shout'); g('push', '-q', 'origin', 'add-shout');
   const head = g('rev-parse', 'HEAD').stdout.trim();
-  fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog }));
+  fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog, ...extra }));
 }
 const ghCalls = dir => { try { return fs.readFileSync(path.join(dir, '.git', 'gh-calls.log'), 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } };
 const headOf = dir => JSON.parse(fs.readFileSync(path.join(dir, '.git', 'fake-gh.json'), 'utf8')).head;
@@ -201,6 +201,18 @@ export const CASES = [
     },
   },
   {
+    name: 'skill merge-when-green: checks still running', expectModel: 'haiku-5-5', fixture: 'verify-and-report', fakeGh: true,
+    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }], undefined, { pendingUntilWatch: true }),
+    prompt: '/rfr-core:merge-when-green 21',
+    check: (t, d) => {
+      const calls = ghCalls(d);
+      const merge = calls.findIndex(a => a[0] === 'pr' && a[1] === 'merge');
+      const watch = calls.findIndex(a => a[0] === 'pr' && a[1] === 'checks' && a.includes('--watch'));
+      const guarded = merge !== -1 && calls[merge].includes('--match-head-commit') && calls[merge].includes(headOf(d));
+      return watch !== -1 && merge > watch && guarded && !calls.some(a => a.includes('--admin'));
+    },
+  },
+  {
     name: 'skill merge-when-green: red head commit', fixture: 'verify-and-report', fakeGh: true,
     change: d => pullRequest(d, [{ name: 'verify', conclusion: 'FAILURE' }, { name: 'secret-scan', conclusion: 'SUCCESS' }],
       'verify\tRun npm run verify\tnot ok 3 - shout returns upper case\nverify\tRun npm run verify\t  expected: HELLO, actual: hello'),
@@ -212,6 +224,46 @@ export const CASES = [
       const namedCause = /(upper ?case|HELLO|lower ?case|not ok 3)/i.test(t);
       return !merged && /verify/.test(t) && /(fail|red|not pass)/i.test(t) && namedCause && !calls.some(a => a.includes('--admin'));
     },
+  },
+  {
+    name: 'ci-watcher: green pull request', expectModel: 'haiku-5-5', fixture: 'verify-and-report', fakeGh: true,
+    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }]),
+    prompt: 'Use the ci-watcher agent on pull request 21. Report its output verbatim.',
+    check: (t, d) => {
+      const calls = ghCalls(d);
+      return t.includes(headOf(d)) && /verify/.test(t) && /secret-scan/.test(t) && /(success|pass)/i.test(t)
+        && !calls.some(a => a[0] === 'pr' && a[1] === 'merge');
+    },
+  },
+  {
+    name: 'ci-watcher: red pull request', expectModel: 'haiku-5-5', fixture: 'verify-and-report', fakeGh: true,
+    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'FAILURE' }, { name: 'secret-scan', conclusion: 'SUCCESS' }],
+      'verify\tRun npm run verify\tnot ok 3 - shout returns upper case\nverify\tRun npm run verify\t  expected: HELLO, actual: hello'),
+    prompt: 'Use the ci-watcher agent on pull request 21. Report its output verbatim.',
+    check: (t, d) => {
+      const calls = ghCalls(d);
+      return t.includes(headOf(d)) && /failure/i.test(t) && /not ok 3 - shout returns upper case/.test(t) && /expected: HELLO, actual: hello/.test(t)
+        && !calls.some(a => a[0] === 'pr' && a[1] === 'merge') && !calls.some(a => a[0] === 'run' && a[1] === 'rerun');
+    },
+  },
+  {
+    name: 'check-runner: failing test and missing scanner', expectModel: 'haiku-5-5', fixture: 'dirty-tree',
+    prompt: 'Use the check-runner agent to run these two commands in the repository root: `npm test` and `gitleaks detect --no-git`. Report its output verbatim.',
+    check: (t, d) => /exit(ed)?( code)?:?\s*1\b/i.test(t) && /fail 1/.test(t) && /gitleaks/i.test(t) && /(did not run|not installed|not found|couldn't run|could not run)/i.test(t)
+      && spawnSync('git', ['status', '--porcelain'], { cwd: d, encoding: 'utf8' }).stdout.trim() === '',
+  },
+  {
+    name: 'check-runner: passing verify', expectModel: 'haiku-5-5', fixture: 'verify-and-report',
+    prompt: 'Use the check-runner agent to run `npm run verify` in the repository root. Report its output verbatim.',
+    check: (t, d) => /exit[^\n]{0,20}\b0\b/i.test(t) && /style OK/.test(t)
+      && spawnSync('git', ['status', '--porcelain'], { cwd: d, encoding: 'utf8' }).stdout.trim() === '',
+  },
+  {
+    name: 'citation-checker: one good and one wrong citation', expectModel: 'haiku-5-5', fixture: 'dirty-tree',
+    prompt: 'Use the citation-checker agent on the working tree with these two findings, and report its output verbatim.\n\n'
+      + '- [major] src/mean.js:4, no rule\n  Problem: the loop in `mean` starts at index 1 and skips the first value.\n  Failure scenario: mean([2, 4]) returns 2.\n  Fix: start at 0.\n\n'
+      + '- [minor] src/median.js:40, no rule\n  Problem: `sortedCopy` mutates its argument.\n  Failure scenario: the caller sees a reordered array.\n  Fix: copy first.',
+    check: t => /src\/mean\.js:4[^\n]*\bok\b/.test(t) && /src\/median\.js:40[^\n]*mismatch/.test(t) && /past the end/i.test(t),
   },
 ];
 
@@ -263,16 +315,18 @@ async function main() {
       const r = await run(c, dir);
       const text = r.result ?? '';
       let pass = false;
-      try { pass = !r.is_error && !!c.check(text, dir); } catch {}
-      results.push({ name: c.name, pass, costUsd: r.total_cost_usd ?? null, turns: r.num_turns ?? null, output: text.replaceAll(FAKE_KEY, '<fake key redacted>') });
+      const usage = r.modelUsage ?? {};
+      const modelOk = !c.expectModel || Object.keys(usage).some(m => m.includes(c.expectModel));
+      try { pass = !r.is_error && modelOk && !!c.check(text, dir); } catch {}
+      results.push({ name: c.name, pass, costUsd: r.total_cost_usd ?? null, models: Object.fromEntries(Object.entries(usage).map(([m, u]) => [m, u.costUSD])), turns: r.num_turns ?? null, output: text.replaceAll(FAKE_KEY, '<fake key redacted>') });
       console.log(`${pass ? 'PASS' : 'FAIL'} ${c.name}`);
       fs.rmSync(dir, { recursive: true, force: true });
     }
   }));
   results.sort((a, b) => a.name.localeCompare(b.name));
   fs.writeFileSync(path.join(out, 'smoke.json'), JSON.stringify(results, null, 2));
-  const md = ['# Agent and skill smoke tests', '', `Model: claude-sonnet-5-5 (main session; agents use their own model settings). Claude Code: ${spawnSync('claude', ['--version'], { encoding: 'utf8' }).stdout.trim()}.`, '', '| Case | Result | Cost (USD) |', '|---|---|---|',
-    ...results.map(r => `| ${r.name} | ${r.pass ? 'pass' : 'FAIL'} | ${r.costUsd?.toFixed(3) ?? ''} |`)];
+  const md = ['# Agent and skill smoke tests', '', `Model: claude-sonnet-5-5 (main session; agents use their own model settings). Claude Code: ${spawnSync('claude', ['--version'], { encoding: 'utf8' }).stdout.trim()}.`, '', '| Case | Result | Cost (USD) | Cost by model (USD) |', '|---|---|---|---|',
+    ...results.map(r => `| ${r.name} | ${r.pass ? 'pass' : 'FAIL'} | ${r.costUsd?.toFixed(3) ?? ''} | ${Object.entries(r.models ?? {}).map(([m, c]) => `${m.replace('claude-', '')} ${c.toFixed(3)}`).join(', ')} |`)];
   fs.writeFileSync(path.join(out, 'summary.md'), md.join('\n') + '\n');
   console.log(`\n${results.filter(r => r.pass).length}/${results.length} passed; total $${results.reduce((s, r) => s + (r.costUsd ?? 0), 0).toFixed(2)}`);
 }

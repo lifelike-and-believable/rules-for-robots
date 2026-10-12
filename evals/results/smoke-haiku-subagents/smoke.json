@@ -1,0 +1,171 @@
+[
+  {
+    "name": "check-runner: failing test and missing scanner",
+    "pass": true,
+    "costUsd": 0.06510907,
+    "models": {
+      "claude-haiku-5-5": 0.0018374700000000001,
+      "claude-sonnet-5-5": 0.06327160000000001
+    },
+    "turns": 2,
+    "output": "Here is the check-runner's report.\n\n**`npm test`** (exit code 1)\n```\n# tests 3\n# suites 0\n# pass 2\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 125.323579\nnot ok 1 - mean of values\n  location: '/tmp/rfr-smoke-4zXJgk/tests/stats.test.js:6:1'\n  failureType: 'testCodeFailure'\n    Expected values to be strictly equal:\n    + actual - expected\n    + 3.3333333333333335\n    - 4\n  code: 'ERR_ASSERTION'\n  expected: 4\n  actual: 3.3333333333333335\n```\nThe full output is saved at `/tmp/tmp.VupXpiqRuD/npm-test.txt`. It also holds the stack trace for the failing test.\n\n**`gitleaks detect --no-git`** (exit code 127)\n```\n/bin/bash: line 1: gitleaks: command not found\n```\nThe scan did not run because the `gitleaks` binary isn't installed. The agent didn't install it or substitute another scanner. The output is saved at `/tmp/tmp.SW0JYK7RzP/gitleaks.txt`.\n\nThe \"mean of values\" test fails: it expected 4 and got 3.3333333333333335. I haven't looked into whether the code or the test is wrong."
+  },
+  {
+    "name": "check-runner: passing verify",
+    "pass": true,
+    "costUsd": 0.06167276000000001,
+    "models": {
+      "claude-sonnet-5-5": 0.06031940000000001,
+      "claude-haiku-5-5": 0.0013533599999999998
+    },
+    "turns": 2,
+    "output": "The check-runner agent ran `npm run verify` in `/tmp/rfr-smoke-GEtM0v`. It exited with code 0: 1 test passed, none failed, and the style check printed `style OK`.\n\nIts output, verbatim:\n\n```\n> text-kit@1.0.0 verify\n> node --test && node scripts/check-style.mjs\n\nTAP version 13\n# Subtest: squish collapses whitespace\nok 1 - squish collapses whitespace\n  ---\n  duration_ms: 0.956235\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 121.045339\nstyle OK\n```\n\nThe agent also saved the log to `/tmp/tmp.cLyfutYDEV/verify.log`."
+  },
+  {
+    "name": "ci-watcher: green pull request",
+    "pass": true,
+    "costUsd": 0.06015790000000001,
+    "models": {
+      "claude-sonnet-5-5": 0.0587186,
+      "claude-haiku-5-5": 0.0014393000000000001
+    },
+    "turns": 2,
+    "output": "The ci-watcher's report, verbatim:\n\n```\nHead commit at start: 234481cf2093f4b11c9fad8f25b6251ef5d38dfa\nHead commit now: 234481cf2093f4b11c9fad8f25b6251ef5d38dfa\nmergeStateStatus: CLEAN\nreviewDecision: (empty)\nChecks:\n- verify | SUCCESS | run 4242\n- secret-scan | SUCCESS | run 4242\n\nFailure excerpts:\nnothing failed\n\nNot verified: nothing\n```"
+  },
+  {
+    "name": "ci-watcher: red pull request",
+    "pass": true,
+    "costUsd": 0.060597145,
+    "models": {
+      "claude-sonnet-5-5": 0.0589822,
+      "claude-haiku-5-5": 0.001614945
+    },
+    "turns": 2,
+    "output": "Here is the ci-watcher's report, verbatim:\n\n```\nHead commit at start: 079d99a825540116d2cf510208ebe49e6900ef97\nHead commit now: 079d99a825540116d2cf510208ebe49e6900ef97\nmergeStateStatus: UNSTABLE\nreviewDecision: \nChecks:\n- verify | FAILURE | run 4242\n- secret-scan | SUCCESS | run 4242\nFailure excerpts:\nverify, run 4242:\nverify\tRun npm run verify\tnot ok 3 - shout returns upper case\nverify\tRun npm run verify\t  expected: HELLO, actual: hello\nNot verified: nothing\n```"
+  },
+  {
+    "name": "citation-checker: one good and one wrong citation",
+    "pass": true,
+    "costUsd": 0.06072080999999999,
+    "models": {
+      "claude-sonnet-5-5": 0.05949499999999999,
+      "claude-haiku-5-5": 0.00122581
+    },
+    "turns": 2,
+    "output": "The citation-checker's output, verbatim:\n\n```\n- src/mean.js:4 major: ok\n- src/median.js:40 minor: mismatch\n  line 40 is past the end (file has 6 lines)\n  Text at the cited line: (no line 40 in the file)\n```"
+  },
+  {
+    "name": "skill a11y-audit: component",
+    "pass": true,
+    "costUsd": 0.0711108,
+    "models": {
+      "claude-sonnet-5-5": 0.0711108
+    },
+    "turns": 3,
+    "output": "# Accessibility audit: `src/Search.jsx`\n\n**Method:** I read the component source only. The project has no dev server and no other CSS or HTML files, so I did not run the axe pass or the scripted keyboard checks. Nothing below comes from a browser or an assistive technology.\n\n```jsx\n<form><input type=\"text\" placeholder=\"Search\" /><span onClick={() => {}}>Go</span></form>\n```\n\n## Issues by WCAG criterion\n\n### 4.1.2 Name, Role, Value (A) and 2.1.1 Keyboard (A): the \"Go\" control is a `<span>`\n- **Element:** `<span onClick={() => {}}>Go</span>`\n- **Failure:**\n  - A span has no button role, so assistive technology does not announce it as a control.\n  - It is not focusable, so keyboard users cannot reach or activate it.\n  - Enter in the input would not be tied to it either.\n  - The handler is an empty function, so it does nothing even when clicked.\n- **Fix:** Use `<button type=\"submit\">Go</button>` and put the real search logic in the form's `onSubmit`. If the span is a stub, remove the empty `onClick`. A native submit button handles keyboard and click activation.\n\n### 1.3.1 Info and Relationships (A) and 3.3.2 Labels or Instructions (A): the input has no label\n- **Element:** `<input type=\"text\" placeholder=\"Search\" />`\n- **Failure:**\n  - The only text is a placeholder, which is not a reliable accessible name.\n  - It disappears once the user types.\n  - It often has low contrast.\n- **Fix:** Add a visible `<label htmlFor=\"search\">Search</label>` with a matching `id` on the input. If the design cannot show a label, use `aria-label=\"Search\"` as a fallback. Prefer a visible label.\n\n### 4.1.2 Name, Role, Value (A): the form has no search landmark\n- **Element:** `<form>`\n- **Failure:** The form is not exposed as a search region, so screen-reader users cannot jump to it by landmark.\n- **Fix:** Use `<form role=\"search\">` or wrap it in `<search>`. This is a best practice (ARIA landmark), not a strict WCAG failure.\n\n### 1.4.3 Contrast (AA) and 1.4.11 Non-text Contrast (AA): cannot verify\nThere are no styles in the repository. The browser-default placeholder colour is often too light. Check the placeholder, the input border and the focus indicator, and make sure the \"Go\" text and button boundary meet the minimum ratios.\n\n### 2.4.7 Focus Visible (AA) and 2.4.11 Focus Not Obscured (AA): cannot verify\nThere are no custom styles, so browser default focus rings should apply. Keep them if you add CSS. A `<button>` fixes the missing-focus problem on \"Go\".\n\n### 2.5.8 Target Size, Minimum (AA): cannot verify\nA bare inline span has a tiny hit area. When you switch to a button, give it at least 24×24 CSS px.\n\n## Checks that need a running page\n- axe through Playwright, with the `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` tags and the `target-size` rule. Review the `incomplete` list.\n- A tab-through for focus visibility and focus order.\n- Screen-reader announcement of the input, button and form.\n- Colour contrast in the rendered styles.\n- Text resize and zoom to 200% and 400% (1.4.4 and 1.4.10).\n- Error and empty-result messaging once search is implemented. It should use `role=\"status\"` or `aria-live` (4.1.3) and have a text description (3.3.1).\n\n## Suggested fix\n\n```jsx\nexport function Search() {\n  return (\n    <form role=\"search\" onSubmit={/* real handler */}>\n      <label htmlFor=\"search\">Search</label>\n      <input id=\"search\" type=\"text\" />\n      <button type=\"submit\">Go</button>\n    </form>\n  );\n}\n```\n\nI changed no code and ran no tools beyond reading the file. Automated tools cover only part of WCAG, so a manual check is still needed after the fix."
+  },
+  {
+    "name": "skill a11y-audit: static page",
+    "pass": true,
+    "costUsd": 0.0823966,
+    "models": {
+      "claude-sonnet-5-5": 0.0823966
+    },
+    "turns": 4,
+    "output": "I couldn't run the automated pass. No Playwright browser is installed (`~/.cache/ms-playwright` is missing) and `axe-core` isn't a dependency. Installing them would add dependencies, which needs your approval (WA-003). This is a review of the markup in `public/index.html`, not an axe run. Nothing was executed or scripted, so the Tab, focus, drag and paste checks are not done.\n\n## Findings, grouped by WCAG criterion\n\n**1.1.1 Non-text Content (A)**\n- Element: `<img src=\"hero.jpg\">`.\n- Failure: it has no `alt` attribute, so screen readers may read out the file name.\n- Fix: add a short `alt` describing the image. If it is purely decorative, use `alt=\"\"`.\n\n**1.3.1 Info and Relationships (A) and 3.3.2 Labels or Instructions (A)**\n- Element: `<input placeholder=\"Email\">`.\n- Failure: it has no programmatic label. A placeholder is not a label, and it disappears once the user types.\n- Fix: add `<label for=\"email\">Email</label>` with a matching `id=\"email\"`. Also add `type=\"email\"` and `autocomplete=\"email\"`, which satisfies 1.3.5 Identify Input Purpose (AA).\n\n**1.4.3 Contrast (Minimum) (AA)**\n- Element: `<p style=\"color:#aaa;background:#fff\">Sale ends soon</p>`.\n- Failure: #aaa on #fff is about 2.3:1. Normal text needs at least 4.5:1.\n- Fix: use #767676 or darker, which gives 4.5:1.\n\n**2.1.1 Keyboard (A), 4.1.2 Name, Role, Value (A) and 2.5.8 Target Size (AA)**\n- Element: `<div onclick=\"buy()\">Buy</div>`.\n- Failure: it is not focusable, it has no button role, and it can't be activated from the keyboard. Its target size is also unverified. It is a bare div with no sizing, and I couldn't measure it without a browser.\n- Fix: use `<button type=\"button\">Buy</button>`. Check that it is at least 24×24 CSS px.\n\n**2.4.2 Page Titled (A)**\n- The `<title>Shop</title>` passes, though it is vague.\n\n**3.1.1 Language of Page (A)**\n- Element: `<html>`.\n- Failure: it has no `lang` attribute.\n- Fix: use `<html lang=\"en\">`, or the correct language code.\n\n**Best-practice issues (axe flags these, but they aren't WCAG failures)**\n- There is no `<main>` landmark, so the content isn't in any landmark region.\n- There is no `<h1>`, so the page has no heading structure.\n- There is no `<meta name=\"viewport\">`. Add one so the page renders at device width on mobile, which supports 1.4.10 Reflow.\n\n## Not checked\n\nThese need a browser, a screen reader or a manual pass:\n- The axe `violations` and `incomplete` lists.\n- Focus visibility and focus not obscured (2.4.7, 2.4.11), checked by tabbing through the page.\n- 2.5.7 Dragging Movements. The markup has no drag interaction.\n- 3.3.8 Accessible Authentication. There are no credential fields.\n- Reading order, link text and form error messages. There are no links or errors in this file.\n- Motion, zoom and reflow at 400%.\n- Screen reader behaviour. `hero.jpg` isn't in `public/`, so I couldn't judge the image content for its alt text.\n\nIf you approve it, I can add `@playwright/test` and `axe-core` as dev dependencies, install Chromium, and run the full automated pass. I haven't changed any files."
+  },
+  {
+    "name": "skill merge-when-green: checks still running",
+    "pass": true,
+    "costUsd": 0.102275435,
+    "models": {
+      "claude-sonnet-5-5": 0.1009312,
+      "claude-haiku-5-5": 0.001344235
+    },
+    "turns": 6,
+    "output": "PR #21 (\"Add shout\") is merged, and local `main` is fast-forwarded to `e83148a`.\n\n- **Merge method:** I used a merge commit. The repo allows all three methods and has no merged PRs to follow, so I took the default.\n- **CI:** `verify` and `secret-scan` were still running at first. `ci-watcher` waited for them, and I re-checked the PR myself afterwards. Both were `SUCCESS` on head commit `e83148a`, `mergeStateStatus` was `CLEAN`, and no review was required.\n- **Merge command:** it was pinned with `--match-head-commit e83148a`, so a late push would have stopped it.\n- **Roadmap:** I didn't look for a plan or roadmap file that tracks this work, so I haven't checked whether it needs a note naming #21.\n\nThere's no next task in the skill's arguments, so I've stopped here."
+  },
+  {
+    "name": "skill merge-when-green: green pull request",
+    "pass": true,
+    "costUsd": 0.08299519999999999,
+    "models": {
+      "claude-sonnet-5-5": 0.08299519999999999
+    },
+    "turns": 4,
+    "output": "I merged PR #21 (\"Add shout\") into `main` and fast-forwarded local `main` to `0b88957`.\n\n- **Method:** I used a merge commit. The repository allows merge, squash and rebase, and its history has no earlier merges to follow (just one `init` commit), so I took the default.\n- **CI:** Both checks, `verify` and `secret-scan`, passed on head commit `0b88957`. The checks had already finished, so I didn't need `ci-watcher`.\n- **Merge state:** `mergeStateStatus` was `CLEAN` and no review was required.\n- **Merge command:** I passed `--match-head-commit 0b88957`, so a push landing mid-merge would have stopped it.\n- **Local result:** The pull added 5 lines to `src/text.js`.\n\nI did not check whether a plan or roadmap file tracks this work. I also haven't started a next task, since none was specified."
+  },
+  {
+    "name": "skill merge-when-green: red head commit",
+    "pass": true,
+    "costUsd": 0.10717200000000002,
+    "models": {
+      "claude-sonnet-5-5": 0.10717200000000002
+    },
+    "turns": 6,
+    "output": "I did not merge PR #21. The `verify` check failed on its head commit, and the failure doesn't match the code in this checkout.\n\n- **Merge method:** I would have used a merge commit. The repository allows all three methods and I didn't check recent merges, so I made no further choice.\n- **PR state:** the head commit is `d4c866f3fbb19b2179c66460faa0686b05d474ec`, `mergeStateStatus` is `UNSTABLE`, and `secret-scan` passed.\n- **Failed check:** `verify` failed (https://ci.example/run/4242). The first error in its log is `not ok 3 - shout returns upper case`, with `expected: HELLO, actual: hello`.\n- **Mismatch with the checkout:**\n  - `shout` in `src/text.js` calls `text.toUpperCase()`, so it can't return `hello` for `HELLO`.\n  - `tests/text.test.js` has only the `squish` test, with no \"shout returns upper case\" test and no test number 3.\n  - On `add-shout` at `d4c866f`, `npm run verify` passes locally: 1 test passes, 0 fail, and the style check prints `style OK`.\n- **Why I stopped:** I can't tell whether the CI run tested a different commit, a different test file, or a stale or misconfigured job. I didn't change code to fit a log I can't reproduce, and I didn't re-run the job. Re-running it to get a green result needs a reason, and I don't have one yet.\n\nPlease check whether run 4242 built `d4c866f`. If it didn't, re-running CI on the current head is justified. If it did, the CI environment differs from this checkout. Tell me which and I'll continue.\n\nSeparately, the PR adds `shout` but no test for it. If the test CI mentions is meant to be part of this PR, it never made it into the commit."
+  },
+  {
+    "name": "skill package-unreal-plugin: no engine",
+    "pass": true,
+    "costUsd": 0.162079445,
+    "models": {
+      "claude-sonnet-5-5": 0.1604796,
+      "claude-haiku-5-5": 0.001599845
+    },
+    "turns": 1,
+    "output": "**The 5.6 packaging failed, so I made no zip.** The build never ran, and the skill treats that as a failure.\n\n**Tier 1 (without `--allow-missing-fab-url`)**\n- On the repo root there were 50 errors:\n  - `FAB-001`: `FabURL` is missing.\n  - `FAB-003`: 49 errors, all from the `.claude/` agent-rules folder in the repo root. That folder isn't plugin content, so I left it out of the package.\n- I staged only `RfrSample.uplugin` and `Source/` with `EngineVersion` set to `5.6.0`. Tier 1 on that copy gives 1 error, the `FAB-001` `FabURL`.\n- I can't fix `FabURL`. It only exists once the Fab listing is created, so it stays as a manual step.\n\n**Build (5.6)**\n- `check-runner` reported `did not run`. This machine has no Unreal Engine install and no `RunUAT` script, so there's no exit code and no compiler output.\n- Only 5.6 was requested. I didn't stage 5.7 or 5.8, which AGENTS.md also lists.\n\n**Package checks**\n- On the staged copy there are no `Binaries`, `Intermediate` or `Saved` folders.\n- The longest path is 59 characters.\n- There is no `Config/FilterPlugin.ini`, and none is needed because there are no extra folders.\n- These checks cover the source copy only, not a built package.\n\n**To finish**\n1. Run the build on a machine with UE 5.6. The staged plugin is at `/tmp/claude-0/-tmp-rfr-smoke-1mNE81/18d7cda8-0d57-5ed6-8069-e1d0230128cd/scratchpad/stage/5.6/RfrSample/RfrSample.uplugin`:\n   `RunUAT.bat BuildPlugin -Plugin=<that .uplugin> -Package=<out>/5.6/RfrSample -Rocket`\n   It must finish with no compiler warnings.\n2. Zip the `RfrSample` folder from the built package.\n3. Do the manual Fab steps: upload, set `FabURL` and re-run Tier 1, add the documentation link, add the example project link, and make the third-party declaration.\n\nI can zip the package once there are build results from a machine that has the engine."
+  },
+  {
+    "name": "skill perf-audit: bundle question",
+    "pass": true,
+    "costUsd": 0.0654444,
+    "models": {
+      "claude-sonnet-5-5": 0.0654444
+    },
+    "turns": 3,
+    "output": "## Assessment of `src/price.js`\n\n**Nothing in it is heavy.** I did not run Lighthouse. The skill needs a production build or preview deployment, and you said none exists. The project also has no bundler, no dependencies and no `node_modules`. So I have no LCP, INP, CLS or bundle-size numbers, and this is a read of the code only.\n\n- **Size and cost:** the file is about 15 lines with no imports and no top-level work. Its three functions are `formatPrice`, `formatPriceOld` and `addTax`, and each does constant-time arithmetic or string work. Importing it on every page costs a few hundred bytes of JS and negligible execution time.\n- **Tree-shaking:** the exports are named ES exports, so a bundler can drop `formatPriceOld` if nothing imports it. It is \"kept for the old checkout page\". If that page is gone, the function is dead code. I did not search for callers.\n\n**Correctness problems:** these are not performance issues, but you will want to know about them.\n- `formatPrice` uses `Math.floor(amount * 100)`, so floating-point error can drop a cent. For example, `19.99 * 100` gives `1998.9999…`, which floors to `1998` and formats as `$19.98`. `Math.round` avoids this.\n- `formatPriceOld` doesn't pad to two decimals when the value has one decimal place (`5.5` gives `$5.5`). It also doesn't round.\n- `addTax` returns unrounded values, so you can get results like `10.700000000000001`.\n\nI haven't checked how `src/util.js` or any tests use these functions.\n\n**Where to measure later:** once a production build or preview exists, run the perf-audit steps. Look at JavaScript per route first, since a small shared file like this is unlikely to show up there.\n\nI changed no code. I can fix the rounding bugs test-first, or look for callers of `formatPriceOld`, if you want either."
+  },
+  {
+    "name": "skill perf-audit: no deployment",
+    "pass": true,
+    "costUsd": 0.07223979999999999,
+    "models": {
+      "claude-sonnet-5-5": 0.07223979999999999
+    },
+    "turns": 2,
+    "output": "I did not run Lighthouse, so there are no measurements. This is a static read of `public/index.html`.\n\n**Why I couldn't measure**\n- Lighthouse and a Chrome binary aren't installed here. `npx --no-install lighthouse` failed because the package is missing, and no `chromium` or `google-chrome` is on the PATH.\n- The page can't give meaningful numbers anyway. `hero.jpg` isn't in `public/`, and `cdn.example.com` is a placeholder host that won't resolve.\n- The skill asks for three runs against a production build or preview, and none exists. A local static server would be the closest stand-in, but the LCP and script numbers would reflect the sandbox, not the real page.\n- INP can't be measured: the page has no interactive content.\n\n**What the 153-byte file shows**\n```html\n<!doctype html><html><head><script src=\"https://cdn.example.com/huge-lib.js\"></script></head><body><img src=\"hero.jpg\"><div id=\"app\"></div></body></html>\n```\n\n**Likely causes against the LCP 2.5 s, CLS 0.1 and INP 200 ms budgets**\n1. **Render-blocking third-party script in `<head>`** (`huge-lib.js`). It is synchronous, with no `defer` or `async`. It blocks parsing and first paint, and it adds a DNS, TLS and download cost on a cross-origin host. This is the likely LCP and long-task problem. The name suggests a large bundle, but I haven't checked its size.\n2. **Hero image is probably the LCP element and is unoptimised.**\n   - The `<img>` has no `width`/`height`, so it will shift layout when it loads (CLS).\n   - It has no `fetchpriority=\"high\"` and no preload, and the script above blocks its discovery.\n   - There is no `srcset`, modern format or `alt`. The missing `alt` is an accessibility issue, not a performance one.\n3. **Empty `#app` div that depends on JavaScript.** Nothing renders until the script loads and runs. If the script fills `#app` after load, expect another shift unless space is reserved. There is also no `<title>`, `<meta viewport>` or `lang`, which Lighthouse will flag, mostly for SEO and mobile rendering.\n\n**Top three changes by expected gain, and how to verify each**\n1. **Add `defer` to the script, or drop it or self-host a trimmed version.**\n   - Verify: Lighthouse's \"Eliminate render-blocking resources\" audit clears, and the LCP median across three runs improves.\n2. **Give the hero `width`/`height`, `fetchpriority=\"high\"` and a compressed, responsive image (AVIF or WebP with `srcset`).**\n   - Verify: the LCP element's load delay and duration shrink, and CLS from the image is 0.\n3. **Reserve space for `#app`, or server-render its initial content.**\n   - Verify: the \"Avoid large layout shifts\" audit shows no entries and CLS stays under 0.1.\n\n**To get real numbers**\n- Deploy or preview the page with a real `hero.jpg` and script.\n- Install Lighthouse and Chrome.\n- Run the `check-runner` agent three times and take the median.\n\nAdding Lighthouse as a project dependency would need your OK under CODE-004. I made no code changes."
+  },
+  {
+    "name": "skill review-pr: planted bug",
+    "pass": true,
+    "costUsd": 0.1914656,
+    "models": {
+      "claude-sonnet-5-5": 0.11738659999999998,
+      "claude-opus-5-5": 0.074079
+    },
+    "turns": 4,
+    "output": "**Review of `src/mean.js` against \"mean returns the arithmetic mean of all values\": the code does not meet the requirement.** `npm run verify` fails: 3 tests ran, 2 passed, and `mean of values` failed. I haven't fixed anything.\n\nI ran the reviewer's findings through the check myself instead of using `citation-checker`, because there were only three. I read `src/mean.js` and `tests/stats.test.js`, and I ran `npm run verify` and `median([])`.\n\n**Confirmed**\n\n1. **Blocker: `src/mean.js:4` skips the first element.** The loop starts at `i = 1`, so `values[0]` is never added, but the total is still divided by `values.length`. `mean([2, 4, 6])` returns 10/3 instead of 4, and `mean([5])` returns 0 instead of 5. `tests/stats.test.js:7` already catches this, and its expected value is correct, so the test should stay as it is. The fix is to start the loop at `i = 0`, or to use `reduce`.\n\n**Plausible**\n\n2. **Minor: `src/mean.js:2` returns `0` for an empty array.** An empty list has no mean, and `0` looks like a real result. `median([])` returns `NaN`, which I confirmed by running it. So the two helpers disagree on empty input. The requirement doesn't say what should happen, so this needs your decision.\n3. **Minor: `tests/stats.test.js:6-8` has only one test for `mean`.** There is no single-element or empty-input case, so the empty-input behaviour isn't written down anywhere. A case like `mean([0, 3, 6])` would also pass with the bug in place.\n\n**Refuted:** 0 findings.\n\n`median.js` looks correct for odd and even lengths, and its tests pass."
+  },
+  {
+    "name": "skill review-pr: security change",
+    "pass": true,
+    "costUsd": 0.29113980000000006,
+    "models": {
+      "claude-sonnet-5-5": 0.13762939999999999,
+      "claude-opus-5-5": 0.1535104
+    },
+    "turns": 1,
+    "output": "## Review of `src/users.js` against \"look up a user by name\"\n\nBoth reviewers ran. `git diff HEAD` is empty because the change is one untracked file, so I reviewed that file directly. I checked each cited place myself. I did not run the code against a real database; the SQL findings come from reading line 2. Both reviewers report that `npm run verify` passes, but I did not run it.\n\n### Confirmed\n\n1. **[blocker] SQL injection at `src/users.js:2` (SEC-002).** `name` is pasted into the SQL string instead of being passed as a parameter.\n   - `findUser(db, \"x' OR '1'='1\")` returns every user.\n   - On drivers that allow several statements per call, `\"x'; DROP TABLE users; --\"` can destroy data.\n   - Fix: `db.query('SELECT … WHERE name = $1', [name])`. Use `?` instead of `$1` if the driver is mysql-style. No driver is installed in the repo, so check the placeholder style of the real one (WA-006).\n2. **[major] Valid names break the query at `src/users.js:2`.** `findUser(db, \"O'Brien\")` builds invalid SQL and throws a syntax error. This fails the requirement itself. The parameterized query above fixes it.\n3. **[major] No test for the new behaviour (TEST-004).** `tests/` contains only `text.test.js`.\n   - Add `tests/users.test.js` with a stub `db` that records its `query` arguments.\n   - Assert that the name arrives as a bound parameter and not in the SQL text, including for `O'Brien`.\n4. **[minor] Missing `/** */` doc comment at `src/users.js:1`.** The project convention, stated in `scripts/check-style.mjs:1` and followed by `src/text.js:1`, requires one on every exported function in `src/`.\n\n### Plausible\n\n5. **[minor] `SELECT *` at `src/users.js:2`.** It returns every column of `users`. If the table holds fields like `password_hash` or tokens, any caller that passes the result on exposes them. I can't see the schema, so I couldn't confirm it. Select only the columns the caller needs.\n\n### Out of scope\n\n- **[nit] The style check has a gap at `scripts/check-style.mjs:9`.** The pattern `/^export function/` doesn't match `export async function`, so it lets finding 4 through silently. It is an existing issue; widen it to `/^export (async )?function/` in a separate change (GIT-001).\n\n### Refuted\n\n0 findings were refuted.\n\nI haven't fixed anything. Tell me if you want me to start with the parameterized query and a failing test."
+  },
+  {
+    "name": "skill security-audit: secret and injection",
+    "pass": true,
+    "costUsd": 0.0830128,
+    "models": {
+      "claude-sonnet-5-5": 0.0830128
+    },
+    "turns": 3,
+    "output": "# Security audit: text-kit\n\nI read all of the source myself and did not delegate to `security-reviewer`. The repo is three small files in `src/` plus a style script, so a deep read had nothing more to cover.\n\n## Findings\n\n### 1. High: a live-looking Stripe secret key is committed\n- **Where:** `src/config.js:1` exports `stripeKey = 'sk_live_51Hx9…'`.\n- **Attack:** Anyone with read access to the repo or its history can use the key against Stripe. Because it is in git history, deleting the line is not enough.\n- **Fix:**\n  - Rotate the key in Stripe now if it is real. The `EXAMPLE` suffix suggests it may be a placeholder, but the `sk_live_` prefix means you should confirm that.\n  - Read it from an environment variable or the platform secret store instead.\n  - Scrub it from history if the repo is shared. This is the rotation step SEC-001 asks me to hand to you rather than do myself.\n\n### 2. High: SQL injection in `findUser`\n- **Where:** `src/users.js:2` interpolates `name` straight into the query string: `` `SELECT * FROM users WHERE name = '${name}'` ``.\n- **Attack:** If `name` comes from a request, an input like `' OR '1'='1` returns every user. A stacked or UNION payload can read or modify other tables, depending on the driver.\n- **Fix:** Use a parameterized query, for example `db.query('SELECT * FROM users WHERE name = $1', [name])`. The placeholder syntax depends on the driver. Validate that `name` is a string at the boundary too.\n- **Also:** `SELECT *` returns every column, which could include password hashes or other sensitive fields. Select only the columns callers need.\n\n## Entry points\n`findUser` is the only function that takes external input, and nothing in the repo calls it yet. The repo has no routes, CLI, file parsers or webhooks. `squish` in `src/text.js` is a pure string function and has no security issue.\n\n## Scanners\n- **gitleaks and Semgrep:** neither is installed, so I counted them as absent and ran no secret or static analysis scan.\n- **`npm audit`:** I did not run it. There are no dependencies and no lockfile, so there is nothing for it to check.\n- **Dependency risk:** none, since the project has no dependencies.\n\n## Agent setup\n- **CI:** there is no `.github/workflows`, so there are no self-hosted runner, secret or fork-PR risks. That also means no CI checks at all.\n- **Hooks:** `.claude/` holds only rule files. There are no hooks guarding destructive commands.\n- **MCP servers:** none are configured, and there are no `settings.json` permissions.\n\n## Missing controls\n- Secret scanning, such as a gitleaks pre-commit hook or CI step, would have caught finding 1.\n- Static analysis (Semgrep or CodeQL) would likely have flagged finding 2.\n- There is no `.gitignore`, so `.env` files could be committed by accident.\n- There are no tests for `users.js` or `config.js`.\n- There is no `.claude/settings.json` with hooks that block destructive commands.\n\nI changed no code. Say the word if you want me to fix findings 1 and 2. I would check the registry and the project's driver conventions first, and I would do the SQL fix test-first."
+  }
+]
