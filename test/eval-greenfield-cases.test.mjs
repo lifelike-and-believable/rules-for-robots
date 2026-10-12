@@ -259,7 +259,32 @@ test('lead-greenfield-uplugin: no descriptor first, no verify script, or the web
   const noBootstrap = UE_PLAN.replace('Create the .uplugin descriptor and one editor module (Source/, Build.cs) that builds', 'Write the naming rules, which build');
   assert.equal((await run('lead-greenfield-uplugin', { finalText: noBootstrap })).checks.bootstrapsProject, false);
   assert.equal((await run('lead-greenfield-uplugin', { finalText: UE_PLAN.replaceAll('Scripts/Verify.ps1', 'the checks').replaceAll('Verify.ps1', 'the checks') })).checks.verifyCommand, false);
-  assert.equal((await run('lead-greenfield-uplugin', { finalText: UE_PLAN.replaceAll('unreal-engineer', 'web-engineer') })).checks.owner, false);
+  assert.equal((await run('lead-greenfield-uplugin', { finalText: UE_PLAN.replaceAll('unreal-engineer', 'web-engineer'), arm: 'rules+agents', tools: leadCall })).checks.owner, false);
+  // The rules arm has no agent roster to name, so owners are not required there.
+  assert.equal((await run('lead-greenfield-uplugin', { finalText: UE_PLAN.replaceAll('unreal-engineer', 'a developer') })).checks.owner, true);
+});
+
+test('lead-greenfield-uplugin: a table plan with a Done-when column, other reviewers, and a numbered decisions list before it pass', async () => {
+  const rows = [1, 2, 3, 4, 5].map(n => `| ${n} | Slice ${n} work (R${n}). | unreal-engineer | Spec passes. |`).join('\n');
+  const table = `Decisions needed:
+
+**Blocking slice 0:**
+
+1. R9 and R10 conflict; which do you want?
+2. Which engine versions?
+
+## Plan
+
+Test-first, with Scripts/Verify.ps1 and a security-reviewer on each slice. The minimal plugin comes first (.uplugin, Source/, Build.cs, tier1).
+
+| # | Slice | Owner | Done when |
+|---|---|---|---|
+${rows}
+`;
+  const r = await run('lead-greenfield-uplugin', { finalText: table });
+  assert.equal(r.checks.slices, 5);
+  assert.equal(r.checks.acceptanceCriteria, true);
+  assert.equal(r.checks.reviewer, true);
 });
 
 test('lead-greenfield-uplugin: deciding R9/R10, code, or a skipped agent fails', async () => {
