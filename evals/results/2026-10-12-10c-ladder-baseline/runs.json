@@ -1,0 +1,344 @@
+[
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 1,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": false,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2181,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 36.198
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2219,
+    "turns": 4,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 47.641
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2307,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 44.946
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-opus-5-5",
+    "arm": "rules",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.4914,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 64.97
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-opus-5-5",
+    "arm": "rules",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.4855,
+    "turns": 6,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 62.354
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-opus-5-5",
+    "arm": "rules",
+    "run": 3,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": false,
+      "migrationPlan": true,
+      "reversibility": false,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.4722,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 59.14
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.2,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 30.778
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 2,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": false,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.1884,
+    "turns": 4,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 29.084
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "arm": "rules",
+    "run": 3,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": false,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.2202,
+    "turns": 11,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 34.781
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-opus-5-5",
+    "arm": "rules",
+    "run": 1,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.4416,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 47.441
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-opus-5-5",
+    "arm": "rules",
+    "run": 2,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.3934,
+    "turns": 4,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 45.961
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-opus-5-5",
+    "arm": "rules",
+    "run": 3,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.4174,
+    "turns": 4,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 43.428
+  }
+]

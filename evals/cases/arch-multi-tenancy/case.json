@@ -1,0 +1,6 @@
+{
+  "targets": "irreversible-design",
+  "agent": "software-architect",
+  "description": "Complexity ladder, large rung, on the same codebase as arch-soft-delete. The service becomes multi-tenant. Six constraints are in the repo and not in the request: the global unique email, tenant-blind cache keys, the revenue reports, the nightly job, invoice numbers from a global MAX(number) + 1, and a session that holds only a user id. SQLite has no row-level security, so the choice is between a tenant column and a database per tenant, and the move for existing data is hard to reverse. The good outcome finds at least four constraints, weighs both isolation options, plans the migration, names what is hard to reverse, records an ADR, and writes no code.",
+  "maxTurns": 50
+}
