@@ -1,0 +1,6 @@
+{
+  "targets": "planning",
+  "agent": "tech-lead",
+  "description": "A tagging feature with a dependency chain (table, then endpoints, then filter, then page) and two nice-to-haves the request marks as not required. The good outcome is three to six ordered slices owned by web-engineer, a verification command that exists, a reviewer named, the nice-to-haves left out of the slices, and no code written.",
+  "maxTurns": 30
+}

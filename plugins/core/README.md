@@ -15,7 +15,7 @@ Core plugin from [rules-for-robots](../../README.md).
 | `ci-watcher` | Haiku 5.5, medium | Read-only | Waits for a pull request's checks and returns results and the first error from each failed job's log |
 | `check-runner` | Haiku 5.5, medium | Read-only | Runs named scanners, audits, builds, and tests and returns exit codes and key output verbatim |
 | `citation-checker` | Haiku 5.5, medium | Read-only | Checks that each review finding's file, line, identifiers, and rule ID exist |
-| `software-architect` (experimental) | Opus, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
+| `software-architect` (experimental) | Fable 5.1, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
 | `tech-lead` (experimental) | Opus, medium | Read-only | Sequenced slices with owners, acceptance criteria, and verification; checks delegated work against them |
 
 Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals. `software-architect` and `tech-lead` are experimental: they were added before any eval showed a benefit (recommendation R18) and will be kept or removed on the results.
