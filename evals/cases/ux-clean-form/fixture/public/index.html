@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Contact Acme</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body>
+  <main>
+    <h1>Contact us</h1>
+    <p>We reply within two working days.</p>
+    <form id="contact" novalidate>
+      <label for="email">Your email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required aria-describedby="email-error">
+      <p id="email-error" class="error" hidden></p>
+      <label for="message">Message</label>
+      <textarea id="message" name="message" rows="5" required aria-describedby="message-error"></textarea>
+      <p id="message-error" class="error" hidden></p>
+      <button type="submit" id="send">Send message</button>
+      <p id="status" role="status"></p>
+    </form>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

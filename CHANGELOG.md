@@ -4,6 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-12
+
+Pull request: #83.
+
+### Added
+
+- Experimental agent `ux-reviewer` (read-only, Opus, medium): usability and interface design in three areas, Unreal Editor tools and Blueprint-facing APIs, general software (desktop, command-line, developer tools), and web pages and apps. Accessibility conformance stays with `accessibility-reviewer`. `review-pr` adds it for new or changed flows, screens, forms, messages, and tools.
+- Eval cases for it: `ux-signup-flow`, `ux-landing-page`, `ux-cli-tool`, `ux-editor-tool` (five planted defects each) and the `ux-clean-form` control, with unit-tested graders and a staged run plan in `evals/README.md`. No paid runs yet.
+
 ## [1.2.1] - 2026-10-12
 
 Pull request: #82.

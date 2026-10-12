@@ -33,3 +33,23 @@ export function splitSlices(text) {
   }
   return chunks.map(lines => ({ title: lines[0].trim(), body: lines.join('\n') }));
 }
+
+// For review cases with planted defects: which of them the review mentions. `defects` maps a
+// name to a pattern that a review of that defect would match.
+export function plantedFound(text, defects) {
+  const found = Object.entries(defects).filter(([, re]) => re.test(text)).map(([name]) => name);
+  return { found, count: found.length };
+}
+
+// Findings by severity, counted from the "[severity]" markers of the standard finding format.
+export function severityCounts(text) {
+  const counts = { blocker: 0, major: 0, minor: 0, nit: 0 };
+  for (const m of text.matchAll(/\[(blocker|major|minor|nit)\]/gi)) counts[m[1].toLowerCase()]++;
+  return counts;
+}
+
+// True when at least `min` findings use the standard Problem / Failure scenario / Fix lines.
+export function standardFormat(text, min = 3) {
+  const n = Math.min((text.match(/^\s*Problem:/gim) ?? []).length, (text.match(/^\s*Failure scenario:/gim) ?? []).length, (text.match(/^\s*Fix:/gim) ?? []).length);
+  return n >= min;
+}

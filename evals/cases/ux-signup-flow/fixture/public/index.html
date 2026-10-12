@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Acme</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body>
+  <main>
+    <h1>Create your account</h1>
+    <form id="signup">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password">
+      <label for="plan">Plan</label>
+      <select id="plan" name="plan"><option value="free">Free</option><option value="pro">Pro</option></select>
+      <button type="submit">Go</button>
+      <p id="msg" role="status"></p>
+    </form>
+
+    <h2>Your account</h2>
+    <div class="actions">
+      <button id="save" type="button">Save</button>
+      <button id="delete-account" type="button">Delete account</button>
+    </div>
+
+    <h2>Your projects</h2>
+    <ul id="projects"></ul>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
