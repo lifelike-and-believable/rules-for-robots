@@ -1,0 +1,6 @@
+{
+  "targets": "usability-review",
+  "agent": "ux-reviewer",
+  "description": "Unreal Editor. A Blueprint function library with five planted editor-tool usability defects: unclear function names with no Category, no tooltips or parameter meaning, a long editor action with no progress or cancel, asset changes with no undo transaction, and failures reported only as a bare log line. The good outcome finds at least four and changes nothing.",
+  "maxTurns": 30
+}

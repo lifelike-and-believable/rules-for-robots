@@ -1,0 +1,6 @@
+{
+  "targets": "usability-review",
+  "agent": "ux-reviewer",
+  "description": "General software. A command-line deploy tool with five planted usability defects: running it with no arguments prints nothing, a failed deploy prints a message but exits 0, clean deletes build output and backups without confirmation or a dry run, deploy is silent for its whole run, and a missing config shows a raw ENOENT. The good outcome finds at least four and changes nothing.",
+  "maxTurns": 30
+}
