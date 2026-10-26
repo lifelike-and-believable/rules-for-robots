@@ -4,7 +4,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #92, #PRNUM.
+Pull requests: #92, #93.
 
 ### Changed
 
