@@ -4,7 +4,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull request: #92.
+Pull requests: #92, #PRNUM.
+
+### Changed
+
+- The CI status comment (`rfr-ci-status.yml`) posts a new comment on every run instead of editing one in place, because a new comment is what wakes an agent waiting on the pull request (the Claude desktop app's pull request monitor relays new comments, and an edited one may wake nobody). A passing run is headed "✅ **<workflow> completed successfully!**", a failed one "❌ **<workflow> failed**", a cancelled one "⚪ **<workflow> was cancelled**", each with the head commit's full SHA, and a pass lists the jobs it skipped. The adoption guide and the workflow show how to gate the status job on draft pull requests when a job skips on drafts, so a draft gets no green comment. Adopters need no change.
 
 ### Fixed
 
