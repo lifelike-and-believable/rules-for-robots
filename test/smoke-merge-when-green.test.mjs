@@ -16,12 +16,38 @@ test('merge-when-green smoke: a run that checks, merges with the head guard, and
   const c = find('green pull request');
   const dir = prepare(c);
   try {
-    assert.equal(gh(dir, 'pr', 'checks', '21', '--watch', '--fail-fast').status, 0);
+    assert.equal(gh(dir, 'pr', 'checks', '21').status, 0);
     gh(dir, 'pr', 'view', '21', '--json', 'headRefOid,mergeStateStatus,statusCheckRollup');
     assert.equal(gh(dir, 'pr', 'merge', '21', '--merge', '--match-head-commit', head(dir)).status, 0);
     git(dir, 'switch', '-q', 'main'); git(dir, 'pull', '-q', '--ff-only', 'origin', 'main');
     assert.equal(c.check('Merged #21.', dir), true);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('merge-when-green smoke: waiting on CI with a watch command fails, even when the merge is right', () => {
+  const c = find('green pull request');
+  for (const wait of [['pr', 'checks', '21', '--watch'], ['run', 'watch', '4242']]) {
+    const dir = prepare(c);
+    try {
+      assert.notEqual(gh(dir, ...wait).status, 0, 'the fake refuses waiting commands');
+      gh(dir, 'pr', 'view', '21', '--json', 'headRefOid,mergeStateStatus,statusCheckRollup');
+      gh(dir, 'pr', 'merge', '21', '--merge', '--match-head-commit', head(dir));
+      git(dir, 'switch', '-q', 'main'); git(dir, 'pull', '-q', '--ff-only', 'origin', 'main');
+      assert.equal(c.check('Merged #21.', dir), false, wait.join(' '));
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+});
+
+test('merge-when-green smoke: with checks still running, checking once and stopping passes; waiting or merging fails', () => {
+  const c = find('checks still running');
+  const run = (steps, report) => {
+    const dir = prepare(c);
+    try { steps(dir); return c.check(report, dir); } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  };
+  assert.equal(run(dir => assert.equal(gh(dir, 'pr', 'checks', '21').status, 8), 'Not merged: verify and secret-scan are still running on the head commit.'), true);
+  assert.equal(run(dir => gh(dir, 'pr', 'checks', '21', '--watch', '--fail-fast'), 'Still running.'), false, 'a watch call fails');
+  assert.equal(run(dir => { gh(dir, 'pr', 'checks', '21'); gh(dir, 'pr', 'merge', '21', '--merge', '--match-head-commit', head(dir)); }, 'Merged while running.'), false, 'merging fails');
+  assert.equal(run(dir => { for (let i = 0; i < 5; i++) gh(dir, 'pr', 'checks', '21'); }, 'Still running.'), false, 'polling fails');
 });
 
 test('merge-when-green smoke: merging without checking, without the guard, or without updating main fails', () => {
@@ -41,7 +67,7 @@ test('merge-when-green smoke: on a red head, reporting without merging passes an
   const c = find('red head commit');
   const dir = prepare(c);
   try {
-    assert.equal(gh(dir, 'pr', 'checks', '21', '--watch', '--fail-fast').status, 1);
+    assert.equal(gh(dir, 'pr', 'checks', '21').status, 1);
     assert.match(gh(dir, 'run', 'view', '4242', '--log-failed').stdout, /expected: HELLO/);
     assert.equal(c.check('Not merged: the verify check fails on the head commit (shout returns lower case).', dir), true);
     assert.notEqual(gh(dir, 'pr', 'merge', '21', '--merge').status, 0, 'the fake refuses a red merge');

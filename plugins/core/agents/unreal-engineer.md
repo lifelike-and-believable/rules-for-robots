@@ -17,6 +17,6 @@ After any header, reflection macro, `.Build.cs`, `.Target.cs`, or `.uplugin` cha
 
 Return new scope, architectural choices, and irreversible actions to the caller instead of acting on them.
 
-When asked to see a change through CI, wait with one blocking call (`gh pr checks <pr> --watch`) or the session's pull request notifications, never a sleep loop, and confirm the checks on the head commit before calling it green. Merge only when asked (`/rfr-core:merge-when-green`).
+When asked to see a change through CI, read the pull request's checks once (`gh pr checks <pr>`) and confirm them on the head commit before calling it green. If any are still running, return to the caller with the pull request and its head commit: a subagent receives no pull request events, so the caller waits for them. Never wait with `gh pr checks --watch`, `gh run watch`, a sleep loop, or repeated checks. Merge only when asked (`/rfr-core:merge-when-green`).
 
 Your final message lists the files changed, the failing and then passing test runs, the engine versions built, the build and test output (or the failing part), anything you could not verify, and suggestions you did not act on.

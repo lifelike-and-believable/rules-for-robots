@@ -181,7 +181,6 @@ Start small and add agents only when evals show benefit (R18).
 | `accessibility-reviewer` | WCAG 2.2 AA for web; editor and game accessibility for Unreal | Read-only | Findings in the common format |
 | `performance-reviewer` | Web budgets, queries, caching; frame time, memory, tick, loading for Unreal | Read-only plus measurement commands | Findings and measurements |
 | `security-reviewer` | Threat model, OWASP, secrets, dependencies, privacy, replication trust boundaries, migrations | Read-only | Findings with severity |
-| `ci-watcher` (Haiku 5.5) | Waits for a pull request's checks; reads failed job logs | Read-only plus `gh` | Check results and verbatim failure excerpts |
 | `check-runner` (Haiku 5.5) | Runs named scanners, audits, builds, and tests | Read-only plus shell | Exit codes and verbatim key output |
 | `citation-checker` (Haiku 5.5) | Checks that review findings cite real files, lines, identifiers, and rule IDs | Read-only | One ok or mismatch line per finding |
 | `software-architect` (experimental) | Module boundaries, data model, interfaces, build-versus-adopt; ADRs for hard-to-reverse choices | Read-only plus ADR files | Recommended design, rejected options, ADRs |

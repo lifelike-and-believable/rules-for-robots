@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Fake gh for the merge-when-green smoke tests. Reads the scenario from .git/fake-gh.json in
 // the current repository, logs every call to .git/gh-calls.log, and answers the pull request
-// commands the skill uses: pr checks (with or without --watch), pr view --json, pr merge,
-// run view --log-failed, and run list.
+// commands the skill uses: pr checks, pr view --json, pr merge, run view --log-failed, and run
+// list. Waiting commands (pr checks --watch, run watch) are logged and refused, as the skill
+// must never call them.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,8 +14,8 @@ try { fs.appendFileSync(path.join(git, 'gh-calls.log'), JSON.stringify(args) + '
 let s;
 try { s = JSON.parse(fs.readFileSync(path.join(git, 'fake-gh.json'), 'utf8')); } catch { console.error('fake gh: no scenario'); process.exit(1); }
 
-// A scenario with pendingUntilWatch shows its checks as running until `pr checks --watch` has been called.
-const pending = !!s.pendingUntilWatch && !s.watched;
+// A scenario with pending shows its checks as still running.
+const pending = !!s.pending;
 const checks = s.checks.map(c => ({ name: c.name, state: pending ? 'PENDING' : c.conclusion, bucket: pending ? 'pending' : c.conclusion === 'SUCCESS' ? 'pass' : 'fail', link: `https://ci.example/run/${s.runId}` }));
 const rollup = s.checks.map(c => ({ __typename: 'CheckRun', name: c.name, status: pending ? 'IN_PROGRESS' : 'COMPLETED', conclusion: pending ? '' : c.conclusion, detailsUrl: `https://ci.example/run/${s.runId}` }));
 const pr = {
@@ -27,16 +28,13 @@ const [cmd, sub] = args;
 const jsonIdx = args.indexOf('--json');
 const pick = fields => Object.fromEntries(fields.split(',').map(f => [f, pr[f]]));
 
-if (cmd === 'pr' && sub === 'checks') {
-  const watchedNow = args.includes('--watch') && pending;
-  if (watchedNow) {
-    s.watched = true;
-    fs.writeFileSync(path.join(git, 'fake-gh.json'), JSON.stringify(s));
-    checks.forEach((c, i) => Object.assign(c, { state: s.checks[i].conclusion, bucket: s.checks[i].conclusion === 'SUCCESS' ? 'pass' : 'fail' }));
-  }
+if (args.includes('--watch') || (cmd === 'run' && sub === 'watch')) {
+  console.error('gh (fake): waiting commands are not available; wait for a pull request event instead');
+  process.exitCode = 1;
+} else if (cmd === 'pr' && sub === 'checks') {
   if (jsonIdx !== -1) console.log(JSON.stringify(checks.map(c => ({ name: c.name, state: c.state, bucket: c.bucket, link: c.link }))));
   else for (const c of checks) console.log(`${c.name}\t${c.bucket}\t1m2s\t${c.link}`);
-  process.exitCode = pending && !watchedNow ? 8 : failing ? 1 : 0;
+  process.exitCode = pending ? 8 : failing ? 1 : 0;
 } else if (cmd === 'pr' && sub === 'view') {
   if (jsonIdx !== -1) console.log(JSON.stringify(pick(args[jsonIdx + 1])));
   else console.log(`${pr.title} #${pr.number}\n${pr.state} • ${pr.headRefName} into main`);
