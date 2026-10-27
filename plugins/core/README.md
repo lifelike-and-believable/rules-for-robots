@@ -12,7 +12,6 @@ Core plugin from [rules-for-robots](../../README.md).
 | `security-reviewer` | Opus, high | Read-only | Secrets, injection, authorization, dependencies, CI, migrations |
 | `accessibility-reviewer` | Sonnet, medium | Read-only | WCAG 2.2 AA for web; editor and in-game accessibility for Unreal |
 | `performance-reviewer` | Sonnet, medium | Read-only | Web budgets and queries; per-frame cost for Unreal |
-| `ci-watcher` | Haiku 5.5, medium | Read-only | Waits for a pull request's checks and returns results and the first error from each failed job's log |
 | `check-runner` | Haiku 5.5, medium | Read-only | Runs named scanners, audits, builds, and tests and returns exit codes and key output verbatim |
 | `citation-checker` | Haiku 5.5, medium | Read-only | Checks that each review finding's file, line, identifiers, and rule ID exist |
 | `software-architect` (experimental) | Fable 5.1, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
