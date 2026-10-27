@@ -72,7 +72,7 @@ A criterion whose "Verified by" cell starts with `test:` must be cited by a test
 
 ### CI status comment
 
-To let agents (and you) merge on green without polling, end the workflow that gates merging with the reusable status job. It keeps one comment on the pull request with each job's result and the head commit's full SHA:
+To let agents (and you) merge on green without polling, end the workflow that gates merging with the reusable status job. Each run posts a new comment on the pull request with each job's result and the head commit's full SHA, headed "<workflow> completed successfully!" when every job passed. A new comment rather than an edited one, because that is what wakes an agent waiting on the pull request (the Claude desktop app's pull request monitor relays new comments):
 
 ```yaml
   status:
@@ -84,6 +84,17 @@ To let agents (and you) merge on green without polling, end the workflow that ga
     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-ci-status.yml@main
     with:
       results: ${{ toJSON(needs) }}
+```
+
+Skipped jobs count as passed, and the comment lists them. If a job skips on draft pull requests (a long self-hosted build, for example), gate the status job so a draft gets no green comment, and make sure the workflow runs on `ready_for_review`:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+# ...
+  status:
+    if: always() && !github.event.pull_request.draft
 ```
 
 The template repos already include it. It never fails the workflow, and pull requests from forks get no comment because their token is read-only. Agents still confirm the checks on the current head commit before merging; `/rfr-core:merge-when-green <pr>` does the whole wait, check, merge, and continue sequence.
