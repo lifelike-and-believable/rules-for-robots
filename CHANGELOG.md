@@ -4,6 +4,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-26
+
+Pull request: #95.
+
+### Added
+
+- UE-009 (SHOULD, `unreal-plugin` pack): a custom asset type gets its own entry in the Content Browser's Add menu, through a `UFactory` and a `UAssetDefinitionDefault` in an editor module, and a test that every asset class has both; users should not have to create a generic Data Asset and then pick the class. Observed in an Open3DPuppet session, where the agent made every asset type a plain `UDataAsset` subclass. The Unreal practice guide has a section on custom asset types.
+
 ## [2.1.0] - 2026-10-26
 
 Pull request: #91.
