@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [2.2.0] - 2026-10-26
 
-Pull request: #PRNUM.
+Pull request: #95.
 
 ### Added
 
