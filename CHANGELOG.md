@@ -4,7 +4,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-## [1.6.0] - 2026-10-12
+## [2.1.0] - 2026-10-26
 
 Pull request: #91.
 
@@ -15,6 +15,23 @@ Pull request: #91.
 ### Added
 
 - Greenfield eval cases `arch-greenfield-webapp`, `arch-greenfield-uplugin`, `lead-greenfield-webapp`, and `lead-greenfield-uplugin`, which start from a profile's template repo plus a requirements brief with planted problems, with unit-tested graders. Large-repository cases `arch-add-godot-support` and `lead-add-godot-support` on a snapshot of this repository.
+
+## [2.0.0] - 2026-10-26
+
+Pull requests: #92, #93, #94.
+
+### Removed
+
+- The `ci-watcher` agent. It existed to make one blocking `gh pr checks --watch` call, and agents no longer wait that way (below). `merge-when-green` reads failed job logs itself. A removed agent is a major change (docs/maintenance.md).
+
+### Changed
+
+- Agents wait for CI on events only. `merge-when-green` checks once; if checks are still running, it ends the turn when the session receives the pull request's events (a cloud session subscribed to the pull request, or the Claude desktop app with the pull request bound and its monitor on, which relays CI failures and new comments, so a green run arrives as the CI status comment), and otherwise says what is still running and stops, with at most one scheduled fallback wake-up. It never waits with `gh pr checks --watch`, `gh run watch`, `sleep` loops, or repeated checks, which hold the session and time out on long self-hosted runs. A check skipped only because the pull request was a draft is not a pass. `unreal-engineer` and `web-engineer` check once and hand a pending wait back to the caller, since a subagent receives no events. The working-with-agents guide says the same. The smoke cases fail any waiting command, and the fake `gh` refuses them.
+- The CI status comment (`rfr-ci-status.yml`) posts a new comment on every run instead of editing one in place, because a new comment is what wakes an agent waiting on the pull request (the Claude desktop app's pull request monitor relays new comments, and an edited one may wake nobody). A passing run is headed "✅ **<workflow> completed successfully!**", a failed one "❌ **<workflow> failed**", a cancelled one "⚪ **<workflow> was cancelled**", each with the head commit's full SHA, and a pass lists the jobs it skipped. The adoption guide and the workflow show how to gate the status job on draft pull requests when a job skips on drafts, so a draft gets no green comment. Adopters need no change.
+
+### Fixed
+
+- The guards workflow in the template repos and `examples/web-app` runs when a label is added or removed (`types: [opened, synchronize, reopened, labeled, unlabeled]`). The test change guard (TEST-001) reads the `tests-reviewed` label from the event that started the run, so a reviewer who added the label after a failed run saw the check stay red: the default events start no new run, and re-running the failed job reuses the original event. Removing the label now also re-runs the guard, so the check does not stay green after the approval is withdrawn. The adoption guide shows the `on:` block for adopters who call the reusable workflow. Adopters update their own `guards.yml`; the reusable workflow is unchanged.
 
 ## [1.5.0] - 2026-10-12
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// CI status comment: when a workflow finishes, post or update one comment on the pull
-// request that names the head commit, each job's result, and the run. An agent or person
-// waiting on CI gets a notification instead of polling. The comment names the full SHA
+// CI status comment: when a workflow finishes, post a new comment on the pull request that
+// names the head commit, each job's result, and the run. An agent or person waiting on CI gets
+// a notification instead of polling. Each run posts a new comment rather than editing one,
+// because agents are woken by new comments (the Claude desktop app's pull request monitor
+// relays them) and an edited comment may wake nobody. The comment names the full SHA
 // because a "CI passed" comment about an older commit is how stale-green merges happen
 // (rules-for-robots#30): readers still confirm the checks on the current head.
 //
@@ -21,12 +23,21 @@ export function overallResult(needs) {
   return results.every(r => r === 'success' || r === 'skipped') ? 'passed' : 'failed';
 }
 
+const headlines = {
+  passed: workflow => `✅ **${workflow} completed successfully!**`,
+  failed: workflow => `❌ **${workflow} failed**`,
+  cancelled: workflow => `⚪ **${workflow} was cancelled**`,
+};
+
 export function renderComment({ workflow, sha, needs, runUrl }) {
   const result = overallResult(needs);
-  const rows = Object.entries(needs ?? {}).map(([job, value]) => `| ${job} | ${value?.result ?? 'unknown'} |`);
+  const entries = Object.entries(needs ?? {});
+  const rows = entries.map(([job, value]) => `| ${job} | ${value?.result ?? 'unknown'} |`);
+  const skipped = entries.filter(([, value]) => value?.result === 'skipped').map(([job]) => job);
   return [
     marker(workflow),
-    `**${workflow} ${result}** on \`${sha}\`.`,
+    `${headlines[result](workflow)} on \`${sha}\`.`,
+    ...(result === 'passed' && skipped.length ? ['', `Skipped (counted as passed): ${skipped.join(', ')}.`] : []),
     '',
     '| Job | Result |',
     '|---|---|',
@@ -34,7 +45,7 @@ export function renderComment({ workflow, sha, needs, runUrl }) {
     '',
     `[Run](${runUrl})`,
     '',
-    'This comment is updated by each run. A later push makes it stale until the next run finishes, so confirm the checks on the current head commit before merging.',
+    'A later push makes this comment stale, so confirm the checks on the current head commit before merging.',
   ].join('\n');
 }
 
@@ -55,11 +66,8 @@ export async function postStatus({ fetch = globalThis.fetch, api = 'https://api.
     if (!numbers.length) return log(`rfr-ci-status: no open pull request contains ${sha}; nothing to comment on`);
     const body = renderComment({ workflow, sha, needs, runUrl });
     for (const number of numbers) {
-      const comments = await call('GET', `/repos/${repo}/issues/${number}/comments?per_page=100`);
-      const existing = comments.find(c => typeof c.body === 'string' && c.body.startsWith(marker(workflow)));
-      if (existing) await call('PATCH', `/repos/${repo}/issues/comments/${existing.id}`, { body });
-      else await call('POST', `/repos/${repo}/issues/${number}/comments`, { body });
-      log(`rfr-ci-status: ${existing ? 'updated' : 'posted'} the ${workflow} status on #${number}`);
+      await call('POST', `/repos/${repo}/issues/${number}/comments`, { body });
+      log(`rfr-ci-status: posted the ${workflow} status on #${number}`);
     }
   } catch (error) {
     log(`rfr-ci-status: could not post the status comment (${error.message}); pull requests from forks get a read-only token`);

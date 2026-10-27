@@ -24,7 +24,7 @@ jobs:
       - run: npx size-limit
 
   status:
-    # One comment on the pull request when CI finishes, naming the head commit, so whoever
+    # A new comment on the pull request each time CI finishes, naming the head commit, so whoever
     # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
     needs: [verify]
     if: always()

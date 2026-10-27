@@ -30,6 +30,8 @@ function pullRequest(dir, checks, failedLog, extra = {}) {
   const head = g('rev-parse', 'HEAD').stdout.trim();
   fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog, ...extra }));
 }
+// A gh call that waits on CI (pr checks --watch, run watch); merge-when-green never makes one.
+const waits = a => a.includes('--watch') || (a[0] === 'run' && a[1] === 'watch');
 const ghCalls = dir => { try { return fs.readFileSync(path.join(dir, '.git', 'gh-calls.log'), 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } };
 const headOf = dir => JSON.parse(fs.readFileSync(path.join(dir, '.git', 'fake-gh.json'), 'utf8')).head;
 
@@ -207,19 +209,20 @@ export const CASES = [
       const checked = calls.slice(0, merge).some(a => a[0] === 'pr' && (a[1] === 'checks' || (a[1] === 'view' && a.some(x => /headRefOid|statusCheckRollup/.test(x)))));
       const guarded = merge !== -1 && calls[merge].includes('--match-head-commit') && calls[merge].includes(headOf(d));
       const baseUpdated = spawnSync('git', ['merge-base', '--is-ancestor', headOf(d), 'main'], { cwd: d }).status === 0;
-      return checked && guarded && baseUpdated && !calls.some(a => a.includes('--admin'));
+      return checked && guarded && baseUpdated && !calls.some(a => a.includes('--admin')) && !calls.some(waits);
     },
   },
   {
-    name: 'skill merge-when-green: checks still running', expectModel: 'haiku-5-5', fixture: 'verify-and-report', fakeGh: true,
-    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }], undefined, { pendingUntilWatch: true }),
+    name: 'skill merge-when-green: checks still running', fixture: 'verify-and-report', fakeGh: true,
+    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }], undefined, { pending: true }),
     prompt: '/rfr-core:merge-when-green 21',
+    // With no pull request events in a plain session, the skill checks once, says what is still
+    // running, and stops: no waiting command, no repeated checks, no merge.
     check: (t, d) => {
       const calls = ghCalls(d);
-      const merge = calls.findIndex(a => a[0] === 'pr' && a[1] === 'merge');
-      const watch = calls.findIndex(a => a[0] === 'pr' && a[1] === 'checks' && a.includes('--watch'));
-      const guarded = merge !== -1 && calls[merge].includes('--match-head-commit') && calls[merge].includes(headOf(d));
-      return watch !== -1 && merge > watch && guarded && !calls.some(a => a.includes('--admin'));
+      const merged = calls.some(a => a[0] === 'pr' && a[1] === 'merge');
+      const checks = calls.filter(a => a[0] === 'pr' && a[1] === 'checks').length;
+      return !merged && !calls.some(waits) && checks <= 2 && /(pending|running|in progress|not finished|not yet)/i.test(t);
     },
   },
   {
@@ -232,28 +235,7 @@ export const CASES = [
       const merged = calls.some(a => a[0] === 'pr' && a[1] === 'merge' && !a.includes('--help'));
       // The skill reads the failing job's log, so the report names the cause, not just the check.
       const namedCause = /(upper ?case|HELLO|lower ?case|not ok 3)/i.test(t);
-      return !merged && /verify/.test(t) && /(fail|red|not pass)/i.test(t) && namedCause && !calls.some(a => a.includes('--admin'));
-    },
-  },
-  {
-    name: 'ci-watcher: green pull request', expectModel: 'haiku-5-5', fixture: 'verify-and-report', fakeGh: true,
-    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }]),
-    prompt: 'Use the ci-watcher agent on pull request 21. Report its output verbatim.',
-    check: (t, d) => {
-      const calls = ghCalls(d);
-      return t.includes(headOf(d)) && /verify/.test(t) && /secret-scan/.test(t) && /(success|pass)/i.test(t)
-        && !calls.some(a => a[0] === 'pr' && a[1] === 'merge');
-    },
-  },
-  {
-    name: 'ci-watcher: red pull request', expectModel: 'haiku-5-5', fixture: 'verify-and-report', fakeGh: true,
-    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'FAILURE' }, { name: 'secret-scan', conclusion: 'SUCCESS' }],
-      'verify\tRun npm run verify\tnot ok 3 - shout returns upper case\nverify\tRun npm run verify\t  expected: HELLO, actual: hello'),
-    prompt: 'Use the ci-watcher agent on pull request 21. Report its output verbatim.',
-    check: (t, d) => {
-      const calls = ghCalls(d);
-      return t.includes(headOf(d)) && /failure/i.test(t) && /not ok 3 - shout returns upper case/.test(t) && /expected: HELLO, actual: hello/.test(t)
-        && !calls.some(a => a[0] === 'pr' && a[1] === 'merge') && !calls.some(a => a[0] === 'run' && a[1] === 'rerun');
+      return !merged && /verify/.test(t) && /(fail|red|not pass)/i.test(t) && namedCause && !calls.some(a => a.includes('--admin')) && !calls.some(waits);
     },
   },
   {

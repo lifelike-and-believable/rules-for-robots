@@ -16,13 +16,23 @@ test('overall result: passed only when every job succeeded or was skipped', () =
 test('the comment names the full head SHA, each job, and the run, behind a per-workflow marker', () => {
   const body = renderComment({ workflow: 'CI', sha: SHA, needs: needs(['verify', 'success'], ['migrations', 'skipped']), runUrl: 'https://ci.example/run/1' });
   assert.ok(body.startsWith(marker('CI')));
-  assert.match(body, /CI passed/);
-  assert.ok(body.includes(SHA));
+  assert.ok(body.includes(`✅ **CI completed successfully!** on \`${SHA}\`.`), body);
   assert.match(body, /\| verify \| success \|/);
   assert.match(body, /\| migrations \| skipped \|/);
+  assert.match(body, /Skipped \(counted as passed\): migrations/, 'says which jobs a pass did not run');
   assert.match(body, /https:\/\/ci\.example\/run\/1/);
   assert.match(body, /later push/i, 'tells readers the comment goes stale on a new push');
+  assert.doesNotMatch(body, /updated by each run/i);
   assert.notEqual(marker('CI'), marker('Unreal Tier 2'));
+});
+
+test('a failed or cancelled run says so in the headline', () => {
+  const failed = renderComment({ workflow: 'CI', sha: SHA, needs: needs(['verify', 'failure']), runUrl: 'u' });
+  assert.ok(failed.includes(`❌ **CI failed** on \`${SHA}\`.`), failed);
+  assert.doesNotMatch(failed, /completed successfully/);
+  const cancelled = renderComment({ workflow: 'CI', sha: SHA, needs: needs(['verify', 'cancelled']), runUrl: 'u' });
+  assert.ok(cancelled.includes(`⚪ **CI was cancelled** on \`${SHA}\`.`), cancelled);
+  assert.doesNotMatch(renderComment({ workflow: 'CI', sha: SHA, needs: needs(['verify', 'success']), runUrl: 'u' }), /Skipped/);
 });
 
 // A fake GitHub REST API: records calls and answers the few endpoints the script uses.
@@ -42,7 +52,7 @@ function fakeGitHub({ comments = [], pulls = [], status = 200 } = {}) {
 
 const base = { token: 't', repo: 'acme/app', workflow: 'CI', sha: SHA, needs: needs(['verify', 'success']), runUrl: 'https://ci.example/run/2', log: () => {} };
 
-test('posts a new comment on the pull request when none has the marker', async () => {
+test('posts a new comment on the pull request', async () => {
   const gh = fakeGitHub({ comments: [{ id: 1, body: 'Looks good' }] });
   await postStatus({ ...base, fetch: gh.fetch, pr: 12 });
   const post = gh.calls.find(c => c.method === 'POST');
@@ -51,12 +61,13 @@ test('posts a new comment on the pull request when none has the marker', async (
   assert.ok(post.body.body.includes(SHA));
 });
 
-test('updates the existing status comment instead of adding another', async () => {
-  const gh = fakeGitHub({ comments: [{ id: 7, body: `${marker('CI')}\nold` }, { id: 8, body: `${marker('Guards')}\nother` }] });
+test('posts a new comment on every run, even when an earlier status comment exists', async () => {
+  // Agents are woken by new comments (the Claude desktop app's pull request monitor relays
+  // them); an edited comment may wake nobody.
+  const gh = fakeGitHub({ comments: [{ id: 7, body: `${marker('CI')}\nold` }] });
   await postStatus({ ...base, fetch: gh.fetch, pr: 12 });
-  assert.equal(gh.calls.filter(c => c.method === 'POST').length, 0);
-  const patch = gh.calls.find(c => c.method === 'PATCH');
-  assert.match(patch.url, /\/issues\/comments\/7$/);
+  assert.equal(gh.calls.filter(c => c.method === 'PATCH').length, 0);
+  assert.equal(gh.calls.filter(c => c.method === 'POST').length, 1);
 });
 
 test('without a pull request number, comments on the pull requests that contain the commit', async () => {
