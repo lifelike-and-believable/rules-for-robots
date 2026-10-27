@@ -1,6 +1,6 @@
 name: rules-for-robots CI status
 
-# Reusable workflow: posts or updates one comment on the pull request when a workflow
+# Reusable workflow: posts a new comment on the pull request each time a workflow
 # finishes, naming the head commit and each job's result, so an agent or person waiting on
 # CI is notified instead of polling. Call it as the last job of the workflow that gates
 # merging:
@@ -15,6 +15,13 @@ name: rules-for-robots CI status
 #     with:
 #       results: ${{ toJSON(needs) }}
 #
+# Each run posts a new comment rather than editing the last one, because agents waiting on CI
+# are woken by new comments (the Claude desktop app's pull request monitor relays them). The
+# headline of a passing run is "<workflow> completed successfully!"; skipped jobs count as
+# passed and are listed. If a job skips on draft pull requests, gate the status job so a draft
+# gets no green comment (if: always() && !github.event.pull_request.draft) and run the workflow
+# on ready_for_review.
+#
 # The comment names the full SHA because a green comment about an older commit is not a
 # green head (rules-for-robots#30). For push and workflow_dispatch runs it comments on the
 # open pull requests that contain the commit. It never fails the workflow; pull requests
@@ -27,7 +34,7 @@ on:
         type: string
         required: true
       workflow-name:
-        description: Name shown in the comment; one comment is kept per name
+        description: Name shown in the comment
         type: string
         default: ''
       rules-ref:
