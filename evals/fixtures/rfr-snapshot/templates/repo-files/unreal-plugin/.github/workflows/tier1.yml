@@ -1,0 +1,31 @@
+name: Unreal Tier 1
+
+# Engine-free checks (UE-002, UE-005, UE-006, FAB-001 to FAB-003) on a GitHub-hosted runner.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tier1:
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-unreal-tier1.yml@main
+    with:
+      plugin-path: Plugins/MyPlugin            # change to your plugin folder
+      copyright: Your Publisher Name           # the name in every source file's copyright line; one per line (copyright: |) for several
+      project-path: .                          # checks Target.cs files of the host project
+      allow-missing-fab-url: true              # set to false once the Fab product exists
+
+  status:
+    # One comment on the pull request when CI finishes, naming the head commit, so whoever
+    # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
+    needs: [tier1]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-ci-status.yml@main
+    with:
+      results: ${{ toJSON(needs) }}
