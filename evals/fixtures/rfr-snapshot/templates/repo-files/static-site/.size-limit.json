@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Client JavaScript, all pages",
+    "path": "dist/_astro/*.js",
+    "limit": "50 kB"
+  }
+]

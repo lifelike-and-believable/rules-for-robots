@@ -167,7 +167,9 @@ function git(cwd, ...args) {
 // then the case's setup.mjs (if any) for uncommitted state.
 export async function prepareWorkspace(testCase, arm) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `rfr-eval-${testCase.name}-`));
-  fs.cpSync(path.join(testCase.dir, 'fixture'), dir, { recursive: true });
+  // A case can share a fixture kept elsewhere: "fixtureFrom" in case.json is a path from the repository root.
+  const fixture = testCase.meta.fixtureFrom ? path.join(ROOT, testCase.meta.fixtureFrom) : path.join(testCase.dir, 'fixture');
+  fs.cpSync(fixture, dir, { recursive: true });
   // Rules are part of the committed starting state, so graders that inspect
   // `git status` see only the agent's changes.
   if (arm !== 'none') {

@@ -1,0 +1,7 @@
+{
+  "targets": "planning",
+  "agent": "tech-lead",
+  "fixtureFrom": "evals/fixtures/rfr-snapshot",
+  "description": "Large repository, same snapshot as arch-add-godot-support. The request is to plan the work to support Godot 4 projects. Order and ownership depend on coupling that only shows up by reading the repository: rule-ID prefixes must be registered before rules lint, the template repos and payload are generated and must be rebuilt after every source edit and before verify, the plugin version and changelog are shared files, and the install-rules skill lists the profiles. The good outcome is an ordered plan that respects these, ends with the build and verify, names a reviewer, and writes no code.",
+  "maxTurns": 60
+}

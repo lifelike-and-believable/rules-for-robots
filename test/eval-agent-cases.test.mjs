@@ -55,6 +55,16 @@ test('splitSlices splits at "Slice N" headings and falls back to numbered lines'
   assert.equal(numbered.length, 2);
 });
 
+test('splitSlices reads work packages, task tables, and T1 labels, and skips decision lists and bullets', () => {
+  const packages = splitSlices('## Decisions I need\n1. Which database?\n2. Tag rules?\n3. Body shape?\n\n## Work packages\n1. **Schema**\n2. **Data layer**\n3. **Routes**\n4. **Page**\n5. **Escaping**');
+  assert.equal(packages.length, 5);
+  const table = splitSlices('## Decisions\n1. a\n2. b\n\n## Tasks, in order\n| # | Task | Depends on |\n|---|---|---|\n| 1 | Migration | - |\n| 2 | Data functions | 1 |\n| 3 | Routes | 2 |\n\n**What can run in parallel:**\n- Task 0 can run any time.\n- Task 4 also edits server.js.');
+  assert.deepEqual(table.map(s => s.title), ['Migration', 'Data functions', 'Routes']);
+  const labels = splitSlices('## Tasks\n\n**T1 — Storage** (first)\n- a\n\n**T2 — Routes** (after T1)\n- b\n\n**T3 — Page**\n- c');
+  assert.equal(labels.length, 3);
+  assert.deepEqual(splitSlices('Nothing here.'), []);
+});
+
 // ---- arch-money-storage
 
 const GOOD_MONEY_ADR = `# 2. Store amounts as integer minor units
@@ -89,6 +99,13 @@ test('arch-money-storage: missing the zero-decimal currency problem fails', asyn
   const r = await run('arch-money-storage', { files: { 'docs/adr/0002-money.md': adr } });
   assert.equal(r.pass, false);
   assert.equal(r.checks.zeroDecimal, false);
+});
+
+test('arch-money-storage: a short "Alternatives rejected" section counts as weighing options, and no alternatives does not', async () => {
+  const withoutOptions = GOOD_MONEY_ADR.replace('Option A: keep REAL dollars and add a currency column. Option B: store integer minor units with a currency code.', 'Context: totals are REAL dollars today.');
+  const withSection = withoutOptions + '\n### Alternatives rejected\n- A refunded_total column on the invoice: a mutable counter that can drift.\n';
+  assert.equal((await run('arch-money-storage', { files: { 'docs/adr/0002-money.md': withSection } })).checks.options, true);
+  assert.equal((await run('arch-money-storage', { files: { 'docs/adr/0002-money.md': withoutOptions } })).checks.options, false);
 });
 
 test('arch-money-storage: editing source or a migration fails even with a good ADR', async () => {
@@ -178,6 +195,42 @@ test('lead-plan-order: the page before the storage fails the order check', async
   const r = await run('lead-plan-order', { finalText: plan });
   assert.equal(r.pass, false);
   assert.equal(r.checks.order, false);
+});
+
+const TABLE_PLAN = `## Decisions
+1. Which database?
+2. Tag rules?
+
+## Slices
+
+| # | Slice | Reviewers | Depends on |
+|---|---|---|---|
+| **S1** | Tag storage: migration and the functions to add, remove, list and filter tags | code, security | none |
+| S2 | \`POST /notes/:id/tags\` and \`DELETE /notes/:id/tags/:tag\` | code, security | S1 |
+| S3 | \`GET /notes?tag=x\` filter | code | S1 |
+| S4 | The notes page shows each note's tags, escaped | code, accessibility | S1 |
+| S5 (stretch) | CSV export of tagged notes | code | S1 to S4 |
+| S6 (stretch) | A colour for each tag | code | S1 to S4 |
+
+Owner of every slice: \`web-engineer\`, test-first. Reviewer: \`code-reviewer\`. \`web-engineer\` runs \`npm run verify\` for each. Slices S3 and S4 can run in parallel.
+`;
+
+test('lead-plan-order: a table of S1 labels, with the extras marked as stretch, passes', async () => {
+  const r = await run('lead-plan-order', { finalText: TABLE_PLAN });
+  assert.equal(r.pass, true, JSON.stringify(r.checks));
+  assert.equal(r.checks.slices, 6);
+});
+
+test('lead-plan-order: mentioning colour in an accessibility note is not the colour feature', async () => {
+  const note = TABLE_PLAN.replace("The notes page shows each note's tags, escaped", "The notes page shows each note's tags, escaped, and not shown by colour alone");
+  assert.equal((await run('lead-plan-order', { finalText: note })).checks.noOptionalSlices, true);
+});
+
+test('lead-plan-order: the same extras without a stretch mark fail', async () => {
+  const unmarked = TABLE_PLAN.replace('S5 (stretch)', 'S5').replace('S6 (stretch)', 'S6');
+  const r = await run('lead-plan-order', { finalText: unmarked });
+  assert.equal(r.checks.noOptionalSlices, false);
+  assert.equal(r.pass, false);
 });
 
 test('lead-plan-order: scheduling the optional extras as slices fails, and so does an invented command', async () => {

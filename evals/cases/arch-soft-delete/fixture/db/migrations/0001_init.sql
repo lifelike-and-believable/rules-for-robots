@@ -1,0 +1,14 @@
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE invoices (
+  id INTEGER PRIMARY KEY,
+  number INTEGER NOT NULL UNIQUE,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  total_minor INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL
+);

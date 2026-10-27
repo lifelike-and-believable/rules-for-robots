@@ -19,19 +19,47 @@ export function agentInvoked(arm, tools, agentName) {
   return tools.some(t => ['Agent', 'Task'].includes(t.name) && String(t.input?.subagent_type ?? '').endsWith(agentName));
 }
 
-// Splits a plan into slices at "Slice N" headings, or at numbered top-level lines when the
-// plan does not use that word. Each chunk's first line is its title.
-export function splitSlices(text) {
-  const lead = '^\\s*(?:#{1,4}\\s*|\\*\\*|[-*]\\s+)?';
-  const sliceWord = new RegExp(`${lead}slice\\s*\\d+`, 'i');
-  const numbered = new RegExp(`${lead}(?:slice\\s*\\d+|\\d+[.)]\\s)`, 'i');
-  const starts = text.split('\n').some(l => sliceWord.test(l)) ? sliceWord : numbered;
+// Splits a plan into its slices. A plan names its units in many ways ("Slice 1", "Work package 2",
+// "Step 3", or a bare numbered list) and may carry other numbered lists (decisions, findings).
+// Lines that name a unit win when there are at least two; otherwise take the numbered list under a
+// heading that sounds like the plan, or failing that the longest numbered list. Each chunk's first
+// line is its title.
+const LEAD = '^ {0,3}(?:#{1,4}\\s*|\\*\\*)?';
+const NAMED_UNIT = new RegExp(`${LEAD}(?:slice|work[- ]?package|package|step|task|phase|stage|t)\\s*\\d+\\b`, 'i');
+// A numbered list item, or a table row whose first cell is a number or a label such as "T1" or "S1".
+const NUMBERED = new RegExp(`${LEAD}\\d+[.)]\\s|^\\s*\\|\\s*(?:\\*\\*)?(?:t|s|task\\s*|slice\\s*)?\\d+(?:\\*\\*)?(?:\\s*\\([^)]*\\))?\\s*\\|`, 'i');
+const PLAN_HEADING = /slice|package|plan|step|task|sequence|breakdown|order|work/i;
+const NOT_PLAN_HEADING = /decision|question|risk|assum|found|current|already|scope|not required|suggest|extra|left out|open/i;
+
+function chunksStartingAt(lines, isStart) {
   const chunks = [];
-  for (const line of text.split('\n')) {
-    if (starts.test(line)) chunks.push([line]);
+  for (const line of lines) {
+    if (isStart.test(line)) chunks.push([line]);
     else if (chunks.length) chunks.at(-1).push(line);
   }
-  return chunks.map(lines => ({ title: lines[0].trim(), body: lines.join('\n') }));
+  // A table row's title is its task cell (the second column), not every column.
+  const titleOf = line => {
+    const cells = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    return line.trim().startsWith('|') && cells.length > 1 ? cells[1] : line.trim();
+  };
+  return chunks.map(c => ({ title: titleOf(c[0]), body: c.join('\n') }));
+}
+
+export function splitSlices(text) {
+  const lines = text.split('\n');
+  if (lines.filter(l => NAMED_UNIT.test(l)).length >= 2) return chunksStartingAt(lines, NAMED_UNIT);
+
+  // Segments between headings and bold-only label lines, each with the heading that opens it.
+  const segments = [{ heading: '', lines: [] }];
+  for (const line of lines) {
+    if (/^#{1,4}\s/.test(line) || /^\s*\*\*[^*]+\*\*:?\s*$/.test(line)) segments.push({ heading: line, lines: [] });
+    else segments.at(-1).lines.push(line);
+  }
+  const lists = segments.map(s => ({ ...s, slices: chunksStartingAt(s.lines, NUMBERED) })).filter(s => s.slices.length >= 2);
+  if (!lists.length) return [];
+  const planLike = lists.find(s => PLAN_HEADING.test(s.heading) && !NOT_PLAN_HEADING.test(s.heading));
+  if (planLike) return planLike.slices;
+  return lists.reduce((best, s) => (s.slices.length >= best.slices.length ? s : best)).slices;
 }
 
 // For review cases with planted defects: which of them the review mentions. `defects` maps a
