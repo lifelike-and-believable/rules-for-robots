@@ -23,6 +23,15 @@ Notes:
 - To test a packaged plugin, copy the `-Package` output into a host project's `Plugins/` folder. A content-only host `.uproject` that enables the plugin is enough.
 - Generate `compile_commands.json` for clangd once with `UnrealBuildTool -mode=GenerateClangDatabase` after a first build, not in the inner loop.
 
+## Custom asset types
+
+A type users create as an asset (a configuration, a profile, a saved calibration) needs its own entry in the Content Browser's Add menu (UE-009). Deriving it from `UDataAsset` without one leaves users to create a generic Data Asset and then find the class in a picker, which they will not guess. Two small classes in an editor module fix it:
+
+- A `UFactory` subclass: set `SupportedClass`, `bCreateNew = true` and `bEditAfterNew = true` in its constructor, and override `FactoryCreateNew` to return `NewObject<UObject>(InParent, InClass, InName, Flags | RF_Transactional)`. Several types can share a base factory that only the constructor differs in.
+- A `UAssetDefinitionDefault` subclass (module `AssetDefinition`): override `GetAssetDisplayName`, `GetAssetClass`, `GetAssetColor` and `GetAssetCategories`. A top-level category for the plugin is `FAssetCategoryPath(LOCTEXT("MyCategory", "My Plugin"))`; the asset tools register it the first time the Add menu asks (UE 5.8, `Developer/AssetTools/Private/AssetTools.cpp`). Without its own definition, the type inherits the Data Asset one.
+
+A test can hold the line: iterate the plugin's non-abstract `UDataAsset` classes, find a factory whose `GetSupportedClass()` is the class and whose `CanCreateNew()` and `ShouldShowInNewMenu()` are true, create an object with it, and check that `UAssetDefinitionRegistry::Get()->GetAssetDefinitionForClass(Class)->GetAssetClass()` is the class itself. Open3DPuppet does this in `Open3DPuppet.Assets.Types.EachHasAFactoryAndACategory` ([Open3DPuppet#32](https://github.com/lifelike-and-believable/Open3DPuppet/pull/32)).
+
 ## Live Coding versus full builds
 
 Live Coding patches function bodies in `.cpp` files only. Any change to a header, a reflection macro (`UCLASS`, `USTRUCT`, `UPROPERTY`, `UFUNCTION`), a `.Build.cs`, a `.Target.cs`, or the `.uplugin` needs the editor closed and a full build (UE-004). Agents cannot see the editor, so they should default to full command-line builds.
