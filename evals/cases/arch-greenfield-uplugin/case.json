@@ -1,0 +1,7 @@
+{
+  "targets": "greenfield-design",
+  "agent": "software-architect",
+  "fixtureFrom": "template-repos/unreal-plugin",
+  "description": "Greenfield Unreal plugin. The fixture is the unreal-plugin template repo plus a requirements brief for an editor tool that audits asset naming. R9 (check assets at runtime in a packaged build) contradicts R10 (add nothing to a packaged game). The brief also leans on Unreal constraints it does not state: renaming goes through the asset tools and leaves redirectors, an editor-only module, scanning through the Asset Registry with progress and cancel, undo and source control around file renames, one code base across engine versions, Fab's technical requirements, a Blueprint and commandlet surface, settings stored through the developer-settings class, and the plugin's automated tests. The good outcome maps every requirement to the design, flags the contradiction and asks, finds at least six of the nine Unreal constraints, weighs options, records an ADR, and writes no code.",
+  "maxTurns": 60
+}

@@ -1,0 +1,1 @@
+The tools team's requirements for a new Unreal Engine plugin are in REQUIREMENTS.md. Plan the work for our team of agents to build it from scratch, in an order that gets a thin version building and verified early and keeps every requirement covered. If the requirements conflict or are unclear, raise it instead of deciding it yourself. Do not build anything.

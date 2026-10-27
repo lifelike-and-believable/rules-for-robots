@@ -50,7 +50,9 @@ export function relativeToWorkspace(file, caseName) {
 async function workspace(caseName, writes) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `rfr-regrade-${caseName}-`));
   const meta = JSON.parse(fs.readFileSync(path.join(CASES, caseName, 'case.json'), 'utf8'));
-  fs.cpSync(meta.fixtureFrom ? path.join(ROOT, meta.fixtureFrom) : path.join(CASES, caseName, 'fixture'), dir, { recursive: true });
+  if (meta.fixtureFrom) fs.cpSync(path.join(ROOT, meta.fixtureFrom), dir, { recursive: true });
+  const own = path.join(CASES, caseName, 'fixture');
+  if (fs.existsSync(own)) fs.cpSync(own, dir, { recursive: true });
   const g = (...a) => spawnSync('git', ['-c', 'user.email=r@example.com', '-c', 'user.name=r', ...a], { cwd: dir, encoding: 'utf8' });
   g('init', '-q', '-b', 'main');
   g('add', '-A');

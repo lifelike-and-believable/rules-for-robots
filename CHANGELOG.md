@@ -4,6 +4,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-26
+
+Pull request: #91.
+
+### Changed
+
+- `software-architect` and `tech-lead` (both still experimental) handle new projects with no code yet. The architect maps every requirement to the design, lists conflicts, gaps, and ambiguous requirements as questions instead of settling them, and names the platform constraints the requirements leave unstated. The tech lead starts with a slice that creates the project and a thin version passing the verification command, maps every requirement to a slice, plans tests before code, and orders slices that wait on an answer last.
+
+### Added
+
+- Greenfield eval cases `arch-greenfield-webapp`, `arch-greenfield-uplugin`, `lead-greenfield-webapp`, and `lead-greenfield-uplugin`, which start from a profile's template repo plus a requirements brief with planted problems, with unit-tested graders. Large-repository cases `arch-add-godot-support` and `lead-add-godot-support` on a snapshot of this repository.
+
 ## [2.0.0] - 2026-10-26
 
 Pull requests: #92, #93, #94.

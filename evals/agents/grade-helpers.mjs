@@ -57,8 +57,8 @@ export function splitSlices(text) {
   }
   const lists = segments.map(s => ({ ...s, slices: chunksStartingAt(s.lines, NUMBERED) })).filter(s => s.slices.length >= 2);
   if (!lists.length) return [];
-  const planLike = lists.find(s => PLAN_HEADING.test(s.heading) && !NOT_PLAN_HEADING.test(s.heading));
-  if (planLike) return planLike.slices;
+  const planLike = lists.filter(s => PLAN_HEADING.test(s.heading) && !NOT_PLAN_HEADING.test(s.heading));
+  if (planLike.length) return planLike.reduce((best, s) => (s.slices.length > best.slices.length ? s : best)).slices;
   return lists.reduce((best, s) => (s.slices.length >= best.slices.length ? s : best)).slices;
 }
 
