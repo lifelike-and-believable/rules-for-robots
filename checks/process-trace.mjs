@@ -211,3 +211,6 @@ function main(argv) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2));
+
+// Stub: implemented in 11b.
+export function staleAssignees() { return []; }
