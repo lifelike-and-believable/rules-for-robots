@@ -78,12 +78,12 @@ The agent proposes a tier and says why; the lead can change it. A change that tu
 
 ## Artifacts, linking, and staleness
 
-### Where artifacts live (to confirm)
+### Where artifacts live
 
 A mix, split by what each kind of record is for:
 
 - **In the repository** (versioned with the code, reviewed in pull requests, checkable offline): concept, requirements, personas, epic and story text, design notes, user documentation, specs, tutorials. Proposed layout: `docs/product/` for concept, requirements, and personas; `docs/product/epics/<epic>/` for each epic and its stories; `docs/design/`; `docs/user/`; `docs/specs/`; `docs/tutorials/`.
-- **In GitHub Issues and Projects** (status and discussion): one issue per epic, sub-issues per story, a `stage:<name>` label, and a Project board with a column per stage. Each issue links to its file; the file is the source of truth for the text.
+- **In GitHub Issues and Projects** (status and discussion): one issue per persona, one issue per epic, sub-issues per story, a `stage:<name>` label, and a Project board with a column per stage. Each issue links to its file; the file is the source of truth for the text.
 
 ### Links
 
@@ -91,7 +91,15 @@ Each artifact has front matter with an `id`, a `status` (`draft`, `in-review`, `
 
 ### Staleness
 
-A check (`checks/process-trace.mjs`) recomputes the upstream hashes. When an approved upstream artifact has changed since a downstream one was approved, the downstream artifact is reported as stale and its issue gets a `stale` label. This generalizes the Phase 10 spec lock: a story changes, so its design, docs, spec, and tests are flagged.
+A check (`checks/process-trace.mjs`) recomputes the upstream hashes. When an approved upstream artifact has changed since a downstream one was approved, the downstream artifact is stale. This generalizes the Phase 10 spec lock: a story changes, so its design, docs, spec, and tests are flagged.
+
+A stale artifact fails CI. Stale artifacts are not allowed to build up in the repository, so a pull request that changes an upstream artifact also deals with everything downstream of it, in one of three ways:
+
+- **Update** the downstream artifact to match, and re-approve it.
+- **Re-approve** it unchanged, when the upstream change does not affect it.
+- **Withdraw** it: set it back to `draft`, which removes its approval and links its issue to the change. A draft artifact is not stale, but no stage that depends on it can proceed until it is approved again, so the gap is visible and work cannot build on it. An artifact that is no longer needed is deleted, and its issue is closed.
+
+For design-phase artifacts, re-approval is the lead's, so the lead reviews that pull request as part of the gate. Delivery-phase artifacts (specs and tests) can be updated and re-approved by agents in the same pull request.
 
 Re-approving a downstream artifact after review records the new hashes. A skill command does this so that a typo upstream costs one confirmation, not a rewrite (to confirm: hash the whole body, or only sections marked as normative).
 
@@ -134,11 +142,12 @@ New profiles follow the existing profile pattern in `build/`.
 | AC-1 | `rfr-process` is a plugin in this marketplace that declares `rfr-core` as a dependency and passes `claude plugin validate --strict`. | command: `npm run validate:plugins` |
 | AC-2 | Each stage has a skill that names its inputs, its artifact template, its self-check, its reviews, and its gate, and stops at a lead gate. | Smoke cases per skill (`evals/agents/smoke.mjs`). |
 | AC-3 | Stories cannot be drafted until at least one persona is approved, and every story names a persona. | test: the process check fails on a story with no persona or with an unapproved persona. |
-| AC-4 | The process check reports a downstream artifact as stale when an approved upstream artifact's content changed after the downstream approval, and passes once it is re-approved. | test: unchanged, changed, re-approved, missing upstream, and cyclic-link cases. |
+| AC-4 | The process check fails when an approved upstream artifact's content changed after a downstream artifact's approval, and passes once the downstream artifact is updated, re-approved, withdrawn to `draft`, or deleted. | test: unchanged, changed, re-approved, withdrawn, deleted, missing upstream, and cyclic-link cases. |
 | AC-5 | An agent cannot mark a design-phase artifact approved. | test: the hook blocks the edit and allows the same edit to a delivery-phase artifact. |
 | AC-6 | A skill proposes a size tier with a reason, and the Fix and Trivial tiers skip the design-phase stages. | Smoke case. |
 | AC-7 | Each profile ships persona starters and templates for user documentation and tutorials. | test: the build renders them for each profile; `npm run build:check` passes. |
-| AC-8 | A status command lists each epic and story with its stage, status, and stale artifacts. | test: fixture repository with features at different stages. |
+| AC-8 | A status command lists each persona, epic, and story with its stage, status, and stale or withdrawn artifacts. | test: fixture repository with features at different stages. |
+| AC-11 | Each persona, epic, and story file has a GitHub issue, and the issue's `stage:` label matches the file's stage; a skill creates or updates the issue when the file is created or changes stage. | Smoke case; the issue link is checked by the process check (test: missing link fails). |
 | AC-9 | The persona walkthrough reports, for a planted mismatch between stories and user docs, the persona and the passage where the expectation breaks. | Eval case `persona-docs-mismatch`. |
 | AC-10 | Tutorials in the `web-app` and `unreal-plugin` profiles can be run as tests, and a tutorial whose steps no longer match the product fails. | test: a fixture tutorial passes, then fails after a planted UI change. |
 
@@ -165,7 +174,7 @@ New profiles follow the existing profile pattern in `build/`.
 - Plan or roadmap item: `PLAN.md`, Phase 11 (proposed).
 - Pull requests: added as each is opened.
 - Slices:
-  - 11a: plugin skeleton, artifact templates, front matter and links, `process-trace` check (AC-1, AC-3, AC-4, AC-8).
+  - 11a: plugin skeleton, artifact templates, front matter and links, `process-trace` check (AC-1, AC-3, AC-4, AC-8, AC-11).
   - 11b: design-phase skills, the approval hook, CODEOWNERS guidance, size tiers (AC-2, AC-5, AC-6).
   - 11c: profile templates, runnable tutorials, the persona walkthrough agent, eval cases and a round (AC-7, AC-9, AC-10).
   - 11d: delivery-phase skills that hand over to `plan-feature` and Phase 10, and the practice guide.
@@ -181,7 +190,5 @@ Keep a stage skill or agent if it raises the pass rate on its case and lowers it
 
 ## Open questions
 
-1. Which design-phase artifacts belong in GitHub Issues as well as files (only epics and stories, or personas too)?
-2. Should a stale artifact block CI, or only warn until the next gate?
-3. Does Release and Feedback belong in this plugin, or in the existing `release` skill?
-4. Is one lead gate per stage right for a team, or should a team be able to name a different approver per stage (for example, a UX lead for design)?
+1. Does Release and Feedback belong in this plugin, or in the existing `release` skill?
+2. Is one lead gate per stage right for a team, or should a team be able to name a different approver per stage (for example, a UX lead for design)?
