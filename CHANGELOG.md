@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- `rfr-process` 0.1.0, a second plugin for the project development process in [docs/specs/project-process.md](docs/specs/project-process.md) (Phase 11, slice 11a; #103). It ships artifact templates for each stage, a `process.yml` template for per-stage approvers, and a caller for the new reusable workflow `rfr-process.yml`. `checks/process-trace.mjs` fails on broken or stale links between artifacts, cycles, approved work built on drafts, stories without an approved persona, spec criteria without a story or documentation source, and withdrawals without a reason; `--status` lists how far each persona, epic, and story has reached. `checks/process-relink.mjs` records current section hashes. The check runs in `npm run verify` and on the default branch, where a failure opens a `stale` issue.
+
 ## [2.2.0] - 2026-10-26
 
 Pull request: #95.

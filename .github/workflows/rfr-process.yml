@@ -1,0 +1,64 @@
+name: rules-for-robots process check
+
+# Reusable workflow for repositories that use the rfr-process plugin
+# (docs/specs/project-process.md). Copy the caller from
+# plugins/process/templates/workflows/rfr-process.yml, which runs it on pull requests and on
+# pushes to the default branch. On pull requests the check also compares with the base, so an
+# artifact withdrawn without a reason fails (rule 7). On the default branch a failure opens an
+# issue labelled `stale`, or comments on the open one, because two pull requests that each pass
+# can leave the branch stale once both merge.
+on:
+  workflow_call:
+    inputs:
+      rules-ref:
+        description: rules-for-robots ref to take the check from
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  process-trace:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Process check
+        run: |
+          set -o pipefail
+          node .rfr/checks/process-trace.mjs . ${{ github.event_name == 'pull_request' && format('--base {0}', github.event.pull_request.base.sha) || '' }} 2>&1 | tee "$RUNNER_TEMP/process-trace.txt"
+      - name: Open or update the stale issue
+        if: failure() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          {
+            echo "The process check failed on \`$REF_NAME\` after a merge ([run]($RUN_URL))."
+            echo "Each stale or broken link below needs its artifact updated, re-recorded, or withdrawn."
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/process-trace.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/stale-issue.md"
+          gh label create stale --color FBCA04 --description "Process artifacts with stale links" 2>/dev/null || true
+          number=$(gh issue list --label stale --state open --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file "$RUNNER_TEMP/stale-issue.md"
+          else
+            gh issue create --title "Stale process artifacts on $REF_NAME" --label stale --body-file "$RUNNER_TEMP/stale-issue.md"
+          fi

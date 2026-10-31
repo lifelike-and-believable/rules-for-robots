@@ -11,6 +11,11 @@
       "name": "rfr-core",
       "source": "./plugins/core",
       "description": "Core skills and hooks, including a skill that installs rules-for-robots rule packs into a repo."
+    },
+    {
+      "name": "rfr-process",
+      "source": "./plugins/process",
+      "description": "A staged project development process: artifact templates, links between artifacts, and a CI check for stale or broken links. Depends on rfr-core."
     }
   ]
 }
