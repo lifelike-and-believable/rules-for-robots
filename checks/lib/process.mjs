@@ -1,5 +1,260 @@
-// Shared parsing for the project process (docs/specs/project-process.md). Stub: implemented in 11a.
-export function parseProcessConfig() { return { config: { mode: null, default: [], stages: {}, publicApi: [], adoptionUntil: null }, errors: [] }; }
-export function sectionText() { return null; }
-export function sectionHash() { return null; }
-export function hashText() { return ''; }
+// Shared parsing for the project process (docs/specs/project-process.md): process.yml, artifact
+// front matter, sections, and hashes. Dependency-free, so the check runs from an .rfr checkout
+// without npm install. The YAML here is a small subset: scalars, inline lists, block lists, one
+// level of mappings, and "- key: value" list items. Anything else is reported, not guessed at.
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+
+export const CONFIG_PATH = 'docs/product/process.yml';
+
+// Gated stages in order. `dir` is a folder (every .md below it) or a single file. Specs are only
+// process artifacts when they have an `id`, so plain Phase 10 specs in docs/specs/ are left alone.
+export const STAGES = [
+  { name: 'concept', file: 'docs/product/concept.md' },
+  { name: 'requirements', dir: 'docs/product/requirements' },
+  { name: 'personas', dir: 'docs/product/personas' },
+  { name: 'epics', dir: 'docs/product/epics' },
+  { name: 'stories', dir: 'docs/product/stories' },
+  { name: 'design', dir: 'docs/design' },
+  { name: 'user-docs', dir: 'docs/user' },
+  { name: 'specs', dir: 'docs/specs', needsId: true },
+  { name: 'tutorials', dir: 'docs/tutorials' },
+];
+export const STAGE_ORDER = STAGES.map(s => s.name);
+const CONFIG_STAGES = new Set([...STAGE_ORDER, 'release']);
+const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'public-api', 'adoption-until']);
+export const STATUSES = new Set(['draft', 'approved', 'implemented']);
+
+// ---- YAML subset ------------------------------------------------------------------------------
+
+function stripComment(line) {
+  let quote = null;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quote) { if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === '#' && (i === 0 || /\s/.test(line[i - 1]))) return line.slice(0, i);
+  }
+  return line;
+}
+
+const unquote = s => s.trim().replace(/^(['"])(.*)\1$/, '$2');
+
+function scalarOrList(value) {
+  const v = value.trim();
+  if (v.startsWith('[')) {
+    if (!v.endsWith(']')) return { error: `unclosed list: ${v}` };
+    return { value: v.slice(1, -1).split(',').map(unquote).filter(Boolean) };
+  }
+  return { value: unquote(v) };
+}
+
+// Parses lines into { key: scalar | list | { key: scalar | list } }. Returns { data, errors }.
+function parseYamlSubset(text) {
+  const data = {};
+  const errors = [];
+  let parent = null;   // top-level key whose value is a mapping or block list
+  let child = null;    // second-level key whose value is a block list
+  for (const [i, raw] of text.split(/\r?\n/).entries()) {
+    const line = stripComment(raw).replace(/\s+$/, '');
+    if (!line.trim()) continue;
+    const indent = line.length - line.trimStart().length;
+    const item = /^\s*-\s+(.*)$/.exec(line);
+    const field = /^\s*([A-Za-z0-9_@./-]+):(?:\s+(.*))?$/.exec(line);
+    if (indent === 0 && field) {
+      const [, key, value] = field;
+      child = null;
+      if (value === undefined || value === '') { data[key] = null; parent = key; continue; }
+      parent = null;
+      const parsed = scalarOrList(value);
+      if (parsed.error) errors.push(`line ${i + 1}: ${parsed.error}`);
+      data[key] = parsed.value;
+    } else if (item && parent) {
+      const target = child ? data[parent][child] : null;
+      if (child && (target === null || Array.isArray(target))) data[parent][child] = [...(target ?? []), unquote(item[1])];
+      else if (!child && (data[parent] === null || Array.isArray(data[parent]))) data[parent] = [...(data[parent] ?? []), unquote(item[1])];
+      else errors.push(`line ${i + 1}: unexpected list item`);
+    } else if (field && parent && indent > 0) {
+      const [, key, value] = field;
+      if (data[parent] === null) data[parent] = {};
+      if (Array.isArray(data[parent])) { errors.push(`line ${i + 1}: mixes a list and a mapping under ${parent}`); continue; }
+      if (value === undefined || value === '') { data[parent][key] = null; child = key; continue; }
+      child = null;
+      const parsed = scalarOrList(value);
+      if (parsed.error) errors.push(`line ${i + 1}: ${parsed.error}`);
+      data[parent][key] = parsed.value;
+    } else {
+      errors.push(`line ${i + 1}: cannot read "${raw.trim()}"`);
+    }
+  }
+  return { data, errors };
+}
+
+// ---- process.yml ------------------------------------------------------------------------------
+
+const asList = v => (Array.isArray(v) ? v : v ? [v] : []);
+
+function validDate(s) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s ?? '')) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+export function parseProcessConfig(text) {
+  const { data, errors } = parseYamlSubset(text);
+  const config = { mode: 'team', default: [], stages: {}, publicApi: [], adoptionUntil: null };
+  for (const key of Object.keys(data)) if (!CONFIG_KEYS.has(key)) errors.push(`process.yml: unknown key "${key}"`);
+  if (data.mode !== undefined && data.mode !== null) {
+    if (data.mode === 'team' || data.mode === 'solo') config.mode = data.mode;
+    else errors.push(`process.yml: mode must be team or solo, not "${data.mode}"`);
+  }
+  config.default = asList(data.default);
+  if (!config.default.length) errors.push('process.yml: a non-empty "default" list of approvers is required');
+  if (data.stages !== undefined && data.stages !== null) {
+    if (typeof data.stages !== 'object' || Array.isArray(data.stages)) errors.push('process.yml: "stages" must map stage names to approvers');
+    else {
+      for (const [stage, approvers] of Object.entries(data.stages)) {
+        if (!CONFIG_STAGES.has(stage)) errors.push(`process.yml: unknown stage "${stage}" (known: ${[...CONFIG_STAGES].join(', ')})`);
+        else if (!asList(approvers).length) errors.push(`process.yml: stage "${stage}" names no approvers`);
+        else config.stages[stage] = asList(approvers);
+      }
+    }
+  }
+  config.publicApi = asList(data['public-api']);
+  if (data['adoption-until'] !== undefined && data['adoption-until'] !== null) {
+    if (validDate(data['adoption-until'])) config.adoptionUntil = data['adoption-until'];
+    else errors.push(`process.yml: adoption-until must be a date (YYYY-MM-DD), not "${data['adoption-until']}"`);
+  }
+  return { config, errors };
+}
+
+// ---- artifacts --------------------------------------------------------------------------------
+
+const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
+
+// Front matter fields used by the process: id, status, withdrawn, derived-from (block list of
+// "target[#section]: hash"). Other fields (Phase 10's tests-commit, unlocks) are ignored here.
+export function parseArtifact(text) {
+  const match = FRONT_MATTER.exec(text);
+  if (!match) return { front: null, body: text, links: [], errors: [] };
+  const front = { id: null, status: null, withdrawn: null };
+  const links = [];
+  const errors = [];
+  let inLinks = false;
+  for (const raw of match[1].split(/\r?\n/)) {
+    if (!raw.trim() || raw.trim().startsWith('#')) continue;
+    const item = /^\s+-\s+([^\s:]+):(?:\s+(.*))?$/.exec(raw);
+    if (inLinks && item) {
+      const [target, section] = item[1].split('#');
+      links.push({ key: item[1], target, section: section || null, hash: (item[2] ?? '').trim() });
+      continue;
+    }
+    if (inLinks && /^\s+-/.test(raw)) { errors.push(`cannot read derived-from entry "${raw.trim()}" (expected "- id#section: hash")`); continue; }
+    const field = /^([a-z-]+):\s*(.*)$/.exec(raw);
+    inLinks = false;
+    if (!field) continue;
+    const [, key, value] = field;
+    if (key === 'id') front.id = value.trim() || null;
+    else if (key === 'status') front.status = value.trim() || null;
+    else if (key === 'withdrawn') front.withdrawn = value.trim() || null;
+    else if (key === 'derived-from') {
+      inLinks = true;
+      if (value.trim() && value.trim() !== '[]') errors.push('derived-from must be a block list ("  - id#section: hash")');
+    }
+  }
+  return { front, body: match[2], links, errors };
+}
+
+function walkMarkdown(root, rel) {
+  const out = [];
+  const abs = path.join(root, rel);
+  let entries;
+  try { entries = fs.readdirSync(abs, { withFileTypes: true }); } catch { return out; }
+  for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    const childRel = `${rel}/${e.name}`;
+    if (e.isDirectory()) out.push(...walkMarkdown(root, childRel));
+    else if (e.isFile() && e.name.endsWith('.md')) out.push(childRel);
+  }
+  return out;
+}
+
+// Lists the process artifact files under root as { file, stage }, reading through `read(file)`
+// (the working tree by default; rule 7 passes a reader for a git ref). `list(dir)` lists .md files.
+export function stageFiles(listDir, fileExists) {
+  const out = [];
+  for (const stage of STAGES) {
+    if (stage.file) { if (fileExists(stage.file)) out.push({ file: stage.file, stage }); }
+    else for (const file of listDir(stage.dir)) out.push({ file, stage });
+  }
+  return out;
+}
+
+export function loadArtifacts({ listDir, fileExists, read }) {
+  const artifacts = [];
+  const errors = [];
+  for (const { file, stage } of stageFiles(listDir, fileExists)) {
+    const parsed = parseArtifact(read(file));
+    if (stage.needsId && !parsed.front?.id) continue;
+    if (!parsed.front) { errors.push(`${file}: no front matter (a --- block with id and status)`); continue; }
+    for (const e of parsed.errors) errors.push(`${file}: ${e}`);
+    artifacts.push({ file, stage: stage.name, ...parsed.front, body: parsed.body, links: parsed.links });
+  }
+  return { artifacts, errors };
+}
+
+export function workingTree(root) {
+  return {
+    listDir: dir => walkMarkdown(root, dir),
+    fileExists: file => fs.existsSync(path.join(root, file)),
+    read: file => fs.readFileSync(path.join(root, file), 'utf8'),
+  };
+}
+
+// ---- sections and hashes ----------------------------------------------------------------------
+
+const normalize = text => text.replace(/\s+/g, ' ').trim();
+
+export function hashText(text) {
+  return crypto.createHash('sha256').update(normalize(text)).digest('hex').slice(0, 12);
+}
+
+export function slug(heading) {
+  return heading.toLowerCase().trim().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
+}
+
+const HEADING = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
+const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// The text of a section: a heading with that slug, a heading containing that ID, a table row whose
+// first cell is that ID, or a list item starting with that ID. Null when there is none.
+export function sectionText(body, section) {
+  if (!section) return body;
+  const lines = body.split(/\r?\n/);
+  const id = new RegExp(`(?<![\\w-])${escapeRe(section)}(?![\\w-])`);
+  const headings = lines.map((l, i) => ({ i, m: HEADING.exec(l) })).filter(h => h.m);
+  const heading = headings.find(h => slug(h.m[2]) === section.toLowerCase()) ?? headings.find(h => id.test(h.m[2]));
+  if (heading) {
+    const level = heading.m[1].length;
+    const end = headings.find(h => h.i > heading.i && h.m[1].length <= level)?.i ?? lines.length;
+    return lines.slice(heading.i, end).join('\n');
+  }
+  const row = lines.find(l => {
+    const t = l.trim();
+    return t.startsWith('|') && t.replace(/^\|/, '').split('|')[0].trim() === section;
+  });
+  if (row) return row;
+  const start = lines.findIndex(l => new RegExp(`^(\\s*)[-*+]\\s+${escapeRe(section)}(?![\\w-])`).test(l));
+  if (start !== -1) {
+    const indent = /^\s*/.exec(lines[start])[0].length;
+    let end = start + 1;
+    while (end < lines.length && lines[end].trim() && /^\s*/.exec(lines[end])[0].length > indent) end++;
+    return lines.slice(start, end).join('\n');
+  }
+  return null;
+}
+
+export function sectionHash(body, section) {
+  const text = sectionText(body, section);
+  return text === null ? null : hashText(text);
+}

@@ -1,12 +1,13 @@
 ---
 status: draft
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed]
 ---
 
 # Project development process (`rfr-process` plugin)
 
 A staged, iterative development process for products built with agents: a design phase owned by the stage approvers, then a delivery phase that agents run with review gates. Features move through the stages independently and any stage can be revisited. When an artifact changes, the artifacts derived from it must be dealt with in the same pull request.
 
-Approved by the project lead on 2026-10-31, after an adversarial review whose blocker and major findings are addressed below. The `status` field stays `draft` until slice 11a commits the first failing tests, because the trace check requires a citing test for every `test:` criterion of an approved spec. Phase 10 did the same.
+Approved by the project lead on 2026-10-31, after an adversarial review whose blocker and major findings are addressed below. The `status` field stays `draft` until every `test:` criterion has a citing test (the end of 11d), because `spec-trace` treats every uncited criterion of an approved spec as an error, and most criteria belong to later slices. The lock does not wait for that: `spec-lock` checks a draft spec's `tests-commit` the same way, so each slice's tests are fixed from the commit that adds them.
 
 ## Problem
 
@@ -205,7 +206,7 @@ An existing project has code and no process artifacts. Setting `adoption-until` 
 - `rfr-process` does not change `rfr-core`. It ships its own stage 8 template, a superset of `plan-feature`'s (the same front matter and criterion format, plus `derived-from` and the source of each criterion), so `spec-trace` and `spec-lock` work on it unchanged. A test confirms this.
 - Phase 10's checks and the sabotage step in `review-pr` cover stages 9 and 10.
 - The existing reviewer agents cover most reviews. One new agent, `persona-walkthrough`, is experimental, as R18 requires.
-- The plugin declares `rfr-core` in its manifest's `dependencies`. Claude Code 2.1.316's validator accepts the field; whether 2.1.288 (the minimum in PLAN decision 14) resolves it is confirmed before 11a starts. If it does not, the minimum version is raised for this plugin only, or the setup skill checks that `rfr-core` is installed and stops if not.
+- The plugin declares `rfr-core` in its manifest's `dependencies`. Claude Code's plugin documentation describes dependency resolution, including behaviour it dates to v2.1.242, so the minimum in PLAN decision 14 (2.1.288) supports it. A bare name resolves in the declaring plugin's own marketplace and is installed with it; a dependency that cannot be satisfied leaves the dependent plugin disabled.
 - Users can disable plugin hooks. Nothing in this design relies on a hook for enforcement.
 
 ## What ships as skills, and what as guidance
@@ -255,7 +256,7 @@ The repository's principle is that rules and skills earn their place with eviden
 
 ## APIs and assumptions
 
-- Confirmed: the plugin manifest validator in Claude Code 2.1.316 accepts a `dependencies` field. To confirm before 11a: that 2.1.288 resolves it (see "How it relates to `rfr-core`" for the fallback).
+- Confirmed: the plugin manifest validator in Claude Code 2.1.316 accepts a `dependencies` field, and the plugin documentation dates dependency behaviour to v2.1.242, before the 2.1.288 minimum.
 - Assumption: a GitHub Actions job can read pull request reviews and the merge actor with the default token. Confirm in 11a against this repository.
 - Assumption: section-level hashes are stable enough that wording fixes rarely reach unrelated artifacts. The `stale-upstream` eval and real use on the first adopting project test this.
 - Assumption: a persona walkthrough by an agent finds a useful share of the misalignments that real users find. The eval tests this; it never replaces the approver's review.
@@ -272,8 +273,8 @@ The repository's principle is that rules and skills earn their place with eviden
 - Plan or roadmap item: `PLAN.md`, Phase 11.
 - Pull requests: added as each is opened.
 - Slices:
-  - 11a: templates, front matter, `process.yml`, and `process-trace` with its tests; the plugin skeleton and `validate:plugins` (AC-1, AC-2, AC-3, AC-4, AC-8, AC-15, AC-17). Can start now.
-  - 11b: approvals job, merge-blocking hook, CODEOWNERS script, tier check, issue sync (AC-5, AC-6, AC-7, AC-9, AC-10, AC-11).
+  - 11a: templates, front matter, `process.yml`, `process-trace` and `process-relink` with their tests, the reusable workflow and its caller template; the plugin skeleton and `validate:plugins` (AC-1, AC-2, AC-3, AC-4, AC-8, AC-15, AC-17).
+  - 11b: approvals job, merge-blocking hook, CODEOWNERS script, tier check, issue sync, and assigning the `stale` issue to the approvers of the stages involved (AC-5, AC-6, AC-7, AC-9, AC-10, AC-11).
   - 11c: practice guide, profile templates, tutorial runners, persona walkthrough agent, bootstrap skill (AC-16, and the guide that AC-18 depends on).
   - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps.
 

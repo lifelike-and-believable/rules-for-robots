@@ -1,0 +1,12 @@
+# Copy to docs/product/process.yml (docs/specs/project-process.md in rules-for-robots).
+# Approvers are GitHub logins or teams (@org/team). A list means any one of them can approve.
+mode: solo                 # solo: approval is the approver merging the pull request; team: an approving review
+default: [your-login]      # required; used for every stage without its own entry
+# stages:
+#   personas: [ux-lead]
+#   design: [ux-lead]
+#   user-docs: [docs-lead, your-login]
+#   specs: [your-login]    # optional: adds a human gate to technical specifications
+#   release: [product-owner]
+# public-api: [src/api/**]          # paths a tier:trivial pull request may not change
+# adoption-until: 2027-03-31        # existing projects: unlinked artifacts only warn until this date

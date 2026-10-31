@@ -1,5 +1,16 @@
+# Copy to .github/workflows/rfr-process.yml in a repository that uses the rfr-process plugin.
+# Runs the process check on every pull request and on every push to the default branch
+# (docs/specs/project-process.md). Change `main` if your default branch has another name.
 name: process
-on: {}
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
 jobs:
   process:
-    uses: none
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-process.yml@main
+    permissions:
+      contents: read
+      issues: write
