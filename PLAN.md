@@ -308,10 +308,11 @@ A document-driven and test-driven hybrid. Acceptance criteria get IDs, a check s
 - **10c:** the paid eval round (including one-test-at-a-time against clusters), the decision to keep or drop the rules, and the review of whether a separate `test-author` agent is needed (the spec lists the signals).
 - **Exit criteria:** the check runs in `npm run verify`; the candidate has an eval result; the rule is promoted or dropped on that result.
 
-### Phase 11: Project development process (proposed)
-Spec: [docs/specs/project-process.md](docs/specs/project-process.md) (draft).
+### Phase 11: Project development process (planned)
+Spec: [docs/specs/project-process.md](docs/specs/project-process.md) (approved 2026-10-31; its `status` changes with the first failing tests in 11a, as Phase 10's did).
+Pull requests: #102 (spec).
 
-A staged, iterative process from concept to demos, delivered as a second plugin, `rfr-process`, that depends on `rfr-core`. The project lead approves the design phase (concept, requirements, personas, epics, stories, design and UX, user documentation); agents run the delivery phase (technical specification, unit tests, implementation, regression tests) and the lead reviews again at demos and tutorials. Artifacts link to their upstream artifacts, and a check reports downstream work as stale when an upstream artifact changes. Slices 11a to 11d are listed in the spec.
+A staged, iterative process from concept to demos, delivered as a second plugin, `rfr-process`, that depends on `rfr-core`. Per-stage approvers approve the design phase (concept, requirements, personas, epics, stories, design and UX, user documentation); agents run the delivery phase (technical specification, unit tests, implementation, regression tests), and approvers review again at demos and tutorials and at release. Approval is read from GitHub reviews or, in solo mode, from who merged. Artifacts link to sections of their upstream artifacts, and a stale link fails CI. Design-stage guidance ships as a practice guide until evals justify skills. Slices 11a to 11d are listed in the spec.
 
 ## 11. Milestones
 
@@ -357,4 +358,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 5. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.
 
 6. Phase 10: approve the spec-to-test traceability slice, then build 10a.
-7. Phase 11: review and approve the project development process spec, then build 11a.
+7. Phase 11: build 11a. 11d waits for Phase 10's eval round (10c).
