@@ -258,3 +258,38 @@ export function sectionHash(body, section) {
   const text = sectionText(body, section);
   return text === null ? null : hashText(text);
 }
+
+// ---- stages, gates, and approvers -------------------------------------------------------------
+
+// The stage a repository path belongs to, or null. A docs/specs file maps to 'specs' whatever its
+// content; callers decide whether it is a process artifact (it has an id).
+export function stageOf(file) {
+  const f = file.replace(/\\/g, '/').replace(/^\.\//, '');
+  for (const stage of STAGES) {
+    if (stage.file ? f === stage.file : f.startsWith(`${stage.dir}/`) && f.endsWith('.md')) return stage.name;
+  }
+  return null;
+}
+
+// Stages whose changes need an approver: every design and validation stage, and specs only when
+// process.yml names spec approvers (agents approve specs otherwise).
+export function gatedStages(config) {
+  return STAGE_ORDER.filter(s => s !== 'specs' || (config?.stages?.specs?.length ?? 0) > 0);
+}
+
+export function approversFor(stage, config) {
+  return config?.stages?.[stage] ?? config?.default ?? [];
+}
+
+export const isTeam = approver => /^@?[^/\s]+\/[^/\s]+$/.test(approver);
+export const login = approver => approver.replace(/^@/, '');
+
+export function hasId(text) {
+  return !!parseArtifact(text ?? '').front?.id;
+}
+
+export function readConfig(root) {
+  const file = path.join(root, CONFIG_PATH);
+  if (!fs.existsSync(file)) return null;
+  return parseProcessConfig(fs.readFileSync(file, 'utf8'));
+}

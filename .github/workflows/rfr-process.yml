@@ -6,7 +6,15 @@ name: rules-for-robots process check
 # pushes to the default branch. On pull requests the check also compares with the base, so an
 # artifact withdrawn without a reason fails (rule 7). On the default branch a failure opens an
 # issue labelled `stale`, or comments on the open one, because two pull requests that each pass
-# can leave the branch stale once both merge.
+# can leave the branch stale once both merge; the issue is assigned to the approvers of the stages
+# involved. The other jobs:
+#   approvals   team mode: an approving review from each touched stage's approvers on the head;
+#               solo mode: after a merge, that the merge was by an approver (opens an issue if not).
+#   tier        pull requests carry one tier: label, and trivial or fix pull requests stay out of
+#               the folders their tier may not change.
+#   codeowners  the rfr-process block in .github/CODEOWNERS matches process.yml (team mode).
+#   sync        after a merge, personas, epics, and stories are mirrored to issues.
+# Every job passes without doing anything when the repository has no docs/product/process.yml.
 on:
   workflow_call:
     inputs:
@@ -56,9 +64,100 @@ jobs:
             echo '```'
           } > "$RUNNER_TEMP/stale-issue.md"
           gh label create stale --color FBCA04 --description "Process artifacts with stale links" 2>/dev/null || true
+          assignees=$(node .rfr/checks/process-trace.mjs . --assignees || true)
           number=$(gh issue list --label stale --state open --json number --jq '.[0].number')
           if [ -n "$number" ]; then
             gh issue comment "$number" --body-file "$RUNNER_TEMP/stale-issue.md"
           else
-            gh issue create --title "Stale process artifacts on $REF_NAME" --label stale --body-file "$RUNNER_TEMP/stale-issue.md"
+            number=$(gh issue create --title "Stale process artifacts on $REF_NAME" --label stale --body-file "$RUNNER_TEMP/stale-issue.md" | grep -o '[0-9]*$')
           fi
+          if [ -n "$assignees" ] && [ -n "$number" ]; then
+            gh issue edit "$number" --add-assignee "$assignees" || echo "Could not assign $assignees (they need access to the repository)."
+          fi
+
+  approvals:
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Approvals
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node .rfr/checks/ci/process-approvals.mjs .
+
+  tier:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Size tier
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node .rfr/checks/ci/process-tier.mjs .
+
+  codeowners:
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: CODEOWNERS block
+        run: node .rfr/checks/process-codeowners.mjs . --check
+
+  sync:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Issue sync
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node .rfr/checks/ci/process-sync.mjs .

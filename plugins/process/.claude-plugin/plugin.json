@@ -1,13 +1,21 @@
 {
   "name": "rfr-process",
-  "version": "0.1.0",
-  "description": "A staged project development process for agent-built products: artifact templates, links between artifacts, and a CI check that fails on stale or broken links.",
+  "version": "0.2.0",
+  "description": "A staged project development process for agent-built products: artifact templates, links between artifacts, CI checks for stale links, approvals, size tiers, and CODEOWNERS, issue sync, and a hook that keeps agents from merging gated changes.",
   "author": {
     "name": "Lifelike & Believable Animation Design"
   },
   "homepage": "https://github.com/lifelike-and-believable/rules-for-robots",
   "repository": "https://github.com/lifelike-and-believable/rules-for-robots",
   "license": "MIT",
-  "keywords": ["process", "requirements", "personas", "user-stories", "documentation"],
-  "dependencies": ["rfr-core"]
+  "keywords": [
+    "process",
+    "requirements",
+    "personas",
+    "user-stories",
+    "documentation"
+  ],
+  "dependencies": [
+    "rfr-core"
+  ]
 }

@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449]
 ---
 
 # Project development process (`rfr-process` plugin)
@@ -274,7 +274,7 @@ The repository's principle is that rules and skills earn their place with eviden
 - Pull requests: added as each is opened.
 - Slices:
   - 11a: templates, front matter, `process.yml`, `process-trace` and `process-relink` with their tests, the reusable workflow and its caller template; the plugin skeleton and `validate:plugins` (AC-1, AC-2, AC-3, AC-4, AC-8, AC-15, AC-17).
-  - 11b: approvals job, merge-blocking hook, CODEOWNERS script, tier check, issue sync, and assigning the `stale` issue to the approvers of the stages involved (AC-5, AC-6, AC-7, AC-9, AC-10, AC-11).
+  - 11b: approvals job, merge-blocking hook, CODEOWNERS script, tier check, issue sync, and assigning the `stale` issue to the approvers of the stages involved (AC-5, AC-6, AC-7, AC-9, AC-10, AC-11). The scripts live in `checks/` and run from the reusable workflow or an `.rfr` checkout, like the 11a check; the hook, which runs from the installed plugin, gets a copy of `checks/lib/process.mjs` made by `npm run build`.
   - 11c: practice guide, profile templates, tutorial runners, persona walkthrough agent, bootstrap skill (AC-16, and the guide that AC-18 depends on).
   - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps.
 

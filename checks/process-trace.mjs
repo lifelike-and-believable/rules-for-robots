@@ -10,13 +10,14 @@
 //      section in the spec's derived-from;
 //   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry.
 // Staleness is direct only. Before process.yml's adoption-until date, problems with artifacts that
-// have no links yet are warnings. --status lists personas, epics, and stories instead.
-// Usage: node checks/process-trace.mjs [project root] [--base <ref>] [--status] [--json]
+// have no links yet are warnings. --status lists personas, epics, and stories instead;
+// --assignees prints the approvers (logins) of the stages with failing artifacts.
+// Usage: node checks/process-trace.mjs [project root] [--base <ref>] [--status | --assignees] [--json]
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, STAGE_ORDER, loadArtifacts, parseProcessConfig, sectionHash, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, parseProcessConfig, sectionHash, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -86,8 +87,10 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     else seen.set(a.id, a.file);
   }
 
+  const involved = new Set();
   for (const a of artifacts) {
-    const problems = adopting && a.links.length === 0 ? warnings : errors;
+    const soft = adopting && a.links.length === 0;
+    const problems = { push: (...msgs) => { (soft ? warnings : errors).push(...msgs); if (!soft && a.id) involved.add(a.id); } };
     const name = a.id ?? a.file;
     if (!a.id) { errors.push(`${a.file}: no id`); continue; }
     if (!a.status) problems.push(`${name}: no status`);
@@ -151,12 +154,13 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
       for (const a of artifacts) {
         if (a.status === 'draft' && !a.withdrawn && isApproved(before.get(a.id))) {
           errors.push(`${a.id}: was approved at ${base} and is now draft without a withdrawn entry (a reason and an issue)`);
+          involved.add(a.id);
         }
       }
     }
   }
 
-  return { errors, warnings, checked: artifacts.length };
+  return { errors, warnings, checked: artifacts.length, involved: [...involved].sort() };
 }
 
 // One row per persona, epic, and story: its status, the furthest stage that approved work below
@@ -182,14 +186,29 @@ export function processStatus(root) {
   return rows.sort((p, q) => STAGE_ORDER.indexOf(p.stage) - STAGE_ORDER.indexOf(q.stage) || p.id.localeCompare(q.id));
 }
 
+// Logins to assign the stale issue to: the approvers of each stage with a failing artifact.
+// Teams are left out, because issues can only be assigned to people.
+export function staleAssignees(root, opts) {
+  const { config, artifacts } = load(root);
+  if (!config) return [];
+  const { involved } = runProcessTrace(root, opts);
+  const stages = new Set(artifacts.filter(a => involved.includes(a.id)).map(a => a.stage));
+  const logins = new Set();
+  for (const stage of stages) for (const a of approversFor(stage, config)) if (!isTeam(a)) logins.add(login(a));
+  return [...logins].sort();
+}
+
 function main(argv) {
   const args = [...argv];
   const flag = name => { const i = args.indexOf(name); if (i === -1) return false; args.splice(i, 1); return true; };
   const option = name => { const i = args.indexOf(name); if (i === -1) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
   const status = flag('--status');
+  const assignees = flag('--assignees');
   const json = flag('--json');
   const base = option('--base');
   const root = path.resolve(args[0] ?? '.');
+
+  if (assignees) { console.log(staleAssignees(root).join(',')); return; }
 
   if (status) {
     const rows = processStatus(root);
