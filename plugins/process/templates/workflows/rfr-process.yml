@@ -1,10 +1,14 @@
-# Copy to .github/workflows/rfr-process.yml in a repository that uses the rfr-process plugin.
-# Runs the process check on every pull request and on every push to the default branch
-# (docs/specs/project-process.md). Change `main` if your default branch has another name.
+# Copy to .github/workflows/rfr-process.yml in a repository that uses the rfr-process plugin
+# (docs/specs/project-process.md in rules-for-robots). Runs the process check, approvals, tier,
+# CODEOWNERS, and issue sync jobs. Change `main` if your default branch has another name. In team
+# mode, make the `process / approvals` and `process / tier` checks required in branch protection.
 name: process
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, dismissed]
   push:
     branches: [main]
 
@@ -13,4 +17,5 @@ jobs:
     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-process.yml@main
     permissions:
       contents: read
+      pull-requests: read
       issues: write

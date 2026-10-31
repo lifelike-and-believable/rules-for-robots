@@ -358,4 +358,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 5. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.
 
 6. Phase 10: approve the spec-to-test traceability slice, then build 10a.
-7. Phase 11: 11a in progress; then 11b. 11d waits for Phase 10's eval round (10c).
+7. Phase 11: 11a done (#103); 11b in progress; then 11c. 11d waits for Phase 10's eval round (10c).
