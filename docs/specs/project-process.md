@@ -37,7 +37,7 @@ The project lead's experience with artist-facing tools is that misalignment betw
 | 10 | Implementation | Code that makes the locked tests pass | Delivery | Agents and CI |
 | 11 | Automated regression tests | Acceptance and end-to-end tests drawn from stories and docs, promoted into the regression suite | Delivery | Agents and CI |
 | 12 | Demos and tutorials | Tutorials that follow the user documentation step by step, and demo content | Validation | Lead reviews (the main expectation check) |
-| 13 | Release and feedback | Release notes; feedback from real use filed against the stage it affects | Validation | Lead decides where feedback goes |
+| 13 | Release and feedback | Release notes drawn from the user documentation; feedback from real use filed against the artifact it affects | Validation | Lead approves the release and decides where feedback goes |
 
 Stages 8 to 11 can overlap. In particular, acceptance tests (stage 11) can be drafted from stories and docs as soon as stage 7 is approved; stage 11 is where they become part of the regression suite.
 
@@ -103,9 +103,32 @@ For design-phase artifacts, re-approval is the lead's, so the lead reviews that 
 
 Re-approving a downstream artifact after review records the new hashes. A skill command does this so that a typo upstream costs one confirmation, not a rewrite (to confirm: hash the whole body, or only sections marked as normative).
 
+### Approvers per stage
+
+"Lead" in this spec means the approver configured for that stage. A project file, `docs/product/process.yml`, names the approvers for each gated stage as GitHub users or teams. A solo project names one person for every stage; a team can name, for example, a UX lead for personas and design, a documentation lead for user documentation, and a product owner for releases. Stages with no entry fall back to a `default` approver, and the file must have one.
+
+```yaml
+default: [lead-login]
+stages:
+  personas: [ux-lead-login]
+  design: [ux-lead-login]
+  user-docs: [docs-lead-login, lead-login]
+  release: [product-owner-login]
+```
+
+A list means any one of the people listed can approve. Delivery-phase stages can name approvers too, which turns their "informed or consulted" into a gate for that project.
+
 ### Approval records
 
-Design-phase approvals are made by the lead and recorded as `approved-by` and `approved-on` in front matter, through a pull request the lead reviews. CODEOWNERS on the design-phase folders makes the lead's review required. A hook stops an agent from setting `status: approved` on a design-phase artifact itself.
+Approvals are recorded as `approved-by` and `approved-on` in front matter, through a pull request the stage's approver reviews. The build renders CODEOWNERS entries for each stage's folder from `process.yml`, so that approver's review is required. The process check fails when `approved-by` names someone who is not an approver for that stage. A hook stops an agent from setting `status: approved` on any artifact in a gated stage.
+
+## Release and feedback
+
+Release is a stage in this plugin. Its skill uses `rfr-core`'s `release` skill for the version, changelog, and tag, and adds the process checks around it:
+
+- **Readiness.** Every story in the release has an approved demo and tutorial, and nothing it depends on is stale or withdrawn. The skill lists anything that is not ready, and the release approver decides whether to hold the release or move those stories out of it.
+- **Release notes** are written from the user documentation and the stories, in the personas' terms, not from commit messages.
+- **Feedback intake.** Feedback from real use is filed as an issue with a `feedback` label. A triage skill links it to the artifact it affects (a persona, a story, the docs, or a spec), proposes the stage to return to, and leaves the decision to that stage's approver. Feedback that changes an approved artifact then goes through the normal staleness rules.
 
 ## Tailoring by project type
 
@@ -147,9 +170,12 @@ New profiles follow the existing profile pattern in `build/`.
 | AC-6 | A skill proposes a size tier with a reason, and the Fix and Trivial tiers skip the design-phase stages. | Smoke case. |
 | AC-7 | Each profile ships persona starters and templates for user documentation and tutorials. | test: the build renders them for each profile; `npm run build:check` passes. |
 | AC-8 | A status command lists each persona, epic, and story with its stage, status, and stale or withdrawn artifacts. | test: fixture repository with features at different stages. |
-| AC-11 | Each persona, epic, and story file has a GitHub issue, and the issue's `stage:` label matches the file's stage; a skill creates or updates the issue when the file is created or changes stage. | Smoke case; the issue link is checked by the process check (test: missing link fails). |
 | AC-9 | The persona walkthrough reports, for a planted mismatch between stories and user docs, the persona and the passage where the expectation breaks. | Eval case `persona-docs-mismatch`. |
 | AC-10 | Tutorials in the `web-app` and `unreal-plugin` profiles can be run as tests, and a tutorial whose steps no longer match the product fails. | test: a fixture tutorial passes, then fails after a planted UI change. |
+| AC-11 | Each persona, epic, and story file has a GitHub issue, and the issue's `stage:` label matches the file's stage; a skill creates or updates the issue when the file is created or changes stage. | Smoke case; the issue link is checked by the process check (test: missing link fails). |
+| AC-12 | `process.yml` names approvers per stage with a required default. The process check fails when an approval names someone who is not an approver for that stage, and the build renders matching CODEOWNERS entries. | test: valid file, missing default, unknown stage, wrong approver, and the rendered CODEOWNERS. |
+| AC-13 | The release skill stops and lists the stories that lack an approved demo or depend on a stale or withdrawn artifact, and writes release notes from the user documentation. | test: readiness check on a fixture repository; smoke case for the notes. |
+| AC-14 | The feedback triage skill links a feedback issue to the artifact it affects and proposes the stage to return to, without changing the artifact. | Smoke case. |
 
 ## Scope
 
@@ -175,9 +201,9 @@ New profiles follow the existing profile pattern in `build/`.
 - Pull requests: added as each is opened.
 - Slices:
   - 11a: plugin skeleton, artifact templates, front matter and links, `process-trace` check (AC-1, AC-3, AC-4, AC-8, AC-11).
-  - 11b: design-phase skills, the approval hook, CODEOWNERS guidance, size tiers (AC-2, AC-5, AC-6).
+  - 11b: design-phase skills, per-stage approvers and rendered CODEOWNERS, the approval hook, size tiers (AC-2, AC-5, AC-6, AC-12).
   - 11c: profile templates, runnable tutorials, the persona walkthrough agent, eval cases and a round (AC-7, AC-9, AC-10).
-  - 11d: delivery-phase skills that hand over to `plan-feature` and Phase 10, and the practice guide.
+  - 11d: delivery-phase skills that hand over to `plan-feature` and Phase 10, the release and feedback skills, and the practice guide (AC-13, AC-14).
 
 ## Eval round (11c)
 
@@ -190,5 +216,4 @@ Keep a stage skill or agent if it raises the pass rate on its case and lowers it
 
 ## Open questions
 
-1. Does Release and Feedback belong in this plugin, or in the existing `release` skill?
-2. Is one lead gate per stage right for a team, or should a team be able to name a different approver per stage (for example, a UX lead for design)?
+1. Should the staleness hash cover an artifact's whole body, or only the sections marked as normative? Whole body is simpler and stricter; normative sections avoid re-approvals for wording fixes. This can be settled while building 11a.
