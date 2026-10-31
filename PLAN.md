@@ -310,7 +310,7 @@ A document-driven and test-driven hybrid. Acceptance criteria get IDs, a check s
 
 ### Phase 11: Project development process (planned)
 Spec: [docs/specs/project-process.md](docs/specs/project-process.md) (approved 2026-10-31; its `status` field changes once every `test:` criterion has a citing test, at the end of 11d).
-Pull requests: #102 (spec), #103 (11a).
+Pull requests: #102 (spec), #103 (11a), #104 (11b).
 
 A staged, iterative process from concept to demos, delivered as a second plugin, `rfr-process`, that depends on `rfr-core`. Per-stage approvers approve the design phase (concept, requirements, personas, epics, stories, design and UX, user documentation); agents run the delivery phase (technical specification, unit tests, implementation, regression tests), and approvers review again at demos and tutorials and at release. Approval is read from GitHub reviews or, in solo mode, from who merged. Artifacts link to sections of their upstream artifacts, and a stale link fails CI. Design-stage guidance ships as a practice guide until evals justify skills. Slices 11a to 11d are listed in the spec.
 
