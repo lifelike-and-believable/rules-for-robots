@@ -1,0 +1,4 @@
+name: rules-for-robots process check
+on:
+  workflow_call: {}
+jobs: {}
