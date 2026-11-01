@@ -176,7 +176,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
 
     if (a.stage === 'user-docs') {
       const { designs, missing } = undefinedNames(a, byId, artifacts);
-      for (const n of missing) warnings.push(`${name}: **${n}** is not named in its design (${designs.join(', ')}); use the design's name, or add it to the design`);
+      for (const n of missing) warnings.push(`${name}: **${n}** is not named in its design (${designs.join(', ')}); use the design's name, add it to the design, or, if it is emphasis and not a name, remove the bold`);
     }
 
     if (a.stage === 'specs') {

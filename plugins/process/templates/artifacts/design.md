@@ -21,8 +21,10 @@ derived-from:
 ## Mock-ups
 
 <!-- Required for every screen, panel, menu, or dialog this design adds or changes. Wireframes are
-enough; they do not need to be polished. Put images in docs/design/<feature>/ or link to the design
-tool (Figma, Penpot, Excalidraw), and say which state each one shows. The approver and the persona
+enough; they do not need to be polished. Put images in docs/design/<feature>/ with their editable source
+beside them (an HTML file rendered to PNG, say), or link to the design tool (Figma, Penpot,
+Excalidraw), and say which state each one shows. For a third-party interface, the mock-ups settle
+wording and states; say which of the tool's behaviours the design assumes. The approver and the persona
 walkthrough judge the design from these, so a control named in the text appears in a mock-up. -->
 
 | Screen or state | Mock-up | Notes |
