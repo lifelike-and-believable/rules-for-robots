@@ -33,7 +33,7 @@ function baseDefs() {
     },
     'story-retarget-batch': {
       path: 'docs/product/stories/retarget/batch.md', links: ['epic-retarget', 'persona-animator#goals'],
-      body: '# Batch retarget\n\nAs an animator, I want to retarget a batch of clips so that I ship shots faster.\n',
+      body: '# Batch retarget\n\nAs an animator, I want to retarget a batch of clips so that I ship shots faster.\n\n## Acceptance criteria\n\n- The clips show the new skeleton.\n',
     },
     'design-retarget': {
       path: 'docs/design/retarget.md', links: ['story-retarget-batch'],
@@ -249,7 +249,7 @@ test('project-process#AC-2: renaming a file keeps its links, because ids are sta
 test('project-process#AC-2: links are many-to-many', () => {
   const { root } = project({
     change: d => {
-      d['story-retarget-preview'] = { path: 'docs/product/stories/retarget/preview.md', links: ['epic-retarget', 'persona-animator'], body: '# Preview\n\nAs an animator, I want a preview.\n' };
+      d['story-retarget-preview'] = { path: 'docs/product/stories/retarget/preview.md', links: ['epic-retarget', 'persona-animator'], body: '# Preview\n\nAs an animator, I want a preview so that I catch mistakes early.\n\n## Acceptance criteria\n\n- A preview plays before applying.\n' };
       d['design-retarget'].links.push('story-retarget-preview');
       d['docs-retarget'].links.push('story-retarget-preview');
     },

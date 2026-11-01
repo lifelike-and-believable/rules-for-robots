@@ -1,6 +1,8 @@
 ---
 status: draft
 tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88]
+unlocks:
+  - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
 ---
 
 # Project development process (`rfr-process` plugin)
@@ -250,7 +252,7 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-18 | Each shipped skill and agent has at least one eval case; design-stage guidance that has none ships only in the practice guide. | command: a check that every skill and agent in `plugins/process/` is named by an eval case. |
 | AC-19 | The `persona-walkthrough` agent works as a per-persona cognitive walkthrough: at each step it asks where that persona would fail and why, ranks its findings by severity while reporting all of them, and for a `runner: web` tutorial runs `tutorial-run` first and reports mismatches with the product as facts, separately from predicted confusion. | Eval case `persona-docs-mismatch` (11d), and a smoke case for the tutorial pass. |
 | AC-20 | `tutorial-run --record <dir>` saves a screenshot after each step and a video of each web tutorial, and a screenshot of the page at a failing step, so a passing run is the stage 12 demo. | test: a fixture run writes one screenshot per step and one video; a failing run writes the failure screenshot. |
-| AC-21 | Link rule 8: a story says who it is for, what they want, and why (`As <persona>, I want ... so that ...`), the persona it names is one it links to, and it has an "Acceptance criteria" section with at least one item. Judging whether a story is good stays with the reviewers. | test: missing role, unlinked persona, missing benefit, and missing or empty criteria cases, and a passing story. |
+| AC-21 | Link rule 8: a story says who it is for, what they want, and why (`As <persona>, I want ... so that ...`), the persona it names is one it links to, and it has an "Acceptance criteria" section with at least one item. An approved story that breaks the rule fails; a draft gets a warning, because drafts are written in steps. Judging whether a story is good stays with the reviewers. | test: missing role, unlinked persona, missing benefit, and missing or empty criteria cases, and a passing story. |
 | AC-22 | When `process.yml` names a `project` and the workflow has a `RFR_PROJECT_TOKEN` secret, the issue sync adds each persona, epic, and story issue to that GitHub Project and sets its Stage field from the file; without them it skips the board and says so. | test: GraphQL stubbed for add, update, a Stage option missing from the board, and no token. |
 | AC-23 | The plugin ships a Vale style built from this repository's writing rules and a vocabulary built from the project's persona and glossary terms, and the reusable workflow has an advisory `docs-lint` job that runs Vale on `docs/user/`, `docs/tutorials/`, and release notes. | test: the vocabulary generator and the style's rules on fixture text; command: the job runs Vale on a fixture project. |
 | AC-24 | The `web-app` and `static-site` profiles ship a Stryker configuration and an advisory `mutation` job: incremental on `tier:story` and `tier:epic` pull requests, a full run when tests change, and the mutation score in the job summary. | test: the configuration and job structure; command: a Stryker run on the tutorial fixture's test project. |
@@ -260,7 +262,7 @@ The repository's principle is that rules and skills earn their place with eviden
 ## Scope
 
 - In: `plugins/process/` (setup, relink, CODEOWNERS, status, release check and notes, triage, and bootstrap skills; the merge-blocking and status-warning hooks; per-profile templates; the `persona-walkthrough` agent); `checks/process-trace.mjs`, the approvals, tier, and sync scripts, and their tests; reusable workflows that adopting repos call, like `rfr-guards.yml`; the `validate:plugins` script extended to the new plugin; `plugins/process/GUIDE.md`; eval cases.
-- In (amendment, proposed 2026-11-01): the tutorial recorder, link rule 8, the Project board sync, the Vale style and `docs-lint` job, the Stryker configuration and `mutation` job, the Unreal fixture and Tier 2 additions, and the recommended-tools guide.
+- In (amendment, approved 2026-11-01): the tutorial recorder, link rule 8, the Project board sync, the Vale style and `docs-lint` job, the Stryker configuration and `mutation` job, the Unreal fixture and Tier 2 additions, and the recommended-tools guide.
 - Out: changes to `rfr-core`; trackers other than GitHub; a MUST rule before evals support one; automating the approvers' decisions; design-stage skills before an eval shows they beat the guide.
 
 ## APIs and assumptions
@@ -304,7 +306,7 @@ Arms: `rules` and `rules+process`, both models, 3 runs, as in Phase 10. Cases ar
 
 Keep a skill or agent if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. Otherwise its guidance stays in the practice guide.
 
-## Amendment: research findings (proposed 2026-11-01)
+## Amendment: research findings (approved 2026-11-01)
 
 Research into third-party skills and tools for each stage is in [docs/research/notes/third_party_tools_for_process.md](../research/notes/third_party_tools_for_process.md). Its main findings, and what this amendment does with each:
 
