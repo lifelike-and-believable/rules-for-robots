@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Retarget</title></head>
+<body>
+  <nav><a href="/settings.html">Settings</a></nav>
+  <h1>Retarget clips</h1>
+  <form id="f">
+    <label for="clip">Clip name</label>
+    <input id="clip" name="clip">
+    <label for="target">Target skeleton</label>
+    <select id="target"><option>Mannequin</option><option>Quadruped</option></select>
+    <label><input type="checkbox" id="keep"> Keep root motion</label>
+    <button type="submit">Retarget</button>
+  </form>
+  <p id="out" role="status"></p>
+  <script>
+    document.getElementById('f').addEventListener('submit', e => {
+      e.preventDefault();
+      const clip = document.getElementById('clip').value;
+      const target = document.getElementById('target').value;
+      const keep = document.getElementById('keep').checked ? ' with root motion' : '';
+      document.getElementById('out').textContent = `Retargeted ${clip} to ${target}${keep}`;
+    });
+  </script>
+</body>
+</html>
