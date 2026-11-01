@@ -52,7 +52,7 @@ To record hashes, run this from the project root, with `.rfr` as a checkout of r
 node .rfr/checks/process-relink.mjs <id> [<id> ...]
 ```
 
-Recording hashes is not approval. The pull request that carries them is approved like any other change to that stage.
+Recording hashes is not approval. The pull request that carries them is approved like any other change to that stage (see "How an artifact becomes approved" below).
 
 ## The check
 
@@ -72,6 +72,22 @@ Recording hashes is not approval. The pull request that carries them is approved
 Existing projects can set `adoption-until: <date>` in `process.yml`. Until that date, problems with artifacts that have no links yet are warnings.
 
 ## Approvals
+
+### How an artifact becomes approved
+
+An artifact is approved by the pull request that says so. That pull request sets the artifact's `status: approved` and records its link hashes (`node .rfr/checks/process-relink.mjs <id>`), and the stage's approver approves the pull request: in team mode with an approving review, in solo mode by merging it. Merging a pull request whose artifacts still say `draft` approves nothing: they stay drafts, and nothing can build on them.
+
+So a design-stage pull request usually goes through two steps in the same pull request:
+1. Open it with the artifacts as `draft` while the approver reads and asks for changes.
+2. When the approver says they are ready, set them to `approved`, record the hashes, and push. The approver then merges (or approves) that commit.
+
+An agent writing the pull request may set `status: approved` in it; that is a proposal, and GitHub's review or merge is the approval.
+
+### When an agent merges for the approver
+
+In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. The plugin's `guard-merge` hook enforces this when the plugin is installed; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
+
+### Who approved, according to GitHub
 
 Who approved a change is read from GitHub, never from front matter.
 

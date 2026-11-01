@@ -125,7 +125,7 @@ Any stage can be revisited. When an upstream section changes, every approved art
 - **Re-record** its hashes unchanged, when the change does not affect it.
 - **Withdraw** it to `draft` with `withdrawn: <reason> (#<issue>)`. Anything approved that links to it then fails too, so the gap is visible all the way down.
 
-Recording hashes is not approval: the pull request that carries them is approved by the stage's approver like any other change. Run `node .rfr/checks/process-trace.mjs --status` to see how far each persona, epic, and story has reached and what needs attention.
+Recording hashes is not approval: the pull request that carries them is approved by the stage's approver like any other change. An artifact becomes approved only through a pull request that sets `status: approved` and records its hashes; merging a pull request whose artifacts still say `draft` leaves them drafts (see the README's "How an artifact becomes approved"). Run `node .rfr/checks/process-trace.mjs --status` to see how far each persona, epic, and story has reached and what needs attention.
 
 ## Adopting on an existing project
 
