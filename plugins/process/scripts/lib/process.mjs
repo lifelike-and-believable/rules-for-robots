@@ -24,7 +24,7 @@ export const STAGES = [
 ];
 export const STAGE_ORDER = STAGES.map(s => s.name);
 const CONFIG_STAGES = new Set([...STAGE_ORDER, 'release']);
-const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'public-api', 'adoption-until']);
+const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'public-api', 'adoption-until', 'project']);
 export const STATUSES = new Set(['draft', 'approved', 'implemented']);
 
 // ---- YAML subset ------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ function validDate(s) {
 
 export function parseProcessConfig(text) {
   const { data, errors } = parseYamlSubset(text);
-  const config = { mode: 'team', default: [], stages: {}, publicApi: [], adoptionUntil: null };
+  const config = { mode: 'team', default: [], stages: {}, publicApi: [], adoptionUntil: null, project: null };
   for (const key of Object.keys(data)) if (!CONFIG_KEYS.has(key)) errors.push(`process.yml: unknown key "${key}"`);
   if (data.mode !== undefined && data.mode !== null) {
     if (data.mode === 'team' || data.mode === 'solo') config.mode = data.mode;
@@ -123,6 +123,11 @@ export function parseProcessConfig(text) {
     }
   }
   config.publicApi = asList(data['public-api']);
+  if (data.project !== undefined && data.project !== null) {
+    const m = /^https:\/\/github\.com\/(orgs|users)\/([^/\s]+)\/projects\/(\d+)\/?$/.exec(String(data.project));
+    if (m) config.project = { owner: m[2], kind: m[1] === 'orgs' ? 'organization' : 'user', number: Number(m[3]) };
+    else errors.push(`process.yml: project must be a GitHub Project URL like https://github.com/orgs/<org>/projects/<number>, not "${data.project}"`);
+  }
   if (data['adoption-until'] !== undefined && data['adoption-until'] !== null) {
     if (validDate(data['adoption-until'])) config.adoptionUntil = data['adoption-until'];
     else errors.push(`process.yml: adoption-until must be a date (YYYY-MM-DD), not "${data['adoption-until']}"`);

@@ -4,12 +4,18 @@
 // `stage:<stage>`, with stories attached as sub-issues of their epic when created. The file always
 // wins: title, body, stage label, and open state are rewritten from it, other labels are kept, and
 // the issue of a deleted artifact is closed. Issues are matched by a marker comment in the body.
+// With `project` in process.yml and an RFR_PROJECT_TOKEN (a token that can write to Projects; the
+// workflow token cannot), each issue is also added to that GitHub Project and its Stage field set:
+// personas to Personas, epics and stories to the furthest stage approved work below them has
+// reached (or their own stage). Missing Stage options are reported and those items left alone.
 // Writes are capped per run, short rate limits are waited out, and a long one stops the run; the
 // next run picks up where this one stopped, because it only writes what still differs.
-// Environment: GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_API_URL (optional), SYNC_MAX_WRITES (optional).
+// Environment: GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_API_URL (optional), SYNC_MAX_WRITES (optional),
+// RFR_PROJECT_TOKEN (optional).
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadArtifacts, readConfig, workingTree } from '../lib/process.mjs';
+import { STAGE_ORDER, loadArtifacts, readConfig, workingTree } from '../lib/process.mjs';
+import { processStatus } from '../process-trace.mjs';
 
 const SYNCED = { personas: 'Persona', epics: 'Epic', stories: 'Story' };
 const MARKER = /<!-- rfr-process:([^\s>]+) -->/;
@@ -32,8 +38,99 @@ function body(a) {
 
 class RateLimited extends Error {}
 
+const STAGE_TITLES = {
+  concept: 'Concept', requirements: 'Requirements', personas: 'Personas', epics: 'Epics', stories: 'Stories',
+  design: 'Design', 'user-docs': 'User docs', specs: 'Specs', tutorials: 'Tutorials',
+};
+
+const Q_PROJECT = kind => `query($login: String!, $number: Int!) {
+  ${kind}(login: $login) {
+    projectV2(number: $number) {
+      id
+      fields(first: 50) { nodes {
+        ... on ProjectV2FieldCommon { id name }
+        ... on ProjectV2SingleSelectField { id name options { id name } }
+      } }
+    }
+  }
+}`;
+const Q_ITEMS = `query($id: ID!, $after: String) {
+  node(id: $id) { ... on ProjectV2 {
+    items(first: 100, after: $after) {
+      pageInfo { hasNextPage endCursor }
+      nodes { id content { ... on Issue { id } } fieldValueByName(name: "Stage") { ... on ProjectV2ItemFieldSingleSelectValue { optionId } } }
+    }
+  } }
+}`;
+const M_ADD = `mutation($projectId: ID!, $contentId: ID!) {
+  addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) { item { id } }
+}`;
+const M_SET = `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+  updateProjectV2ItemFieldValue(input: { projectId: $projectId, itemId: $itemId, fieldId: $fieldId, value: { singleSelectOptionId: $optionId } }) { projectV2Item { id } }
+}`;
+
+// The board column for each synced artifact: personas stay in Personas; epics and stories go to the
+// furthest stage that approved work at or below them has reached.
+function boardStages(root) {
+  const out = new Map();
+  for (const row of processStatus(root)) {
+    if (row.stage === 'personas') { out.set(row.id, 'personas'); continue; }
+    const own = STAGE_ORDER.indexOf(row.stage);
+    const reached = row.reached ? STAGE_ORDER.indexOf(row.reached) : -1;
+    out.set(row.id, STAGE_ORDER[Math.max(own, reached)]);
+  }
+  return out;
+}
+
+async function syncBoard({ root, fetch, api, projectToken, project, issues, log }) {
+  const graphql = async (query, variables) => {
+    const response = await fetch(`${api}/graphql`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${projectToken}`, accept: 'application/vnd.github+json', 'content-type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    const json = await response.json().catch(() => null);
+    if (!response.ok || json?.errors?.length) throw new Error(`GraphQL: ${json?.errors?.map(e => e.message).join('; ') ?? `HTTP ${response.status}`}`);
+    return json.data;
+  };
+  const result = { added: 0, moved: 0 };
+  const found = await graphql(Q_PROJECT(project.kind), { login: project.owner, number: project.number });
+  const board = found?.[project.kind]?.projectV2;
+  if (!board) { log(`project board skipped: ${project.kind} ${project.owner} has no project ${project.number} this token can see`); return result; }
+  const field = board.fields.nodes.find(f => f?.name?.toLowerCase() === 'stage' && Array.isArray(f.options));
+  if (!field) { log('project board skipped: the project has no single-select field named Stage'); return result; }
+
+  const items = new Map(); // content node id -> { id, optionId }
+  for (let after = null, more = true; more;) {
+    const page = (await graphql(Q_ITEMS, { id: board.id, after })).node.items;
+    for (const n of page.nodes) if (n.content?.id) items.set(n.content.id, { id: n.id, optionId: n.fieldValueByName?.optionId ?? null });
+    more = page.pageInfo.hasNextPage;
+    after = page.pageInfo.endCursor;
+  }
+
+  const columns = boardStages(root);
+  for (const [id, issue] of issues) {
+    const stage = columns.get(id);
+    if (!stage || !issue.node_id) continue;
+    const option = field.options.find(o => [STAGE_TITLES[stage], stage].some(n => n.toLowerCase() === o.name.toLowerCase()));
+    let item = items.get(issue.node_id);
+    if (!item) {
+      const added = await graphql(M_ADD, { projectId: board.id, contentId: issue.node_id });
+      item = { id: added.addProjectV2ItemById.item.id, optionId: null };
+      items.set(issue.node_id, item);
+      result.added++;
+    }
+    if (!option) { log(`project board: no Stage option "${STAGE_TITLES[stage]}" for ${id}; add it to the board's Stage field`); continue; }
+    if (item.optionId === option.id) continue;
+    await graphql(M_SET, { projectId: board.id, itemId: item.id, fieldId: field.id, optionId: option.id });
+    item.optionId = option.id;
+    result.moved++;
+  }
+  return result;
+}
+
 export async function syncIssues({
-  root = '.', fetch = globalThis.fetch, api = 'https://api.github.com', token, repo,
+  root = '.', fetch = globalThis.fetch, api = 'https://api.github.com', token, repo, projectToken = '',
   maxWrites = 100, maxWaitSeconds = 60, sleep = ms => new Promise(r => setTimeout(r, ms)), log = console.log,
 } = {}) {
   const result = { created: 0, updated: 0, closed: 0, stopped: false };
@@ -65,11 +162,12 @@ export async function syncIssues({
     .sort((x, y) => Object.keys(SYNCED).indexOf(x.stage) - Object.keys(SYNCED).indexOf(y.stage) || x.id.localeCompare(y.id));
   const ids = new Set(synced.map(a => a.id));
 
+  const existingById = new Map();
   try {
     for (const name of ['rfr-process', ...Object.keys(SYNCED).map(s => `stage:${s}`)]) {
       await request('POST', `/repos/${repo}/labels`, { name, color: name === 'rfr-process' ? '5319E7' : 'C5DEF5' });
     }
-    const existing = new Map();
+    const existing = existingById;
     for (let page = 1; page < 100; page++) {
       const r = await request('GET', `/repos/${repo}/issues?labels=rfr-process&state=all&per_page=100&page=${page}`);
       if (!r.ok) throw new Error(`listing issues: HTTP ${r.status}`);
@@ -114,6 +212,18 @@ export async function syncIssues({
     result.stopped = true;
     log(`${e.message}; stopping. The next run resumes from here.`);
   }
+
+  const project = readConfig(root)?.config?.project;
+  if (project && !result.stopped) {
+    if (!projectToken) log('project board skipped: no RFR_PROJECT_TOKEN (the workflow token cannot write to Projects)');
+    else {
+      try {
+        result.board = await syncBoard({ root, fetch, api, projectToken, project, issues: existingById, log });
+      } catch (e) {
+        log(`project board not updated: ${e.message}`);
+      }
+    }
+  }
   return result;
 }
 
@@ -124,8 +234,10 @@ async function main() {
     root, token: process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPOSITORY,
     api: process.env.GITHUB_API_URL || 'https://api.github.com',
     maxWrites: Number(process.env.SYNC_MAX_WRITES || 100),
+    projectToken: process.env.RFR_PROJECT_TOKEN || '',
   });
   console.log(`Issue sync: ${r.created} created, ${r.updated} updated, ${r.closed} closed${r.stopped ? '; stopped early, the next run continues' : ''}.`);
+  if (r.board) console.log(`Project board: ${r.board.added} added, ${r.board.moved} moved.`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main().catch(e => { console.error(e.message); process.exit(1); });

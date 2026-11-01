@@ -13,7 +13,8 @@ name: rules-for-robots process check
 #   tier        pull requests carry one tier: label, and trivial or fix pull requests stay out of
 #               the folders their tier may not change.
 #   codeowners  the rfr-process block in .github/CODEOWNERS matches process.yml (team mode).
-#   sync        after a merge, personas, epics, and stories are mirrored to issues.
+#   sync        after a merge, personas, epics, and stories are mirrored to issues, and, with
+#               `project` in process.yml and the RFR_PROJECT_TOKEN secret, placed on that Project.
 #   tutorials   every tutorial names its runner, web tutorials use steps the runner can perform,
 #               and an automation test cites each Unreal tutorial. Running web tutorials against
 #               the product needs it deployed, so that step belongs in the project's own e2e job:
@@ -26,6 +27,10 @@ on:
         description: rules-for-robots ref to take the check from
         type: string
         default: main
+    secrets:
+      RFR_PROJECT_TOKEN:
+        description: Token with write access to the GitHub Project named in process.yml (optional; without it the board is skipped)
+        required: false
 
 permissions:
   contents: read
@@ -164,6 +169,7 @@ jobs:
       - name: Issue sync
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          RFR_PROJECT_TOKEN: ${{ secrets.RFR_PROJECT_TOKEN }}
         run: node .rfr/checks/ci/process-sync.mjs .
 
   tutorials:

@@ -10,3 +10,4 @@ default: [your-login]      # required; used for every stage without its own entr
 #   release: [product-owner]
 # public-api: [src/api/**]          # paths a tier:trivial pull request may not change
 # adoption-until: 2027-03-31        # existing projects: unlinked artifacts only warn until this date
+# project: https://github.com/orgs/<org>/projects/<number>   # board to place personas, epics, and stories on; needs the RFR_PROJECT_TOKEN secret
