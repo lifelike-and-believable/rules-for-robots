@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// PreToolUse (shell commands and GitHub MCP merge tools): agents may not merge a pull request that
-// touches a gated process folder (docs/specs/project-process.md, "Approval records"). In solo mode
-// the approver's merge is the approval, so an agent merging under the approver's credentials would
-// forge it; in team mode the approvals job already requires a review, and this keeps the merge with
-// a person too. Projects without docs/product/process.yml are not affected. If the pull request's
-// files cannot be listed (no gh, no network), the merge is denied: merge it yourself.
+// PreToolUse (shell commands and GitHub MCP merge tools): an agent's merge of a pull request that
+// touches a gated process folder needs the person's confirmation (docs/specs/project-process.md,
+// "Approval records"). In solo mode the approver's merge is the approval, so the hook asks: the
+// permission prompt is where the approver confirms, which turns an instruction like "merge it when
+// green" into a recorded decision instead of something the agent does on its own. Projects without
+// docs/product/process.yml are not affected. If the pull request's files cannot be listed (no gh,
+// no network), it asks as well, and says why.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -61,14 +62,14 @@ function listWithGh(target) {
 
 export function decideMerge({ input, root, listFiles = listWithGh }) {
   const target = mergeTarget(input);
-  if (!target) return { deny: false, reason: '' };
+  if (!target) return { ask: false, reason: '' };
   const loaded = readConfig(root);
-  if (!loaded) return { deny: false, reason: '' };
+  if (!loaded) return { ask: false, reason: '' };
   let files;
   try {
     files = listFiles(target);
   } catch (e) {
-    return { deny: true, reason: `rfr-process: could not list the pull request's files (${e.message}), so it may touch gated process folders. Ask the approver to merge it.` };
+    return { ask: true, reason: `rfr-process: could not list the pull request's files (${e.message}), so it may touch gated process folders, where merging is the approver's decision. Confirm only if you are the approver and want it merged now.` };
   }
   const gated = new Set(gatedStages(loaded.config));
   const touched = files.filter(file => {
@@ -78,15 +79,15 @@ export function decideMerge({ input, root, listFiles = listWithGh }) {
     const local = path.join(root, file);
     return !fs.existsSync(local) || hasId(fs.readFileSync(local, 'utf8'));
   });
-  if (!touched.length) return { deny: false, reason: '' };
+  if (!touched.length) return { ask: false, reason: '' };
   return {
-    deny: true,
-    reason: `rfr-process: this pull request touches gated process files (${touched.slice(0, 5).join(', ')}${touched.length > 5 ? ', ...' : ''}). Merging it is the approver's decision, so an agent may not merge it. Ask the approver to review and merge.`,
+    ask: true,
+    reason: `rfr-process: this pull request touches gated process files (${touched.slice(0, 5).join(', ')}${touched.length > 5 ? ', ...' : ''}). Merging it approves them. Confirm only if you are the approver and want it merged now; the agent should then comment on the pull request with your instruction.`,
   };
 }
 
-export function denyOutput(reason) {
-  return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } });
+export function askOutput(reason) {
+  return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: reason } });
 }
 
 async function main() {
@@ -95,8 +96,8 @@ async function main() {
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* not JSON: nothing to check */ }
   const root = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const { deny, reason } = decideMerge({ input, root });
-  if (deny) process.stdout.write(denyOutput(reason));
+  const { ask, reason } = decideMerge({ input, root });
+  if (ask) process.stdout.write(askOutput(reason));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();

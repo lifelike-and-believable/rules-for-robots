@@ -47,5 +47,5 @@ test('project-process#AC-5: with spec approvers configured, a plain spec change 
 test('project-process#AC-7: with spec approvers configured, merging a plain spec change is allowed', () => {
   const root = project();
   const input = { tool_name: 'Bash', tool_input: { command: 'gh pr merge 3' } };
-  assert.equal(decideMerge({ input, root, listFiles: () => ['docs/specs/plain.md'] }).deny, false);
+  assert.equal(decideMerge({ input, root, listFiles: () => ['docs/specs/plain.md'] }).ask, false);
 });
