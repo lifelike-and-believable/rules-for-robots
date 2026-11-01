@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772]
 unlocks:
   - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
   - test/process-plain-specs.test.mjs: the same AC-7 change; its merge-guard case expects no ask instead of no deny
@@ -268,6 +268,7 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-30 | The process check warns when a bold name in a user documentation page does not appear in any design the page links to, directly or through a story it links to, so a control named in the manual that no design defines is caught before review. It is a warning, never an error, and it says how to resolve it: use the design's name, add the name to the design, or, when the bold is emphasis rather than a name, remove it. | test: a name the design has, a name it lacks, a design reached through a story, and a page that links no design. |
 | AC-31 | The process check prints the rules-for-robots commit it ran from, so local and CI runs can be compared. | test: the output names the commit of the checkout it ran from. |
 | AC-32 | The artifact templates link to sections by default (requirements and personas to the concept's sections, stories to the epic's outcome, designs to the persona's goals and frustrations), so an edit elsewhere in an upstream artifact does not make everything below it stale. | test: no template links to a whole concept, epic, or persona. |
+| AC-33 | A reusable workflow runs a project's `runner: web` tutorials against a URL its caller passes, such as a pull request's preview deployment, records them, and uploads the recording; the caller template starts it from a successful preview `deployment_status`. An optional header for protected previews (for example Vercel's protection bypass) is sent only to the preview's own origin, never to other hosts the page loads. | test: the header reaches the tutorial's origin and not another; the workflow and caller structure. |
 
 ## Scope
 
@@ -300,7 +301,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps. Amendment additions are listed under "Amendment: research findings".
   - 11e: walkthrough reframing, recorded tutorial runs, the story check, and the recommended-tools and safety guide (AC-19, AC-20, AC-21, AC-26).
   - 11f: the Project board in the issue sync (AC-22). Decided in 11f: an epic or story sits in the column of the furthest stage that approved work at or below it has reached, so the board shows progress; personas stay in their own column.
-  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (from the pilot).
+  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (AC-33, from the pilot).
   - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
   - Pilot fixes, round 3: the AC-30 warning wording, and the guide, template, and agent changes under "Pilot findings: round 3".

@@ -16,7 +16,8 @@ Rules, best practices, and agent definitions that steer Claude Code toward high-
 - `.claude-plugin/marketplace.json`: makes this repo a plugin marketplace.
 - `checks/unreal/tier1.mjs`: engine-free Unreal checks used by the `unreal-plugin` pack's CI. `examples/unreal/RfrSample/`: minimal plugin those checks and the Tier 2 workflow run against.
 - `practices/`: longer guides that rules link to.
-- `.github/workflows/rfr-guards.yml`, `rfr-unreal-tier1.yml`: reusable workflows that adopting repos call. `checks/ci/`: scripts they run.
+- `.github/workflows/rfr-guards.yml`, `rfr-unreal-tier1.yml`, `rfr-process.yml`, `rfr-tutorials-preview.yml`: reusable workflows that adopting repos call.
+- `plugins/process/vale/RFR/`: the Vale style the `docs-lint` job uses; `checks/ci/install-vale.mjs` pins Vale by SHA-256 into `.cache/` (gitignored). `checks/ci/`: scripts they run.
 - `checks/`: rule lint and shared parsing. `build/`: template repo renderer and profiles. `test/`: tests for both.
 - `docs/research/`: Phase 0 findings, recommendations, notes, and experiments. Treat as a record; correct errors, but do not rewrite history.
 

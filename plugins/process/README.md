@@ -4,7 +4,7 @@ A staged project development process for products built with agents, from [rules
 
 Install it from this marketplace with `/plugin install rfr-process@rules-for-robots`. It declares `rfr-core` as a dependency, so Claude Code installs that too.
 
-Slices 11a to 11c and 11e are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable and recorded tutorials, a merge guard hook, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
+Slices 11a to 11c, 11e, and 11g are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable and recorded tutorials, a merge guard hook, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, advisory docs-lint (Vale) and mutation (Stryker) jobs, a workflow that runs tutorials against preview deployments, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
 
 ## The process
 
@@ -121,6 +121,17 @@ Every tutorial in `docs/tutorials/` names its runner in front matter.
 - `runner: manual`: a person follows it before release.
 
 The `tutorials` job checks, without a browser or the engine, that every tutorial names a runner, that web tutorials use steps the runner can perform, and that an automation test cites each Unreal tutorial.
+
+## Advisory jobs
+
+These report in the job summary and never fail the build.
+
+- **`docs-lint`**: Vale on `docs/user/`, `docs/tutorials/`, and `docs/releases/`, with the RFR writing style and a vocabulary of persona names and glossary terms (`docs/product/glossary.md`). See the guide's recommended tools.
+- **`mutation`** (with `mutation: true` in the caller, for `web-app` and `static-site`): Stryker on `tier:story` and `tier:epic` pull requests, using the project's `stryker.config.mjs` (start from `templates/profiles/<profile>/`). Later pushes to a pull request only retest the mutants their changes affect; a change to a test file reruns everything. The summary gives the mutation score and lists the surviving mutants.
+
+## Tutorials against a preview
+
+`templates/workflows/rfr-tutorials-preview.yml` runs the `runner: web` tutorials against each successful preview deployment (Vercel, Netlify, or any host that reports GitHub deployments), records them, and uploads the recording as the `tutorials` build artifact. For a protected preview, save the bypass token as the `RFR_PREVIEW_BYPASS` secret; the `bypass-header` input names the header (Vercel's `x-vercel-protection-bypass` by default), and it is sent only to the preview's origin. Locally, `RFR_TUTORIAL_HEADER="<name>: <value>"` does the same for `tutorial-run.mjs`.
 
 ## Persona walkthrough
 

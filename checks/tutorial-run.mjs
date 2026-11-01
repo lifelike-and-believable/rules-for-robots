@@ -128,7 +128,9 @@ function loadPlaywright(root) {
 // Runs one web tutorial. Returns { ok, steps, failure: { step, text, message } | null, artifacts }.
 // With `record`, writes <record>/<tutorial id>/step-NN.png after each step, failure.png at a failing
 // step, and video.webm of the whole run, so a passing run is also the stage 12 demo.
-export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout = 5000, browser = null, record = null }) {
+// `headers` are added only to requests to baseUrl's origin (for example a preview deployment's
+// protection bypass), so a page that loads other hosts never sends them the secret.
+export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout = 5000, browser = null, record = null, headers = null }) {
   const parsed = parseArtifact(text);
   const { steps, errors } = parseSteps(parsed.body);
   if (errors.length) return { ok: false, steps: steps.length, failure: { step: null, text: '', message: errors.join('\n') }, artifacts: [] };
@@ -138,6 +140,15 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
   const own = !browser;
   const b = browser ?? await loadPlaywright(root).chromium.launch();
   const context = await b.newContext({ baseURL: baseUrl, ...(out ? { recordVideo: { dir: out } } : {}) });
+  if (headers && Object.keys(headers).length) {
+    const origin = new URL(baseUrl).origin;
+    await context.route('**/*', route => {
+      const request = route.request();
+      let same = false;
+      try { same = new URL(request.url()).origin === origin; } catch { /* data: and other non-URL requests */ }
+      return same ? route.continue({ headers: { ...request.headers(), ...headers } }) : route.continue();
+    });
+  }
   const page = await context.newPage();
   let result;
   try {
@@ -194,12 +205,17 @@ async function main(argv) {
   const web = tutorials.filter(t => t.runner === 'web');
   if (coverageOnly || !web.length) { console.log(`${tutorials.length} tutorial(s): runners and steps are in order.`); return; }
   if (!baseUrl) { console.error('--base-url is required to run web tutorials (or pass --coverage)'); process.exit(2); }
+  // RFR_TUTORIAL_HEADER="Name: value" adds a header for the base URL's origin only, such as a
+  // preview deployment's protection bypass. It is read from the environment so it stays out of logs.
+  const raw = process.env.RFR_TUTORIAL_HEADER ?? '';
+  const sep = raw.indexOf(':');
+  const headers = sep > 0 ? { [raw.slice(0, sep).trim().toLowerCase()]: raw.slice(sep + 1).trim() } : null;
   const { chromium } = loadPlaywright(root);
   const browser = await chromium.launch();
   let failed = 0;
   try {
     for (const t of web) {
-      const r = await runTutorial({ text: t.text, baseUrl, root, browser, record });
+      const r = await runTutorial({ text: t.text, baseUrl, root, browser, record, headers });
       if (r.ok) console.log(`ok   ${t.id} (${r.steps} steps)`);
       else { failed++; console.error(`FAIL ${t.id}: ${r.failure.message}`); }
     }

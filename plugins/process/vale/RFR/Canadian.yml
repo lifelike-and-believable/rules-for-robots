@@ -1,0 +1,28 @@
+# Writing rules: Canadian English. US spellings that Canadian English writes differently.
+extends: substitution
+message: "Canadian English: use '%s' instead of '%s'."
+level: warning
+ignorecase: true
+swap:
+  behavior: behaviour
+  behaviors: behaviours
+  center: centre
+  centers: centres
+  centered: centred
+  color: colour
+  colors: colours
+  colored: coloured
+  favor: favour
+  favorite: favourite
+  favorites: favourites
+  honor: honour
+  labeled: labelled
+  labeling: labelling
+  canceled: cancelled
+  canceling: cancelling
+  catalog: catalogue
+  dialog box: dialogue box
+  gray: grey
+  modeled: modelled
+  neighbor: neighbour
+  traveled: travelled

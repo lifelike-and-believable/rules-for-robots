@@ -107,6 +107,8 @@ Every tutorial names its runner in front matter:
 - `runner: unreal`: an automation or functional test in the sample project follows the steps and names the tutorial's id in a comment. The process check fails if no test cites it, and the Tier 2 workflow runs the test on the engine runner. Record a short walkthrough video from the same steps for the Fab listing.
 - `runner: manual`: a person follows it before each release. Use this only when neither runner can do the steps.
 
+To run them against each pull request's preview deployment as well, copy `templates/workflows/rfr-tutorials-preview.yml`: it starts on a successful preview deployment, runs and records the web tutorials, and uploads the recording. A protected preview needs its bypass token as the `RFR_PREVIEW_BYPASS` secret, which is sent to the preview's own origin only.
+
 Run web tutorials in the project's own CI against a **fixture build**: the site built with fixed, offline content (for example an environment variable that swaps the CMS client for local fixtures), so each run is deterministic and does not depend on what the live content holds. A preview deployment is the second check, for what the fixtures cannot show.
 
 Review checks: the approver follows the tutorial on the real product. Did it produce what the stories promised? Was any step surprising?
@@ -171,7 +173,11 @@ These fit the process without competing with it. Versions are the ones checked o
 | Starlight | User documentation | npm `@astrojs/starlight` (0.42.x when checked; still 0.x, so pin it) | Publishes `docs/user/` as an accessible static site; the files stay the source. |
 | Figma MCP server | Design and UX | `figma@claude-plugins-official`, which pins it to a commit | Only if the project designs in Figma. A hosted service that reads your files, and it needs a paid seat for some features. |
 
-Vale prose linting and Stryker mutation testing arrive as advisory CI jobs in a later slice (spec slice 11g).
+| Stryker | Unit tests, implementation | npm `@stryker-mutator/core` and `@stryker-mutator/vitest-runner`, exact versions (checked with 10.1.1) | Mutation testing: it changes the code in small ways and reports each change no test noticed. Locked tests can still be weak, and coverage does not show it. Copy `templates/profiles/<profile>/stryker.config.mjs` to the project root and set `mutation: true` in the workflow caller; the advisory `mutation` job runs on `tier:story` and `tier:epic` pull requests. Treat each surviving mutant as a test to strengthen or code no behaviour depends on. |
+
+### Every profile, in CI
+
+The reusable workflow's advisory `docs-lint` job runs [Vale](https://vale.sh) 3.26.0 (installed and checked by SHA-256) on `docs/user/`, `docs/tutorials/`, and `docs/releases/`. Its RFR style carries the rules-for-robots writing rules: no emphatic capitals, no "it's not X, it's Y", few em dashes, and Canadian spellings. Its vocabulary is built on each run from the personas' names (the title up to its first comma, when that is a name) and the terms in `docs/product/glossary.md` (list items that start with a bold term, and headings), so Vale flags a term written with the wrong case. The alerts go to the job summary and never fail the build. To run it locally: `node .rfr/checks/ci/install-vale.mjs`, then `node .rfr/checks/process-vale.mjs . --out .vale-tmp` and run the printed config with `vale --config`.
 
 ### `unreal-plugin`
 
