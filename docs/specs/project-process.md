@@ -248,10 +248,19 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-16 | The `web-app` profile's tutorial runner passes a fixture tutorial and fails after a planted UI change. The `unreal-plugin` runner does the same in Tier 2 CI. | test: web fixture in `npm run verify`; Unreal fixture in the Tier 2 workflow. |
 | AC-17 | The status listing shows each persona, epic, and story with its stage, status, and any stale or withdrawn artifacts. | test: fixture repository with features at different stages. |
 | AC-18 | Each shipped skill and agent has at least one eval case; design-stage guidance that has none ships only in the practice guide. | command: a check that every skill and agent in `plugins/process/` is named by an eval case. |
+| AC-19 | The `persona-walkthrough` agent works as a per-persona cognitive walkthrough: at each step it asks where that persona would fail and why, ranks its findings by severity while reporting all of them, and for a `runner: web` tutorial runs `tutorial-run` first and reports mismatches with the product as facts, separately from predicted confusion. | Eval case `persona-docs-mismatch` (11d), and a smoke case for the tutorial pass. |
+| AC-20 | `tutorial-run --record <dir>` saves a screenshot after each step and a video of each web tutorial, and a screenshot of the page at a failing step, so a passing run is the stage 12 demo. | test: a fixture run writes one screenshot per step and one video; a failing run writes the failure screenshot. |
+| AC-21 | Link rule 8: a story says who it is for, what they want, and why (`As <persona>, I want ... so that ...`), the persona it names is one it links to, and it has an "Acceptance criteria" section with at least one item. Judging whether a story is good stays with the reviewers. | test: missing role, unlinked persona, missing benefit, and missing or empty criteria cases, and a passing story. |
+| AC-22 | When `process.yml` names a `project` and the workflow has a `RFR_PROJECT_TOKEN` secret, the issue sync adds each persona, epic, and story issue to that GitHub Project and sets its Stage field from the file; without them it skips the board and says so. | test: GraphQL stubbed for add, update, a Stage option missing from the board, and no token. |
+| AC-23 | The plugin ships a Vale style built from this repository's writing rules and a vocabulary built from the project's persona and glossary terms, and the reusable workflow has an advisory `docs-lint` job that runs Vale on `docs/user/`, `docs/tutorials/`, and release notes. | test: the vocabulary generator and the style's rules on fixture text; command: the job runs Vale on a fixture project. |
+| AC-24 | The `web-app` and `static-site` profiles ship a Stryker configuration and an advisory `mutation` job: incremental on `tier:story` and `tier:epic` pull requests, a full run when tests change, and the mutation score in the job summary. | test: the configuration and job structure; command: a Stryker run on the tutorial fixture's test project. |
+| AC-25 | `examples/unreal/RfrSample` has a fixture tutorial followed by an automation test that cites it, a screenshot functional test of the editor step it covers, and a Movie Render Queue command that renders the tutorial's demo sequence; the Tier 2 workflow runs all three on the GPU runner and fails when the tutorial no longer matches. | Tier 2 workflow run (the Unreal half of AC-16). |
+| AC-26 | The guide has a "recommended tools" section for each profile, each tool with its source, a pinned version or commit, and its security notes, and a section on installing third-party plugins and MCP servers safely. Every security claim cites a primary source. | Review against `docs/research/notes/third_party_tools_for_process.md`. |
 
 ## Scope
 
 - In: `plugins/process/` (setup, relink, CODEOWNERS, status, release check and notes, triage, and bootstrap skills; the merge-blocking and status-warning hooks; per-profile templates; the `persona-walkthrough` agent); `checks/process-trace.mjs`, the approvals, tier, and sync scripts, and their tests; reusable workflows that adopting repos call, like `rfr-guards.yml`; the `validate:plugins` script extended to the new plugin; `plugins/process/GUIDE.md`; eval cases.
+- In (amendment, proposed 2026-11-01): the tutorial recorder, link rule 8, the Project board sync, the Vale style and `docs-lint` job, the Stryker configuration and `mutation` job, the Unreal fixture and Tier 2 additions, and the recommended-tools guide.
 - Out: changes to `rfr-core`; trackers other than GitHub; a MUST rule before evals support one; automating the approvers' decisions; design-stage skills before an eval shows they beat the guide.
 
 ## APIs and assumptions
@@ -276,7 +285,11 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11a: templates, front matter, `process.yml`, `process-trace` and `process-relink` with their tests, the reusable workflow and its caller template; the plugin skeleton and `validate:plugins` (AC-1, AC-2, AC-3, AC-4, AC-8, AC-15, AC-17).
   - 11b: approvals job, merge-blocking hook, CODEOWNERS script, tier check, issue sync, and assigning the `stale` issue to the approvers of the stages involved (AC-5, AC-6, AC-7, AC-9, AC-10, AC-11). The scripts live in `checks/` and run from the reusable workflow or an `.rfr` checkout, like the 11a check; the hook, which runs from the installed plugin, gets a copy of `checks/lib/process.mjs` made by `npm run build`.
   - 11c: practice guide, profile templates, tutorial runners, persona walkthrough agent, setup and bootstrap skills (AC-7, AC-16, and the guide that AC-18 depends on). The Unreal half of AC-16, a fixture tutorial and automation test in `examples/unreal/RfrSample` run by the Tier 2 workflow, needs the engine runner to build and verify, so it follows in its own pull request; 11c ships the engine-free check that every Unreal tutorial is cited by a test.
-  - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps.
+  - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps. Amendment additions are listed under "Amendment: research findings".
+  - 11e: walkthrough reframing, recorded tutorial runs, the story check, and the recommended-tools and safety guide (AC-19, AC-20, AC-21, AC-26).
+  - 11f: the Project board in the issue sync (AC-22).
+  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24).
+  - 11h: the Unreal tutorial fixture, screenshot functional test, and demo render on the Tier 2 GPU runner (AC-25, and the Unreal half of AC-16).
 
 ## Eval round (11d)
 
@@ -290,6 +303,28 @@ Arms: `rules` and `rules+process`, both models, 3 runs, as in Phase 10. Cases ar
 - One case per shipped skill, named in AC-18.
 
 Keep a skill or agent if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. Otherwise its guidance stays in the practice guide.
+
+## Amendment: research findings (proposed 2026-11-01)
+
+Research into third-party skills and tools for each stage is in [docs/research/notes/third_party_tools_for_process.md](../research/notes/third_party_tools_for_process.md). Its main findings, and what this amendment does with each:
+
+1. **Locked tests can still be weak tests.** Writing tests first and locking them stops tests being changed to fit the code, but it does not make them strong; a 2026 study of LLM-written tests reports suites with 100% coverage and a 4% mutation score. Mutation testing gives a number for test strength that CI can report. Added as an advisory job for the web profiles (AC-24), and proposed as a comparison arm in Phase 10's eval round: does Stryker find the vacuous tests that the sabotage step misses, and the reverse?
+2. **LLM persona walkthroughs are better at heuristic review than at simulating users.** Published studies found that models complete more tasks and find fewer failure points than people unless asked explicitly for failure points, and that persona prompts make output more believable rather than more accurate. The agent is reframed as a per-persona cognitive walkthrough that asks for failure points at every step, and it checks web tutorials against the product before predicting anything (AC-19). It stays advisory, and the 11d eval measures it.
+3. **The user documentation, the main alignment check, has no automated check of its own.** A prose linter built from the repository's writing rules and each project's vocabulary is deterministic and cheap (AC-23). It starts advisory, because false positives need tuning.
+4. **A runnable tutorial can also be the demo.** Recording the run gives the approver a video and screenshots that cannot drift from the tutorial (AC-20). For Unreal, the project's Tier 2 runner has an NVIDIA A6000, so screenshot functional tests and a headless Movie Render Queue demo are in scope (AC-25).
+5. **The spec promised a Project board column per stage, and 11b did not build it.** The default workflow token cannot write to Projects, so the board needs a token with project scope; the project lead has agreed to provide one (AC-22).
+6. **No spec-driven tool has this process's two checkpoints.** GitHub Spec Kit, BMAD-METHOD, OpenSpec, Kiro, and Tessl each bring their own stages and file layout that would compete with this one, and none puts user documentation before the spec or uses runnable tutorials as acceptance. They are not adopted. Two ideas are borrowed for the stage 8 template in 11d: Spec Kit's clarify step (list the ambiguities and ask before planning) and EARS-style phrasing for `test:` criteria.
+7. **Story quality is best checked in two passes:** a deterministic check of structure first, then judgment. The structure check becomes link rule 8 (AC-21); judgment stays with `tech-lead` and `ux-reviewer`.
+8. **Third-party skills and plugins are a real supply-chain risk.** The guide gets a section on installing them safely: the official marketplace or the publisher's own repository, pinned to a commit, with hooks and MCP configuration read before installing (AC-26).
+
+Additions to 11d:
+- The stage 8 template gains a "Clarify" section and EARS guidance for criteria.
+- An acceptance-test drafting skill wraps Playwright's planner and generator agents and points them at the approved user documentation and tutorial; generated tests cite their source. Playwright's healer agent may change only tests that `spec-lock` does not cover, and its changes go to `code-reviewer`.
+- Eval candidates: a concept and requirements interview skill (one question at a time until nothing is open, plus a glossary that the Vale vocabulary and personas reuse), and a property-based testing skill using fast-check that proposes properties from `test:` criteria. Each ships only if its eval beats the guide.
+
+Considered and not adopted: Gherkin and BDD runners (a third format for what criteria and tutorials already say), traceability tools such as StrictDoc (the process check and `spec-trace` cover it), TDD Guard (overlaps the spec lock), Doc Detective (overlaps the tutorial runner, and AGPL-licensed), release-please and changesets (conflict with release notes drafted from the user documentation), Mintlify (hosted and expensive for a solo developer), and commercial synthetic-user products (unvalidated claims).
+
+Not decided: running the walkthrough, release notes, or feedback triage automatically in CI with `anthropics/claude-code-action`. It costs API usage on every run and widens the prompt-injection surface (feedback issues are written by anyone), and the walkthrough's value is unmeasured until the 11d eval. Until then the agent runs on demand.
 
 ## Open questions
 
