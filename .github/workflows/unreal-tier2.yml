@@ -270,6 +270,10 @@ jobs:
           Select-String -Path "$env:RFR_WORK\tests.log" -Pattern 'TEST COMPLETE|Screenshot|LogAutomationController: Error|Expected .* to be' | Select-Object -First 60 | ForEach-Object { Write-Host $_.Line }
           node checks\unreal\ci\read-automation-report.mjs $report
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          # Unreal passes a screenshot test that has no approved reference, with a warning. Here that
+          # is a failure: without a reference the test cannot notice the tutorial's step changing.
+          $new = Select-String -Path "$env:RFR_WORK\tests.log" -Pattern "New Screenshot '([^']+)' was discovered"
+          if ($new) { $new | ForEach-Object { Write-Host $_.Line }; Write-Error "a screenshot has no approved reference for UE $env:ENGINE_VERSION; see examples/unreal/screenshots/README.md"; exit 1 }
 
       - name: Render the demo with Movie Render Queue
         # Runs even when the tests fail, as long as the demo level was built.
@@ -284,11 +288,11 @@ jobs:
           if (-not $p.WaitForExit(1800000)) { $p.Kill(); Write-Error "the render did not finish in 30 minutes" }
           Select-String -Path "$env:RFR_WORK\render.log" -Pattern 'render_demo|LogMovieRenderPipeline: Error|LogPython: Error' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
           $frames = @(Get-ChildItem "$env:RFR_DEMO_OUT" -Filter *.png -ErrorAction SilentlyContinue)
-          Write-Host "Rendered frames: $($frames.Count)"
+          Write-Host "Rendered frames: $($frames.Count) in $env:RFR_DEMO_OUT (first: $($frames | Select-Object -First 1 -ExpandProperty Name))"
           "### Demo render (UE $env:ENGINE_VERSION)`n`n$($frames.Count) frames at 1280x720 in the tutorial-demo artifact." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           if (-not (Test-Path "$env:RFR_HOST\ci\render_demo.ok") -or $frames.Count -lt 72) { Write-Error "the demo render did not produce the sequence's frames"; exit 1 }
 
-      - name: Upload the report, screenshots, and demo
+      - name: Upload the report and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -296,8 +300,16 @@ jobs:
           path: |
             ${{ env.RFR_WORK }}/*.log
             ${{ env.RFR_WORK }}/report/**
-            ${{ env.RFR_WORK }}/demo/**
             ${{ env.RFR_WORK }}/host/Saved/Automation/**
+          if-no-files-found: ignore
+
+      # The demo frames get their own artifact: this is the recording the approver reviews.
+      - name: Upload the demo frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutorial-demo-frames-${{ matrix.engine }}
+          path: ${{ runner.temp }}/rfr-demo-${{ matrix.engine }}/demo/
           if-no-files-found: ignore
 
       - name: Clean up
