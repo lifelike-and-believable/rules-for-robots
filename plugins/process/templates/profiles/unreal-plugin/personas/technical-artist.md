@@ -2,7 +2,7 @@
 id: persona-technical-artist
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Technical artist

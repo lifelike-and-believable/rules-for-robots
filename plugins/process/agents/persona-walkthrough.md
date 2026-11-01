@@ -1,6 +1,6 @@
 ---
 name: persona-walkthrough
-description: Experimental, not yet evaluated. A cognitive walkthrough of user documentation, a design note, or a tutorial, once for each persona the stories name - at each step, where would this persona fail, and why. For web tutorials it first runs the tutorial against the product and reports mismatches as facts. Use before an approver reviews stages 6, 7, and 12 (docs/specs/project-process.md).
+description: Experimental, not yet evaluated. A cognitive walkthrough of user documentation, a design, a decision note, or a tutorial, once for each persona the stories name - at each step, where would this persona fail, and why. For web tutorials it first runs the tutorial against the product and reports mismatches as facts. Use before an approver reviews stages 6, 7, and 12 (docs/specs/project-process.md).
 model: sonnet
 effort: medium
 tools: Read, Grep, Glob, Bash
@@ -27,6 +27,10 @@ Report each step that fails as a **mismatch**: the step, what the tutorial says,
 - After they act, will they know it worked, and is the result what they expected? (Check the stories and the persona's goals.)
 
 Also note where the page would trigger one of the persona's listed frustrations, and anything a story promised that the page does not cover.
+
+**For a design**, read its mock-ups as well as its text: open each image (or say you could not, for a link to a design tool), and walk the flow screen by screen. A control the text names that no mock-up shows, or a state with no mock-up, is a finding. If the design has no mock-ups for a screen or dialog it changes, report that first, as `blocks` for the approver.
+
+**For a decision note**, there are no steps to follow. Instead, for each persona, walk the tasks the decision affects (sharing a link, finding a page again, publishing a new item) under the chosen option, and ask the same four questions of each task. Also check each consequence the note lists against the persona's goals and frustrations, and note any consequence it does not list.
 
 **Report.** Mismatches first. Then findings, grouped by persona and ordered by severity within each group: `blocks` (they cannot finish the task), then `misleads` (they finish with the wrong result or belief), then `slows` (they finish, with effort). For each finding:
 

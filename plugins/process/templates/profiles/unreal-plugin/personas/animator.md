@@ -2,7 +2,7 @@
 id: persona-animator
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Animator

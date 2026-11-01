@@ -6,29 +6,23 @@ derived-from:
   - story-<epic>-<name>:
 ---
 
-# <Feature> for content editors
+# <Feature>
 
-<!-- docs/user/<feature>.md for a static site. The readers are content editors: how to add and
-change this kind of content, what each field does, and how to preview before publishing. -->
+<!-- docs/user/<feature>.md for a static site. The readers are visitors. Most sites have no manual,
+so this page is for the approver: it says what a visitor finds, does, and sees, in the order they
+meet it, with every link, button, and heading in bold exactly as the design names it. The persona
+walkthrough and the web tutorial runner work from it. Editors get their own page
+(user-doc-editor.md or user-doc-editor-cms.md). -->
 
-## Content model
+## <What the visitor wants to do>
 
-| Field | Required | What it is for | Example |
-|---|---|---|---|
-| `title` | yes | <...> | <...> |
+1. From **<page or link>**, <what they select>.
+2. <What they see, and what they can do next.>
 
-## Add a new <item>
+## On a phone
 
-1. Create `src/content/<collection>/<slug>.md`.
-2. <Fill in the fields above.>
-3. Run `npm run dev` and open `/<path>/<slug>` to preview.
+<What differs on a small screen: menus, image sizes, gestures.>
 
-## Publish
+## If something is missing
 
-<How a change goes live, and how long it takes.>
-
-## If the build fails
-
-| Message | Cause | Fix |
-|---|---|---|
-| <message> | <cause> | <fix> |
+- <A page that moved, a broken embed, an empty list: what the visitor sees and where it sends them.>

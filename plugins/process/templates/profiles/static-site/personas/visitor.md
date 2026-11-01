@@ -2,7 +2,7 @@
 id: persona-visitor
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Visitor

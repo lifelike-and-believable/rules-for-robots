@@ -2,7 +2,7 @@
 id: persona-support-agent
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Support agent

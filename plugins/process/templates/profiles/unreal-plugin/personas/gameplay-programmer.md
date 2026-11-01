@@ -2,7 +2,7 @@
 id: persona-gameplay-programmer
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Gameplay programmer

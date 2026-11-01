@@ -2,7 +2,7 @@
 id: story-<epic>-<name>
 status: draft
 derived-from:
-  - epic-<epic>:
+  - epic-<epic>#outcome:
   - persona-<name>#goals:
 ---
 

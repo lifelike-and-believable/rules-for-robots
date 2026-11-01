@@ -2,7 +2,7 @@
 id: requirements-<area>
 status: draft
 derived-from:
-  - concept:
+  - concept#vision:
 ---
 
 # <Area> requirements

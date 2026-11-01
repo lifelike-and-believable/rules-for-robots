@@ -2,7 +2,7 @@
 id: persona-content-editor
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Content editor

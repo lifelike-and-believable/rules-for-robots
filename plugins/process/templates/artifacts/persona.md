@@ -2,7 +2,7 @@
 id: persona-<name>
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # <Persona name>, <role>
