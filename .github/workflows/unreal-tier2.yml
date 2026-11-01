@@ -256,8 +256,9 @@ jobs:
       - name: Build the demo level and sequence
         id: demo
         shell: powershell
+        # With a renderer: under -nullrhi, UE 5.6 crashed (divide by zero) placing the text display.
         run: |
-          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecutePythonScript=$env:RFR_HOST\ci\make_demo.py" -unattended -nullrhi -nosound -nosplash -nopause "-abslog=$env:RFR_WORK\make_demo.log" | Out-Null
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecutePythonScript=$env:RFR_HOST\ci\make_demo.py" -unattended -RenderOffscreen -nosound -nosplash -nopause "-abslog=$env:RFR_WORK\make_demo.log" | Out-Null
           Select-String -Path "$env:RFR_WORK\make_demo.log" -Pattern 'make_demo|LogPython: Error|Error:' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
           if (-not (Test-Path "$env:RFR_HOST\ci\make_demo.ok")) { Write-Error "make_demo.py did not finish"; exit 1 }
 
