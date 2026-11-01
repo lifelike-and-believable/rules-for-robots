@@ -27,9 +27,9 @@ Approvers configured in `docs/product/process.yml` approve the design phase: con
 Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and gives you the commands for 3 and 4. For a project that already has code and users, follow it with `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from what exists. By hand:
 
 1. Copy `templates/process.yml` to `docs/product/process.yml` and name the approvers.
-2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch.
+2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch. It follows rules-for-robots `main`, so fixes arrive at once, and so do changes that could turn your CI red. For stable CI, pin both the `uses:` line (`...rfr-process.yml@<tag or commit>`) and the `rules-ref` input to the same release tag or commit, and update them on purpose.
 3. In team mode, run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
-4. Create the labels `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic`.
+4. Nothing to do for labels: the tier job creates `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic` on its first run.
 5. Start each artifact from `templates/artifacts/`, and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`.
 
 ## Links and staleness
@@ -52,7 +52,7 @@ To record hashes, run this from the project root, with `.rfr` as a checkout of r
 node .rfr/checks/process-relink.mjs <id> [<id> ...]
 ```
 
-Recording hashes is not approval. The pull request that carries them is approved like any other change to that stage.
+Recording hashes is not approval. The pull request that carries them is approved like any other change to that stage (see "How an artifact becomes approved" below).
 
 ## The check
 
@@ -73,6 +73,22 @@ Existing projects can set `adoption-until: <date>` in `process.yml`. Until that 
 
 ## Approvals
 
+### How an artifact becomes approved
+
+An artifact is approved by the pull request that says so. That pull request sets the artifact's `status: approved` and records its link hashes (`node .rfr/checks/process-relink.mjs <id>`), and the stage's approver approves the pull request: in team mode with an approving review, in solo mode by merging it. Merging a pull request whose artifacts still say `draft` approves nothing: they stay drafts, and nothing can build on them.
+
+So a design-stage pull request usually goes through two steps in the same pull request:
+1. Open it with the artifacts as `draft` while the approver reads and asks for changes.
+2. When the approver says they are ready, set them to `approved`, record the hashes, and push. The approver then merges (or approves) that commit.
+
+An agent writing the pull request may set `status: approved` in it; that is a proposal, and GitHub's review or merge is the approval.
+
+### When an agent merges for the approver
+
+In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. The plugin's `guard-merge` hook enforces this when the plugin is installed; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
+
+### Who approved, according to GitHub
+
 Who approved a change is read from GitHub, never from front matter.
 
 - **Team mode** (`mode: team`): each gated stage a pull request changes needs an approving review, on the current head commit, from one of that stage's approvers. A member of a listed team counts if the workflow's token can read team membership. A reviewer's latest review is the one that counts.
@@ -88,7 +104,7 @@ The plugin's `guard-merge` hook denies `gh pr merge`, `gh api .../pulls/N/merge`
 
 ## Size tiers
 
-Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, or `tier:epic`. The tier job fails a `tier:trivial` pull request that changes a process artifact or a `public-api` path, and a `tier:fix` pull request that changes `docs/product/`, `docs/design/`, or `docs/user/`. A change to documented behaviour is at least a story.
+Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, or `tier:epic`. The tier job fails a `tier:trivial` pull request that changes a process artifact or a `public-api` path, and a `tier:fix` pull request that changes `docs/product/`, `docs/design/`, or `docs/user/`. A change to documented behaviour is at least a story. The pull request that adds `process.yml` needs no tier. On a newly opened pull request without a tier label, the job re-reads the labels for up to a minute before failing, so labelling a pull request right after opening it does not leave a red run.
 
 ## Issue sync
 

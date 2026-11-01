@@ -15,7 +15,7 @@ Pick the tier before writing anything, and put it on the pull request as a label
 | `tier:story` | A new capability inside an approved epic | User stories |
 | `tier:epic` | A new area of capability | Epics, after checking whether requirements or personas change |
 
-If a fix turns out to need a change to the user documentation, it is a story. CI enforces this for the documentation folders.
+If a fix turns out to need a change to the user documentation, it is a story. CI enforces this for the documentation folders. The one pull request with no tier is the one that adds `process.yml`: adopting the process fits none of them, so the tier check lets it through.
 
 ## Design stages
 
@@ -43,7 +43,7 @@ Review checks: Is every requirement testable? Do any two conflict? Is anything a
 A persona is a specific kind of user, described by evidence: interviews, support tickets, forum posts, analytics, your own experience with that role. The profile starters (`templates/profiles/<profile>/personas/` in this plugin) are a starting point, not evidence.
 
 - Write goals, skills and tools, context of use, and frustrations. Stories link to a section (`persona-animator#goals`), so keep each section focused.
-- Two or three well-understood personas beat six thin ones. Merge personas whose goals and skills do not differ in ways that change the design.
+- Two or three well-understood personas beat six thin ones. Merge personas whose goals and skills do not differ in ways that change the design. A profile starter may become two personas (a site's visitors who are fans and those who are clients) or fold into one (a content editor who is the artist); say which in the evidence note.
 - Approve personas before any story names them; the check enforces this.
 
 Review checks: Does each detail come from somewhere? Would the team design differently for each persona? Are the frustrations ones this product can actually address or make worse?
@@ -125,11 +125,11 @@ Any stage can be revisited. When an upstream section changes, every approved art
 - **Re-record** its hashes unchanged, when the change does not affect it.
 - **Withdraw** it to `draft` with `withdrawn: <reason> (#<issue>)`. Anything approved that links to it then fails too, so the gap is visible all the way down.
 
-Recording hashes is not approval: the pull request that carries them is approved by the stage's approver like any other change. Run `node .rfr/checks/process-trace.mjs --status` to see how far each persona, epic, and story has reached and what needs attention.
+Recording hashes is not approval: the pull request that carries them is approved by the stage's approver like any other change. An artifact becomes approved only through a pull request that sets `status: approved` and records its hashes; merging a pull request whose artifacts still say `draft` leaves them drafts (see the README's "How an artifact becomes approved"). Run `node .rfr/checks/process-trace.mjs --status` to see how far each persona, epic, and story has reached and what needs attention.
 
 ## Adopting on an existing project
 
-Run `/rfr-process:setup`, then `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from the project's README, documentation, issues, and code, and sets an adoption window. Until the window ends, artifacts with no links produce warnings instead of failures. Approve the product-level artifacts first, then write stories and documentation for new work as it comes. Existing features get user documentation and tutorials when they next change, or sooner if they matter most to users.
+Run `/rfr-process:setup`, then `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from the project's README, documentation, issues, code, and running product, and sets an adoption window. Keep existing planning documents where they are; they are evidence, and the code and running product win where they disagree. Once the process artifacts cover what an old document said, archive it or link it from the concept, so there is one source of intent. Until the window ends, artifacts with no links produce warnings instead of failures. Approve the product-level artifacts first, then write stories and documentation for new work as it comes. Existing features get user documentation and tutorials when they next change, or sooner if they matter most to users.
 
 ## Recommended tools
 

@@ -193,7 +193,8 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     }
   }
 
-  return { errors, warnings, checked: artifacts.length, involved: [...involved].sort() };
+  const unrecorded = artifacts.filter(a => !isApproved(a)).reduce((n, a) => n + a.links.filter(l => !l.hash).length, 0);
+  return { errors, warnings, checked: artifacts.length, involved: [...involved].sort(), unrecorded };
 }
 
 // One row per persona, epic, and story: its status, the furthest stage that approved work below
@@ -259,7 +260,11 @@ function main(argv) {
   for (const w of r.warnings) console.warn(`warning: ${w}`);
   for (const e of r.errors) console.error(e);
   if (r.errors.length) process.exit(1);
-  if (!json) console.log(r.checked ? `${r.checked} process artifact(s) checked; links are current.` : 'No process artifacts.');
+  if (!json) {
+    if (!r.checked) console.log('No process artifacts.');
+    else if (r.unrecorded) console.log(`${r.checked} process artifact(s) checked; recorded links are current, and ${r.unrecorded} draft link(s) have hashes not yet recorded (they are recorded when each draft is approved).`);
+    else console.log(`${r.checked} process artifact(s) checked; links are current.`);
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2));

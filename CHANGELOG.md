@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- `rfr-process` 0.6.0 (#109): fixes from the first pilot, on the Kettlebird website. The tier job creates the four `tier:` labels, lets the pull request that adds `process.yml` through, and on a newly opened pull request waits up to a minute for a tier label before failing. The bootstrap skill drafts requirements as user-visible behaviour with today's tools as "current implementation, not a commitment", ranks code and the running product above planning documents, and lists defects found for later `tier:fix` issues. Setup skips persona starters when bootstrap follows, and both skills allow a commit when the task is to open a pull request. The process check counts draft links with no recorded hash. The README, guide, and workflow template explain pinning the reusable workflow to a tag or commit. From pilot entries 17 and 18: an artifact is approved by the pull request that sets `status: approved` and records its hashes (bootstrap now does this in the same pull request once the approver says the drafts are ready); an agent merges a gated pull request only on the approver's explicit instruction and comments with the instruction quoted; setup writes these rules into the project's `AGENTS.md`, so they hold without the plugin.
+
 ### Added
 
 - `rfr-process` 0.5.0 (Phase 11, slice 11f; #108). The issue sync places persona, epic, and story issues on a GitHub Project when `process.yml` names a `project` and the `RFR_PROJECT_TOKEN` secret is set, and sets each item's Stage field: personas in Personas, epics and stories in the furthest stage their approved work has reached. Runs that change nothing make no board changes; missing Stage options are reported, not failed. The reusable workflow declares the optional secret, and the caller template passes it with `secrets: inherit`.

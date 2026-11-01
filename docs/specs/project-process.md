@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52]
 unlocks:
   - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
   - test/process-tutorial-record.test.mjs: the "without record" test also counted every entry in the shared temp folder, which other test files running in parallel write to, so it failed at random in CI (seen on #108, reproduced locally by creating temp folders during the run); that count is removed, and the test still checks that a run without --record returns no artifacts
@@ -259,6 +259,8 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-24 | The `web-app` and `static-site` profiles ship a Stryker configuration and an advisory `mutation` job: incremental on `tier:story` and `tier:epic` pull requests, a full run when tests change, and the mutation score in the job summary. | test: the configuration and job structure; command: a Stryker run on the tutorial fixture's test project. |
 | AC-25 | `examples/unreal/RfrSample` has a fixture tutorial followed by an automation test that cites it, a screenshot functional test of the editor step it covers, and a Movie Render Queue command that renders the tutorial's demo sequence; the Tier 2 workflow runs all three on the GPU runner and fails when the tutorial no longer matches. | Tier 2 workflow run (the Unreal half of AC-16). |
 | AC-26 | The guide has a "recommended tools" section for each profile, each tool with its source, a pinned version or commit, and its security notes, and a section on installing third-party plugins and MCP servers safely. Every security claim cites a primary source. | Review against `docs/research/notes/third_party_tools_for_process.md`. |
+| AC-27 | The tier job creates the four `tier:` labels if they are missing, with a colour and description; it lets the pull request that adds `docs/product/process.yml` through without a tier, because adopting the process fits no tier; and on a newly opened pull request with no tier label it re-reads the labels for up to a minute before failing, so a label added just after opening does not leave a red run. | test: the adoption pull request passes and a changed `process.yml` does not; the label wait returns a label added on a later poll and gives up after the limit; the workflow job creates the labels. |
+| AC-28 | The process check's summary counts the draft links that have no recorded hash yet, instead of saying every link is current. | test: a draft link without a hash is counted, and the command's output says so. |
 
 ## Scope
 
@@ -291,7 +293,8 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps. Amendment additions are listed under "Amendment: research findings".
   - 11e: walkthrough reframing, recorded tutorial runs, the story check, and the recommended-tools and safety guide (AC-19, AC-20, AC-21, AC-26).
   - 11f: the Project board in the issue sync (AC-22). Decided in 11f: an epic or story sits in the column of the furthest stage that approved work at or below it has reached, so the board shows progress; personas stay in their own column.
-  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24).
+  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (from the pilot).
+  - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - 11h: the Unreal tutorial fixture, screenshot functional test, and demo render on the Tier 2 GPU runner (AC-25, and the Unreal half of AC-16).
 
 ## Eval round (11d)
@@ -328,6 +331,17 @@ Additions to 11d:
 Considered and not adopted: Gherkin and BDD runners (a third format for what criteria and tutorials already say), traceability tools such as StrictDoc (the process check and `spec-trace` cover it), TDD Guard (overlaps the spec lock), Doc Detective (overlaps the tutorial runner, and AGPL-licensed), release-please and changesets (conflict with release notes drafted from the user documentation), Mintlify (hosted and expensive for a solo developer), and commercial synthetic-user products (unvalidated claims).
 
 Not decided: running the walkthrough, release notes, or feedback triage automatically in CI with `anthropics/claude-code-action`. It costs API usage on every run and widens the prompt-injection surface (feedback issues are written by anyone), and the walkthrough's value is unmeasured until the 11d eval. Until then the agent runs on demand.
+
+## Pilot findings: round 1 (2026-11-01)
+
+The first real use, on the Kettlebird website ([kettlebird-website#28](https://github.com/lifelike-and-believable/kettlebird-website/pull/28)), produced a log of 16 findings after setup and bootstrap. Decisions taken from it:
+
+- **Tier job friction.** Every new pull request showed one red tier run, because the job ran on `opened` before a label could be added; agents without `gh` could not create the labels; and the setup and bootstrap pull request fit no tier. The tier job now creates the labels, waits briefly for a label on `opened`, and lets the pull request that adds `process.yml` through (AC-27).
+- **Bootstrap drafted tools into requirements.** Its instruction to describe "current behaviour" led to requirements naming Sanity, Ko-fi, and AO3, and to non-goals inferred from missing features; the lead caught it at the design gate. Bootstrap now asks for user-visible behaviour, names tools only as the current implementation, ranks the code and the live product above planning documents, and ends with a list of defects found, which become `tier:fix` issues once the requirements are approved.
+- **Smaller fixes**: setup skips the starter personas when bootstrap comes next; both skills allow a commit when the task asks for a pull request; the guide covers existing planning documents, splitting or merging starter personas, and pinning the reusable workflow to a commit; the process check reports draft links with no recorded hash (AC-28).
+- **Approval needs the status change in the approved pull request** (entries 17 and 18, after the bootstrap pull request was merged). Merging the bootstrap drafts left every artifact `draft`, so nothing downstream could start. Decided: an artifact is approved by the pull request that sets `status: approved` and records its hashes, and the approver's merge or review of that pull request is the approval; bootstrap now does the change in the same pull request once the approver says the drafts are ready. The agent that merged it did so on the lead's explicit instruction, in a session without the plugin, so the merge guard was not running and GitHub recorded the lead as the merger. Decided: an agent merges a gated pull request only on the approver's explicit instruction and then comments on it quoting the instruction; setup writes these rules into the project's `AGENTS.md` so they hold without the plugin. Open for the lead: whether the merge guard should ask the person (a permission prompt) instead of denying, so an explicit instruction can be carried out through the hook.
+- **Added to 11g**: a reusable job that runs `runner: web` tutorials against each pull request's preview deployment (for example from a Vercel `deployment_status` event), because adopting projects have previews but no job to run tutorials against them.
+- **Evidence for the process**: the step "run the project's own tests before each push" found 18 errors in a check the project's CI never ran, and bootstrap's evidence-gathering found real defects (broken links, an inaccessible lightbox, 404s rewritten to the home page).
 
 ## Open questions
 
