@@ -269,6 +269,7 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-31 | The process check prints the rules-for-robots commit it ran from, so local and CI runs can be compared. | test: the output names the commit of the checkout it ran from. |
 | AC-32 | The artifact templates link to sections by default (requirements and personas to the concept's sections, stories to the epic's outcome, designs to the persona's goals and frustrations), so an edit elsewhere in an upstream artifact does not make everything below it stale. | test: no template links to a whole concept, epic, or persona. |
 | AC-33 | A reusable workflow runs a project's `runner: web` tutorials against a URL its caller passes, such as a pull request's preview deployment, records them, and uploads the recording; the caller template starts it from a successful preview `deployment_status`. An optional header for protected previews (for example Vercel's protection bypass) is sent only to the preview's own origin, never to other hosts the page loads. | test: the header reaches the tutorial's origin and not another; the workflow and caller structure. |
+| AC-34 | A new `derived-from` entry can be written as a bare `- id#section`, with or without the colon; the check reads it as a link with no hash yet, the relink script records its hash, and the check's message for an approved link with no hash names the relink command. | test: relink fills in both forms; the check reads both; the message names the command. |
 
 ## Scope
 
@@ -304,6 +305,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (AC-33, from the pilot).
   - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
+  - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
   - Pilot fixes, round 3: the AC-30 warning wording, and the guide, template, and agent changes under "Pilot findings: round 3".
   - 11h: the Unreal tutorial fixture, screenshot functional test, and demo render on the Tier 2 GPU runner (AC-25, and the Unreal half of AC-16).
 
@@ -371,6 +373,15 @@ Entries 47 to 50, from the first designs made with mock-ups. Decisions:
 - **Mock-ups of a third-party interface** (a CMS's editing screens) settle labels, help text, states, and warnings, but cannot show what the tool's components support. The guide says the spec checks that.
 - **The walkthrough surfaced an ambiguous word in a story** ("placeholder", which overlapped with honest empty states). The agent now checks each key term a story's criteria rely on against anything in the product that looks similar.
 - **The bold-name check flagged emphasis.** Its warning now also offers removing the bold when it is emphasis (AC-30). Printing the rules-for-robots commit worked as intended.
+
+## Pilot findings: round 4 (2026-11-01)
+
+Entries 51 to 54, from the first delivery-stage pull requests. Decisions:
+
+- **New links could not be recorded.** A `derived-from` entry written without the colon (`- persona-fan#goals`) was an error the relink script could not fix, so the pilot typed a placeholder hash. Both forms are now read as unrecorded links, and relink fills them in (AC-34).
+- **Some stories have nothing to document or demonstrate.** A story that only removes things (placeholder text) gives a user page nothing to say and a tutorial nothing to show that the end-to-end tests do not. The guide says when the user documentation and tutorial stages may be skipped, and that the pull request says so and why, so the approver can disagree.
+- **A criterion found after the tests commit** goes in as a new criterion with its own failing test in a second commit, listed in `tests-commit`; the earlier tests stay locked. The pilot found the gap by reading the spec against the approved user documentation before implementing, which the guide now recommends.
+- **A user interface the CI cannot drive** (a hosted CMS editor behind a login): keeping the rules and messages in a module that does not import the editor let unit tests cover most criteria, and a `runner: manual` tutorial covers the rest. The guide gives this as the pattern.
 
 ## Open questions
 
