@@ -268,6 +268,7 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-30 | The process check warns when a bold name in a user documentation page does not appear in any design the page links to, directly or through a story it links to, so a control named in the manual that no design defines is caught before review. It is a warning, never an error, and it says how to resolve it: use the design's name, add the name to the design, or, when the bold is emphasis rather than a name, remove it. | test: a name the design has, a name it lacks, a design reached through a story, and a page that links no design. |
 | AC-31 | The process check prints the rules-for-robots commit it ran from, so local and CI runs can be compared. | test: the output names the commit of the checkout it ran from. |
 | AC-32 | The artifact templates link to sections by default (requirements and personas to the concept's sections, stories to the epic's outcome, designs to the persona's goals and frustrations), so an edit elsewhere in an upstream artifact does not make everything below it stale. | test: no template links to a whole concept, epic, or persona. |
+| AC-33 | A reusable workflow runs a project's `runner: web` tutorials against a URL its caller passes, such as a pull request's preview deployment, records them, and uploads the recording; the caller template starts it from a successful preview `deployment_status`. An optional header for protected previews (for example Vercel's protection bypass) is sent only to the preview's own origin, never to other hosts the page loads. | test: the header reaches the tutorial's origin and not another; the workflow and caller structure. |
 
 ## Scope
 
@@ -300,7 +301,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps. Amendment additions are listed under "Amendment: research findings".
   - 11e: walkthrough reframing, recorded tutorial runs, the story check, and the recommended-tools and safety guide (AC-19, AC-20, AC-21, AC-26).
   - 11f: the Project board in the issue sync (AC-22). Decided in 11f: an epic or story sits in the column of the furthest stage that approved work at or below it has reached, so the board shows progress; personas stay in their own column.
-  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (from the pilot).
+  - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (AC-33, from the pilot).
   - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
   - Pilot fixes, round 3: the AC-30 warning wording, and the guide, template, and agent changes under "Pilot findings: round 3".

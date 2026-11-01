@@ -23,6 +23,7 @@
     "check:instructions": "node checks/ci/instruction-lint.mjs"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "10.1.1",
     "playwright": "1.63.0",
     "yaml": "^2.9.1"
   }
