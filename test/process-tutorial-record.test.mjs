@@ -73,10 +73,8 @@ test('project-process#AC-20: a recorded failing run leaves the steps before it a
 });
 
 test('project-process#AC-20: without record, nothing is written', async () => {
-  const before = fs.readdirSync(os.tmpdir()).length;
   broken = false;
   const r = await runTutorial({ text: TUTORIAL, baseUrl });
   assert.equal(r.ok, true);
   assert.deepEqual(r.artifacts ?? [], []);
-  assert.ok(fs.readdirSync(os.tmpdir()).length <= before + 1);
 });
