@@ -254,6 +254,7 @@ jobs:
           "RFR_HOST=$hostDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build the demo level and sequence
+        id: demo
         shell: powershell
         run: |
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecutePythonScript=$env:RFR_HOST\ci\make_demo.py" -unattended -nullrhi -nosound -nosplash -nopause "-abslog=$env:RFR_WORK\make_demo.log" | Out-Null
@@ -271,7 +272,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Render the demo with Movie Render Queue
-        if: ${{ !cancelled() }}
+        # Runs even when the tests fail, as long as the demo level was built.
+        if: ${{ !cancelled() && steps.demo.outcome == 'success' }}
         shell: powershell
         run: |
           $env:RFR_DEMO_OUT = "$env:RFR_WORK\demo"

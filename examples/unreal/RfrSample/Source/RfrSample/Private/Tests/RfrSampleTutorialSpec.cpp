@@ -49,7 +49,7 @@ void FRfrSampleTutorialSpec::Define()
 	It("step 3: setting Preview Score to 3 shows Score: 3", [this]()
 	{
 		Display->PreviewScore = 3;
-		Display->RerunConstructionScripts();
+		Display->OnConstruction(Display->GetActorTransform());
 		TestEqual(TEXT("text"), Display->GetDisplayedText().ToString(), FString(TEXT("Score: 3")));
 	});
 
