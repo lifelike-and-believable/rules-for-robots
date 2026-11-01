@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- `rfr-process` 0.6.0: fixes from the first pilot, on the Kettlebird website. The tier job creates the four `tier:` labels, lets the pull request that adds `process.yml` through, and on a newly opened pull request waits up to a minute for a tier label before failing. The bootstrap skill drafts requirements as user-visible behaviour with today's tools as "current implementation, not a commitment", ranks code and the running product above planning documents, and lists defects found for later `tier:fix` issues. Setup skips persona starters when bootstrap follows, and both skills allow a commit when the task is to open a pull request. The process check counts draft links with no recorded hash. The README, guide, and workflow template explain pinning the reusable workflow to a tag or commit.
+- `rfr-process` 0.6.0 (#109): fixes from the first pilot, on the Kettlebird website. The tier job creates the four `tier:` labels, lets the pull request that adds `process.yml` through, and on a newly opened pull request waits up to a minute for a tier label before failing. The bootstrap skill drafts requirements as user-visible behaviour with today's tools as "current implementation, not a commitment", ranks code and the running product above planning documents, and lists defects found for later `tier:fix` issues. Setup skips persona starters when bootstrap follows, and both skills allow a commit when the task is to open a pull request. The process check counts draft links with no recorded hash. The README, guide, and workflow template explain pinning the reusable workflow to a tag or commit.
 
 ### Added
 
