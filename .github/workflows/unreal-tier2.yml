@@ -10,6 +10,10 @@ on:
         description: Also run the runner probe (BuildPlugin flags, Insights flags, editor exit code on failing tests)
         type: boolean
         default: false
+      plant-change:
+        description: Plant a change (the demo display shows 4, not 3) to check the screenshot test fails
+        type: boolean
+        default: false
       engines:
         description: Engine versions to run, as a JSON list
         type: string
@@ -256,6 +260,8 @@ jobs:
       - name: Build the demo level and sequence
         id: demo
         shell: powershell
+        env:
+          RFR_DEMO_SCORE: ${{ inputs.plant-change && '4' || '3' }}
         # With a renderer: under -nullrhi, UE 5.6 crashed (divide by zero) placing the text display.
         run: |
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecutePythonScript=$env:RFR_HOST\ci\make_demo.py" -unattended -RenderOffscreen -nosound -nosplash -nopause "-abslog=$env:RFR_WORK\make_demo.log" | Out-Null

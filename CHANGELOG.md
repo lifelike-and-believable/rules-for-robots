@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- `rfr-process` 0.9.2, slice 11h (#PRNUM): the Unreal half of runnable tutorials. `examples/unreal` has a fixture tutorial (`tutorial-rfrsample-score-display`), an `RFR Score Display` actor in the sample plugin, and the automation spec `RfrSample.Tutorial.ScoreDisplay` that follows the tutorial step by step. A new `tutorial-demo` job in `unreal-tier2.yml` runs on the GPU runner for each engine version: it builds a demo level and sequence with editor Python, runs the spec and a screenshot functional test of the tutorial's editor step against approved reference images (a missing reference fails the job), and renders a 72-frame demo with Movie Render Queue, uploaded as an artifact. The workflow takes an `engines` input so one version can be run on its own (AC-25).
+
 ## [2.2.1] - 2026-11-01
 
 Pull requests: #103, #104, #105, #107, #108, #109, #110, #111, #112, #113, #114, #115.

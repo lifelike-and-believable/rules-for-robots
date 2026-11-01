@@ -117,7 +117,7 @@ After each merge, every persona, epic, and story gets an issue labelled `rfr-pro
 Every tutorial in `docs/tutorials/` names its runner in front matter.
 
 - `runner: web`: the tutorial is its own test. `node .rfr/checks/tutorial-run.mjs . --base-url <url>` opens the product in a browser and performs each step: ``Open `/path`.``, ``Type `text` into **Label**.``, ``Choose `option` from **Label**.``, `Check **Label**.`, `Click **Name**.`, and `You see **Text**.` Other sentences are narration, and a step ending in `(manual)` is skipped. When the product changes and the tutorial does not, the run fails at the step that no longer matches. Add the command to the job that runs your end-to-end tests against a preview; it needs `playwright` as a dev dependency. With `--record <dir>` it saves a screenshot after each step, `failure.png` at a failing step, and `video.webm` for each tutorial: upload the folder as a build artifact and the approver has the stage 12 demo.
-- `runner: unreal`: an automation or functional test follows the tutorial and names its id in a comment.
+- `runner: unreal`: an automation or functional test follows the tutorial and names its id in a comment. On a GPU runner, a screenshot functional test of the tutorial's editor step, compared against approved reference images, and a Movie Render Queue render of a demo sequence make the run the stage 12 demo too; `examples/unreal` and the `tutorial-demo` job in rules-for-robots' `unreal-tier2.yml` are a working example to copy.
 - `runner: manual`: a person follows it before release.
 
 The `tutorials` job checks, without a browser or the engine, that every tutorial names a runner, that web tutorials use steps the runner can perform, and that an automation test cites each Unreal tutorial.

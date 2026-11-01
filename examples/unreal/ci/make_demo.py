@@ -18,6 +18,9 @@ MAP = f"{ROOT}/ScoreDisplayMap"
 SEQUENCE = f"{ROOT}/ScoreDemo"
 FPS = 24
 FRAMES = 72
+# The score the display shows. The workflow's plant-change input sets 4, so the screenshot test
+# can be seen to fail when the product no longer matches tutorial step 3.
+SCORE = int(os.environ.get("RFR_DEMO_SCORE", "3"))
 
 
 def actors():
@@ -40,7 +43,7 @@ def build_level():
     # Tutorial step 2 and 3: the display, with Preview Score set to 3, facing the camera (-X).
     display = spawn(unreal.RfrScoreDisplay, unreal.Vector(0, 0, 100), unreal.Rotator(0, 0, 180), "ScoreDisplay")
     # set_editor_property notifies the actor, which reruns its construction script.
-    display.set_editor_property("preview_score", 3)
+    display.set_editor_property("preview_score", SCORE)
     spawn(unreal.DirectionalLight, unreal.Vector(0, 0, 400), unreal.Rotator(0, -45, 200), "Sun")
     spawn(unreal.SkyLight, unreal.Vector(0, 0, 500), label="Sky")
     spawn(unreal.SkyAtmosphere, unreal.Vector(0, 0, 0), label="Atmosphere")

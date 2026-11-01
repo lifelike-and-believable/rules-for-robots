@@ -1,6 +1,6 @@
 {
   "name": "rfr-process",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "A staged project development process for agent-built products: artifact and per-profile templates, links between artifacts, runnable tutorials, CI checks for stale links, approvals, size tiers, and CODEOWNERS, issue sync, a persona walkthrough agent, setup and bootstrap skills, and a hook that asks the approver to confirm agent merges of gated changes.",
   "author": {
     "name": "Lifelike & Believable Animation Design"

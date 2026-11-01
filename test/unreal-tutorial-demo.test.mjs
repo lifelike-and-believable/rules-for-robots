@@ -37,7 +37,8 @@ test('project-process#AC-25: the demo scripts build what the job names and are v
     assert.ok(make.includes(name.split('/').pop()) && render.includes(name), name);
   }
   assert.match(make, /ScreenshotFunctionalTest/);
-  assert.match(make, /preview_score", 3/);
+  assert.match(make, /preview_score", SCORE/);
+  assert.match(make, /RFR_DEMO_SCORE", "3"/);
   const py = spawnSync('python3', ['-c', 'import ast,sys\nfor f in sys.argv[1:]: ast.parse(open(f).read(), f)', 'examples/unreal/ci/make_demo.py', 'examples/unreal/ci/render_demo.py'], { encoding: 'utf8' });
   assert.equal(py.status, 0, py.stderr);
 });
