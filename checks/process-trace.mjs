@@ -6,6 +6,8 @@
 //   3. an approved artifact that links to a draft (or withdrawn) one;
 //   4. an approved artifact whose recorded hash for a linked section is missing or out of date;
 //   5. a story that names no persona, or a persona that is not approved;
+//   8. a story without "As <persona>, I want ... so that ..." naming a linked persona, or without
+//      acceptance criteria (an error when approved, a warning when draft);
 //   6. a spec `test:` criterion whose Source cell names no approved story or user documentation
 //      section in the spec's derived-from;
 //   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry.
@@ -40,6 +42,35 @@ function parseCriteria(body) {
     if (!/^AC-\d+$/.test(cells[0] ?? '')) continue;
     out.push({ id: cells[0], needsTest: /^test:/i.test(cells[2] ?? ''), sources: (cells[3] ?? '').split(/[,\s]+/).filter(Boolean) });
   }
+  return out;
+}
+
+// Rule 8: "As <persona>, I want ... so that ..." naming a linked persona, and acceptance criteria.
+// Returns the problems found; an approved story fails on them, a draft gets warnings.
+const AS_I_WANT = /\bAs\s+(?:an?\s+|the\s+)?(.+?),\s*I\s+want\b([\s\S]*?)(?:\bso\s+that\b([\s\S]*?))?(?:\n\s*\n|$)/i;
+const titleOf = p => /^#\s+(.+?)\s*$/m.exec(p.body)?.[1] ?? '';
+
+export function storyShape(body, personas) {
+  const out = [];
+  const text = body.replace(/^#.*$/gm, '');
+  const m = AS_I_WANT.exec(text);
+  if (!m) out.push('does not say who it is for and what they want ("As <persona>, I want ... so that ...")');
+  else {
+    const role = m[1].trim().toLowerCase();
+    const named = personas.some(p => {
+      const names = [p.id, p.id.replace(/^persona-/, '').replace(/-/g, ' '), titleOf(p)].map(n => n.toLowerCase()).filter(Boolean);
+      return names.some(n => role === n || role.includes(n) || (role.length >= 3 && n.includes(role)));
+    });
+    if (!named) out.push(`the role "${m[1].trim()}" is not a persona it links to (${personas.map(p => p.id).join(', ') || 'none linked'})`);
+    if (!m[3] || !m[3].trim()) out.push('does not say why ("so that ...")');
+  }
+  const section = /^##\s+Acceptance criteria\s*\n([\s\S]*?)(?=^##\s|$(?![\s\S]))/mi.exec(body)?.[1];
+  const lines = (section ?? '').split('\n');
+  const listItems = lines.filter(l => /^\s*(?:[-*+]|\d+[.)])\s+\S/.test(l));
+  const separator = lines.findIndex(l => /^\s*\|?\s*:?-{3,}/.test(l));
+  const tableRows = separator === -1 ? [] : lines.slice(separator + 1).filter(l => /^\s*\|.*\S.*\|/.test(l));
+  const items = [...listItems, ...tableRows];
+  if (!items.length) out.push('has no "## Acceptance criteria" section with at least one item');
   return out;
 }
 
@@ -112,6 +143,8 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
       const personas = a.links.map(l => byId.get(l.target)).filter(t => t?.stage === 'personas');
       if (!personas.length) problems.push(`${name}: names no persona (link one in derived-from)`);
       for (const p of personas) if (!isApproved(p)) problems.push(`${name}: persona ${p.id} is not approved`);
+      const shape = isApproved(a) ? problems : { push: (...msgs) => warnings.push(...msgs) };
+      for (const msg of storyShape(a.body, personas)) shape.push(`${name}: ${msg}`);
     }
 
     if (a.stage === 'specs') {

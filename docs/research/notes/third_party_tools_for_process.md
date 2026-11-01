@@ -5,7 +5,7 @@ Research date: 2026-11-01, for the Phase 11 amendment in [docs/specs/project-pro
 Known weaknesses, found on review before the amendment was written:
 - Star counts were read from repository pages and some look implausible (for example `mattpocock/skills` at about 309k); none of the decisions depends on them.
 - Prices and some dates come from secondary or vendor sources (for example Argos's own pricing comparison) and are marked so in the tables.
-- The security incidents cited (Snyk's skill study, the 30 October Microsoft report) must be checked against their primary sources before any repository document cites them.
+- The security incidents cited were checked against their primary sources on 2026-11-01 (see "Corrections" at the end). The Snyk figures in this report were wrong as stated; the Microsoft report was accurate.
 
 Date: 2026-11-01. Scope: Claude Code skills, plugins, MCP servers, and developer tools that could strengthen the staged process in `docs/specs/project-process.md` (rfr-process). Versions marked "tag" are the latest git tag read with `git ls-remote` on 2026-11-01; star counts were read from the GitHub repository page on the same day. Anything taken only from a secondary source is labelled as such.
 
@@ -261,3 +261,13 @@ Process plumbing
 - codeowners-validator: https://github.com/mszostok/codeowners-validator
 - Projects API (GitHub docs): https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-api-to-manage-projects
 - VHS: https://github.com/charmbracelet/vhs
+
+## Corrections (2026-11-01)
+
+Checked against the primary pages after the report was written. The report text above is kept as written.
+
+- **Snyk ToxicSkills** (published 2026-02-05): 36.82% (1,467) of the skills examined had at least one security flaw of any kind. That is not the prompt-injection rate: prompt injection was found in 2.6% of ClawHub skills overall, and in 91% of the confirmed malicious ones. Confirmed malicious payloads numbered 76, not 1,467.
+- **Microsoft, 30 October 2026**: accurate. Cursor reported a tampered copy of the Claude Code extension (`anthropic.claude-code` 2.1.312 and 2.1.313) in its marketplace for a few hours; it tried to add an attacker's SSH key and open a reverse tunnel. Microsoft confirmed that the Visual Studio Marketplace listing and the npm package `@anthropic-ai/claude-code` were not affected.
+- **Epic's Unreal MCP**: the documentation (a UE 5.8 page) marks it experimental, says it has no authentication, and binds to loopback by default (the bind address is configurable). It does not describe a built-in tool that runs arbitrary Python; it says Python toolsets in any installed plugin's `Content/Python/` folder are discovered at startup and exposed to the agent. The report's `execute_tool_script` claim is unconfirmed.
+- **claude-plugins-official**: confirmed that git-sourced third-party entries carry a `sha`, and that the README says Anthropic "does not control what MCP servers, files, or other software are included in plugins and cannot verify that they will work as intended or that they won't change". Plugins vendored in the repository (for example `playwright` and `context7`) have no `sha`, because their code is in the repository itself.
+- **Claude Code plugin docs**: marketplace sources of type `github`, `url`, and `git-subdir` take `ref` and `sha`, and `sha` wins when both are set.

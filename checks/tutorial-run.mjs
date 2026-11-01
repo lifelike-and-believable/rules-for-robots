@@ -9,6 +9,7 @@
 // Usage:
 //   node checks/tutorial-run.mjs [root] --coverage            check runners and step grammar only
 //   node checks/tutorial-run.mjs [root] --base-url <url>      also run every web tutorial
+//   ... --record <dir>   save a screenshot per step, failure.png, and video.webm per tutorial
 // Playwright is loaded from the project being checked (its own dependency), so this script works
 // from an .rfr checkout.
 import fs from 'node:fs';
@@ -124,36 +125,67 @@ function loadPlaywright(root) {
   throw new Error('playwright is not installed in this project; add it as a dev dependency to run web tutorials');
 }
 
-// Runs one web tutorial. Returns { ok, steps, failure: { step, text, message } | null }.
-export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout = 5000, browser = null }) {
-  const { steps, errors } = parseSteps(parseArtifact(text).body);
-  if (errors.length) return { ok: false, steps: steps.length, failure: { step: null, text: '', message: errors.join('\n') } };
+// Runs one web tutorial. Returns { ok, steps, failure: { step, text, message } | null, artifacts }.
+// With `record`, writes <record>/<tutorial id>/step-NN.png after each step, failure.png at a failing
+// step, and video.webm of the whole run, so a passing run is also the stage 12 demo.
+export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout = 5000, browser = null, record = null }) {
+  const parsed = parseArtifact(text);
+  const { steps, errors } = parseSteps(parsed.body);
+  if (errors.length) return { ok: false, steps: steps.length, failure: { step: null, text: '', message: errors.join('\n') }, artifacts: [] };
+  const out = record ? path.join(record, parsed.front?.id ?? 'tutorial') : null;
+  if (out) fs.mkdirSync(out, { recursive: true });
+  const artifacts = [];
   const own = !browser;
   const b = browser ?? await loadPlaywright(root).chromium.launch();
-  const context = await b.newContext({ baseURL: baseUrl });
+  const context = await b.newContext({ baseURL: baseUrl, ...(out ? { recordVideo: { dir: out } } : {}) });
   const page = await context.newPage();
+  let result;
   try {
-    for (const step of steps) {
-      for (const action of step.actions) {
-        try {
-          await perform(page, action, timeout);
-        } catch (e) {
-          const why = (e.message ?? String(e)).split('\n')[0];
-          return { ok: false, steps: steps.length, failure: { step: step.n, text: step.text, message: `step ${step.n} ("${step.text}"): could not ${describe(action)} (${why})` } };
+    run: {
+      for (const step of steps) {
+        for (const action of step.actions) {
+          try {
+            await perform(page, action, timeout);
+          } catch (e) {
+            const why = (e.message ?? String(e)).split('\n')[0];
+            let message = `step ${step.n} ("${step.text}"): could not ${describe(action)} (${why})`;
+            if (out) {
+              const shot = path.join(out, 'failure.png');
+              await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
+              if (fs.existsSync(shot)) { artifacts.push(shot); message += `; the page at that point is in ${shot}`; }
+            }
+            result = { ok: false, steps: steps.length, failure: { step: step.n, text: step.text, message } };
+            break run;
+          }
+        }
+        if (out) {
+          const shot = path.join(out, `step-${String(step.n).padStart(2, '0')}.png`);
+          await page.screenshot({ path: shot, fullPage: true });
+          artifacts.push(shot);
         }
       }
+      result = { ok: true, steps: steps.length, failure: null };
     }
-    return { ok: true, steps: steps.length, failure: null };
   } finally {
+    const video = out ? page.video() : null;
     await context.close();
+    if (video) {
+      const target = path.join(out, 'video.webm');
+      await video.saveAs(target);
+      await video.delete().catch(() => {});
+      artifacts.push(target);
+    }
     if (own) await b.close();
   }
+  return { ...result, artifacts };
 }
 
 async function main(argv) {
   const args = [...argv];
   const i = args.indexOf('--base-url');
   const baseUrl = i === -1 ? null : args.splice(i, 2)[1];
+  const j = args.indexOf('--record');
+  const record = j === -1 ? null : path.resolve(args.splice(j, 2)[1]);
   const coverageOnly = args.includes('--coverage');
   const root = path.resolve(args.find(a => !a.startsWith('--')) ?? '.');
   const { errors, tutorials } = checkCoverage(root);
@@ -167,7 +199,7 @@ async function main(argv) {
   let failed = 0;
   try {
     for (const t of web) {
-      const r = await runTutorial({ text: t.text, baseUrl, root, browser });
+      const r = await runTutorial({ text: t.text, baseUrl, root, browser, record });
       if (r.ok) console.log(`ok   ${t.id} (${r.steps} steps)`);
       else { failed++; console.error(`FAIL ${t.id}: ${r.failure.message}`); }
     }
