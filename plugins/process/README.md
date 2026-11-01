@@ -46,7 +46,7 @@ A section is a heading (by slug or by an ID it contains, such as `REQ-animation-
 
 When an upstream section changes, every approved artifact that links to it is stale and the check fails. In the same pull request, update each one, re-record its hashes if the change does not affect it, or withdraw it to `draft` with `withdrawn: <reason> (#<issue>)`. An approved artifact that links to a draft one also fails, so a withdrawal has to go all the way down.
 
-To record hashes, run this from the project root, with `.rfr` as a checkout of rules-for-robots (or use the path to your copy of `checks/`):
+A new link can be written as `- id#section` or `- id#section:`, with no hash. To record hashes, run this from the project root, with `.rfr` as a checkout of rules-for-robots (or use the path to your copy of `checks/`):
 
 ```
 node .rfr/checks/process-relink.mjs <id> [<id> ...]

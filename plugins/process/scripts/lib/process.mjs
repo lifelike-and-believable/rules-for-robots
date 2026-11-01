@@ -150,7 +150,8 @@ export function parseArtifact(text) {
   let inLinks = false;
   for (const raw of match[1].split(/\r?\n/)) {
     if (!raw.trim() || raw.trim().startsWith('#')) continue;
-    const item = /^\s+-\s+([^\s:]+):(?:\s+(.*))?$/.exec(raw);
+    // A link is `- id#section: hash`; a new one may have no hash yet, with or without the colon.
+    const item = /^\s+-\s+([^\s:]+)(?::(?:\s+(.*))?)?\s*$/.exec(raw);
     if (inLinks && item) {
       const [target, section] = item[1].split('#');
       links.push({ key: item[1], target, section: section || null, hash: (item[2] ?? '').trim() });

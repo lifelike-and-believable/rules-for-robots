@@ -28,7 +28,7 @@ export function relink(root, ids) {
       const hash = target ? sectionHash(target.body, link.section) : null;
       if (hash === null) { result.problems.push(`${id}: cannot hash ${link.key} (missing id or section)`); continue; }
       if (hash === link.hash) continue;
-      front = front.replace(new RegExp(`^(\\s+-\\s+${escapeRe(link.key)}:)[^\\n]*$`, 'm'), `$1 ${hash}`);
+      front = front.replace(new RegExp(`^(\\s+-\\s+${escapeRe(link.key)})(?::[^\\n]*)?\\s*$`, 'm'), `$1: ${hash}`);
       changed = true;
     }
     if (changed) {

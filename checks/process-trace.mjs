@@ -162,7 +162,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
       if (current === null) { problems.push(`${name}: ${link.target} has no section ${link.section}`); continue; }
       if (!isApproved(a)) continue;
       if (!isApproved(target)) problems.push(`${name}: links to ${target.id}, which is ${target.status ?? 'without a status'}`);
-      if (!link.hash) problems.push(`${name}: the link to ${link.key} has no recorded hash`);
+      if (!link.hash) problems.push(`${name}: the link to ${link.key} has no recorded hash (record it with node .rfr/checks/process-relink.mjs ${a.id})`);
       else if (link.hash !== current) problems.push(`${name}: stale: ${link.key} changed since it was recorded`);
     }
 
