@@ -19,7 +19,13 @@ name: rules-for-robots process check
 #   tutorials   every tutorial names its runner, web tutorials use steps the runner can perform,
 #               and an automation test cites each Unreal tutorial. Running web tutorials against
 #               the product needs it deployed, so that step belongs in the project's own e2e job:
-#               node .rfr/checks/tutorial-run.mjs . --base-url <url>.
+#               node .rfr/checks/tutorial-run.mjs . --base-url <url>, or the
+#               rfr-tutorials-preview.yml workflow against a preview deployment.
+#   docs-lint   advisory: Vale with the RFR style and the project's persona and glossary terms on
+#               docs/user, docs/tutorials, and docs/releases; alerts go to the job summary.
+#   mutation    advisory, with `mutation: true` (web-app and static-site): Stryker on tier:story
+#               and tier:epic pull requests, incremental from the pull request's earlier runs, in full
+#               when test files change; the score and surviving mutants go to the job summary.
 # Every job passes without doing anything when the repository has no docs/product/process.yml.
 on:
   workflow_call:
@@ -28,6 +34,10 @@ on:
         description: rules-for-robots ref to take the check from
         type: string
         default: main
+      mutation:
+        description: Run the advisory Stryker job (needs stryker.config.mjs and Stryker in the project's dev dependencies)
+        type: boolean
+        default: false
     secrets:
       RFR_PROJECT_TOKEN:
         description: Token with write access to the GitHub Project named in process.yml (optional; without it the board is skipped)
@@ -203,3 +213,86 @@ jobs:
           node-version: 22
       - name: Tutorial runners and coverage
         run: node .rfr/checks/tutorial-run.mjs . --coverage
+
+  docs-lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Vale on user documentation, tutorials, and release notes
+        run: |
+          if [ ! -f docs/product/process.yml ]; then echo "No docs/product/process.yml; nothing to lint."; exit 0; fi
+          vale=$(node .rfr/checks/ci/install-vale.mjs)
+          mapfile -t prepared < <(node .rfr/checks/process-vale.mjs . --out "$RUNNER_TEMP/vale")
+          config="${prepared[0]}"
+          paths=("${prepared[@]:1}")
+          if [ ${#paths[@]} -eq 0 ]; then echo "No docs/user, docs/tutorials, or docs/releases yet."; exit 0; fi
+          "$vale" --config "$config" --output line --no-exit "${paths[@]}" | tee "$RUNNER_TEMP/vale.txt"
+          {
+            echo "### Docs lint (advisory)"
+            if [ -s "$RUNNER_TEMP/vale.txt" ]; then
+              echo "Vale found $(wc -l < "$RUNNER_TEMP/vale.txt") alert(s). They do not fail the build; fix the ones a reader would trip on."
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/vale.txt"
+              echo '```'
+            else
+              echo "No alerts."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  mutation:
+    if: >-
+      inputs.mutation && github.event_name == 'pull_request' &&
+      (contains(github.event.pull_request.labels.*.name, 'tier:story') || contains(github.event.pull_request.labels.*.name, 'tier:epic'))
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # The incremental file from earlier runs on this pull request. The first run on a pull request
+      # is a full run; later pushes only test the mutants their changes affect.
+      - uses: actions/cache@v4
+        with:
+          path: reports/stryker-incremental.json
+          key: stryker-${{ github.event.pull_request.number }}-${{ github.sha }}
+          restore-keys: |
+            stryker-${{ github.event.pull_request.number }}-
+      - run: npm ci
+      - name: Stryker
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # A change to a test file reruns every mutant, so the score reflects the new tests.
+          if git diff --name-only "$BASE_SHA"...HEAD | grep -Eq '(\.(test|spec)\.[cm]?[jt]sx?$|(^|/)(tests?|e2e|__tests__)/)'; then
+            echo "Test files changed: full run."
+            npx stryker run --incremental --force
+          else
+            npx stryker run --incremental
+          fi
+      - name: Mutation score
+        if: always()
+        run: |
+          if [ -f reports/mutation/mutation.json ]; then
+            node .rfr/checks/ci/mutation-summary.mjs reports/mutation/mutation.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Stryker wrote no report (reports/mutation/mutation.json); see the Stryker step." >> "$GITHUB_STEP_SUMMARY"
+          fi

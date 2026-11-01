@@ -1,0 +1,16 @@
+# Writing rules: plain sentences, no emphatic capitals.
+extends: existence
+message: "Avoid emphatic capitals ('%s'); say why it matters instead."
+level: warning
+ignorecase: false
+tokens:
+  - ALWAYS
+  - NEVER
+  - MUST
+  - IMPORTANT
+  - CRITICAL
+  - REALLY
+  - VERY
+  - DO NOT
+  - DON'T
+  - NOT

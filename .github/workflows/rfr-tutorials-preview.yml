@@ -1,0 +1,74 @@
+name: rules-for-robots tutorials against a preview
+
+# Reusable workflow for repositories that use the rfr-process plugin (docs/specs/project-process.md,
+# AC-33). Runs every `runner: web` tutorial in docs/tutorials/ against the URL the caller passes,
+# usually a pull request's preview deployment, records each one (a screenshot per step, the failing
+# page, and a video), and uploads the recording as the `tutorials` build artifact, which is also the
+# stage 12 demo. Copy the caller from plugins/process/templates/workflows/rfr-tutorials-preview.yml.
+#
+# For a protected preview, save the bypass token as the RFR_PREVIEW_BYPASS secret; it is sent in the
+# `bypass-header` header (Vercel's x-vercel-protection-bypass by default) to the preview's origin
+# only, never to other hosts the pages load. A deterministic fixture build in the project's own CI is
+# the first check (see the guide); this workflow checks the real deployment.
+on:
+  workflow_call:
+    inputs:
+      base-url:
+        description: The deployment to run the tutorials against
+        type: string
+        required: true
+      rules-ref:
+        description: rules-for-robots ref to take the runner from
+        type: string
+        default: main
+      bypass-header:
+        description: Header that carries RFR_PREVIEW_BYPASS
+        type: string
+        default: x-vercel-protection-bypass
+      playwright-version:
+        description: Playwright version for the runner (the runner is tested with this one)
+        type: string
+        default: 1.63.0
+    secrets:
+      RFR_PREVIEW_BYPASS:
+        description: Token that lets automation through the preview's protection (optional)
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  tutorials:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install the browser
+        working-directory: .rfr
+        env:
+          PLAYWRIGHT_VERSION: ${{ inputs.playwright-version }}
+        run: |
+          npm install --no-save --ignore-scripts "playwright@$PLAYWRIGHT_VERSION" yaml
+          npx playwright install --with-deps chromium
+      - name: Run the tutorials
+        env:
+          BASE_URL: ${{ inputs.base-url }}
+          BYPASS: ${{ secrets.RFR_PREVIEW_BYPASS }}
+          BYPASS_HEADER: ${{ inputs.bypass-header }}
+        run: |
+          if [ -n "$BYPASS" ]; then export RFR_TUTORIAL_HEADER="$BYPASS_HEADER: $BYPASS"; fi
+          # The runner loads Playwright from the project first, then from .rfr.
+          node .rfr/checks/tutorial-run.mjs . --base-url "$BASE_URL" --record "$RUNNER_TEMP/tutorials"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tutorials
+          path: ${{ runner.temp }}/tutorials
+          if-no-files-found: ignore

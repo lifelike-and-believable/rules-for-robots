@@ -1,0 +1,7 @@
+# Writing rules: few em dashes. More than one in a paragraph usually means two sentences.
+extends: occurrence
+message: "More than one em dash in this paragraph; split it into sentences or use commas."
+level: suggestion
+scope: paragraph
+max: 1
+token: '—'

@@ -1,0 +1,26 @@
+# Copy to .github/workflows/rfr-tutorials-preview.yml in a repository that uses the rfr-process plugin
+# and deploys a preview for each pull request (Vercel, Netlify, or similar, reporting through GitHub
+# deployments). When a preview deployment succeeds, it runs the `runner: web` tutorials against it and
+# uploads the recording as the `tutorials` build artifact. GitHub runs deployment_status workflows from
+# the default branch, so this file takes effect once it is merged there.
+#
+# For a protected preview, save the bypass token as the RFR_PREVIEW_BYPASS repository secret (for
+# Vercel, the Protection Bypass for Automation secret). It is sent only to the preview's own origin.
+name: tutorials on preview
+
+on:
+  deployment_status:
+
+jobs:
+  tutorials:
+    # Successful deployments that are not production. Adjust the environment name to your host's.
+    if: github.event.deployment_status.state == 'success' && !contains(github.event.deployment.environment, 'Production') && !contains(github.event.deployment.environment, 'production')
+    # @main follows rules-for-robots as it changes. For stable CI, pin this and rules-ref to the same
+    # release tag or commit.
+    uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-tutorials-preview.yml@main
+    with:
+      base-url: ${{ github.event.deployment_status.environment_url }}
+      # rules-ref: <the same tag or commit>
+    permissions:
+      contents: read
+    secrets: inherit

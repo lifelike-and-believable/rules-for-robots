@@ -1,0 +1,8 @@
+# Writing rules: no "it's not X, it's Y" constructions. Say what it is.
+extends: existence
+message: "Say what it is, without the 'not X, it's Y' construction ('%s')."
+level: warning
+ignorecase: true
+nonword: true
+tokens:
+  - '\b(?:it''s|it is|this is|that''s|that is)\s+not\s+(?:just\s+|only\s+|merely\s+)?[^.;:!?]{1,60}?[,;]\s*(?:it''s|it is|but)\b'
