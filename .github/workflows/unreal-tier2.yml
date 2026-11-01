@@ -277,7 +277,9 @@ jobs:
         shell: powershell
         run: |
           $env:RFR_DEMO_OUT = "$env:RFR_WORK\demo"
-          $argList = @("$env:RFR_HOST\Host.uproject", "-ExecutePythonScript=$env:RFR_HOST\ci\render_demo.py", '-RenderOffscreen', '-unattended', '-nosound', '-nosplash', '-windowed', '-ResX=1280', '-ResY=720', "-abslog=$env:RFR_WORK\render.log")
+          # -ExecCmds "py ..." rather than -ExecutePythonScript: with the latter the editor quits once the
+          # script returns, before Movie Render Queue renders a frame. render_demo.py quits when done.
+          $argList = @("$env:RFR_HOST\Host.uproject", "-ExecCmds=`"py $env:RFR_HOST\ci\render_demo.py`"", '-RenderOffscreen', '-unattended', '-nosound', '-nosplash', '-windowed', '-ResX=1280', '-ResY=720', "-abslog=$env:RFR_WORK\render.log")
           $p = Start-Process -FilePath "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe" -ArgumentList $argList -PassThru
           if (-not $p.WaitForExit(1800000)) { $p.Kill(); Write-Error "the render did not finish in 30 minutes" }
           Select-String -Path "$env:RFR_WORK\render.log" -Pattern 'render_demo|LogMovieRenderPipeline: Error|LogPython: Error' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }

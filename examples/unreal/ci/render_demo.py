@@ -1,8 +1,8 @@
 # Copyright (c) 2026 Lifelike & Believable Animation Design. All rights reserved.
 """Renders the tutorial's demo sequence with Movie Render Queue (docs/specs/project-process.md, AC-25).
 
-Run by the Tier 2 workflow with UnrealEditor.exe Host.uproject -ExecutePythonScript=render_demo.py
--RenderOffscreen, after make_demo.py has built the level and sequence. It renders PNG frames at
+Run by the Tier 2 workflow with UnrealEditor.exe Host.uproject -ExecCmds="py render_demo.py"
+-RenderOffscreen (not -ExecutePythonScript, after which the editor quits before the render starts), after make_demo.py has built the level and sequence. It renders PNG frames at
 1280x720 to the folder in RFR_DEMO_OUT, writes render_demo.ok next to itself when the render
 succeeds, and quits the editor either way.
 """
