@@ -17,7 +17,7 @@ Approvers configured in `docs/product/process.yml` approve the design phase: con
 | Personas | `docs/product/personas/<name>.md` |
 | Epics | `docs/product/epics/<name>.md` |
 | Stories | `docs/product/stories/<epic>/<name>.md` |
-| Design and UX | `docs/design/` |
+| Design and UX | `docs/design/`, with mock-ups beside each design and decision notes in `docs/design/decisions/` |
 | User documentation | `docs/user/` |
 | Technical specifications | `docs/specs/` (only files with an `id` are process artifacts) |
 | Tutorials | `docs/tutorials/` |
@@ -30,7 +30,7 @@ Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and
 2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch. It follows rules-for-robots `main`, so fixes arrive at once, and so do changes that could turn your CI red. For stable CI, pin both the `uses:` line (`...rfr-process.yml@<tag or commit>`) and the `rules-ref` input to the same release tag or commit, and update them on purpose.
 3. In team mode, run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
 4. Nothing to do for labels: the tier job creates `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic` on its first run.
-5. Start each artifact from `templates/artifacts/`, and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`.
+5. Start each artifact from `templates/artifacts/` (including `decision.md` for a choice that spans epics), and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`. A static site has a visitor-facing page (`user-doc.md`) and an editor guide for content in files (`user-doc-editor.md`) or in a CMS (`user-doc-editor-cms.md`). The templates link to sections (`concept#audience`, `epic-<name>#outcome`), so an edit elsewhere in an upstream artifact does not make everything below it stale.
 
 ## Links and staleness
 
@@ -65,7 +65,9 @@ Recording hashes is not approval. The pull request that carries them is approved
 5. a story that names no persona, or a persona that is not approved;
 6. a spec `test:` criterion whose Source column names no story or user documentation section from its `derived-from`;
 7. with `--base`, an artifact approved at the base that is now draft without a `withdrawn` entry;
-8. a story without "As <persona>, I want ... so that ..." naming a persona it links to, or without an "Acceptance criteria" section with at least one item (a warning while the story is a draft).
+8. a story without "As <persona>, I want ... so that ..." naming a persona it links to, or without an "Acceptance criteria" section with at least one item (a warning while the story is a draft). The role matches the persona's id, short name, or title, or the start of the title ("Star" for "Star, the artist"), at word boundaries; a word from the middle of a title does not.
+
+It warns, without failing, when a bold name in a user documentation page appears in no design the page links to or reaches through its stories. It prints the rules-for-robots commit it ran from, so a local run and a CI run can be compared.
 
 `--status` lists each persona, epic, and story, how far the work below it has reached, and anything stale or withdrawn.
 
@@ -81,7 +83,7 @@ So a design-stage pull request usually goes through two steps in the same pull r
 1. Open it with the artifacts as `draft` while the approver reads and asks for changes.
 2. When the approver says they are ready, set them to `approved`, record the hashes, and push. The approver then merges (or approves) that commit.
 
-An agent writing the pull request may set `status: approved` in it; that is a proposal, and GitHub's review or merge is the approval.
+An agent writing the pull request may set `status: approved` in it; that is a proposal, and GitHub's review or merge is the approval. In solo mode, propose `approved` from the start, since the merge is the approval; keep `draft` for work that will not merge yet.
 
 ### When an agent merges for the approver
 

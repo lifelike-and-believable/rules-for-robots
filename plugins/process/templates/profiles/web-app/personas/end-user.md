@@ -2,7 +2,7 @@
 id: persona-end-user
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # End user

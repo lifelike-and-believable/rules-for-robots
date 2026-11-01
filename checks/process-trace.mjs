@@ -11,6 +11,8 @@
 //   6. a spec `test:` criterion whose Source cell names no approved story or user documentation
 //      section in the spec's derived-from;
 //   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry.
+// It warns when a bold name in a user documentation page appears in no design the page reaches,
+// and prints the rules-for-robots commit it ran from.
 // Staleness is direct only. Before process.yml's adoption-until date, problems with artifacts that
 // have no links yet are warnings. --status lists personas, epics, and stories instead;
 // --assignees prints the approvers (logins) of the stages with failing artifacts.
@@ -50,6 +52,31 @@ function parseCriteria(body) {
 const AS_I_WANT = /\bAs\s+(?:an?\s+|the\s+)?(.+?),\s*I\s+want\b([\s\S]*?)(?:\bso\s+that\b([\s\S]*?))?(?:\n\s*\n|$)/i;
 const titleOf = p => /^#\s+(.+?)\s*$/m.exec(p.body)?.[1] ?? '';
 
+const escapeRe = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// A role names a persona when it is the persona's id, short name, or title; when the title starts
+// with the role ("Star" for "Star, the artist and site editor"); or when the role contains the
+// whole short name or title ("busy animator" for "Animator"). Matches are at word boundaries, so a
+// word from the middle of a title ("reader" in "Fan and reader") or part of a word does not count.
+export function roleMatches(role, name) {
+  if (role === name) return true;
+  if (new RegExp(`^${escapeRe(role)}(?![\\p{L}\\p{N}])`, 'u').test(name)) return true;
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(name)}(?![\\p{L}\\p{N}])`, 'u').test(role);
+}
+
+// Bold names in a user documentation page that no design it reaches mentions (AC-30). The designs
+// are those it links to, and those that link to a story it links to. Returns [] when it reaches none.
+export function undefinedNames(doc, byId, artifacts) {
+  const linked = doc.links.map(l => byId.get(l.target)).filter(Boolean);
+  const stories = new Set(linked.filter(t => t.stage === 'stories').map(t => t.id));
+  const designs = new Set(linked.filter(t => t.stage === 'design'));
+  for (const d of artifacts) if (d.stage === 'design' && d.links.some(l => stories.has(l.target))) designs.add(d);
+  if (!designs.size) return { designs: [], missing: [] };
+  const text = [...designs].map(d => d.body.replace(/\*\*/g, '').toLowerCase()).join('\n');
+  const names = [...new Set([...doc.body.matchAll(/\*\*([^*\n]+?)\*\*/g)].map(m => m[1].trim()).filter(n => n && !/:$/.test(n)))];
+  return { designs: [...designs].map(d => d.id), missing: names.filter(n => !text.includes(n.toLowerCase())) };
+}
+
 export function storyShape(body, personas) {
   const out = [];
   const text = body.replace(/^#.*$/gm, '');
@@ -58,8 +85,8 @@ export function storyShape(body, personas) {
   else {
     const role = m[1].trim().toLowerCase();
     const named = personas.some(p => {
-      const names = [p.id, p.id.replace(/^persona-/, '').replace(/-/g, ' '), titleOf(p)].map(n => n.toLowerCase()).filter(Boolean);
-      return names.some(n => role === n || role.includes(n) || (role.length >= 3 && n.includes(role)));
+      const names = [p.id, p.id.replace(/^persona-/, '').replace(/-/g, ' '), titleOf(p)].map(n => n.toLowerCase().trim()).filter(Boolean);
+      return names.some(n => roleMatches(role, n));
     });
     if (!named) out.push(`the role "${m[1].trim()}" is not a persona it links to (${personas.map(p => p.id).join(', ') || 'none linked'})`);
     if (!m[3] || !m[3].trim()) out.push('does not say why ("so that ...")');
@@ -147,6 +174,11 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
       for (const msg of storyShape(a.body, personas)) shape.push(`${name}: ${msg}`);
     }
 
+    if (a.stage === 'user-docs') {
+      const { designs, missing } = undefinedNames(a, byId, artifacts);
+      for (const n of missing) warnings.push(`${name}: **${n}** is not named in its design (${designs.join(', ')}); use the design's name, or add it to the design`);
+    }
+
     if (a.stage === 'specs') {
       for (const c of parseCriteria(a.body).filter(c => c.needsTest)) {
         if (!c.sources.length) { problems.push(`${name}#${c.id}: test: criterion has no source (an approved story or user documentation section)`); continue; }
@@ -232,6 +264,12 @@ export function staleAssignees(root, opts) {
   return [...logins].sort();
 }
 
+// The rules-for-robots commit this script runs from, so local and CI runs can be compared (AC-31).
+function checkoutCommit() {
+  const r = spawnSync('git', ['rev-parse', '--short=12', 'HEAD'], { cwd: path.dirname(fileURLToPath(import.meta.url)), encoding: 'utf8' });
+  return r.status === 0 ? r.stdout.trim() : '(commit unknown: not a git checkout)';
+}
+
 function main(argv) {
   const args = [...argv];
   const flag = name => { const i = args.indexOf(name); if (i === -1) return false; args.splice(i, 1); return true; };
@@ -256,6 +294,7 @@ function main(argv) {
   }
 
   const r = runProcessTrace(root, { base });
+  if (!json) console.log(`Checked with rules-for-robots ${checkoutCommit()}.`);
   if (json) console.log(JSON.stringify(r, null, 2));
   for (const w of r.warnings) console.warn(`warning: ${w}`);
   for (const e of r.errors) console.error(e);

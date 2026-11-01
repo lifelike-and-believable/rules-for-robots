@@ -181,7 +181,7 @@ test('project-process#AC-7: persona starters pass the process check once copied 
   for (const p of PROFILES) {
     const root = project({
       'docs/product/process.yml': 'default: [lead]\n',
-      'docs/product/concept.md': '---\nid: concept\nstatus: approved\n---\n\n# Concept\n\nA tool.\n',
+      'docs/product/concept.md': '---\nid: concept\nstatus: approved\n---\n\n# Concept\n\nA tool.\n\n## Audience\n\nThe people it is for.\n',
     });
     const ids = [];
     for (const f of fs.readdirSync(path.join(profileDir(p), 'personas'))) {

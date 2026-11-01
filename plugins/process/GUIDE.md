@@ -35,6 +35,7 @@ One file per area (`docs/product/requirements/animation.md`), each requirement u
 - Make each requirement testable as written: a number, a named behaviour, or a condition someone could check.
 - Put constraints (engine versions, platforms, budgets, policies) and success measures in their own sections.
 - List open questions instead of guessing. An approver can answer a question; they may not notice a guess.
+- Requirements may lead the product. On an existing project they can describe behaviour it does not have yet; the epics then close the gap. Mark such a requirement as not yet met, so nobody reads it as a description of today.
 
 Review checks: Is every requirement testable? Do any two conflict? Is anything a design choice in disguise? Are the success measures ones the project can actually observe?
 
@@ -50,9 +51,9 @@ Review checks: Does each detail come from somewhere? Would the team design diffe
 
 ### Epics
 
-An epic is an outcome for one or more personas: "Animators can retarget a batch of clips without leaving the editor." Link it to the requirements it serves and the personas it is for. List its stories as they are written, and its non-goals.
+An epic is an outcome for one or more personas: "Animators can retarget a batch of clips without leaving the editor." Link it to the requirements it serves and the goals of the personas it is for. List the proposed stories, then the stories as they are written; the release groups (stories that only make sense shipped together, such as a comic reader and the way to reach the next page); dependencies on other epics or decisions; open questions for the approver; and non-goals. More than about six stories, or more than one tutorial to demonstrate it, means it is two epics.
 
-Review checks: Is it an outcome, not a list of features? Is it small enough to ship and demonstrate on its own?
+Review checks: Is it an outcome, not a list of features? Is it small enough to ship and demonstrate on its own? Can each release group ship without the others?
 
 ### User stories
 
@@ -66,16 +67,20 @@ Review checks: independent, negotiable, valuable, estimable, small, and testable
 
 ### Design and UX
 
-Flows, layouts or editor UI, and every state: empty, loading, partial, error, success, disabled. For Unreal tools, the Details panel layout, menu placement, undo and cancel behaviour, and where errors appear. Link sketches or mock-ups. The user documentation is written from this, so name every control as it will appear.
+Flows, layouts or editor UI, and every state: empty, loading, partial, error, success, disabled. For Unreal tools, the Details panel layout, menu placement, undo and cancel behaviour, and where errors appear. The user documentation is written from this, so name every control as it will appear.
 
-Review checks: the `ux-reviewer` and `accessibility-reviewer` checklists. Does every state have a design? Does every error say what to do next?
+- **Include visual mock-ups or wireframes** for every screen, panel, menu, or dialog the design adds or changes, and for each state that looks different. A written flow is not enough for the approver or the persona walkthrough to judge a user interface. Wireframes are enough; polish is not the point. Put images in `docs/design/<feature>/` (so they are versioned with the text) or link to frames in the design tool, and say which state each one shows. Screenshots of the current product are fine as a starting point for a change.
+- Say which persona goals and frustrations the design answers, and link those sections (`persona-fan#frustrations`).
+- A choice that spans several stories or epics, such as a URL scheme or a content model, gets its own decision note (`templates/artifacts/decision.md`, in `docs/design/decisions/`), which designs link to. It is gated like any design.
+
+Review checks: the `ux-reviewer` and `accessibility-reviewer` checklists. Does every screen and state have a mock-up? Does every control the text names appear in one? Does every error say what to do next?
 
 ### User documentation
 
 The user manual for the feature, written before the technical spec, as if the feature exists. This is the main alignment check: the approver reads it as a user would, and misunderstandings between the stories and what users expect show up here, while they are cheap to fix.
 
 - Write for the personas the stories name, in their vocabulary. Explain the task, not the implementation.
-- Name every control, menu, and message exactly as the design shows it, in bold. Tutorials and the tutorial runner rely on those names.
+- Name every control, menu, and message exactly as the design shows it, in bold. Tutorials and the tutorial runner rely on those names, and the process check warns about a bold name that no design the page reaches mentions.
 - Cover what can go wrong: each message the user might see, what it means, and what to do.
 - Keep sections task-shaped, with clear headings. Specs cite them (`docs-retarget#retarget-a-batch`).
 
@@ -125,7 +130,17 @@ Any stage can be revisited. When an upstream section changes, every approved art
 - **Re-record** its hashes unchanged, when the change does not affect it.
 - **Withdraw** it to `draft` with `withdrawn: <reason> (#<issue>)`. Anything approved that links to it then fails too, so the gap is visible all the way down.
 
+Link to sections, not whole artifacts. A link to `concept` goes stale on any edit to the concept; a link to `concept#audience` only when the audience changes. The templates link to sections; keep it that way when you add links.
+
 Recording hashes is not approval: the pull request that carries them is approved by the stage's approver like any other change. An artifact becomes approved only through a pull request that sets `status: approved` and records its hashes; merging a pull request whose artifacts still say `draft` leaves them drafts (see the README's "How an artifact becomes approved"). Run `node .rfr/checks/process-trace.mjs --status` to see how far each persona, epic, and story has reached and what needs attention.
+
+## Pull requests for process artifacts
+
+- **In solo mode, propose `approved` from the start.** The merge is the approval, so open the pull request with the artifacts already set to `approved` and their hashes recorded; if the approver asks for changes, the agent updates them in the same pull request. Keep `draft` for work that will not merge yet. In team mode the two-step flow in the README still applies.
+- **Batch artifacts of the same stage** into one pull request when the approver will read them together (three personas, or an epic's stories), and keep stages apart, so each pull request has one approver and one kind of review.
+- **Stack pull requests for linked artifacts.** A story's pull request can be based on its epic's branch, so both are reviewed in parallel; merge the epic first, then retarget the story to the default branch. The story cannot be approved before its epic is, because the check fails an approved artifact that links to a draft.
+- **Some cloud agent sessions can push to only one branch.** They cannot stack pull requests or keep two open at once; work through the stages one pull request at a time, or batch.
+- **Pull request numbers skip.** Issues and pull requests share one sequence, and issue sync creates an issue for each persona, epic, and story, so gaps between pull request numbers are normal.
 
 ## Adopting on an existing project
 

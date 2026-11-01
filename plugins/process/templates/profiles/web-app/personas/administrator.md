@@ -2,7 +2,7 @@
 id: persona-administrator
 status: draft
 derived-from:
-  - concept:
+  - concept#audience:
 ---
 
 # Administrator
