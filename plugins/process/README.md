@@ -107,3 +107,13 @@ The `tutorials` job checks, without a browser or the engine, that every tutorial
 ## Persona walkthrough
 
 The experimental `persona-walkthrough` agent does a cognitive walkthrough of user documentation, a design note, or a tutorial, once for each persona the stories name: at every step it asks where that persona would fail and why. For a web tutorial with a URL, it runs the tutorial first and reports mismatches with the product as facts. Findings are ordered by severity, each citing the story or persona section behind the expectation and the artifact that most likely needs to change. Run it before the approver reviews stages 6, 7, and 12. It has not been through an eval round yet.
+
+### Project board
+
+To place the issues on a GitHub Project as well:
+
+1. Create the Project, and give it a single-select field named **Stage** with the options `Personas`, `Epics`, `Stories`, `Design`, `User docs`, `Specs`, and `Tutorials`. Add the options you use; a missing one is reported in the sync's log and that item is left where it is.
+2. Add `project: https://github.com/orgs/<org>/projects/<number>` (or `.../users/<login>/projects/<number>`) to `process.yml`.
+3. Create a token that can write to the Project and save it as the repository secret `RFR_PROJECT_TOKEN`. The workflow's own token cannot write to Projects. A classic token needs the `project` scope; a fine-grained token needs read and write access to the organization's Projects (or, for a user Project, a classic token).
+
+After each merge, each persona, epic, and story is added to the board. Personas sit in Personas. Epics and stories move to the furthest stage that approved work at or below them has reached: a story whose design is approved sits in Design, and moves to User docs when its documentation is approved. Without the token, the board is skipped and the log says so.

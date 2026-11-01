@@ -19,3 +19,5 @@ jobs:
       contents: read
       pull-requests: read
       issues: write
+    # Passes RFR_PROJECT_TOKEN, if you have set it, for the Project board (see process.yml's project).
+    secrets: inherit
