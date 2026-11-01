@@ -69,7 +69,8 @@ Review checks: independent, negotiable, valuable, estimable, small, and testable
 
 Flows, layouts or editor UI, and every state: empty, loading, partial, error, success, disabled. For Unreal tools, the Details panel layout, menu placement, undo and cancel behaviour, and where errors appear. The user documentation is written from this, so name every control as it will appear.
 
-- **Include visual mock-ups or wireframes** for every screen, panel, menu, or dialog the design adds or changes, and for each state that looks different. A written flow is not enough for the approver or the persona walkthrough to judge a user interface. Wireframes are enough; polish is not the point. Put images in `docs/design/<feature>/` (so they are versioned with the text) or link to frames in the design tool, and say which state each one shows. Screenshots of the current product are fine as a starting point for a change.
+- **Include visual mock-ups or wireframes** for every screen, panel, menu, or dialog the design adds or changes, and for each state that looks different. A written flow is not enough for the approver or the persona walkthrough to judge a user interface. Wireframes are enough; polish is not the point. Put images in `docs/design/<feature>/` (so they are versioned with the text) or link to frames in the design tool, and say which state each one shows. Screenshots of the current product are fine as a starting point for a change. Keep the editable source beside the images (an HTML file rendered to PNG, or a link to the frame in the design tool), so each round of review is cheap to fix and re-render.
+- **For a third-party interface** (a CMS's editing screens, an engine's built-in panels), the mock-ups settle the labels, help text, states, and warnings the project controls. They cannot show what the tool's components support, such as dropping several files at once or reordering by keyboard; the spec checks that against the tool's documentation, and the design says which behaviours it assumes.
 - Say which persona goals and frustrations the design answers, and link those sections (`persona-fan#frustrations`).
 - A choice that spans several stories or epics, such as a URL scheme or a content model, gets its own decision note (`templates/artifacts/decision.md`, in `docs/design/decisions/`), which designs link to. It is gated like any design.
 
@@ -80,7 +81,7 @@ Review checks: the `ux-reviewer` and `accessibility-reviewer` checklists. Does e
 The user manual for the feature, written before the technical spec, as if the feature exists. This is the main alignment check: the approver reads it as a user would, and misunderstandings between the stories and what users expect show up here, while they are cheap to fix.
 
 - Write for the personas the stories name, in their vocabulary. Explain the task, not the implementation.
-- Name every control, menu, and message exactly as the design shows it, in bold. Tutorials and the tutorial runner rely on those names, and the process check warns about a bold name that no design the page reaches mentions.
+- Name every control, menu, and message exactly as the design shows it, in bold, and keep bold for those names. Tutorials and the tutorial runner rely on them, and the process check warns about a bold name that no design the page reaches mentions; bold used for emphasis triggers the same warning.
 - Cover what can go wrong: each message the user might see, what it means, and what to do.
 - Keep sections task-shaped, with clear headings. Specs cite them (`docs-retarget#retarget-a-batch`).
 
@@ -121,8 +122,9 @@ A persona walkthrough is a cognitive walkthrough done once per persona: at every
 1. Pick the personas the artifact's stories name. Read each persona file in full.
 2. For each persona separately, read the stories first, as their expectations.
 3. Read the artifact from the top with only that persona's skills and vocabulary. For a tutorial, do the steps, on the product if it runs.
-4. At each step ask four questions: will they know what to do, will they see the control or information they need, will they connect it to their goal, and after acting, will they know it worked and get what they expected? Note every "no", and every listed frustration the page triggers.
-5. For each finding, record where it is, what the persona would do, what they expected and why, how bad it is (blocks, misleads, or slows), and which artifact most likely needs to change.
+4. Check each key term the stories' criteria rely on ("no placeholder text") against anything in the product that looks similar (an honest empty state), and report a term the artifact does not define precisely enough to tell them apart.
+5. At each step ask four questions: will they know what to do, will they see the control or information they need, will they connect it to their goal, and after acting, will they know it worked and get what they expected? Note every "no", and every listed frustration the page triggers.
+6. For each finding, record where it is, what the persona would do, what they expected and why, how bad it is (blocks, misleads, or slows), and which artifact most likely needs to change.
 
 The walkthrough informs the approver; it does not replace them. Whether an agent's walkthrough finds the misalignments real users find is an open question the Phase 11 evals test.
 
