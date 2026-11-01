@@ -14,7 +14,11 @@ on:
 
 jobs:
   process:
+    # @main follows rules-for-robots as it changes. For stable CI, pin this and rules-ref below to
+    # the same release tag or commit.
     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-process.yml@main
+    # with:
+    #   rules-ref: <the same tag or commit>
     permissions:
       contents: read
       pull-requests: read

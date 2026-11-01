@@ -6,11 +6,14 @@
 //   - tier:fix may not change docs/product/, docs/design/, or docs/user/;
 //   - tier:story and tier:epic follow the normal rules.
 // A change that alters documented behaviour therefore has to be labelled at least tier:story.
-// Environment: LABELS (JSON array of label names), BASE_SHA, HEAD_SHA. Skipped without process.yml.
+// The pull request that adds process.yml adopts the process and needs no tier. On a newly opened
+// pull request without a tier label, the labels are re-read for up to a minute before failing.
+// Environment: LABELS (JSON array of label names), BASE_SHA, HEAD_SHA, EVENT_ACTION, PR_NUMBER,
+// GITHUB_TOKEN, GITHUB_REPOSITORY. Skipped without process.yml.
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { hasId, readConfig, stageOf } from '../lib/process.mjs';
+import { CONFIG_PATH, hasId, readConfig, stageOf } from '../lib/process.mjs';
 
 const TIERS = ['trivial', 'fix', 'story', 'epic'];
 const FIX_FORBIDDEN = ['docs/product/', 'docs/design/', 'docs/user/'];
@@ -29,9 +32,11 @@ export function matchGlob(glob, file) {
   return new RegExp(`^${re}$`).test(file);
 }
 
-// processSpecs: the docs/specs files that are process artifacts (have an id).
-export function checkTier({ labels, files, config, processSpecs = new Set() }) {
+// processSpecs: the docs/specs files that are process artifacts (have an id). addedFiles: files the
+// pull request adds; the one that adds process.yml is adopting the process and needs no tier.
+export function checkTier({ labels, files, config, processSpecs = new Set(), addedFiles = new Set() }) {
   const tierLabels = labels.filter(l => /^tier:/.test(l));
+  if (!tierLabels.length && addedFiles.has(CONFIG_PATH)) return { ok: true, tier: 'adoption', problems: [] };
   const problems = [];
   if (tierLabels.length === 0) return { ok: false, tier: null, problems: [`no tier label: add one of ${TIERS.map(t => `tier:${t}`).join(', ')}`] };
   if (tierLabels.length > 1) return { ok: false, tier: null, problems: [`more than one tier label: ${tierLabels.join(', ')}`] };
@@ -52,7 +57,20 @@ export function checkTier({ labels, files, config, processSpecs = new Set() }) {
   return { ok: problems.length === 0, tier, problems };
 }
 
-function main() {
+// A pull request is often labelled just after it is opened (an agent opens it, then labels it).
+// Re-read the labels for a while before failing, so that does not leave a red run.
+export async function waitForTierLabel({ fetch = globalThis.fetch, api, token, repo, pr, sleep = ms => new Promise(r => setTimeout(r, ms)), attempts = 6, intervalMs = 10_000 }) {
+  let names = [];
+  for (let i = 0; i < attempts; i++) {
+    await sleep(intervalMs);
+    const response = await fetch(`${api}/repos/${repo}/issues/${pr}/labels`, { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json' } });
+    if (response.ok) names = (await response.json()).map(l => l.name);
+    if (names.some(n => /^tier:/.test(n))) break;
+  }
+  return names;
+}
+
+async function main() {
   const root = path.resolve(process.argv[2] ?? '.');
   const loaded = readConfig(root);
   if (!loaded) { console.log('No docs/product/process.yml; tier check skipped.'); return; }
@@ -63,12 +81,18 @@ function main() {
   const files = diff.stdout.split('\n').filter(Boolean);
   const show = (ref, f) => { const r = git(['show', `${ref}:${f}`]); return r.status === 0 ? r.stdout : ''; };
   const processSpecs = new Set(files.filter(f => stageOf(f) === 'specs' && (hasId(show(base, f)) || hasId(show(head, f)))));
+  const added = git(['diff', '--name-only', '--no-renames', '--diff-filter=A', `${base}...${head}`]);
+  const addedFiles = new Set(added.stdout.split('\n').filter(Boolean));
   let labels = [];
   try { labels = JSON.parse(process.env.LABELS || '[]'); } catch { /* treat as none */ }
-  const r = checkTier({ labels, files, config: loaded.config, processSpecs });
+  if (!labels.some(l => /^tier:/.test(l)) && !addedFiles.has(CONFIG_PATH) && process.env.EVENT_ACTION === 'opened' && process.env.GITHUB_TOKEN) {
+    console.log('No tier label yet; waiting up to a minute for one to be added.');
+    labels = await waitForTierLabel({ api: process.env.GITHUB_API_URL || 'https://api.github.com', token: process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPOSITORY, pr: process.env.PR_NUMBER });
+  }
+  const r = checkTier({ labels, files, config: loaded.config, processSpecs, addedFiles });
   for (const p of r.problems) console.error(p);
   if (!r.ok) process.exit(1);
-  console.log(`Tier ${r.tier}: ok.`);
+  console.log(r.tier === 'adoption' ? 'This pull request adds process.yml, so it adopts the process and needs no tier.' : `Tier ${r.tier}: ok.`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main().catch(e => { console.error(e.message); process.exit(1); });

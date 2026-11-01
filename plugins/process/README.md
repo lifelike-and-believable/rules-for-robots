@@ -27,9 +27,9 @@ Approvers configured in `docs/product/process.yml` approve the design phase: con
 Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and gives you the commands for 3 and 4. For a project that already has code and users, follow it with `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from what exists. By hand:
 
 1. Copy `templates/process.yml` to `docs/product/process.yml` and name the approvers.
-2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch.
+2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch. It follows rules-for-robots `main`, so fixes arrive at once, and so do changes that could turn your CI red. For stable CI, pin both the `uses:` line (`...rfr-process.yml@<tag or commit>`) and the `rules-ref` input to the same release tag or commit, and update them on purpose.
 3. In team mode, run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
-4. Create the labels `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic`.
+4. Nothing to do for labels: the tier job creates `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic` on its first run.
 5. Start each artifact from `templates/artifacts/`, and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`.
 
 ## Links and staleness
@@ -88,7 +88,7 @@ The plugin's `guard-merge` hook denies `gh pr merge`, `gh api .../pulls/N/merge`
 
 ## Size tiers
 
-Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, or `tier:epic`. The tier job fails a `tier:trivial` pull request that changes a process artifact or a `public-api` path, and a `tier:fix` pull request that changes `docs/product/`, `docs/design/`, or `docs/user/`. A change to documented behaviour is at least a story.
+Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, or `tier:epic`. The tier job fails a `tier:trivial` pull request that changes a process artifact or a `public-api` path, and a `tier:fix` pull request that changes `docs/product/`, `docs/design/`, or `docs/user/`. A change to documented behaviour is at least a story. The pull request that adds `process.yml` needs no tier. On a newly opened pull request without a tier label, the job re-reads the labels for up to a minute before failing, so labelling a pull request right after opening it does not leave a red run.
 
 ## Issue sync
 

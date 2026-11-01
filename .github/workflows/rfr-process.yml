@@ -11,7 +11,8 @@ name: rules-for-robots process check
 #   approvals   team mode: an approving review from each touched stage's approvers on the head;
 #               solo mode: after a merge, that the merge was by an approver (opens an issue if not).
 #   tier        pull requests carry one tier: label, and trivial or fix pull requests stay out of
-#               the folders their tier may not change.
+#               the folders their tier may not change. Creates the four labels if missing; the pull
+#               request that adds process.yml needs no tier.
 #   codeowners  the rfr-process block in .github/CODEOWNERS matches process.yml (team mode).
 #   sync        after a merge, personas, epics, and stories are mirrored to issues, and, with
 #               `project` in process.yml and the RFR_PROJECT_TOKEN secret, placed on that Project.
@@ -115,6 +116,10 @@ jobs:
   tier:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -127,11 +132,22 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: Create the tier labels if they are missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create tier:trivial --color C2E0C6 --description "No user-visible change: refactor, dependency bump, typo" 2>/dev/null || true
+          gh label create tier:fix --color FBCA04 --description "Behaviour differs from approved stories or docs" 2>/dev/null || true
+          gh label create tier:story --color 0E8A16 --description "A new story in an approved epic" 2>/dev/null || true
+          gh label create tier:epic --color 5319E7 --description "A new area of capability" 2>/dev/null || true
       - name: Size tier
         env:
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_ACTION: ${{ github.event.action }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: node .rfr/checks/ci/process-tier.mjs .
 
   codeowners:

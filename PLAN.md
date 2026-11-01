@@ -358,4 +358,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 5. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.
 
 6. Phase 10: approve the spec-to-test traceability slice, then build 10a.
-7. Phase 11: 11a to 11c done (#103, #104, #105). Research amendment approved (#106). 11e done (#107); a pilot on the Kettlebird website is running. 11f (Project board) in progress, 11g (Vale and Stryker jobs), and 11h (Unreal fixture on the Tier 2 GPU runner). 11d waits for Phase 10's eval round (10c), which the amendment proposes should also compare Stryker with the sabotage step.
+7. Phase 11: 11a to 11c done (#103, #104, #105). Research amendment approved (#106). 11e done (#107); a pilot on the Kettlebird website is running. 11f done (#108). Pilot fixes round 1 in progress; then 11g (Vale and Stryker jobs, and tutorials against preview deployments) and 11h (Unreal fixture on the Tier 2 GPU runner). 11d waits for Phase 10's eval round (10c), which the amendment proposes should also compare Stryker with the sabotage step.
