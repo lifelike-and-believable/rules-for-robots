@@ -85,6 +85,8 @@ The user manual for the feature, written before the technical spec, as if the fe
 - Cover what can go wrong: each message the user might see, what it means, and what to do.
 - Keep sections task-shaped, with clear headings. Specs cite them (`docs-retarget#retarget-a-batch`).
 
+**When there is nothing to document or demonstrate.** A story that only removes something (placeholder text, a retired page) or changes nothing a user does may have no user documentation and no tutorial: a page would tell the persona nothing, and a tutorial would repeat what the end-to-end tests check. Skip those stages only then, and say so in the pull request, with the reason, so the approver can disagree. A story that changes what a user sees or does is never in this group.
+
 Review checks: run a persona walkthrough (below) first. Then read it as each persona: could they do the task with only this page? Does anything promised in the stories not appear? Does anything appear that no story asked for?
 
 ## Delivery stages
@@ -92,6 +94,8 @@ Review checks: run a persona walkthrough (below) first. Then read it as each per
 These follow `rfr-core` and Phase 10: a spec whose criteria cite the stories and documentation sections they come from, tests written first and locked, implementation that makes them pass, and regression tests promoted from the stories and documentation. See [working with agents](../../practices/working-with-agents.md) and [testing and code quality](../../practices/testing-and-code-quality.md).
 
 Acceptance and end-to-end tests can be drafted as soon as the user documentation is approved. Write them against the documented behaviour, not the planned implementation.
+
+Before implementing, read the spec against the approved user documentation, promise by promise. A behaviour the documentation describes and no criterion covers is a gap in the spec. If the tests are already committed, add it as a new criterion with its own failing test in a second commit, and append that commit to `tests-commit`; the earlier tests stay locked. When a locked test compares whole objects, make the new field optional, or record an `unlocks:` entry with the reason.
 
 When tests are committed red against stubs, make each stub return a wrong value that is not empty or false: a stub returning `[]` or `false` passes every test that expects nothing to be found or something to be refused, and those tests then prove nothing until they are changed.
 
@@ -108,6 +112,8 @@ Every tutorial names its runner in front matter:
 - `runner: manual`: a person follows it before each release. Use this only when neither runner can do the steps.
 
 To run them against each pull request's preview deployment as well, copy `templates/workflows/rfr-tutorials-preview.yml`: it starts on a successful preview deployment, runs and records the web tutorials, and uploads the recording. A protected preview needs its bypass token as the `RFR_PREVIEW_BYPASS` secret, which is sent to the preview's own origin only.
+
+**When the CI cannot drive the user interface** (a hosted CMS editor behind a login, a vendor's admin console): put the rules and messages the stories promise in a module that does not import the third-party tool, and unit-test that module against the criteria. The pilot covered 11 of 15 criteria this way. Cover the rest with a `runner: manual` tutorial that a person follows before release.
 
 Run web tutorials in the project's own CI against a **fixture build**: the site built with fixed, offline content (for example an environment variable that swaps the CMS client for local fixtures), so each run is deterministic and does not depend on what the live content holds. A preview deployment is the second check, for what the fixtures cannot show.
 
