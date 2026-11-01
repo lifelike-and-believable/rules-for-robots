@@ -1,5 +1,5 @@
 {
-  "description": "rfr-process hooks: deny agent merges of pull requests that touch gated process folders, because the approver's merge is the approval (docs/specs/project-process.md).",
+  "description": "rfr-process hooks: ask the person to confirm agent merges of pull requests that touch gated process folders, because the approver's merge is the approval (docs/specs/project-process.md).",
   "hooks": {
     "PreToolUse": [
       {

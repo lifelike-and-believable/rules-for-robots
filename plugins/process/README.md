@@ -85,7 +85,7 @@ An agent writing the pull request may set `status: approved` in it; that is a pr
 
 ### When an agent merges for the approver
 
-In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. The plugin's `guard-merge` hook enforces this when the plugin is installed; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
+In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. When the plugin is installed, its `guard-merge` hook asks the person to confirm each such merge; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent and the project's `AGENTS.md`. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
 
 ### Who approved, according to GitHub
 
@@ -100,7 +100,7 @@ Required reviews and checks need a paid GitHub plan for private repositories. Wi
 
 ## The merge guard
 
-The plugin's `guard-merge` hook denies `gh pr merge`, `gh api .../pulls/N/merge`, and the GitHub MCP merge tool when the pull request touches a gated folder, because the approver's merge is the approval. It lists the pull request's files with `gh`; if it cannot, it denies the merge. Projects without `docs/product/process.yml` are not affected. Users can disable plugin hooks, so the hook is a convenience and the approvals job is the enforcement.
+The plugin's `guard-merge` hook asks the person to confirm `gh pr merge`, `gh api .../pulls/N/merge`, and the GitHub MCP merge tool when the pull request touches a gated folder, because merging it is the approval. The permission prompt is where the approver says yes; the agent should then comment on the pull request with the instruction. It lists the pull request's files with `gh`; if it cannot, it asks anyway and says why. Projects without `docs/product/process.yml` are not affected. Users can disable plugin hooks, so the hook is a convenience and the approvals job is the enforcement.
 
 ## Size tiers
 

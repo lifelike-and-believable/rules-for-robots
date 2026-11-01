@@ -1,6 +1,6 @@
-// Tests for the rfr-process merge guard (docs/specs/project-process.md, "Approval records"): agents
-// may not merge pull requests that touch gated folders, because in solo mode the merge is the
-// approval. Each test title cites the criterion it covers (project-process#AC-n).
+// Tests for the rfr-process merge guard (docs/specs/project-process.md, "Approval records"): an
+// agent's merge of a pull request that touches gated folders needs the person's confirmation,
+// because in solo mode the merge is the approval. Each test title cites the criterion it covers (project-process#AC-n).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -35,21 +35,21 @@ test('project-process#AC-7: merge commands and the MCP merge tool are recognized
   assert.equal(mergeTarget({ tool_name: 'mcp__github__get_pull_request', tool_input: {} }), null);
 });
 
-test('project-process#AC-7: merging a pull request that touches a gated folder is blocked', () => {
+test('project-process#AC-7: merging a pull request that touches a gated folder asks the person', () => {
   const root = project();
   const seen = [];
   const listFiles = target => { seen.push(target); return gated; };
   const viaGh = decideMerge({ input: bash('gh pr merge 12 --merge'), root, listFiles });
-  assert.equal(viaGh.deny, true);
+  assert.equal(viaGh.ask, true);
   assert.match(viaGh.reason, /docs\/user\/retarget\.md/);
-  assert.equal(decideMerge({ input: mcp(), root, listFiles }).deny, true);
+  assert.equal(decideMerge({ input: mcp(), root, listFiles }).ask, true);
   assert.deepEqual(seen, [{ kind: 'gh', ref: '12' }, { kind: 'api', owner: 'acme', repo: 'app', number: 12 }]);
 });
 
 test('project-process#AC-7: merging a pull request that touches no gated folder is allowed', () => {
   const root = project();
-  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => ungated }).deny, false);
-  assert.equal(decideMerge({ input: mcp(), root, listFiles: () => ungated }).deny, false);
+  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => ungated }).ask, false);
+  assert.equal(decideMerge({ input: mcp(), root, listFiles: () => ungated }).ask, false);
 });
 
 test('project-process#AC-7: process specs are gated only when spec approvers are configured', () => {
@@ -57,23 +57,23 @@ test('project-process#AC-7: process specs are gated only when spec approvers are
   const root = project('mode: team\ndefault: [lead]\n');
   fs.mkdirSync(path.join(root, 'docs/specs'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs/specs/retarget.md'), '---\nid: spec-retarget\nstatus: draft\n---\n\n# Spec\n');
-  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => files }).deny, false);
+  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => files }).ask, false);
   fs.writeFileSync(path.join(root, 'docs/product/process.yml'), 'mode: team\ndefault: [lead]\nstages:\n  specs: [lead]\n');
-  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => files }).deny, true);
+  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => files }).ask, true);
 });
 
-test('project-process#AC-7: when the pull request\'s files cannot be listed, the merge is blocked', () => {
+test('project-process#AC-7: when the pull request\'s files cannot be listed, the hook asks', () => {
   const root = project();
   const result = decideMerge({ input: bash('gh pr merge 12'), root, listFiles: () => { throw new Error('gh: not found'); } });
-  assert.equal(result.deny, true);
+  assert.equal(result.ask, true);
   assert.match(result.reason, /could not/i);
 });
 
 test('project-process#AC-7: without process.yml, or for other commands, nothing is checked', () => {
   let called = false;
   const listFiles = () => { called = true; return gated; };
-  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root: project(null), listFiles }).deny, false);
-  assert.equal(decideMerge({ input: bash('gh pr view 12'), root: project(), listFiles }).deny, false);
+  assert.equal(decideMerge({ input: bash('gh pr merge 12'), root: project(null), listFiles }).ask, false);
+  assert.equal(decideMerge({ input: bash('gh pr view 12'), root: project(), listFiles }).ask, false);
   assert.equal(called, false);
 });
 
@@ -86,15 +86,15 @@ test('project-process#AC-7: the plugin registers the guard for shell commands an
   assert.ok(!guarded('Edit'));
 });
 
-test('project-process#AC-7: the hook prints a deny decision, and nothing for an allowed command', () => {
+test('project-process#AC-7: the hook prints an ask decision, and nothing for an allowed command', () => {
   const root = project();
   const script = path.resolve('plugins/process/scripts/guard-merge.mjs');
   const quiet = spawnSync(process.execPath, [script], { input: JSON.stringify({ ...bash('gh pr view 12'), cwd: root }), encoding: 'utf8' });
   assert.equal(quiet.status, 0);
   assert.equal(quiet.stdout, '');
-  // With PATH emptied, gh cannot run, so the files cannot be listed and the merge is denied.
-  const denied = spawnSync(process.execPath, [script], { input: JSON.stringify({ ...bash('gh pr merge 12'), cwd: root }), encoding: 'utf8', env: { PATH: '' } });
-  assert.equal(denied.status, 0);
-  const out = JSON.parse(denied.stdout);
-  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  // With PATH emptied, gh cannot run, so the files cannot be listed and the hook asks.
+  const asked = spawnSync(process.execPath, [script], { input: JSON.stringify({ ...bash('gh pr merge 12'), cwd: root }), encoding: 'utf8', env: { PATH: '' } });
+  assert.equal(asked.status, 0);
+  const out = JSON.parse(asked.stdout);
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
 });
