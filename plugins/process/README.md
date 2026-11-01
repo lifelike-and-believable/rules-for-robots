@@ -4,7 +4,7 @@ A staged project development process for products built with agents, from [rules
 
 Install it from this marketplace with `/plugin install rfr-process@rules-for-robots`. It declares `rfr-core` as a dependency, so Claude Code installs that too.
 
-Slices 11a and 11b are in: templates, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, and a merge guard hook. Skills, profile templates, and the persona walkthrough follow in later slices.
+Slices 11a to 11c are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable tutorials, a merge guard hook, the `persona-walkthrough` agent, and the `setup` and `bootstrap` skills. How to write each artifact and what each review checks is in the [guide](GUIDE.md). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
 
 ## The process
 
@@ -24,11 +24,13 @@ Approvers configured in `docs/product/process.yml` approve the design phase: con
 
 ## Setting up a project
 
+Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and gives you the commands for 3 and 4. For a project that already has code and users, follow it with `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from what exists. By hand:
+
 1. Copy `templates/process.yml` to `docs/product/process.yml` and name the approvers.
 2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch.
 3. In team mode, run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
 4. Create the labels `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic`.
-5. Start each artifact from `templates/artifacts/`.
+5. Start each artifact from `templates/artifacts/`, and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`.
 
 ## Links and staleness
 
@@ -90,3 +92,17 @@ Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, o
 ## Issue sync
 
 After each merge, every persona, epic, and story gets an issue labelled `rfr-process` and `stage:<stage>`; stories are attached to their epic as sub-issues when created. The file always wins: the next sync rewrites the title, body, stage label, and open state, keeps other labels and the discussion, and closes the issue of a deleted artifact. Large first syncs stop at 100 writes or a long rate limit, and the next run continues.
+
+## Runnable tutorials
+
+Every tutorial in `docs/tutorials/` names its runner in front matter.
+
+- `runner: web`: the tutorial is its own test. `node .rfr/checks/tutorial-run.mjs . --base-url <url>` opens the product in a browser and performs each step: ``Open `/path`.``, ``Type `text` into **Label**.``, ``Choose `option` from **Label**.``, `Check **Label**.`, `Click **Name**.`, and `You see **Text**.` Other sentences are narration, and a step ending in `(manual)` is skipped. When the product changes and the tutorial does not, the run fails at the step that no longer matches. Add the command to the job that runs your end-to-end tests against a preview; it needs `playwright` as a dev dependency.
+- `runner: unreal`: an automation or functional test follows the tutorial and names its id in a comment.
+- `runner: manual`: a person follows it before release.
+
+The `tutorials` job checks, without a browser or the engine, that every tutorial names a runner, that web tutorials use steps the runner can perform, and that an automation test cites each Unreal tutorial.
+
+## Persona walkthrough
+
+The experimental `persona-walkthrough` agent reads user documentation, a design note, or a tutorial once for each persona the stories name, and reports where each would be confused, blocked, or expect something different, which story or persona section the expectation comes from, and which artifact most likely needs to change. Run it before the approver reviews stages 6, 7, and 12. It has not been through an eval round yet.

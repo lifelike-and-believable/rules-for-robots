@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88]
 ---
 
 # Project development process (`rfr-process` plugin)
@@ -137,7 +137,7 @@ Two pull requests can each pass the process check and still leave the default br
 
 ### Code and tests
 
-Code and tests carry no front matter and no links. They inherit staleness through the spec they cite: a stale or withdrawn spec fails the process check, and its tests are tied to it through the Phase 10 citation (`<spec>#AC-n`). The Phase 10 lock and trace checks apply unchanged. Tutorials (stage 12) are markdown artifacts with links; their runnable scripts cite the tutorial `id` in a comment, the same way tests cite criteria.
+Code and tests carry no front matter and no links. They inherit staleness through the spec they cite: a stale or withdrawn spec fails the process check, and its tests are tied to it through the Phase 10 citation (`<spec>#AC-n`). The Phase 10 lock and trace checks apply unchanged. Tutorials (stage 12) are markdown artifacts with links, and each names its runner in front matter. A `runner: web` tutorial is its own test: `checks/tutorial-run.mjs` reads each step's sentences (`Click **Name**.`, ``Type `text` into **Label**.``, `You see **Text**.`) as browser actions and checks, so the words a reader follows are the words that run, and no separate script can drift from them. A `runner: unreal` tutorial is followed by an automation test that cites its `id` in a comment, the same way tests cite criteria; the check fails when none does. A `runner: manual` tutorial is followed by a person before release. (Decided in 11c: the original design had a separate script for every tutorial.)
 
 ## Approvers and approval
 
@@ -214,7 +214,7 @@ An existing project has code and no process artifacts. Setting `adoption-until` 
 The repository's principle is that rules and skills earn their place with evidence (PLAN section 4, R18). Writing a concept or requirements document is mostly something the model already does well. So:
 
 - **Ship as skills and scripts from the start**, because they carry mechanics the model cannot infer: setup (templates, `process.yml`), `process-relink`, `process-codeowners`, the status listing, release readiness and notes, feedback triage, and the bootstrap skill.
-- **Ship as a practice guide first** (`practices/project-process.md`): how to write each design-stage artifact, the review checklists, and the persona walkthrough procedure. A stage gets its own skill only when an eval case shows the skill does better than the guide.
+- **Ship as a guide first** (`plugins/process/GUIDE.md`; planned as `practices/project-process.md`, moved in 11c because guides in `practices/` belong to rules and this one has none yet): how to write each design-stage artifact, the review checklists, and the persona walkthrough procedure. A stage gets its own skill only when an eval case shows the skill does better than the guide.
 
 ## User stories
 
@@ -251,7 +251,7 @@ The repository's principle is that rules and skills earn their place with eviden
 
 ## Scope
 
-- In: `plugins/process/` (setup, relink, CODEOWNERS, status, release check and notes, triage, and bootstrap skills; the merge-blocking and status-warning hooks; per-profile templates; the `persona-walkthrough` agent); `checks/process-trace.mjs`, the approvals, tier, and sync scripts, and their tests; reusable workflows that adopting repos call, like `rfr-guards.yml`; the `validate:plugins` script extended to the new plugin; `practices/project-process.md`; eval cases.
+- In: `plugins/process/` (setup, relink, CODEOWNERS, status, release check and notes, triage, and bootstrap skills; the merge-blocking and status-warning hooks; per-profile templates; the `persona-walkthrough` agent); `checks/process-trace.mjs`, the approvals, tier, and sync scripts, and their tests; reusable workflows that adopting repos call, like `rfr-guards.yml`; the `validate:plugins` script extended to the new plugin; `plugins/process/GUIDE.md`; eval cases.
 - Out: changes to `rfr-core`; trackers other than GitHub; a MUST rule before evals support one; automating the approvers' decisions; design-stage skills before an eval shows they beat the guide.
 
 ## APIs and assumptions
@@ -275,7 +275,7 @@ The repository's principle is that rules and skills earn their place with eviden
 - Slices:
   - 11a: templates, front matter, `process.yml`, `process-trace` and `process-relink` with their tests, the reusable workflow and its caller template; the plugin skeleton and `validate:plugins` (AC-1, AC-2, AC-3, AC-4, AC-8, AC-15, AC-17).
   - 11b: approvals job, merge-blocking hook, CODEOWNERS script, tier check, issue sync, and assigning the `stale` issue to the approvers of the stages involved (AC-5, AC-6, AC-7, AC-9, AC-10, AC-11). The scripts live in `checks/` and run from the reusable workflow or an `.rfr` checkout, like the 11a check; the hook, which runs from the installed plugin, gets a copy of `checks/lib/process.mjs` made by `npm run build`.
-  - 11c: practice guide, profile templates, tutorial runners, persona walkthrough agent, bootstrap skill (AC-16, and the guide that AC-18 depends on).
+  - 11c: practice guide, profile templates, tutorial runners, persona walkthrough agent, setup and bootstrap skills (AC-7, AC-16, and the guide that AC-18 depends on). The Unreal half of AC-16, a fixture tutorial and automation test in `examples/unreal/RfrSample` run by the Tier 2 workflow, needs the engine runner to build and verify, so it follows in its own pull request; 11c ships the engine-free check that every Unreal tutorial is cited by a test.
   - 11d: stage 8 template, release check and notes, triage skill, and the eval round (AC-12, AC-13, AC-14, AC-18). Starts after Phase 10's eval round (10c), because it builds on whichever Phase 10 rules that round keeps.
 
 ## Eval round (11d)
