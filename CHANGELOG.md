@@ -4,8 +4,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-11-01
+
+Pull requests: #103, #104, #105, #107, #108, #109, #110, #111, #112, #113, #114, #115.
+
 ### Changed
 
+- `plan-feature` (`rfr-core`, #115): stubs for tests written first return a wrong value that is not empty or false, so tests that expect nothing found or something refused start red; the spec is read against the approved user documentation before the tests are written; and a criterion found missing after the tests commit gets its own failing test in a new commit appended to `tests-commit`. The same guidance is in `practices/working-with-agents.md`. From the Kettlebird pilot (entries 44 and 53).
 - `rfr-process` 0.9.1 (#114): fixes from the fourth round of the Kettlebird pilot. A new `derived-from` entry can be written with or without its colon, the relink script records its hash, and the check's message for an unrecorded link names the relink command (AC-34). The guide says when a story may skip user documentation and tutorials, how to add a criterion after the tests commit, and how to test a user interface the CI cannot drive.
 - `rfr-process` 0.9.0 (#113), slice 11g: an advisory `docs-lint` job that runs Vale 3.26.0 (pinned by SHA-256) with an RFR style built from the writing rules and a vocabulary of persona names and glossary terms (AC-23); Stryker configurations for the `web-app` and `static-site` profiles and an advisory `mutation` job for `tier:story` and `tier:epic` pull requests, incremental across pushes and in full when tests change, with the score and surviving mutants in the job summary (AC-24); and a reusable workflow, with a caller template, that runs and records web tutorials against each preview deployment, sending a protection-bypass header to the preview's origin only (AC-33).
 - `rfr-process` 0.8.1 (#112): fixes from the third round of the Kettlebird pilot. The bold-name warning also offers removing bold that is only emphasis; the guide and design template recommend keeping the mock-ups' editable source beside them and say what mock-ups of a third-party interface can and cannot settle; the persona walkthrough checks a story's key terms against similar things in the product.
