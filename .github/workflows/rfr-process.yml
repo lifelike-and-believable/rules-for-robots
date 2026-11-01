@@ -14,6 +14,10 @@ name: rules-for-robots process check
 #               the folders their tier may not change.
 #   codeowners  the rfr-process block in .github/CODEOWNERS matches process.yml (team mode).
 #   sync        after a merge, personas, epics, and stories are mirrored to issues.
+#   tutorials   every tutorial names its runner, web tutorials use steps the runner can perform,
+#               and an automation test cites each Unreal tutorial. Running web tutorials against
+#               the product needs it deployed, so that step belongs in the project's own e2e job:
+#               node .rfr/checks/tutorial-run.mjs . --base-url <url>.
 # Every job passes without doing anything when the repository has no docs/product/process.yml.
 on:
   workflow_call:
@@ -161,3 +165,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node .rfr/checks/ci/process-sync.mjs .
+
+  tutorials:
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Tutorial runners and coverage
+        run: node .rfr/checks/tutorial-run.mjs . --coverage

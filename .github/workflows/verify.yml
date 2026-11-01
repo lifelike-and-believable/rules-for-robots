@@ -20,6 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The tutorial runner tests drive a real browser.
+      - run: npx playwright install --with-deps chromium
       # Plugin validation needs the Claude Code CLI; no API key is used.
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
       - run: npm run verify
