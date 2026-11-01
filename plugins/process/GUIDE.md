@@ -92,6 +92,8 @@ These follow `rfr-core` and Phase 10: a spec whose criteria cite the stories and
 
 Acceptance and end-to-end tests can be drafted as soon as the user documentation is approved. Write them against the documented behaviour, not the planned implementation.
 
+When tests are committed red against stubs, make each stub return a wrong value that is not empty or false: a stub returning `[]` or `false` passes every test that expects nothing to be found or something to be refused, and those tests then prove nothing until they are changed.
+
 ## Validation stages
 
 ### Tutorials and demos
@@ -103,6 +105,8 @@ Every tutorial names its runner in front matter:
 - `runner: web`: the steps run in a browser against the product (`node .rfr/checks/tutorial-run.mjs --base-url <url>`). Write each step with sentences the runner understands: ``Open `/path`.``, ``Type `text` into **Label**.``, ``Choose `option` from **Label**.``, `Check **Label**.`, `Click **Name**.`, and `You see **Text**.` Other sentences are narration. End a step with `(manual)` when a person has to do it. A tutorial that no longer matches the product fails, so the tutorial and the product cannot drift apart unnoticed.
 - `runner: unreal`: an automation or functional test in the sample project follows the steps and names the tutorial's id in a comment. The process check fails if no test cites it, and the Tier 2 workflow runs the test on the engine runner. Record a short walkthrough video from the same steps for the Fab listing.
 - `runner: manual`: a person follows it before each release. Use this only when neither runner can do the steps.
+
+Run web tutorials in the project's own CI against a **fixture build**: the site built with fixed, offline content (for example an environment variable that swaps the CMS client for local fixtures), so each run is deterministic and does not depend on what the live content holds. A preview deployment is the second check, for what the fixtures cannot show.
 
 Review checks: the approver follows the tutorial on the real product. Did it produce what the stories promised? Was any step surprising?
 
@@ -138,7 +142,7 @@ Recording hashes is not approval: the pull request that carries them is approved
 
 - **In solo mode, propose `approved` from the start.** The merge is the approval, so open the pull request with the artifacts already set to `approved` and their hashes recorded; if the approver asks for changes, the agent updates them in the same pull request. Keep `draft` for work that will not merge yet. In team mode the two-step flow in the README still applies.
 - **Batch artifacts of the same stage** into one pull request when the approver will read them together (three personas, or an epic's stories), and keep stages apart, so each pull request has one approver and one kind of review.
-- **Stack pull requests for linked artifacts.** A story's pull request can be based on its epic's branch, so both are reviewed in parallel; merge the epic first, then retarget the story to the default branch. The story cannot be approved before its epic is, because the check fails an approved artifact that links to a draft.
+- **Stack pull requests for linked artifacts.** A story's pull request can be based on its epic's branch, so both are reviewed in parallel; merge the epic first, then retarget the story to the default branch. The story cannot be approved before its epic is, because the check fails an approved artifact that links to a draft. Check that the project's own CI runs on stacked pull requests: workflows often run only on pull requests into the default branch, and retargeting does not re-run CI unless the workflow listens for `edited`. After retargeting, merge the default branch into the story's branch and push, so every check runs on what will merge.
 - **Some cloud agent sessions can push to only one branch.** They cannot stack pull requests or keep two open at once; work through the stages one pull request at a time, or batch.
 - **Pull request numbers skip.** Issues and pull requests share one sequence, and issue sync creates an issue for each persona, epic, and story, so gaps between pull request numbers are normal.
 
@@ -161,7 +165,7 @@ These fit the process without competing with it. Versions are the ones checked o
 
 | Tool | Stage | Source and pin | Notes |
 |---|---|---|---|
-| Playwright | Tutorials, regression tests | npm `playwright`, an exact version (the runner is tested with 1.63.0) | Runs `runner: web` tutorials. For an agent checking a page, prefer the Playwright CLI to the MCP server in long sessions (rule WEB-004). |
+| Playwright | Tutorials, regression tests | npm `playwright`, an exact version (the runner is tested with 1.63.0) | Runs `runner: web` tutorials. For an agent checking a page, prefer the Playwright CLI to the MCP server in long sessions (rule WEB-004). Some add-ons, such as `@axe-core/playwright`, depend on their own `playwright-core` instead of a peer, so pinning `playwright` still leaves two versions; add an npm `overrides` entry for `playwright-core` with the same version. |
 | Starlight | User documentation | npm `@astrojs/starlight` (0.42.x when checked; still 0.x, so pin it) | Publishes `docs/user/` as an accessible static site; the files stay the source. |
 | Figma MCP server | Design and UX | `figma@claude-plugins-official`, which pins it to a commit | Only if the project designs in Figma. A hosted service that reads your files, and it needs a paid seat for some features. |
 
