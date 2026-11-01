@@ -4,7 +4,7 @@ A staged project development process for products built with agents, from [rules
 
 Install it from this marketplace with `/plugin install rfr-process@rules-for-robots`. It declares `rfr-core` as a dependency, so Claude Code installs that too.
 
-Slices 11a to 11c are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable tutorials, a merge guard hook, the `persona-walkthrough` agent, and the `setup` and `bootstrap` skills. How to write each artifact and what each review checks is in the [guide](GUIDE.md). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
+Slices 11a to 11c and 11e are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable and recorded tutorials, a merge guard hook, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
 
 ## The process
 
@@ -64,7 +64,8 @@ Recording hashes is not approval. The pull request that carries them is approved
 4. a stale link, or an approved link with no recorded hash;
 5. a story that names no persona, or a persona that is not approved;
 6. a spec `test:` criterion whose Source column names no story or user documentation section from its `derived-from`;
-7. with `--base`, an artifact approved at the base that is now draft without a `withdrawn` entry.
+7. with `--base`, an artifact approved at the base that is now draft without a `withdrawn` entry;
+8. a story without "As <persona>, I want ... so that ..." naming a persona it links to, or without an "Acceptance criteria" section with at least one item (a warning while the story is a draft).
 
 `--status` lists each persona, epic, and story, how far the work below it has reached, and anything stale or withdrawn.
 
@@ -97,7 +98,7 @@ After each merge, every persona, epic, and story gets an issue labelled `rfr-pro
 
 Every tutorial in `docs/tutorials/` names its runner in front matter.
 
-- `runner: web`: the tutorial is its own test. `node .rfr/checks/tutorial-run.mjs . --base-url <url>` opens the product in a browser and performs each step: ``Open `/path`.``, ``Type `text` into **Label**.``, ``Choose `option` from **Label**.``, `Check **Label**.`, `Click **Name**.`, and `You see **Text**.` Other sentences are narration, and a step ending in `(manual)` is skipped. When the product changes and the tutorial does not, the run fails at the step that no longer matches. Add the command to the job that runs your end-to-end tests against a preview; it needs `playwright` as a dev dependency.
+- `runner: web`: the tutorial is its own test. `node .rfr/checks/tutorial-run.mjs . --base-url <url>` opens the product in a browser and performs each step: ``Open `/path`.``, ``Type `text` into **Label**.``, ``Choose `option` from **Label**.``, `Check **Label**.`, `Click **Name**.`, and `You see **Text**.` Other sentences are narration, and a step ending in `(manual)` is skipped. When the product changes and the tutorial does not, the run fails at the step that no longer matches. Add the command to the job that runs your end-to-end tests against a preview; it needs `playwright` as a dev dependency. With `--record <dir>` it saves a screenshot after each step, `failure.png` at a failing step, and `video.webm` for each tutorial: upload the folder as a build artifact and the approver has the stage 12 demo.
 - `runner: unreal`: an automation or functional test follows the tutorial and names its id in a comment.
 - `runner: manual`: a person follows it before release.
 
@@ -105,4 +106,4 @@ The `tutorials` job checks, without a browser or the engine, that every tutorial
 
 ## Persona walkthrough
 
-The experimental `persona-walkthrough` agent reads user documentation, a design note, or a tutorial once for each persona the stories name, and reports where each would be confused, blocked, or expect something different, which story or persona section the expectation comes from, and which artifact most likely needs to change. Run it before the approver reviews stages 6, 7, and 12. It has not been through an eval round yet.
+The experimental `persona-walkthrough` agent does a cognitive walkthrough of user documentation, a design note, or a tutorial, once for each persona the stories name: at every step it asks where that persona would fail and why. For a web tutorial with a URL, it runs the tutorial first and reports mismatches with the product as facts. Findings are ordered by severity, each citing the story or persona section behind the expectation and the artifact that most likely needs to change. Run it before the approver reviews stages 6, 7, and 12. It has not been through an eval round yet.

@@ -107,12 +107,12 @@ Before a release, every story in it has an approved tutorial, and nothing it dep
 
 ## Persona walkthrough
 
-A persona walkthrough reads an artifact once per persona, in that persona's terms, and reports where they would be confused, blocked, or expect something different. Run it on design notes, user documentation, and tutorials before the approver reviews them. The `persona-walkthrough` agent does this; you can also do it by hand.
+A persona walkthrough is a cognitive walkthrough done once per persona: at every step, where would this persona fail, and why? Run it on design notes, user documentation, and tutorials before the approver reviews them. The `persona-walkthrough` agent does this; you can also do it by hand. Look for failures deliberately at each step: studies of LLM walkthroughs found that models finish more tasks and spot fewer failure points than people unless asked for failures explicitly, and that playing a persona makes the output more believable rather than more accurate. For a web tutorial, run it against the product first (`tutorial-run --record`); a step that fails there is a fact, not a prediction.
 
 1. Pick the personas the artifact's stories name. Read each persona file in full.
 2. For each persona separately, read the stories first, as their expectations.
 3. Read the artifact from the top with only that persona's skills and vocabulary. For a tutorial, do the steps, on the product if it runs.
-4. Note every unknown term or prerequisite, every step they could not take or would take wrongly, every result that differs from what their goals and the stories led them to expect, and every listed frustration the page triggers.
+4. At each step ask four questions: will they know what to do, will they see the control or information they need, will they connect it to their goal, and after acting, will they know it worked and get what they expected? Note every "no", and every listed frustration the page triggers.
 5. For each finding, record where it is, what the persona would do, what they expected and why, how bad it is (blocks, misleads, or slows), and which artifact most likely needs to change.
 
 The walkthrough informs the approver; it does not replace them. Whether an agent's walkthrough finds the misalignments real users find is an open question the Phase 11 evals test.
@@ -130,3 +130,42 @@ Recording hashes is not approval: the pull request that carries them is approved
 ## Adopting on an existing project
 
 Run `/rfr-process:setup`, then `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from the project's README, documentation, issues, and code, and sets an adoption window. Until the window ends, artifacts with no links produce warnings instead of failures. Approve the product-level artifacts first, then write stories and documentation for new work as it comes. Existing features get user documentation and tutorials when they next change, or sooner if they matter most to users.
+
+## Recommended tools
+
+These fit the process without competing with it. Versions are the ones checked on 2026-11-01; pin exactly what you install, and update on purpose. The research behind each choice, and the tools considered and not recommended, are in the rules-for-robots note [third-party tools for the project process](../../docs/research/notes/third_party_tools_for_process.md).
+
+### Every profile
+
+| Tool | Stage | Source and pin | Notes |
+|---|---|---|---|
+| `rfr-core` and `rfr-process` | All | This repository's marketplace | Installing `rfr-process` installs `rfr-core` as its dependency. |
+| Context7 | Implementation | `context7@claude-plugins-official` (vendored in that repository) | Current library documentation for the agent. Its hosted service sees your queries; do not send confidential code to it. |
+
+### `web-app` and `static-site`
+
+| Tool | Stage | Source and pin | Notes |
+|---|---|---|---|
+| Playwright | Tutorials, regression tests | npm `playwright`, an exact version (the runner is tested with 1.63.0) | Runs `runner: web` tutorials. For an agent checking a page, prefer the Playwright CLI to the MCP server in long sessions (rule WEB-004). |
+| Starlight | User documentation | npm `@astrojs/starlight` (0.42.x when checked; still 0.x, so pin it) | Publishes `docs/user/` as an accessible static site; the files stay the source. |
+| Figma MCP server | Design and UX | `figma@claude-plugins-official`, which pins it to a commit | Only if the project designs in Figma. A hosted service that reads your files, and it needs a paid seat for some features. |
+
+Vale prose linting and Stryker mutation testing arrive as advisory CI jobs in a later slice (spec slice 11g).
+
+### `unreal-plugin`
+
+| Tool | Stage | Source and pin | Notes |
+|---|---|---|---|
+| Epic's Unreal Engine skills plugin | Design (editor UI), tutorials, demos | `unreal-engine-skills-for-claude-code@claude-plugins-official`, which pins it to a commit | Unreal 5.8 and later. Epic marks Unreal MCP experimental. Use it interactively only, never in CI, with one agent per editor (rule R34 in the rules-for-robots plan), and commit before a long session. See the security notes below. |
+| Unreal automation and screenshot functional tests | Tutorials, regression tests | The engine's own test framework | `runner: unreal` tutorials are followed by automation tests. Screenshot tests and Movie Render Queue demo renders run on a GPU runner (spec slice 11h). |
+
+## Installing third-party plugins and MCP servers safely
+
+Plugins and MCP servers run with your permissions on your machine and in your CI. Treat each one like a dependency you are adding to the build.
+
+1. **Install from a source you can trace.** Prefer this repository's marketplace and `claude-plugins-official`. Even there, the official README says: "Anthropic does not control what MCP servers, files, or other software are included in plugins and cannot verify that they will work as intended or that they won't change." ([claude-plugins-official](https://github.com/anthropics/claude-plugins-official)) Install community collections one plugin at a time, never wholesale.
+2. **Pin to a commit.** A marketplace source of type `github`, `url`, or `git-subdir` takes `ref` (a branch or tag) and `sha` (a full 40-character commit); when both are set, Claude Code checks out `sha`. ([plugin sources](https://code.claude.com/docs/en/plugins/marketplace-reference.md)) `claude-plugins-official` already pins its git-sourced third-party entries this way; plugins vendored inside that repository are pinned by the repository itself.
+3. **Read before installing, and again before updating.** Read the plugin's `hooks/hooks.json` and the scripts it runs, its `.mcp.json`, and any agent or skill that asks for shell or network tools. On an update, read the diff between the old and new commit.
+4. **Expect real attacks.** Snyk's study of public agent skills found that 36.82% (1,467) had at least one security flaw, and confirmed 76 malicious payloads built for credential theft, backdoors, and data exfiltration ([Snyk, February 2026](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)). In October 2026, a tampered copy of the Claude Code extension (versions 2.1.312 and 2.1.313) was served from Cursor's extension marketplace for a few hours and tried to open an SSH backdoor; the official npm package was not affected ([Microsoft Security, 30 October 2026](https://www.microsoft.com/en-us/security/blog/2026/10/30/inside-malicious-claude-code-branded-cursor-extension-persistent-ssh-backdoor/)). Install from the publisher's own channel.
+5. **Know what an editor-control server can reach.** Epic's documentation says Unreal MCP has no authentication layer, accepts only local connections by default, and discovers Python toolsets from every installed plugin's `Content/Python/` folder at startup ([Unreal MCP in Unreal Editor](https://dev.epicgames.com/documentation/unreal-engine/unreal-mcp-in-unreal-editor)). So any process on the machine can drive the editor while it runs, and installing an engine plugin can add tools the agent will use. Do not change the bind address, and review engine plugins as you would Claude Code plugins.
+6. **Keep remote services' data in mind.** Hosted MCP servers (Figma, Context7, and others) see what you send them. Check a client's confidentiality terms before connecting their project.
