@@ -48,7 +48,9 @@ def main():
     output = config.find_or_add_setting_by_class(unreal.MoviePipelineOutputSetting)
     output.output_directory = unreal.DirectoryPath(out)
     output.output_resolution = unreal.IntPoint(1280, 720)
-    output.file_name_format = "{sequence_name}.{frame_number}"
+    # A fixed name: {sequence_name} is empty in some versions, and a name starting with "."
+    # is hidden, so the artifact upload skips it.
+    output.file_name_format = "score-demo.{frame_number}"
     executor = unreal.MoviePipelinePIEExecutor()
     executor.on_executor_finished_delegate.add_callable_unique(finished)
     queue_subsystem.render_queue_with_executor_instance(executor)
