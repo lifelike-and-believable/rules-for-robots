@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- `rfr-process` 0.9.3 (#PRNUM): fixes from the fifth round of the Kettlebird pilot. The process check warns when a draft's recorded hash is out of date (AC-35); the tutorial runner names a protected preview (a 401 or 403, or a login page on another host) instead of reporting a missing element (AC-36); the mutation job posts its score as a check annotation (AC-37), and the static-site Stryker configuration mutates `src/lib/` only. The design template asks how the system knows what it shows, what enforces each promise, and what is published together; the persona walkthrough reads the rendering code, checks help text against the site, and walks editor designs as the readers of the changed pages; bootstrap keeps implementation facts in `docs/product/notes.md`; the preview caller's comment on when it runs is corrected.
+- `rfr-process` 0.9.3 (#117): fixes from the fifth round of the Kettlebird pilot. The process check warns when a draft's recorded hash is out of date (AC-35); the tutorial runner names a protected preview (a 401 or 403, or a login page on another host) instead of reporting a missing element (AC-36); the mutation job posts its score as a check annotation (AC-37), and the static-site Stryker configuration mutates `src/lib/` only. The design template asks how the system knows what it shows, what enforces each promise, and what is published together; the persona walkthrough reads the rendering code, checks help text against the site, and walks editor designs as the readers of the changed pages; bootstrap keeps implementation facts in `docs/product/notes.md`; the preview caller's comment on when it runs is corrected.
 
 ### Added
 
