@@ -275,6 +275,7 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-37 | The mutation job reports its score as a check annotation, so it shows in the pull request's checks without opening the run. | test: the summary script prints a notice annotation with the score; the job asks for it. |
 | AC-38 | When a link to a whole artifact (no section) goes stale, the message says that any edit to the target stales it, and lists the target's sections to link instead, so artifacts written before the templates used section links can be moved over. | test: the message for a stale whole-artifact link names the target's sections; a stale section link's message does not. |
 | AC-39 | The tier job reads the pull request's current labels from GitHub on every run, so re-running a failed tier job after changing the label uses the new label, not the one recorded in the original event. | test: current labels from the API win over the event's; the event's are used when the API cannot be read. |
+| AC-40 | When an approved artifact is set back to draft without a withdrawn entry, the message also says that an amendment keeps `approved` (the gated merge approves it) and that `draft` with a reason and an issue is only for withdrawing it. | test: the rule 7 message names both choices. |
 
 ## Scope
 
@@ -310,6 +311,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (AC-33, from the pilot).
   - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
+  - Pilot fixes, round 7: AC-40, and the guide changes under "Pilot findings: round 7".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
   - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
@@ -408,6 +410,15 @@ Entries 70 to 80: adopting 0.9.3, the lead's manual pass of a CMS editing story,
 - **Old whole-artifact links cause churn.** A small addition to an approved design staled two artifacts that did not depend on it, because they linked the whole design. The stale message now lists the sections to link instead (AC-38).
 - **Re-running a failed tier job replayed the old label** from the event, so only a fresh run from the label change passed. The job now reads current labels (AC-39). The guide's tier table says that any pull request adding or changing a design or user documentation is at least `tier:story`, however small the change it describes.
 - **Smaller decisions**: each changelog entry ends with an "Adopters:" line; expected values that depend on outside facts (time zones, calendars) are worked out by hand and the reasoning noted in the test, and redoing an unpushed tests-first commit is fine; after a test-only change, run Stryker locally with `--force`; the manual tutorial template has a "Before you start" block with each server's command and address; mock-ups with several frames on one page use container units; the guide shows how an intermittent visual report became a deterministic first-frame test.
+
+## Pilot findings: round 7 (2026-11-02)
+
+Entries 81 to 83. Decisions:
+
+- **Amending an approved artifact keeps it `approved`.** The pilot set an approved user guide to `draft` while adding two sections, as it would for a new guide, and rule 7 failed. Nothing said which way an amendment goes: the gated merge approves the amended text, `draft` is for new artifacts, and `withdrawn` is for real withdrawals. The guide says so, and the rule 7 message names both choices (AC-40).
+- **Run the type check on the tests-first commit.** Against stubs, type errors in tests are easy to miss; the pilot committed the same unneeded `@ts-expect-error` twice.
+- **Test each page state as a component.** A fixture build holds one set of content; splitting a page into components that take their data as props, rendered in unit tests (Astro's container API, for one), covers every state while the end-to-end suite keeps the fixture build.
+- Observed, no change needed: mutation testing caught another real gap (alt text made only of spaces); an accessibility rule (visible link text must be part of the accessible name) shaped a design detail; the `unlocks:` list held up for test changes made after the build started.
 
 ## Open questions
 
