@@ -60,3 +60,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
   if (!file) { console.error('usage: mutation-summary.mjs <mutation.json>'); process.exit(2); }
   process.stdout.write(markdown(summarize(JSON.parse(fs.readFileSync(file, 'utf8')))));
 }
+
+// Stub (round 5 tests first).
+export function annotation() { return 'stub'; }
