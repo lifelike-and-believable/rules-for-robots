@@ -50,14 +50,15 @@ def build_level():
     # The screenshot functional test looks at the display from 400 units away.
     shot = spawn(unreal.ScreenshotFunctionalTest, unreal.Vector(-400, 0, 100), unreal.Rotator(0, 0, 0), "ScoreDisplayScreenshot")
     shot.set_actor_label("ScoreDisplayScreenshot")
-    # Unreal's default tolerances (0.02 global, 0.1 local) let "Score: 4" pass against a reference of
-    # "Score: 3": one digit is a small part of a 1920x1080 image (global 0.0008, local 0.042 on the
-    # Tier 2 runner). The scene renders identically run to run there (difference 0.000000), so the
-    # comparison allows no tolerance and only tiny errors.
+    # Unreal's default error limits (0.02 global, 0.1 local) let "Score: 4" pass against a reference
+    # of "Score: 3": one digit is a small part of a 1920x1080 image. Measured on the Tier 2 runner
+    # with the Low per-pixel tolerance: the unchanged scene differs by 0.000000, the planted change
+    # by 0.0008 global and 0.042 local. With zero per-pixel tolerance even the unchanged scene
+    # differs by 0.31, from render noise. So: Low tolerance, and limits between the two results.
     options = shot.get_editor_property("screenshot_options")
-    options.set_editor_property("tolerance", unreal.ComparisonTolerance.ZERO)
-    options.set_editor_property("maximum_local_error", 0.005)
-    options.set_editor_property("maximum_global_error", 0.0001)
+    options.set_editor_property("tolerance", unreal.ComparisonTolerance.LOW)
+    options.set_editor_property("maximum_local_error", 0.01)
+    options.set_editor_property("maximum_global_error", 0.0002)
     shot.set_editor_property("screenshot_options", options)
     if not levels.save_current_level():
         raise RuntimeError(f"could not save {MAP}")
