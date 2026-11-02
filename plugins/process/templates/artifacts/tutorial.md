@@ -13,8 +13,11 @@ tutorial-<feature> in a comment, so a tutorial that no longer matches the produc
 ## Before you start
 
 - <What the reader needs.>
+- <For each server the tutorial uses: the command that starts it and the address to open, for example "Site: `npm run dev`, then http://localhost:4321; editor: `npm run studio`, then http://localhost:3333". A step that names a page names which server it is on.>
 
 ## Steps
+
+<!-- A runner: manual tutorial is walked once by its author before the pull request is ready, or the pull request says it has not been. -->
 
 1. <Step, with the expected result.>
 

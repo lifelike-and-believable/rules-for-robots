@@ -15,7 +15,7 @@ Pick the tier before writing anything, and put it on the pull request as a label
 | `tier:story` | A new capability inside an approved epic | User stories |
 | `tier:epic` | A new area of capability | Epics, after checking whether requirements or personas change |
 
-If a fix turns out to need a change to the user documentation, it is a story. CI enforces this for the documentation folders. The one pull request with no tier is the one that adds `process.yml`: adopting the process fits none of them, so the tier check lets it through.
+If a fix turns out to need a change to the user documentation, it is a story. So is any pull request that adds or changes a design or user documentation, however small the change it describes: a short design for a one-line fix still takes `tier:story`. The tier job reads the pull request's current labels, so after changing the label, re-run it. CI enforces this for the documentation folders. The one pull request with no tier is the one that adds `process.yml`: adopting the process fits none of them, so the tier check lets it through.
 
 ## Design stages
 
@@ -98,6 +98,8 @@ Acceptance and end-to-end tests can be drafted as soon as the user documentation
 
 Before implementing, read the spec against the approved user documentation, promise by promise. A behaviour the documentation describes and no criterion covers is a gap in the spec. If the tests are already committed, add it as a new criterion with its own failing test in a second commit, and append that commit to `tests-commit`; the earlier tests stay locked. When a locked test compares whole objects, make the new field optional, or record an `unlocks:` entry with the reason.
 
+An expected value that depends on outside facts (a time zone's daylight-saving dates, a calendar, an external format) is worked out by hand from a source, with the reasoning in a comment beside it: against stubs every test fails anyway, so a wrong expectation only shows once the real code runs. Redoing an unpushed tests-first commit to correct one is fine; once pushed, use `unlocks:`.
+
 When tests are committed red against stubs, make each stub return a wrong value that is not empty or false: a stub returning `[]` or `false` passes every test that expects nothing to be found or something to be refused, and those tests then prove nothing until they are changed.
 
 ## Validation stages
@@ -115,6 +117,13 @@ Every tutorial names its runner in front matter:
 To run them against each pull request's preview deployment as well, copy `templates/workflows/rfr-tutorials-preview.yml`: it starts on a successful preview deployment, runs and records the web tutorials, and uploads the recording. A protected preview needs its bypass token as the `RFR_PREVIEW_BYPASS` secret, which is sent to the preview's own origin only.
 
 **When the CI cannot drive the user interface** (a hosted CMS editor behind a login, a vendor's admin console): put the rules and messages the stories promise in a module that does not import the third-party tool, and unit-test that module against the criteria. The pilot covered 11 of 15 criteria this way. Cover the rest with a `runner: manual` tutorial that a person follows before release.
+
+The pilot's manual pass then found four defects the tests had missed, all where the project's code called the framework: a validation result in a shape the framework ignored, a drop handler that left the framework's overlay stuck, a delete the framework refused, and a delete the editor pane never heard about. So:
+
+- Wrap each call into the framework in a thin adapter, and test the adapter with a fake of the framework's interface (a fake validation rule, a fake document store), checking the shape the framework expects.
+- List each framework behaviour the spec relies on under its assumptions ("Delete can be wrapped to run code afterwards"), so the build checks it early instead of discovering it.
+- Test wiring by its observable effect ("removals are recorded"), not by the name of a planned function, so a change of mechanism does not unlock the test.
+- Walk a manual tutorial once yourself before the pull request is ready, or say in the pull request that it has not been walked. The pilot's first manual tutorial had a step the framework refuses.
 
 When tutorials follow fixture content and previews read a CMS that is still empty, a preview run fails for a reason that is not the product. Choose one: build previews with the fixture switch on (simplest; the preview then shows fixture content), give previews a seeded CMS dataset that matches the fixtures, or run the preview workflow only once real content exists.
 
@@ -138,6 +147,10 @@ A persona walkthrough is a cognitive walkthrough done once per persona: at every
 6. For each finding, record where it is, what the persona would do, what they expected and why, how bad it is (blocks, misleads, or slows), and which artifact most likely needs to change.
 
 The walkthrough informs the approver; it does not replace them. Whether an agent's walkthrough finds the misalignments real users find is an open question the Phase 11 evals test.
+
+## Turning an intermittent visual report into a test
+
+A report like "the header sometimes flashes on page turns" can be made deterministic. In the pilot, a headless screencast caught the flash in one frame out of four turns: a script scrolled the page after the first paint. The regression test registers an init script that records `window.scrollY` in the first `requestAnimationFrame` after navigation, then asserts the value. It failed before the fix and passed after, every run. Look for the earliest observable state that differs, record it from inside the page, and assert on that rather than on a screenshot timed by luck.
 
 ## When things change
 
@@ -182,7 +195,7 @@ These fit the process without competing with it. Versions are the ones checked o
 | Starlight | User documentation | npm `@astrojs/starlight` (0.42.x when checked; still 0.x, so pin it) | Publishes `docs/user/` as an accessible static site; the files stay the source. |
 | Figma MCP server | Design and UX | `figma@claude-plugins-official`, which pins it to a commit | Only if the project designs in Figma. A hosted service that reads your files, and it needs a paid seat for some features. |
 
-| Stryker | Unit tests, implementation | npm `@stryker-mutator/core` and `@stryker-mutator/vitest-runner`, exact versions (checked with 10.1.1) | Mutation testing: it changes the code in small ways and reports each change no test noticed. Locked tests can still be weak, and coverage does not show it. Copy `templates/profiles/<profile>/stryker.config.mjs` to the project root and set `mutation: true` in the workflow caller; the advisory `mutation` job runs on `tier:story` and `tier:epic` pull requests. Treat each surviving mutant as a test to strengthen or code no behaviour depends on; in the pilot, the first run's survivors led to two real defects. Point `mutate` at unit-tested code (the static-site template uses `src/lib/`), since Stryker does not run end-to-end tests. Installing Stryker can update other packages in the lock file; review that diff. The job's score also appears as a check annotation. |
+| Stryker | Unit tests, implementation | npm `@stryker-mutator/core` and `@stryker-mutator/vitest-runner`, exact versions (checked with 10.1.1) | Mutation testing: it changes the code in small ways and reports each change no test noticed. Locked tests can still be weak, and coverage does not show it. Copy `templates/profiles/<profile>/stryker.config.mjs` to the project root and set `mutation: true` in the workflow caller; the advisory `mutation` job runs on `tier:story` and `tier:epic` pull requests. Treat each surviving mutant as a test to strengthen or code no behaviour depends on; in the pilot, the first run's survivors led to two real defects. Point `mutate` at unit-tested code (the static-site template uses `src/lib/`), since Stryker does not run end-to-end tests. Installing Stryker can update other packages in the lock file; review that diff. The job's score also appears as a check annotation. Locally, after a commit that changes only tests, run `stryker run --force`: incremental mode reuses the earlier result and can report a mutant your new test already kills. |
 
 ### Every profile, in CI
 

@@ -31,4 +31,4 @@ Rules, best practices, and agent definitions that steer Claude Code toward high-
 
 - One plan slice per branch and pull request, named `phase-<n>/<slice>`.
 - Update `PLAN.md` when a slice answers an open question or changes a decision. When a slice completes a phase or milestone item, add its pull request to that item's `Pull requests:` line or column in the same pull request, once the number is known (`npm run check:plan` fails on completed work with no pull request).
-- Name the pull request in the changelog entry for each release.
+- Name the pull request in the changelog entry for each release, and end each plugin entry with an "Adopters:" line: "nothing to do", or what an adopting project changes.

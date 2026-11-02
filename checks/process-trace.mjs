@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, parseProcessConfig, sectionHash, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -167,7 +167,12 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
       }
       if (!isApproved(target)) problems.push(`${name}: links to ${target.id}, which is ${target.status ?? 'without a status'}`);
       if (!link.hash) problems.push(`${name}: the link to ${link.key} has no recorded hash (record it with node .rfr/checks/process-relink.mjs ${a.id})`);
-      else if (link.hash !== current) problems.push(`${name}: stale: ${link.key} changed since it was recorded`);
+      else if (link.hash !== current) {
+        // A link to a whole artifact goes stale on any edit to it; suggest its sections (AC-38).
+        const sections = link.section ? [] : [...target.body.matchAll(/^##\s+(.+?)\s*$/gm)].map(m => `${target.id}#${slug(m[1])}`);
+        const hint = sections.length ? `; it links the whole of ${target.id}, so any edit there stales it: link the sections it depends on instead (${sections.join(', ')})` : '';
+        problems.push(`${name}: stale: ${link.key} changed since it was recorded${hint}`);
+      }
     }
 
     if (a.stage === 'stories') {
