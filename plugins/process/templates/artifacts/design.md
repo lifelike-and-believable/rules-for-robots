@@ -25,7 +25,10 @@ enough; they do not need to be polished. Put images in docs/design/<feature>/ wi
 beside them (an HTML file rendered to PNG, say), or link to the design tool (Figma, Penpot,
 Excalidraw), and say which state each one shows. For a third-party interface, the mock-ups settle
 wording and states; say which of the tool's behaviours the design assumes. The approver and the persona
-walkthrough judge the design from these, so a control named in the text appears in a mock-up. -->
+walkthrough judge the design from these, so a control named in the text appears in a mock-up.
+When several phone-sized frames share one HTML page, give each frame container-type: inline-size and use
+cqw where the site uses vw, or the units measure the page instead of the phone. For a "text at 200%"
+frame, double the root font size, not a wrapper's. -->
 
 | Screen or state | Mock-up | Notes |
 |---|---|---|

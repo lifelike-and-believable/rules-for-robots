@@ -70,6 +70,19 @@ export async function waitForTierLabel({ fetch = globalThis.fetch, api, token, r
   return names;
 }
 
+// The pull request's labels now. A re-run of a failed job replays its original event, whose labels
+// may be out of date, so ask GitHub; fall back to the event's when that is not possible (AC-39).
+export async function readLabels({ eventLabels, fetch = globalThis.fetch, api, token, repo, pr }) {
+  if (!token || !repo || !pr) return eventLabels;
+  try {
+    const response = await fetch(`${api}/repos/${repo}/issues/${pr}/labels`, { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json' } });
+    if (!response.ok) return eventLabels;
+    return (await response.json()).map(l => l.name);
+  } catch {
+    return eventLabels;
+  }
+}
+
 async function main() {
   const root = path.resolve(process.argv[2] ?? '.');
   const loaded = readConfig(root);
@@ -85,6 +98,7 @@ async function main() {
   const addedFiles = new Set(added.stdout.split('\n').filter(Boolean));
   let labels = [];
   try { labels = JSON.parse(process.env.LABELS || '[]'); } catch { /* treat as none */ }
+  labels = await readLabels({ eventLabels: labels, api: process.env.GITHUB_API_URL || 'https://api.github.com', token: process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPOSITORY, pr: process.env.PR_NUMBER });
   if (!labels.some(l => /^tier:/.test(l)) && !addedFiles.has(CONFIG_PATH) && process.env.EVENT_ACTION === 'opened' && process.env.GITHUB_TOKEN) {
     console.log('No tier label yet; waiting up to a minute for one to be added.');
     labels = await waitForTierLabel({ api: process.env.GITHUB_API_URL || 'https://api.github.com', token: process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPOSITORY, pr: process.env.PR_NUMBER });
