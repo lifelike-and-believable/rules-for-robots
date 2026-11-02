@@ -100,6 +100,10 @@ Before implementing, read the spec against the approved user documentation, prom
 
 An expected value that depends on outside facts (a time zone's daylight-saving dates, a calendar, an external format) is worked out by hand from a source, with the reasoning in a comment beside it: against stubs every test fails anyway, so a wrong expectation only shows once the real code runs. Redoing an unpushed tests-first commit to correct one is fine; once pushed, use `unlocks:`.
 
+Run the project's type check on the tests-first commit as well as the unit tests (`astro check`, `tsc --noEmit`): against stubs every test fails anyway, so a type error in a test, such as an unneeded `@ts-expect-error`, shows only in the type check.
+
+For a static site whose fixture build holds one set of content, test each page state through components: split the page into components that take their data as props, and render each state in a unit test (Astro's container API does this in Vitest). The end-to-end suite keeps the fixture build; the unit tests cover open and closed, filled and empty.
+
 When tests are committed red against stubs, make each stub return a wrong value that is not empty or false: a stub returning `[]` or `false` passes every test that expects nothing to be found or something to be refused, and those tests then prove nothing until they are changed.
 
 ## Validation stages
@@ -154,7 +158,9 @@ A report like "the header sometimes flashes on page turns" can be made determini
 
 ## When things change
 
-Any stage can be revisited. When an upstream section changes, every approved artifact that links to that section is stale and CI fails, so the same pull request deals with each one:
+Any stage can be revisited. To amend an approved artifact (a new section, a corrected step), edit it and keep `status: approved`: the pull request carries the change, and the gated merge, or the approving review in team mode, approves the amended text. `draft` is for new artifacts; setting an approved one back to `draft` means withdrawing it, which needs a `withdrawn:` reason and issue.
+
+When an upstream section changes, every approved artifact that links to that section is stale and CI fails, so the same pull request deals with each one:
 
 - **Update** it to match, then record new hashes with `node .rfr/checks/process-relink.mjs <id>`.
 - **Re-record** its hashes unchanged, when the change does not affect it.

@@ -227,7 +227,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
       const before = new Map(loadArtifacts(tree).artifacts.filter(a => a.id).map(a => [a.id, a]));
       for (const a of artifacts) {
         if (a.status === 'draft' && !a.withdrawn && isApproved(before.get(a.id))) {
-          errors.push(`${a.id}: was approved at ${base} and is now draft without a withdrawn entry (a reason and an issue)`);
+          errors.push(`${a.id}: was approved at ${base} and is now draft without a withdrawn entry. If you are amending it, keep status: approved; the gated merge approves the change. Set draft only to withdraw it, with withdrawn: <reason> (#<issue>)`);
           involved.add(a.id);
         }
       }
