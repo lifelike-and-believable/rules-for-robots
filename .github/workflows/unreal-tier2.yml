@@ -10,11 +10,20 @@ on:
         description: Also run the runner probe (BuildPlugin flags, Insights flags, editor exit code on failing tests)
         type: boolean
         default: false
+      plant-change:
+        description: Plant a change (the demo display shows 4, not 3) to check the screenshot test fails
+        type: boolean
+        default: false
+      engines:
+        description: Engine versions to run, as a JSON list
+        type: string
+        default: '["5.6", "5.7", "5.8"]'
   push:
     branches: [main]
     paths:
       - examples/unreal/**
       - examples/unreal-plugin/**
+      - checks/tutorial-run.mjs
       - templates/repo-files/unreal-plugin/**
       - checks/unreal/**
       - .github/workflows/unreal-tier2.yml
@@ -29,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: ['5.6', '5.7', '5.8']
+        engine: ${{ fromJSON(inputs.engines || '["5.6", "5.7", "5.8"]') }}
     env:
       ENGINE_VERSION: ${{ matrix.engine }}
       # Engine roots come from repository variables, e.g. UE_5_6_ROOT, falling back to the
@@ -147,7 +156,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: ['5.6', '5.7', '5.8']
+        engine: ${{ fromJSON(inputs.engines || '["5.6", "5.7", "5.8"]') }}
     env:
       ENGINE_VERSION: ${{ matrix.engine }}
       ENGINE_ROOT_VAR: ${{ matrix.engine == '5.6' && vars.UE_5_6_ROOT || matrix.engine == '5.7' && vars.UE_5_7_ROOT || vars.UE_5_8_ROOT }}
@@ -193,3 +202,129 @@ jobs:
         if: always()
         shell: powershell
         run: if (Test-Path "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION") { Remove-Item -Recurse -Force "$env:RUNNER_TEMP\ref-$env:ENGINE_VERSION" }
+
+  # The fixture tutorial (examples/unreal/docs/tutorials/score-display.md) on the GPU runner
+  # (docs/specs/project-process.md, AC-25): the automation spec that follows it, a screenshot
+  # functional test of its editor step, and a Movie Render Queue render of its demo sequence.
+  # Unlike build-and-test, the editor renders here (no -nullrhi).
+  tutorial-demo:
+    runs-on: [self-hosted, Windows, X64, ue5]
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ${{ fromJSON(inputs.engines || '["5.6", "5.7", "5.8"]') }}
+    env:
+      ENGINE_VERSION: ${{ matrix.engine }}
+      ENGINE_ROOT_VAR: ${{ matrix.engine == '5.6' && vars.UE_5_6_ROOT || matrix.engine == '5.7' && vars.UE_5_7_ROOT || vars.UE_5_8_ROOT }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Tutorial runners and coverage
+        run: node checks/tutorial-run.mjs examples/unreal --coverage
+
+      - name: Locate engine
+        shell: powershell
+        run: |
+          $root = $env:ENGINE_ROOT_VAR
+          if (-not $root) { $root = "C:\Program Files\Epic Games\UE_$env:ENGINE_VERSION" }
+          if (-not (Test-Path "$root\Engine\Build\BatchFiles\RunUAT.bat")) { Write-Error "Unreal Engine $env:ENGINE_VERSION not found at $root"; exit 1 }
+          "UE_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $work = Join-Path $env:RUNNER_TEMP "rfr-demo-$env:ENGINE_VERSION"
+          if (Test-Path $work) { Remove-Item -Recurse -Force $work }
+          New-Item -ItemType Directory -Path "$work\src" | Out-Null
+          "RFR_WORK=$work" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build plugin and host project
+        shell: powershell
+        run: |
+          Copy-Item -Recurse examples\unreal\RfrSample "$env:RFR_WORK\src\RfrSample"
+          $desc = "$env:RFR_WORK\src\RfrSample\RfrSample.uplugin"
+          (Get-Content $desc -Raw) -replace '"EngineVersion": "[^"]*"', ('"EngineVersion": "' + $env:ENGINE_VERSION + '.0"') | Set-Content $desc -Encoding utf8
+          & "$env:UE_ROOT\Engine\Build\BatchFiles\RunUAT.bat" BuildPlugin "-Plugin=$desc" "-Package=$env:RFR_WORK\pkg\RfrSample" -Rocket *> "$env:RFR_WORK\buildplugin.log"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RFR_WORK\buildplugin.log" -Tail 60; Write-Error "BuildPlugin failed ($LASTEXITCODE)"; exit 1 }
+          $hostDir = "$env:RFR_WORK\host"
+          New-Item -ItemType Directory -Path "$hostDir\Plugins", "$hostDir\Content", "$hostDir\ci" -Force | Out-Null
+          Copy-Item -Recurse "$env:RFR_WORK\pkg\RfrSample" "$hostDir\Plugins\RfrSample"
+          Copy-Item examples\unreal\ci\*.py "$hostDir\ci\"
+          $plugins = 'RfrSample', 'PythonScriptPlugin', 'EditorScriptingUtilities', 'SequencerScripting', 'MovieRenderPipeline' | ForEach-Object { "{ `"Name`": `"$_`", `"Enabled`": true }" }
+          "{ `"FileVersion`": 3, `"EngineAssociation`": `"`", `"Plugins`": [ $($plugins -join ', ') ] }" | Set-Content "$hostDir\Host.uproject" -Encoding utf8
+          # Approved reference screenshots for this engine version, if any (see examples/unreal/screenshots/README.md).
+          $truth = "examples\unreal\screenshots\$env:ENGINE_VERSION"
+          if (Test-Path $truth) { New-Item -ItemType Directory -Path "$hostDir\Test" -Force | Out-Null; Copy-Item -Recurse $truth "$hostDir\Test\Screenshots" }
+          "RFR_HOST=$hostDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build the demo level and sequence
+        id: demo
+        shell: powershell
+        env:
+          RFR_DEMO_SCORE: ${{ inputs.plant-change && '4' || '3' }}
+        # With a renderer: under -nullrhi, UE 5.6 crashed (divide by zero) placing the text display.
+        run: |
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecutePythonScript=$env:RFR_HOST\ci\make_demo.py" -unattended -RenderOffscreen -nosound -nosplash -nopause "-abslog=$env:RFR_WORK\make_demo.log" | Out-Null
+          Write-Host "Editor exit code: $LASTEXITCODE"
+          Select-String -Path "$env:RFR_WORK\make_demo.log" -Pattern 'make_demo|LogPython: Error|Error:' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
+          # The script writes make_demo.ok when it has built and saved everything. The editor's own exit
+          # code is not used: UE 5.6 sometimes returns 1 after a clean shutdown.
+          if (-not (Test-Path "$env:RFR_HOST\ci\make_demo.ok")) { Write-Error "make_demo.py did not finish"; exit 1 }
+          exit 0
+
+      - name: Tutorial spec and screenshot functional test
+        shell: powershell
+        run: |
+          $report = "$env:RFR_WORK\report"
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecCmds=Automation RunTests RfrSample.Tutorial+Project.Functional Tests;Quit" -unattended -nosound -nopause -RenderOffscreen "-ReportExportPath=$report" "-abslog=$env:RFR_WORK\tests.log" | Out-Null
+          Write-Host "Editor exit code: $LASTEXITCODE"
+          Select-String -Path "$env:RFR_WORK\tests.log" -Pattern 'TEST COMPLETE|Screenshot|LogAutomationController: Error|Expected .* to be' | Select-Object -First 60 | ForEach-Object { Write-Host $_.Line }
+          node checks\unreal\ci\read-automation-report.mjs $report
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          # Unreal passes a screenshot test that has no approved reference, with a warning. Here that
+          # is a failure: without a reference the test cannot notice the tutorial's step changing.
+          $new = Select-String -Path "$env:RFR_WORK\tests.log" -Pattern "New Screenshot '([^']+)' was discovered"
+          if ($new) { $new | ForEach-Object { Write-Host $_.Line }; Write-Error "a screenshot has no approved reference for UE $env:ENGINE_VERSION; see examples/unreal/screenshots/README.md"; exit 1 }
+
+      - name: Render the demo with Movie Render Queue
+        # Runs even when the tests fail, as long as the demo level was built.
+        if: ${{ !cancelled() && steps.demo.outcome == 'success' }}
+        shell: powershell
+        run: |
+          $env:RFR_DEMO_OUT = "$env:RFR_WORK\demo"
+          # -ExecCmds "py ..." rather than -ExecutePythonScript: with the latter the editor quits once the
+          # script returns, before Movie Render Queue renders a frame. render_demo.py quits when done.
+          $argList = @("$env:RFR_HOST\Host.uproject", "-ExecCmds=`"py $env:RFR_HOST\ci\render_demo.py`"", '-RenderOffscreen', '-unattended', '-nosound', '-nosplash', '-windowed', '-ResX=1280', '-ResY=720', "-abslog=$env:RFR_WORK\render.log")
+          $p = Start-Process -FilePath "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe" -ArgumentList $argList -PassThru
+          if (-not $p.WaitForExit(1800000)) { $p.Kill(); Write-Error "the render did not finish in 30 minutes" }
+          Select-String -Path "$env:RFR_WORK\render.log" -Pattern 'render_demo|LogMovieRenderPipeline: Error|LogPython: Error' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
+          $frames = @(Get-ChildItem "$env:RFR_DEMO_OUT" -Filter *.png -ErrorAction SilentlyContinue)
+          Write-Host "Rendered frames: $($frames.Count) in $env:RFR_DEMO_OUT (first: $($frames | Select-Object -First 1 -ExpandProperty Name))"
+          "### Demo render (UE $env:ENGINE_VERSION)`n`n$($frames.Count) frames at 1280x720 in the tutorial-demo artifact." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          if (-not (Test-Path "$env:RFR_HOST\ci\render_demo.ok") -or $frames.Count -lt 72) { Write-Error "the demo render did not produce the sequence's frames"; exit 1 }
+          exit 0
+
+      - name: Upload the report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutorial-demo-${{ matrix.engine }}
+          path: |
+            ${{ env.RFR_WORK }}/*.log
+            ${{ env.RFR_WORK }}/report/**
+            ${{ env.RFR_WORK }}/host/Saved/Automation/**
+          if-no-files-found: ignore
+
+      # The demo frames get their own artifact: this is the recording the approver reviews.
+      - name: Upload the demo frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutorial-demo-frames-${{ matrix.engine }}
+          path: ${{ runner.temp }}/rfr-demo-${{ matrix.engine }}/demo/
+          if-no-files-found: ignore
+
+      - name: Clean up
+        if: always()
+        shell: powershell
+        run: if ($env:RFR_WORK -and (Test-Path $env:RFR_WORK)) { Remove-Item -Recurse -Force $env:RFR_WORK }
