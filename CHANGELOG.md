@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- `rfr-process` 0.9.3 (#PRNUM): fixes from the fifth round of the Kettlebird pilot. The process check warns when a draft's recorded hash is out of date (AC-35); the tutorial runner names a protected preview (a 401 or 403, or a login page on another host) instead of reporting a missing element (AC-36); the mutation job posts its score as a check annotation (AC-37), and the static-site Stryker configuration mutates `src/lib/` only. The design template asks how the system knows what it shows, what enforces each promise, and what is published together; the persona walkthrough reads the rendering code, checks help text against the site, and walks editor designs as the readers of the changed pages; bootstrap keeps implementation facts in `docs/product/notes.md`; the preview caller's comment on when it runs is corrected.
+
 ### Added
 
 - `rfr-process` 0.9.2, slice 11h (#116): the Unreal half of runnable tutorials. `examples/unreal` has a fixture tutorial (`tutorial-rfrsample-score-display`), an `RFR Score Display` actor in the sample plugin, and the automation spec `RfrSample.Tutorial.ScoreDisplay` that follows the tutorial step by step. A new `tutorial-demo` job in `unreal-tier2.yml` runs on the GPU runner for each engine version: it builds a demo level and sequence with editor Python, runs the spec and a screenshot functional test of the tutorial's editor step against approved reference images (a missing reference fails the job), and renders a 72-frame demo with Movie Render Queue, uploaded as an artifact. The workflow takes an `engines` input so one version can be run on its own (AC-25).

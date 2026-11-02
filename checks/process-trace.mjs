@@ -160,7 +160,11 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     for (const { link, target, current } of linkState.get(a)) {
       if (!target) { problems.push(`${name}: links to ${link.target}, which does not exist`); continue; }
       if (current === null) { problems.push(`${name}: ${link.target} has no section ${link.section}`); continue; }
-      if (!isApproved(a)) continue;
+      if (!isApproved(a)) {
+        // A draft's recorded hash that no longer matches: its upstream changed after it was written.
+        if (link.hash && link.hash !== current) warnings.push(`${name}: draft: ${link.key} changed since it was recorded; update the draft to match, or record it again (node .rfr/checks/process-relink.mjs ${a.id})`);
+        continue;
+      }
       if (!isApproved(target)) problems.push(`${name}: links to ${target.id}, which is ${target.status ?? 'without a status'}`);
       if (!link.hash) problems.push(`${name}: the link to ${link.key} has no recorded hash (record it with node .rfr/checks/process-relink.mjs ${a.id})`);
       else if (link.hash !== current) problems.push(`${name}: stale: ${link.key} changed since it was recorded`);

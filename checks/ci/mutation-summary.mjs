@@ -3,7 +3,7 @@
 // (docs/specs/project-process.md, AC-24). The score is computed as Stryker computes it: killed and
 // timed-out mutants over all valid mutants, where survivors and mutants no test covers count as
 // undetected, and ignored mutants and compile or runtime errors are left out.
-// Usage: node checks/ci/mutation-summary.mjs <reports/mutation/mutation.json>
+// Usage: node checks/ci/mutation-summary.mjs <reports/mutation/mutation.json> [--annotate]
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,11 +55,16 @@ export function markdown(s) {
   return `${lines.join('\n')}\n`;
 }
 
+// One line for a GitHub check annotation, so the score shows on the pull request's checks.
+export function annotation(s) {
+  const undetected = s.survived + s.noCoverage;
+  return `::notice title=Mutation score::${s.score.toFixed(1)}% of ${s.total} mutants detected; ${undetected} undetected (details in the job summary)`;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
   const file = process.argv[2];
   if (!file) { console.error('usage: mutation-summary.mjs <mutation.json>'); process.exit(2); }
-  process.stdout.write(markdown(summarize(JSON.parse(fs.readFileSync(file, 'utf8')))));
+  const s = summarize(JSON.parse(fs.readFileSync(file, 'utf8')));
+  // --annotate prints only the annotation line (to stdout, where the runner reads it).
+  process.stdout.write(process.argv.includes('--annotate') ? `${annotation(s)}\n` : markdown(s));
 }
-
-// Stub (round 5 tests first).
-export function annotation() { return 'stub'; }

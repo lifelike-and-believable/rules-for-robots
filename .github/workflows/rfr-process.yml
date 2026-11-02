@@ -293,6 +293,7 @@ jobs:
         run: |
           if [ -f reports/mutation/mutation.json ]; then
             node .rfr/checks/ci/mutation-summary.mjs reports/mutation/mutation.json >> "$GITHUB_STEP_SUMMARY"
+            node .rfr/checks/ci/mutation-summary.mjs reports/mutation/mutation.json --annotate
           else
             echo "Stryker wrote no report (reports/mutation/mutation.json); see the Stryker step." >> "$GITHUB_STEP_SUMMARY"
           fi

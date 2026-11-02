@@ -1,8 +1,9 @@
 # Copy to .github/workflows/rfr-tutorials-preview.yml in a repository that uses the rfr-process plugin
 # and deploys a preview for each pull request (Vercel, Netlify, or similar, reporting through GitHub
 # deployments). When a preview deployment succeeds, it runs the `runner: web` tutorials against it and
-# uploads the recording as the `tutorials` build artifact. GitHub runs deployment_status workflows from
-# the default branch, so this file takes effect once it is merged there.
+# uploads the recording as the `tutorials` build artifact. It runs from the workflow file at the
+# deployed commit, so a pull request that adds or changes this file runs it on its own preview: set
+# RFR_PREVIEW_BYPASS first if previews are protected, or that first run stops at the login page.
 #
 # For a protected preview, save the bypass token as the RFR_PREVIEW_BYPASS repository secret (for
 # Vercel, the Protection Bypass for Automation secret). It is sent only to the preview's own origin.
