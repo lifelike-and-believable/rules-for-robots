@@ -273,6 +273,8 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-35 | The process check warns, without failing, when a draft artifact's recorded hash no longer matches the section it links to, so a draft built on an upstream section that has since changed is visible before it is approved. | test: a draft with a stale recorded hash gets a warning naming the link; a draft with no recorded hash gets none. |
 | AC-36 | When a web tutorial's page answers 401 or 403, or a step lands on another origin than the base URL (a login page), the tutorial runner says the deployment is protected and names the bypass setting, instead of reporting a missing element. | test: a 401 and a redirect to another origin each give the protected message. |
 | AC-37 | The mutation job reports its score as a check annotation, so it shows in the pull request's checks without opening the run. | test: the summary script prints a notice annotation with the score; the job asks for it. |
+| AC-38 | When a link to a whole artifact (no section) goes stale, the message says that any edit to the target stales it, and lists the target's sections to link instead, so artifacts written before the templates used section links can be moved over. | test: the message for a stale whole-artifact link names the target's sections; a stale section link's message does not. |
+| AC-39 | The tier job reads the pull request's current labels from GitHub on every run, so re-running a failed tier job after changing the label uses the new label, not the one recorded in the original event. | test: current labels from the API win over the event's; the event's are used when the API cannot be read. |
 
 ## Scope
 
@@ -308,6 +310,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - 11g: the advisory `docs-lint` and `mutation` jobs (AC-23, AC-24), and a job that runs web tutorials against each pull request's preview deployment (AC-33, from the pilot).
   - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
+  - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
   - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
   - Pilot fixes, round 3: the AC-30 warning wording, and the guide, template, and agent changes under "Pilot findings: round 3".
@@ -396,6 +399,15 @@ Entries 55 to 69, from the first runs of 0.9.0 and the designs that followed. De
 - **The check did not see a stale draft.** A draft built on a story that changed in the same pull request kept its old hash and the check said links were current. It now warns (AC-35).
 - **The walkthrough found mechanism flaws, not only wording**: status kept only in the browser, a "never shown" promise that held by accident, a shared Publish that let one field block another, help text promising features the site lacks, and a mock-up the rendering code cannot produce. The design template asks how the system knows what it shows, what enforces each promise and what checks it, and what is published together. The walkthrough reads the code that renders each changed screen, checks help text against the site field by field, walks editor designs as the personas who read the changed pages, and notes the branch's base when related designs are still in review.
 - **Smaller decisions**: requirements stay free of implementation notes (bootstrap puts them in `docs/product/notes.md`, which is not an artifact), so a factual change does not force a story tier; the Vale em dash rule allows one per paragraph by design; installing Stryker can update other packages in the lock file.
+
+## Pilot findings: round 6 (2026-11-02)
+
+Entries 70 to 80: adopting 0.9.3, the lead's manual pass of a CMS editing story, and two smaller stories. Decisions:
+
+- **The manual tutorial found four defects the tests could not**, all where the project's code calls the CMS framework (a validation result the framework ignored, a drop handler that left an overlay stuck, a delete the framework refused, a delete the editor pane never heard about). Two were framework behaviours the spec assumed without saying so. The guide now says to wrap each framework call in a thin adapter tested with a fake, to list each framework behaviour the spec relies on under its assumptions, and to check wiring by its observable effect rather than a planned function name. A manual tutorial is walked once by its author before review, or its pull request says it has not been.
+- **Old whole-artifact links cause churn.** A small addition to an approved design staled two artifacts that did not depend on it, because they linked the whole design. The stale message now lists the sections to link instead (AC-38).
+- **Re-running a failed tier job replayed the old label** from the event, so only a fresh run from the label change passed. The job now reads current labels (AC-39). The guide's tier table says that any pull request adding or changing a design or user documentation is at least `tier:story`, however small the change it describes.
+- **Smaller decisions**: each changelog entry ends with an "Adopters:" line; expected values that depend on outside facts (time zones, calendars) are worked out by hand and the reasoning noted in the test, and redoing an unpushed tests-first commit is fine; after a test-only change, run Stryker locally with `--force`; the manual tutorial template has a "Before you start" block with each server's command and address; mock-ups with several frames on one page use container units; the guide shows how an intermittent visual report became a deterministic first-frame test.
 
 ## Open questions
 

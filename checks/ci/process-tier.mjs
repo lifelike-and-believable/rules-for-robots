@@ -96,3 +96,6 @@ async function main() {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main().catch(e => { console.error(e.message); process.exit(1); });
+
+// Stub (round 6 tests first).
+export async function readLabels() { return ['tier:stub']; }
