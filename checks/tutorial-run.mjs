@@ -82,12 +82,21 @@ export function checkCoverage(root) {
   return { errors, tutorials };
 }
 
-async function perform(page, action, timeout) {
+const PROTECTED = 'the deployment is protected; give the runner its bypass token (RFR_PREVIEW_BYPASS in the preview workflow, or RFR_TUTORIAL_HEADER="<header>: <token>" locally)';
+
+async function perform(page, action, timeout, baseUrl) {
   const exact = { exact: true };
   switch (action.type) {
     case 'goto': {
       const response = await page.goto(action.path, { timeout });
-      if (response && !response.ok()) throw new Error(`${action.path} answered HTTP ${response.status()}`);
+      const status = response?.status();
+      if (status === 401 || status === 403) throw new Error(`${action.path} answered HTTP ${status}: ${PROTECTED}`);
+      // A login page on another host (Vercel, Netlify, an identity provider) instead of the product.
+      if (baseUrl) {
+        const landed = new URL(page.url());
+        if (landed.origin !== new URL(baseUrl).origin) throw new Error(`${action.path} led to ${landed.host}${landed.pathname}, not the product: ${PROTECTED}`);
+      }
+      if (response && !response.ok()) throw new Error(`${action.path} answered HTTP ${status}`);
       return;
     }
     case 'fill': return page.getByLabel(action.label, exact).fill(action.value, { timeout });
@@ -156,7 +165,7 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
       for (const step of steps) {
         for (const action of step.actions) {
           try {
-            await perform(page, action, timeout);
+            await perform(page, action, timeout, baseUrl);
           } catch (e) {
             const why = (e.message ?? String(e)).split('\n')[0];
             let message = `step ${step.n} ("${step.text}"): could not ${describe(action)} (${why})`;

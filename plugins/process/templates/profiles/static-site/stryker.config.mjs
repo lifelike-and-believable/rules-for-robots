@@ -5,8 +5,10 @@
 // the score and the surviving mutants in the job summary and never fails the build.
 export default {
   testRunner: 'vitest',
-  // Source files whose mutants count. Leave out tests, generated files, and configuration.
-  mutate: ['src/**/*.{ts,tsx,js,jsx,mjs,astro}', '!src/**/*.{test,spec}.*', '!src/**/*.d.ts'],
+  // The unit-tested code only. Pages, layouts, and data loaders are covered by end-to-end tests,
+  // which Stryker does not run, so their mutants all survive and hide the ones that matter. Add
+  // other folders of pure logic (for example a CMS's validation rules) as they get unit tests.
+  mutate: ['src/lib/**/*.{ts,tsx,js,jsx,mjs}', '!src/**/*.{test,spec}.*', '!src/**/*.d.ts'],
   reporters: ['json', 'html', 'clear-text', 'progress'],
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
   htmlReporter: { fileName: 'reports/mutation/mutation.html' },

@@ -127,7 +127,7 @@ The `tutorials` job checks, without a browser or the engine, that every tutorial
 These report in the job summary and never fail the build.
 
 - **`docs-lint`**: Vale on `docs/user/`, `docs/tutorials/`, and `docs/releases/`, with the RFR writing style and a vocabulary of persona names and glossary terms (`docs/product/glossary.md`). See the guide's recommended tools.
-- **`mutation`** (with `mutation: true` in the caller, for `web-app` and `static-site`): Stryker on `tier:story` and `tier:epic` pull requests, using the project's `stryker.config.mjs` (start from `templates/profiles/<profile>/`). Later pushes to a pull request only retest the mutants their changes affect; a change to a test file reruns everything. The summary gives the mutation score and lists the surviving mutants.
+- **`mutation`** (with `mutation: true` in the caller, for `web-app` and `static-site`): Stryker on `tier:story` and `tier:epic` pull requests, using the project's `stryker.config.mjs` (start from `templates/profiles/<profile>/`). Later pushes to a pull request only retest the mutants their changes affect; a change to a test file reruns everything. The score appears as a check annotation, and the summary lists the surviving mutants.
 
 ## Tutorials against a preview
 

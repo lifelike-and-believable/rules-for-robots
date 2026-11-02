@@ -41,6 +41,14 @@ each control exactly as the user documentation will use it.>
 
 - <Empty, loading, partial, error, and success states, and what each says.>
 
+## How it works
+
+<!-- Answer each that applies; the persona walkthrough checks these. -->
+
+- **How does the system know?** For each status, count, or message the design shows: where the fact comes from, and whether it survives a reload, another device, or another person's session.
+- **What enforces each promise, and what checks it?** For each "never", "always", or privacy promise ("visitors never see drafts"): the mechanism that makes it true, and the test or check that would notice if it stopped being true.
+- **What is published together?** For content edited in a CMS: which fields go live in one publish, and whether a mistake in one can block or expose another.
+
 ## Accessibility
 
 - <Keyboard, screen reader, colour, and motion notes.>
