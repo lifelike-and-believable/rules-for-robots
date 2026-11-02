@@ -265,8 +265,12 @@ jobs:
         # With a renderer: under -nullrhi, UE 5.6 crashed (divide by zero) placing the text display.
         run: |
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" "$env:RFR_HOST\Host.uproject" "-ExecutePythonScript=$env:RFR_HOST\ci\make_demo.py" -unattended -RenderOffscreen -nosound -nosplash -nopause "-abslog=$env:RFR_WORK\make_demo.log" | Out-Null
+          Write-Host "Editor exit code: $LASTEXITCODE"
           Select-String -Path "$env:RFR_WORK\make_demo.log" -Pattern 'make_demo|LogPython: Error|Error:' | Select-Object -First 40 | ForEach-Object { Write-Host $_.Line }
+          # The script writes make_demo.ok when it has built and saved everything. The editor's own exit
+          # code is not used: UE 5.6 sometimes returns 1 after a clean shutdown.
           if (-not (Test-Path "$env:RFR_HOST\ci\make_demo.ok")) { Write-Error "make_demo.py did not finish"; exit 1 }
+          exit 0
 
       - name: Tutorial spec and screenshot functional test
         shell: powershell
@@ -298,6 +302,7 @@ jobs:
           Write-Host "Rendered frames: $($frames.Count) in $env:RFR_DEMO_OUT (first: $($frames | Select-Object -First 1 -ExpandProperty Name))"
           "### Demo render (UE $env:ENGINE_VERSION)`n`n$($frames.Count) frames at 1280x720 in the tutorial-demo artifact." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           if (-not (Test-Path "$env:RFR_HOST\ci\render_demo.ok") -or $frames.Count -lt 72) { Write-Error "the demo render did not produce the sequence's frames"; exit 1 }
+          exit 0
 
       - name: Upload the report and screenshots
         if: always()
