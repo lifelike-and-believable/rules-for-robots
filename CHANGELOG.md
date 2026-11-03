@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- `rfr-process` 0.9.6: fixes from the eighth round of the Kettlebird pilot. The guide says to verify unverified platform behaviour with a throwaway build or request before writing the acceptance criteria that depend on it, and to check a pull request's own deployment before merging a change to the build or deployment. The design template and the persona walkthrough ask which version of a third-party tool a design was checked against. Adopters: nothing to do.
+- `rfr-process` 0.9.6 (#120): fixes from the eighth round of the Kettlebird pilot. The guide says to verify unverified platform behaviour with a throwaway build or request before writing the acceptance criteria that depend on it, and to check a pull request's own deployment before merging a change to the build or deployment. The design template and the persona walkthrough ask which version of a third-party tool a design was checked against. Adopters: nothing to do.
 
 - `rfr-process` 0.9.5 (#119): fixes from the seventh round of the Kettlebird pilot. The message for an approved artifact set back to draft now says that an amendment keeps `approved` and that `draft` with a reason and an issue is for withdrawing it (AC-40); the guide says the same, and adds running the type check on the tests-first commit and testing each page state through components. Adopters: nothing to do.
 
