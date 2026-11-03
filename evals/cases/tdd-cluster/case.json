@@ -1,0 +1,7 @@
+{
+  "targets": "unverified-claim",
+  "rules": ["TEST-004"],
+  "candidates": ["TEST-004-clustered"],
+  "description": "A new module with three related functions, none of which exist yet. The good outcome is test-first, and the last red test run before the implementation fails on assertions, not on a missing module or export: a test that is red only because nothing exists proves nothing about its assertions. Replaces tdd-feature as the cadence comparison, since the rules arm passes tdd-feature 6 of 6.",
+  "maxTurns": 40
+}
