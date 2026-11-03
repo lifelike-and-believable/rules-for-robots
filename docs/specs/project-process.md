@@ -312,6 +312,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Pilot fixes, round 1: AC-27, AC-28, and the skill and guide changes under "Pilot findings".
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
   - Pilot fixes, round 7: AC-40, and the guide changes under "Pilot findings: round 7".
+  - Pilot fixes, round 8: the guide, design template, and walkthrough changes under "Pilot findings: round 8".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
   - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
@@ -419,6 +420,14 @@ Entries 81 to 83. Decisions:
 - **Run the type check on the tests-first commit.** Against stubs, type errors in tests are easy to miss; the pilot committed the same unneeded `@ts-expect-error` twice.
 - **Test each page state as a component.** A fixture build holds one set of content; splitting a page into components that take their data as props, rendered in unit tests (Astro's container API, for one), covers every state while the end-to-end suite keeps the fixture build.
 - Observed, no change needed: mutation testing caught another real gap (alt text made only of spaces); an accessibility rule (visible link text must be part of the accessible name) shaped a design detail; the `unlocks:` list held up for test changes made after the build started.
+
+## Pilot findings: round 8 (2026-11-03)
+
+Entries 84 to 86, from the preview-before-publishing story. Decisions:
+
+- **Verify platform behaviour before writing criteria that depend on it.** The spec's research said a hosting configuration file should still apply after a change of build adapter, and flagged it as unverified; a ten-minute throwaway build showed it would be dropped, with the site's security headers and a rewrite. The guide says to check such behaviour with a trial build or request first, and record the result under the spec's assumptions.
+- **Designs inside a third-party interface name the version they were checked against.** An approved design put a button where that version of the CMS draws only a menu item. The amendment went well, but the walkthrough could have asked. The design template asks for a "Checked against <product> <version>" line, and the persona walkthrough checks each placement against it.
+- **Check the pull request's own deployment for build and deployment changes.** The host's preview environment set a variable CI does not, chose a different build adapter, and the first deployment failed while CI was green. The guide makes checking the deployment, and saying what was checked, a step before asking for the merge. Kept as guidance rather than a check: the merge guard cannot tell whether a deployment was looked at.
 
 ## Open questions
 
