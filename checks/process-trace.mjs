@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, openItems, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -147,6 +147,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
 
   const involved = new Set();
   const open = [];
+  const artifactFiles = new Set(artifacts.map(x => x.file.replace(/\\/g, '/')));
   for (const a of artifacts) {
     const soft = adopting && a.links.length === 0;
     const problems = { push: (...msgs) => { (soft ? warnings : errors).push(...msgs); if (!soft && a.id) involved.add(a.id); } };
@@ -180,6 +181,14 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     for (const item of openItems(a.body ?? '', a.bodyLine)) {
       open.push({ id: a.id, file: a.file, ...item });
       if (isApproved(a)) warnings.push(`${name}: approved, but ${a.file}:${item.line} still has ${item.marker}: resolve it, or reword it as settled text`);
+    }
+
+    // An approved product artifact cannot rest on a file that has no approval of its own (AC-43).
+    if (isApproved(a) && a.file.startsWith('docs/product/')) {
+      for (const link of markdownLinks(a.body ?? '', a.file, a.bodyLine)) {
+        if (artifactFiles.has(link.target) || !fs.existsSync(path.join(root, link.target))) continue;
+        warnings.push(`${name}: ${a.file}:${link.line} links to ${link.target}, which is not a process artifact, so approving ${a.id} does not cover what it says; move the content into ${a.id}, or make the file an artifact (a discovery file, for example) and link its section in derived-from`);
+      }
     }
 
     if (a.stage === 'stories') {

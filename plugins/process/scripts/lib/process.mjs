@@ -312,11 +312,13 @@ export function readConfig(root) {
 // HTML comments, fenced code blocks, and inline code are examples, not markers.
 export const MARKERS = ['[open]', '[assumed]', '[proposed]'];
 
-export function openItems(body, firstLine = 1) {
-  const items = [];
+// Body lines as prose: HTML comments, fenced code blocks, and inline code removed (examples, not
+// content). Returns [{ index, prose, raw }] with the 0-based line index.
+export function proseLines(body) {
+  const out = [];
   let inFence = false;
   let inComment = false;
-  for (const [i, raw] of body.split(/\r?\n/).entries()) {
+  for (const [index, raw] of body.split(/\r?\n/).entries()) {
     if (/^\s*(```|~~~)/.test(raw)) { inFence = !inFence; continue; }
     if (inFence) continue;
     let line = '';
@@ -335,10 +337,32 @@ export function openItems(body, firstLine = 1) {
         rest = rest.slice(start + 4);
       }
     }
-    line = line.replace(/`[^`]*`/g, '');
+    out.push({ index, prose: line.replace(/`[^`]*`/g, ''), raw });
+  }
+  return out;
+}
+
+export function openItems(body, firstLine = 1) {
+  const items = [];
+  for (const { index, prose, raw } of proseLines(body)) {
     for (const marker of MARKERS) {
-      if (line.toLowerCase().includes(marker)) items.push({ marker, line: firstLine + i, text: raw.trim() });
+      if (prose.toLowerCase().includes(marker)) items.push({ marker, line: firstLine + index, text: raw.trim() });
     }
   }
   return items;
+}
+
+// Relative Markdown links to .md files in prose: [{ target (repository path), line }] (AC-43).
+export function markdownLinks(body, file, firstLine = 1) {
+  const links = [];
+  const dir = path.posix.dirname(file.replace(/\\/g, '/'));
+  for (const { index, prose } of proseLines(body)) {
+    for (const m of prose.matchAll(/\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) {
+      const href = m[1].split('#')[0];
+      if (!href || /^[a-z][a-z0-9+.-]*:/i.test(href) || !/\.md$/i.test(href)) continue;
+      const target = href.startsWith('/') ? href.slice(1) : path.posix.normalize(path.posix.join(dir, href));
+      links.push({ target, line: firstLine + index });
+    }
+  }
+  return links;
 }

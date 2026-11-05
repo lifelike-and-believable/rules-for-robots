@@ -56,7 +56,15 @@ One file per area (`docs/product/requirements/animation.md`), each requirement u
 - Keep implementation facts out of requirements (the CMS, the hosting provider, the current project ID): they change for reasons no approver needs to review, and a change to a requirements file needs at least a story tier. Put them in `docs/product/notes.md`, which is not an artifact.
 - Requirements may lead the product. On an existing project they can describe behaviour it does not have yet; the epics then close the gap. Mark such a requirement as not yet met, so nobody reads it as a description of today.
 
-**Check across areas before approving.** Areas are often reviewed one at a time, and a later area can change an earlier one: a spend limit in one area can stop a live show promised in another, and an offline rule can conflict with a remote audience target. Before the requirements are approved, read all the area files together and list every conflict between them, with the requirement IDs on both sides; the approver resolves each one. Do this pass again whenever an area changes after the others were reviewed.
+**Check across areas, and against the concept, before approving.** This is a required step, not a nicety. Areas are often reviewed one at a time, and a later area can change an earlier one: a spend limit in one area can stop a live show promised in another, an offline rule can conflict with a remote audience target, backups can conflict with deleting a guest's data on request. In one project, a pass over nine area files that had each been reviewed found about a dozen real conflicts. Before the requirements are approved, read all the area files together with the concept and any discovery files, and list in the pull request:
+
+- every conflict between two requirements, with the IDs on both sides;
+- every requirement that contradicts the concept's vision or non-goals;
+- every requirement whose `Release:` disagrees with a requirement it depends on.
+
+The approver resolves each one, sometimes by changing the concept (see "When things change"). Do this pass again whenever an area changes after the others were reviewed.
+
+**Keep what a requirement depends on inside the process.** A requirement that points to a list or rule kept in plain notes rests on text no one approved. Move the content into the requirement, or into a discovery file it links to. The process check warns when an approved artifact in `docs/product/` links to a Markdown file that is not an artifact.
 
 **Re-opening an area.** An area discussed but not yet merged as approved is still a draft: edit it and say in the pull request which earlier answers changed. An approved area is amended like any approved artifact: edit it, keep `status: approved`, and the gated merge approves the change; artifacts that link to the changed sections go stale and are updated in turn.
 
@@ -70,7 +78,9 @@ A persona is a specific kind of user, described by evidence: interviews, support
 - Two or three well-understood personas beat six thin ones. Merge personas whose goals and skills do not differ in ways that change the design. A profile starter may become two personas (a site's visitors who are fans and those who are clients) or fold into one (a content editor who is the artist); say which in the evidence note.
 - Approve personas before any story names them; the check enforces this.
 
-Review checks: Does each detail come from somewhere? Would the team design differently for each persona? Are the frustrations ones this product can actually address or make worse?
+**Then check the requirements against the personas.** Requirements come before personas, so they can assume a user no persona is: a separate operator, a full team, a desk, a fast connection. Once personas are approved, read each requirement against each persona's real situation, starting with the smallest team (a solo performer who is also the operator). List each requirement that fails for a persona, with the persona and why, and amend the requirements in their own pull request; the personas do not wait for it. The `persona-walkthrough` agent can do this pass (give it the requirement files). Do it again when a persona is added.
+
+Review checks: Does each detail come from somewhere? Would the team design differently for each persona? Are the frustrations ones this product can actually address or make worse? Has each requirement been checked against each persona?
 
 ### Epics
 
@@ -185,7 +195,9 @@ A report like "the header sometimes flashes on page turns" can be made determini
 
 ## When things change
 
-Any stage can be revisited. To amend an approved artifact (a new section, a corrected step), edit it and keep `status: approved`: the pull request carries the change, and the gated merge, or the approving review in team mode, approves the amended text. `draft` is for new artifacts; setting an approved one back to `draft` means withdrawing it, which needs a `withdrawn:` reason and issue.
+Any stage can be revisited, and a later stage often finds the reason: a requirement that contradicts a concept non-goal, a persona that a requirement fails. When that happens, decide which one is wrong. If the earlier artifact is, amend it in its own pull request (approved by its own stage's approver), and let the later work wait on it or carry on as a draft that links to the amended section; do not quietly work around it downstream. If the later work is wrong, change that instead. Either way, say in both pull requests which finding led to the change.
+
+To amend an approved artifact (a new section, a corrected step), edit it and keep `status: approved`: the pull request carries the change, and the gated merge, or the approving review in team mode, approves the amended text. `draft` is for new artifacts; setting an approved one back to `draft` means withdrawing it, which needs a `withdrawn:` reason and issue.
 
 When an upstream section changes, every approved artifact that links to that section is stale and CI fails, so the same pull request deals with each one:
 

@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a]
 unlocks:
   - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
   - test/process-plain-specs.test.mjs: the same AC-7 change; its merge-guard case expects no ask instead of no deny
@@ -318,7 +318,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Pilot fixes, round 2: AC-29 to AC-32, and the template, skill, agent, and guide changes under "Pilot findings: round 2".
   - Pilot fixes, round 7: AC-40, and the guide changes under "Pilot findings: round 7".
   - Pilot fixes, round 8: the guide, design template, and walkthrough changes under "Pilot findings: round 8".
-  - Agentic XR Pipeline feedback, round 1: AC-41, AC-42, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
+  - Agentic XR Pipeline feedback, round 1: AC-41 to AC-43, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
   - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
@@ -437,13 +437,14 @@ Entries 84 to 86, from the preview-before-publishing story. Decisions:
 
 ## Project findings: Agentic XR Pipeline, round 1 (2026-11-05)
 
-A second project, a greenfield XR pipeline in solo mode, sent seven recommendations after stages 1 and 2. Decisions:
+A second project, a greenfield XR pipeline in solo mode, sent seven recommendations after stage 1 and four more at the end of stage 2. Decisions:
 
 - **Discovery gets an optional stage** (AC-41). The project needed a long use-case and decision document before its requirements, and with no artifact for it, requirements cited it in comments. `docs/product/discovery/<topic>.md` sits between the concept and the requirements, is gated like the concept, and has its own approver key and template. It is optional and numbered 1a, so the stage numbers elsewhere do not change.
 - **Open-item markers** (AC-42). `[open]`, `[assumed]`, and `[proposed]` replace free-text TBDs and invented conventions. `[proposed]` also answers the provenance question: text the agent proposed keeps the marker until the approver accepts it, so the distinction survives the chat. The check lists every marker and warns, not fails, when an approved artifact still has one, because a success measure the approver will set later is allowed to stay (next point).
 - **Success measures not yet set** may be approved as `[open]` with the event they wait for, if the approver says so in the pull request; the warning stays as the reminder.
 - **Requirements carry a `Release:` line** under each heading, which the epics' release groups use.
 - **A consistency pass across areas** before requirements are approved, repeated when an area changes later, and a statement of how a reviewed area is re-opened (a draft is edited; an approved one is amended and keeps `approved`).
+- **Batch 2, at the end of stage 2.** The cross-area pass found about a dozen real conflicts across nine area files that had each been reviewed, so it is now a required step, and it includes the concept: one requirement contradicted a concept non-goal. The guide says how a later stage re-opens an earlier artifact (decide which is wrong, amend it in its own pull request, say which finding led to it). An approved requirement pointed to a list kept in plain notes; the check now warns when an approved product artifact links to a Markdown file that is not an artifact (AC-43). Several requirements assumed a separate operator, which fails for a solo performer; after personas are approved, each requirement is checked against each persona, starting with the smallest team, and the `persona-walkthrough` agent can do this pass.
 - **A repository first.** Setup stops if the folder is not a git repository. The guide says the first commit of a new repository goes straight to the default branch (the approvals job skips a commit with no parent), and in an existing repository the drafts go in through a pull request.
 
 ## Open questions
