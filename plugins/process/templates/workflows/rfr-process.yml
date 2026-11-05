@@ -19,6 +19,8 @@ jobs:
     uses: lifelike-and-believable/rules-for-robots/.github/workflows/rfr-process.yml@main
     # with:
     #   rules-ref: <the same tag or commit>
+    #   typecheck: npm run check        # the project's type check, run on every pull request
+    #   install-dirs: sanity-studio     # folders with their own package.json, installed after the root
     permissions:
       contents: read
       pull-requests: read

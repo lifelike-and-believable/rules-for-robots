@@ -1,6 +1,6 @@
 ---
 status: approved
-tests-commit: [77f3846098d14c773f1c5c16157bc04d803cb56d, 50f93e402a00580852df135a5bd0f6ee047ac759]
+tests-commit: [77f3846098d14c773f1c5c16157bc04d803cb56d, 50f93e402a00580852df135a5bd0f6ee047ac759, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef]
 unlocks:
   - test/spec-lock.test.mjs: the repo() helper failed when the spec had no tests-commit (nothing to commit); the second commit may now be empty
 ---
@@ -37,6 +37,7 @@ A document-driven and test-driven hybrid: the spec's acceptance criteria are the
 | AC-10 | `review-pr` has a sabotage step for approved specs: in a throwaway `git worktree` outside the project folder, break the behaviour behind each traced criterion in a small way, run the tests, and report any citing test that still passes. The worktree is removed afterwards and the project tree is never changed. | Smoke case `skill review-pr: vacuous tests behind an approved spec` and eval case `spec-vacuous-tests`. |
 | AC-11 | `tests-commit` can be a list, one commit per cluster of tests. Each commit locks the test files that cite the spec at that commit; a file in an earlier cluster stays locked when a later cluster is added. | test: one commit or a list parses; two clusters pass; an earlier cluster stays locked; a later cluster locks at its own commit; new files are only reported; a non-descendant commit fails. |
 | AC-12 | A candidate wording of TEST-004 drafts tests in clusters per criterion group, with stubs first so each test fails on its assertion, and the evals compare it with the current one-test-at-a-time wording. | Eval round (10c). |
+| AC-13 | A test can cite several criteria of one spec after one spec name, separated by spaces, commas, or "and" (`unit-converter#AC-2 AC-8`, `unit-converter#AC-2, AC-8 and AC-9`); each criterion named is counted as cited. | test: each form counts every criterion it names, and a criterion mentioned elsewhere in the line without a spec name is not counted. |
 
 **Citation form.** A test cites a criterion as `<spec file name without .md>#AC-<n>`, for example `spec-test-traceability#AC-2`, in a test title or a comment anywhere in the file. The slug keeps IDs from different specs apart in a shared test folder. A criterion needs a citing test when its "Verified by" cell starts with `test:`; any other text (a command, a browser check) is skipped and listed. Front matter fields: `status` (`draft`, `approved`, `implemented`), `tests` (folders searched; default `test`, `tests`, `spec`, `__tests__`), `tests-commit`, and `unlocks` (a list of `path: reason`).
 

@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef]
 unlocks:
   - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
   - test/process-plain-specs.test.mjs: the same AC-7 change; its merge-guard case expects no ask instead of no deny
@@ -281,6 +281,8 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-41 | An optional discovery stage sits between the concept and the requirements: files in `docs/product/discovery/` are gated artifacts with their own approver key (`discovery`) and CODEOWNERS entry, and requirements can link to their sections. | test: the stage is recognised and ordered, `process.yml` accepts it, and a requirements file linking to an approved discovery section passes. |
 | AC-42 | Three markers record what is not settled in an artifact: `[open]` (a question for the approver), `[assumed]` (an assumption made without the approver's answer), and `[proposed]` (text the agent proposed, not yet accepted). The process check lists them per artifact, ignoring HTML comments and code, and warns when an approved artifact still contains one. | test: markers in a draft are listed with their line, markers in comments and code are not, and an approved artifact with a marker gets a warning that names it. |
 | AC-43 | The process check warns when an approved artifact in `docs/product/` links, with a relative Markdown link, to a Markdown file that exists but is not a process artifact (notes, drafts kept outside the stage folders), because approval cannot cover what that file says. Links in HTML comments and code, links to process artifacts, and web addresses are not reported. | test: an approved requirement linking a plain notes file is warned about; a link to an artifact, a web address, a link in a comment, and the same link in a draft are not. |
+| AC-44 | The reusable process workflow takes an optional `typecheck` input, a command such as `npm run check`; when it is set, a `typecheck` job installs the project and runs the command on every pull request, and fails when the command fails. | test: the input exists, the job runs only when it is set, and the command reaches the job through an environment variable, not inline expression text. |
+| AC-45 | The reusable process workflow takes an optional `install-dirs` input, a space-separated list of folders with their own `package.json`; the `mutation` and `typecheck` jobs run `npm ci` in each after the root. | test: the input exists, and both jobs install each listed folder after the root. |
 
 ## Scope
 
@@ -319,6 +321,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Pilot fixes, round 7: AC-40, and the guide changes under "Pilot findings: round 7".
   - Pilot fixes, round 8: the guide, design template, and walkthrough changes under "Pilot findings: round 8".
   - Agentic XR Pipeline feedback, round 1: AC-41 to AC-43, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
+  - Pilot fixes, round 9: AC-44, AC-45, spec-test-traceability AC-13, and the guide changes under "Pilot findings: round 9".
   - Agentic XR Pipeline feedback, round 2: the setup changes under "Project findings: Agentic XR Pipeline, round 2".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
@@ -435,6 +438,16 @@ Entries 84 to 86, from the preview-before-publishing story. Decisions:
 - **Verify platform behaviour before writing criteria that depend on it.** The spec's research said a hosting configuration file should still apply after a change of build adapter, and flagged it as unverified; a ten-minute throwaway build showed it would be dropped, with the site's security headers and a rewrite. The guide says to check such behaviour with a trial build or request first, and record the result under the spec's assumptions.
 - **Designs inside a third-party interface name the version they were checked against.** An approved design put a button where that version of the CMS draws only a menu item. The amendment went well, but the walkthrough could have asked. The design template asks for a "Checked against <product> <version>" line, and the persona walkthrough checks each placement against it.
 - **Check the pull request's own deployment for build and deployment changes.** The host's preview environment set a variable CI does not, chose a different build adapter, and the first deployment failed while CI was green. The guide makes checking the deployment, and saying what was checked, a step before asking for the merge. Kept as guidance rather than a check: the merge guard cannot tell whether a deployment was looked at.
+
+## Pilot findings: round 9 (2026-11-05)
+
+Entries 87 to 91, from finishing the story-reader epic. Decisions:
+
+- **The type check in CI** (AC-44). A type error in a new test reached a push for the third time (entries 81 and 87): Vitest runs code whose types are wrong, and the type check is not part of the habitual test run. Guidance alone has not held, so the reusable workflow takes a `typecheck` command and runs it on every pull request. The guide says to run the type check with the tests, on fixes too.
+- **Several criteria after one spec name** (spec-test-traceability AC-13). `spec-trace` read only the first criterion in `story-reader-editor#AC-2 AC-8`, so later ones were reported as uncited. The lead chose to accept the form rather than require `#AC-n` for each: `slug#AC-2 AC-8`, with commas or "and", now counts each criterion. This is in `checks/lib/spec.mjs`, which adopters run from the `.rfr` checkout; the `rfr-core` plugin does not change.
+- **Nested packages** (AC-45). The mutation job ran `npm ci` in the root only, so a test importing code from a second package failed with "Cannot find package". The workflow takes `install-dirs`, used by the mutation and type check jobs.
+- **Size requests by what they change.** A "feature request" with one obvious behaviour, no design choice, and no documentation of the old behaviour is a `tier:fix`. `tier:fix` still may not change `docs/user/`: a line documenting the fix goes in its own small pull request, which keeps the tier check simple.
+- **A fixture build covers every content source,** with a test that it does. Five lists still read live content, and the first published art piece turned every branch red.
 
 ## Project findings: Agentic XR Pipeline, round 1 (2026-11-05)
 

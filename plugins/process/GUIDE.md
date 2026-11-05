@@ -19,6 +19,8 @@ Pick the tier before writing anything, and put it on the pull request as a label
 | `tier:story` | A new capability inside an approved epic | User stories |
 | `tier:epic` | A new area of capability | Epics, after checking whether requirements or personas change |
 
+Size a request by what it changes, not by what it is called. A "feature request" with one obvious right behaviour (the product already does it that way elsewhere), no design choice, and no user documentation that describes the old behaviour is a `tier:fix`: a failing test, then the change. If the fixed behaviour deserves a line in the user documentation, add it in a separate small pull request, because a `tier:fix` may not change `docs/user/`. A request that needs a design decision, or changes what the documentation says, is a story whatever it was called.
+
 If a fix turns out to need a change to the user documentation, it is a story. So is any pull request that adds or changes a design or user documentation, however small the change it describes: a short design for a one-line fix still takes `tier:story`. The tier job reads the pull request's current labels, so after changing the label, re-run it. CI enforces this for the documentation folders. The one pull request with no tier is the one that adds `process.yml`: adopting the process fits none of them, so the tier check lets it through.
 
 ## Design stages
@@ -135,7 +137,7 @@ Before implementing, read the spec against the approved user documentation, prom
 
 An expected value that depends on outside facts (a time zone's daylight-saving dates, a calendar, an external format) is worked out by hand from a source, with the reasoning in a comment beside it: against stubs every test fails anyway, so a wrong expectation only shows once the real code runs. Redoing an unpushed tests-first commit to correct one is fine; once pushed, use `unlocks:`.
 
-Run the project's type check on the tests-first commit as well as the unit tests (`astro check`, `tsc --noEmit`): against stubs every test fails anyway, so a type error in a test, such as an unneeded `@ts-expect-error`, shows only in the type check.
+Run the project's type check whenever you run the tests, on the tests-first commit and on every fix (`astro check`, `tsc --noEmit`): against stubs every test fails anyway, and a test runner such as Vitest runs code whose types are wrong, so a type error in a test (an unneeded `@ts-expect-error`, `undefined` where the type wants `null`) shows only in the type check. Make it part of the same command, or set `typecheck:` in the process workflow caller so CI runs it on every pull request; the pilot pushed the same kind of type error three times before CI caught it.
 
 For a static site whose fixture build holds one set of content, test each page state through components: split the page into components that take their data as props, and render each state in a unit test (Astro's container API does this in Vitest). The end-to-end suite keeps the fixture build; the unit tests cover open and closed, filled and empty.
 
@@ -169,6 +171,8 @@ The pilot's manual pass then found four defects the tests had missed, all where 
 When tutorials follow fixture content and previews read a CMS that is still empty, a preview run fails for a reason that is not the product. Choose one: build previews with the fixture switch on (simplest; the preview then shows fixture content), give previews a seeded CMS dataset that matches the fixtures, or run the preview workflow only once real content exists.
 
 Run web tutorials in the project's own CI against a **fixture build**: the site built with fixed, offline content (for example an environment variable that swaps the CMS client for local fixtures), so each run is deterministic and does not depend on what the live content holds. A preview deployment is the second check, for what the fixtures cannot show.
+
+The fixture build must cover **every** content source, not only the ones the current tests use, with a unit test that fails if any source still reads live content in that build (list the sources, and check each returns fixture data or nothing). In the pilot, five lists still read the live dataset; when the artist published their first art piece, three end-to-end tests failed on every branch, including `main`, for a reason unrelated to any change.
 
 Review checks: the approver follows the tutorial on the real product. Did it produce what the stories promised? Was any step surprising?
 

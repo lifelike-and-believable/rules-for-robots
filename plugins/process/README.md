@@ -129,6 +129,8 @@ These report in the job summary and never fail the build.
 
 - **`docs-lint`**: Vale on `docs/user/`, `docs/tutorials/`, and `docs/releases/`, with the RFR writing style and a vocabulary of persona names and glossary terms (`docs/product/glossary.md`). See the guide's recommended tools.
 - **`mutation`** (with `mutation: true` in the caller, for `web-app` and `static-site`): Stryker on `tier:story` and `tier:epic` pull requests, using the project's `stryker.config.mjs` (start from `templates/profiles/<profile>/`). Later pushes to a pull request only retest the mutants their changes affect; a change to a test file reruns everything. The score appears as a check annotation, and the summary lists the surviving mutants.
+- **`typecheck`** (with `typecheck: <command>` in the caller, such as `npm run check`): the project's type check on every pull request. A test runner such as Vitest runs code whose types are wrong, so a type error in a test otherwise shows only when someone runs the type check locally.
+- **`install-dirs`**: the `mutation` and `typecheck` jobs run `npm ci` in the repository root only, unless the caller lists other folders with their own `package.json` (`install-dirs: sanity-studio`). A unit test that imports code from a nested package needs that package's dependencies, or the job fails with "Cannot find package".
 
 ## Tutorials against a preview
 
