@@ -30,3 +30,8 @@ Uses the app in short sessions between other work, sometimes on a slow connectio
 - Forms that lose what they typed after an error.
 - Unclear errors and dead ends with no next step.
 - Being asked for information the app already has.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

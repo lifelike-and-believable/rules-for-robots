@@ -30,3 +30,8 @@ Supports a team of artists on a production with milestones. Evaluates a plugin b
 - Plugins that hide settings in C++ or config files instead of the Details panel or Project Settings.
 - Batch operations that cannot be undone or cancelled.
 - Errors that appear only in the Output Log.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

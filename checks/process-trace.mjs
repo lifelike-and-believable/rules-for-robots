@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -180,7 +180,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     // Open-item markers (AC-42): listed for every artifact; an approved one should have none left.
     for (const item of openItems(a.body ?? '', a.bodyLine)) {
       open.push({ id: a.id, file: a.file, ...item });
-      if (isApproved(a)) warnings.push(`${name}: approved, but ${a.file}:${item.line} still has ${item.marker}: resolve it, or reword it as settled text`);
+      if (isApproved(a) && !ACCEPTED_MARKERS.has(item.marker)) warnings.push(`${name}: approved, but ${a.file}:${item.line} still has ${item.marker}: settle it with the approver, or, if they accept it as a working assumption to check later, mark it [to validate]; changing the wording only to clear this warning hides the gap`);
     }
 
     // An approved product artifact cannot rest on a file that has no approval of its own (AC-43).

@@ -28,3 +28,8 @@ Scans the page for a few seconds before deciding to stay. Often has a slow or me
 
 - Slow pages, layout shifts, and pop-ups.
 - Navigation that hides the thing they came for.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

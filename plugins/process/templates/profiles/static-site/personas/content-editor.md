@@ -29,3 +29,8 @@ Updates content weekly and makes urgent fixes on short notice.
 
 - Build errors with no clear cause.
 - Images and links that break silently after an edit.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

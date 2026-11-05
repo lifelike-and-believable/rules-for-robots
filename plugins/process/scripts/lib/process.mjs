@@ -308,9 +308,11 @@ export function readConfig(root) {
 
 // ---- open-item markers ------------------------------------------------------------------------
 
-// [open], [assumed], and [proposed] mark what an artifact has not settled (AC-42). Markers inside
-// HTML comments, fenced code blocks, and inline code are examples, not markers.
-export const MARKERS = ['[open]', '[assumed]', '[proposed]'];
+// [open], [assumed], and [proposed] mark what an artifact has not settled (AC-42); [to validate]
+// marks a working assumption the approver accepted, to check later (AC-46). Markers inside HTML
+// comments, fenced code blocks, and inline code are examples, not markers.
+export const MARKERS = ['[open]', '[assumed]', '[proposed]', '[to validate]'];
+export const ACCEPTED_MARKERS = new Set(['[to validate]']);
 
 // Body lines as prose: HTML comments, fenced code blocks, and inline code removed (examples, not
 // content). Returns [{ index, prose, raw }] with the 0-based line index.
