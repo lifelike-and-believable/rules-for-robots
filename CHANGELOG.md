@@ -4,6 +4,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- `spec-lock` reads a `tests-commit` written as a block list of `- <commit>` lines, and fails when a `tests-commit` holds no commit it can read; before, a block list was skipped in silence and the spec's tests were never locked (spec-test-traceability AC-14). An `unlocks` entry marked ` (new)` for a test file added later draws no warning (AC-15). From Kettlebird pilot entries 92 and 93. Adopters: specs that wrote `tests-commit` as a block list are now checked; a test changed since its tests commit without an `unlocks` entry will fail until one is added.
+- `rfr-process` 0.10.5: fixes from the tenth round of the Kettlebird pilot. The tutorial runner clicks only visible controls (AC-49), and a tutorial can name its browser size with `viewport: WIDTHxHEIGHT` (AC-50). The guide says that the first end-to-end run often corrects a few expectations under `unlocks`, that new test files need no unlock entry, and where shared code lives in a repository with a nested package. Adopters: nothing to do.
+
 ## [2.2.2] - 2026-11-05
 
 Pull requests: #116, #117, #118, #119, #120, #121, #122, #123, #124, #125, #126, #127.

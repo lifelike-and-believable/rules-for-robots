@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef, 1976536227cf3d45b2227e57bb99cb523f38163d]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef, 1976536227cf3d45b2227e57bb99cb523f38163d, e1b077853beb2c5e3ed189d0a9c5bef6586b0a15]
 unlocks:
   - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
   - test/process-plain-specs.test.mjs: the same AC-7 change; its merge-guard case expects no ask instead of no deny
@@ -328,6 +328,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Agentic XR Pipeline feedback, round 1: AC-41 to AC-43, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
   - Pilot fixes, round 9: AC-44, AC-45, spec-test-traceability AC-13, and the guide changes under "Pilot findings: round 9".
   - Agentic XR Pipeline feedback, round 2: the setup changes under "Project findings: Agentic XR Pipeline, round 2".
+  - Pilot fixes, round 10: AC-49, AC-50, spec-test-traceability AC-14 and AC-15, and the guide changes under "Pilot findings: round 10".
   - Agentic XR Pipeline feedback, round 3: AC-46 to AC-48, and the guide changes under "Project findings: Agentic XR Pipeline, round 3".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
@@ -454,6 +455,16 @@ Entries 87 to 91, from finishing the story-reader epic. Decisions:
 - **Nested packages** (AC-45). The mutation job ran `npm ci` in the root only, so a test importing code from a second package failed with "Cannot find package". The workflow takes `install-dirs`, used by the mutation and type check jobs.
 - **Size requests by what they change.** A "feature request" with one obvious behaviour, no design choice, and no documentation of the old behaviour is a `tier:fix`. `tier:fix` still may not change `docs/user/`: a line documenting the fix goes in its own small pull request, which keeps the tier check simple.
 - **A fixture build covers every content source,** with a test that it does. Five lists still read live content, and the first published art piece turned every branch red.
+
+## Pilot findings: round 10 (2026-11-05)
+
+Entries 92 to 96, from the two-page spreads and page-flip work. Decisions:
+
+- **The test lock had never run on the pilot** (spec-test-traceability AC-14). Every spec there wrote `tests-commit` as a block list, which the parser did not read, so `spec-lock` checked nothing and reported success. It now reads the block list, and a `tests-commit` it cannot read any commit from is an error. Projects that wrote the block list will see their locks checked for the first time, and may find tests that were changed without an `unlocks` entry.
+- **New test files in `unlocks`** (AC-15). A path marked ` (new)` is read without the marker and draws no warning; the guide says new test files need no entry at all.
+- **The tutorial runner clicks visible controls only** (AC-49), so a page can keep a hidden set of controls for another screen size, and **a tutorial can name its viewport** (AC-50), so phone-sized tutorials run.
+- **The first end-to-end run corrects a few expectations.** Tests first still found design gaps early on a large visual feature; three expectations were corrected under `unlocks`, which is what it is for.
+- **Shared code in a repository with a nested package** lives in the package with fewer dependencies, and a change to it is checked with only one package installed, as that package's CI job does.
 
 ## Project findings: Agentic XR Pipeline, round 1 (2026-11-05)
 

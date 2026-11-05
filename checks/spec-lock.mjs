@@ -27,7 +27,11 @@ export function runLock(root, { specsDir = 'docs/specs' } = {}) {
   const result = { errors: [], warnings: [], notices: [], checked: 0 };
   for (const spec of listSpecs(root, specsDir)) {
     const commits = spec.testsCommits;
-    if (!commits.length) continue;
+    if (!commits.length) {
+      // A tests-commit key with nothing readable would otherwise skip the lock in silence (AC-14).
+      if (spec.hasTestsCommit && spec.status !== 'implemented') result.errors.push(`${spec.slug}: tests-commit has no commit the check can read; write it as "tests-commit: <sha>", an inline list, or a block list of "- <sha>" lines`);
+      continue;
+    }
     if (spec.status === 'implemented') {
       result.notices.push(`${spec.slug}: lock released (status implemented)`);
       continue;
@@ -62,9 +66,11 @@ export function runLock(root, { specsDir = 'docs/specs' } = {}) {
     }
 
     const unlocks = new Map();
+    const newFiles = new Set();
     for (const u of spec.unlocks) {
       if (!u.reason) result.errors.push(`${spec.slug}: the unlocks entry for ${u.file} has no reason`);
       else unlocks.set(u.file, u.reason);
+      if (u.isNew) newFiles.add(u.file);
     }
 
     const changedLocked = new Set();
@@ -89,7 +95,7 @@ export function runLock(root, { specsDir = 'docs/specs' } = {}) {
       }
     }
     for (const file of unlocks.keys()) {
-      if (!changedLocked.has(file)) result.warnings.push(`${spec.slug}: unlock for ${file} did not change since tests-commit ${short(last)}`);
+      if (!changedLocked.has(file) && !newFiles.has(file)) result.warnings.push(`${spec.slug}: unlock for ${file} did not change since tests-commit ${short(last)}`);
     }
   }
   return result;
