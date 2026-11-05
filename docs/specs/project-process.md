@@ -319,6 +319,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Pilot fixes, round 7: AC-40, and the guide changes under "Pilot findings: round 7".
   - Pilot fixes, round 8: the guide, design template, and walkthrough changes under "Pilot findings: round 8".
   - Agentic XR Pipeline feedback, round 1: AC-41 to AC-43, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
+  - Agentic XR Pipeline feedback, round 2: the setup changes under "Project findings: Agentic XR Pipeline, round 2".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
   - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
@@ -446,6 +447,14 @@ A second project, a greenfield XR pipeline in solo mode, sent seven recommendati
 - **A consistency pass across areas** before requirements are approved, repeated when an area changes later, and a statement of how a reviewed area is re-opened (a draft is edited; an approved one is amended and keeps `approved`).
 - **Batch 2, at the end of stage 2.** The cross-area pass found about a dozen real conflicts across nine area files that had each been reviewed, so it is now a required step, and it includes the concept: one requirement contradicted a concept non-goal. The guide says how a later stage re-opens an earlier artifact (decide which is wrong, amend it in its own pull request, say which finding led to it). An approved requirement pointed to a list kept in plain notes; the check now warns when an approved product artifact links to a Markdown file that is not an artifact (AC-43). Several requirements assumed a separate operator, which fails for a solo performer; after personas are approved, each requirement is checked against each persona, starting with the smallest team, and the `persona-walkthrough` agent can do this pass.
 - **A repository first.** Setup stops if the folder is not a git repository. The guide says the first commit of a new repository goes straight to the default branch (the approvals job skips a commit with no parent), and in an existing repository the drafts go in through a pull request.
+
+## Project findings: Agentic XR Pipeline, round 2 (2026-11-05)
+
+From running `/rfr-process:setup` on a repository that will hold web apps, Unreal plugins, and possibly Claude Code plugins, and that held only documents when setup ran. Decisions:
+
+- **Several sub-projects share one process.** The profile only chooses the starters and templates setup offers; no check reads it, and each tutorial names its own runner. So a `mixed` setup records each sub-project's folder and profile in the project's `AGENTS.md`, offers persona starters from each profile used, and offers the Stryker configuration per web sub-project. A `profiles:` key in `process.yml` waits until a check or workflow needs to read it. There is no Claude Code plugin profile yet; such a sub-project uses the closest profile's templates.
+- **Nothing to infer from.** When the repository has no code yet, setup asks for the profile instead of guessing.
+- **Setup never replaces an existing artifact.** The starter step copied the concept template without checking for a concept that was already written.
 
 ## Open questions
 
