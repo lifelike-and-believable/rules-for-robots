@@ -26,6 +26,9 @@ name: rules-for-robots process check
 #   mutation    advisory, with `mutation: true` (web-app and static-site): Stryker on tier:story
 #               and tier:epic pull requests, incremental from the pull request's earlier runs, in full
 #               when test files change; the score and surviving mutants go to the job summary.
+#   typecheck   with `typecheck: <command>`: the project's type check on every pull request, so a
+#               type error in a test shows before review, not only in a later local run.
+#   Both install the root package with npm ci, then each folder in `install-dirs`.
 # Every job passes without doing anything when the repository has no docs/product/process.yml.
 on:
   workflow_call:
@@ -38,6 +41,14 @@ on:
         description: Run the advisory Stryker job (needs stryker.config.mjs and Stryker in the project's dev dependencies)
         type: boolean
         default: false
+      typecheck:
+        description: Command for the project's type check (for example `npm run check` or `npx tsc --noEmit`); when set, the typecheck job runs it on every pull request
+        type: string
+        default: ''
+      install-dirs:
+        description: Space-separated folders with their own package.json to install after the root (for example `sanity-studio`), for the mutation and typecheck jobs
+        type: string
+        default: ''
     secrets:
       RFR_PROJECT_TOKEN:
         description: Token with write access to the GitHub Project named in process.yml (optional; without it the board is skipped)
@@ -277,6 +288,15 @@ jobs:
           restore-keys: |
             stryker-${{ github.event.pull_request.number }}-
       - run: npm ci
+      - name: Install other packages
+        if: inputs.install-dirs != ''
+        env:
+          INSTALL_DIRS: ${{ inputs.install-dirs }}
+        run: |
+          for dir in $INSTALL_DIRS; do
+            echo "npm ci in $dir"
+            npm ci --prefix "$dir"
+          done
       - name: Stryker
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -297,3 +317,26 @@ jobs:
           else
             echo "Stryker wrote no report (reports/mutation/mutation.json); see the Stryker step." >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  typecheck:
+    if: inputs.typecheck != '' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Install other packages
+        if: inputs.install-dirs != ''
+        env:
+          INSTALL_DIRS: ${{ inputs.install-dirs }}
+        run: |
+          for dir in $INSTALL_DIRS; do
+            echo "npm ci in $dir"
+            npm ci --prefix "$dir"
+          done
+      - name: Type check
+        env:
+          TYPECHECK: ${{ inputs.typecheck }}
+        run: bash -c "$TYPECHECK"

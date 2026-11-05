@@ -5,6 +5,9 @@ import path from 'node:path';
 
 export const DEFAULT_TEST_DIRS = ['test', 'tests', 'spec', '__tests__'];
 export const CITATION = /\b([a-z0-9][a-z0-9_-]*)#AC-(\d+)\b/g;
+// A citation can name more criteria of the same spec right after the first: "slug#AC-2 AC-8",
+// "slug#AC-2, AC-8 and AC-9" (spec-test-traceability#AC-13).
+const CITATION_RUN = /\b([a-z0-9][a-z0-9_-]*)#AC-(\d+)((?:(?:\s*,\s*|\s+and\s+|\s+)AC-\d+\b)*)/g;
 
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
@@ -79,7 +82,10 @@ export function findCitations(root, dirs) {
       if (e.isDirectory()) walk(childAbs, childRel);
       else if (e.isFile() && fs.statSync(childAbs).size < 1_000_000) {
         const text = fs.readFileSync(childAbs, 'utf8');
-        for (const m of text.matchAll(CITATION)) found.push({ file: childRel, slug: m[1], id: `AC-${m[2]}` });
+        for (const m of text.matchAll(CITATION_RUN)) {
+          found.push({ file: childRel, slug: m[1], id: `AC-${m[2]}` });
+          for (const more of m[3].matchAll(/AC-(\d+)/g)) found.push({ file: childRel, slug: m[1], id: `AC-${more[1]}` });
+        }
       }
     }
   };

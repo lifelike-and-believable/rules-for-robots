@@ -1,6 +1,6 @@
 ---
 status: approved
-tests-commit: [77f3846098d14c773f1c5c16157bc04d803cb56d, 50f93e402a00580852df135a5bd0f6ee047ac759]
+tests-commit: [77f3846098d14c773f1c5c16157bc04d803cb56d, 50f93e402a00580852df135a5bd0f6ee047ac759, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef]
 unlocks:
   - test/spec-lock.test.mjs: the repo() helper failed when the spec had no tests-commit (nothing to commit); the second commit may now be empty
 ---
