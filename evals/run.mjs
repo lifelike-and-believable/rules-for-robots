@@ -281,13 +281,22 @@ function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCa
   });
 }
 
-// Helpers handed to graders.
+// Helpers handed to graders. Each call carries its `output` (the tool result's text, or '' if none
+// arrived), so a grader can read what a test run printed.
 export function transcriptTools(events) {
   const calls = [];
+  const byId = new Map();
   for (const e of events) {
-    if (e.type !== 'assistant') continue;
     for (const block of e.message?.content ?? []) {
-      if (block.type === 'tool_use') calls.push({ name: block.name, input: block.input });
+      if (e.type === 'assistant' && block.type === 'tool_use') {
+        const call = { name: block.name, input: block.input, output: '' };
+        calls.push(call);
+        if (block.id) byId.set(block.id, call);
+      } else if (e.type === 'user' && block.type === 'tool_result' && byId.has(block.tool_use_id)) {
+        const c = block.content;
+        byId.get(block.tool_use_id).output = typeof c === 'string' ? c
+          : (c ?? []).map(part => part.text ?? '').join('\n');
+      }
     }
   }
   return calls;

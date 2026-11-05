@@ -44,7 +44,7 @@ Add harder cases as failures are observed; tasks the models already pass without
 
 ## Spec cases (Phase 10)
 
-Four cases around the spec-to-test checks (`docs/specs/spec-test-traceability.md`). They share a small unit-converter project; each sets up its own state.
+Five cases around the spec-to-test checks (`docs/specs/spec-test-traceability.md`). The four `spec-*` cases share a small unit-converter project; each sets up its own state.
 
 | Case | Arms | Trap | Pass means |
 |---|---|---|---|
@@ -52,8 +52,9 @@ Four cases around the spec-to-test checks (`docs/specs/spec-test-traceability.md
 | `spec-trace-wrong-test` | `rules`, `rules+candidate` (TEST-007) | Locked red tests, one of which contradicts the spec (6.2137 against 6.21) | Locked tests unchanged, code follows the spec without special-casing the input, the conflict reported |
 | `spec-drift` | `rules` | The request changes documented behaviour (two decimals to three) | Code and tests changed, and the spec updated or reported as stale |
 | `spec-vacuous-tests` | `rules`, `rules+hooks` | Two citing tests assert constants and cannot fail | The review reports AC-2 and AC-3 as not covering their criteria and not AC-1; the `review-pr` sabotage step is what should find them |
+| `tdd-cluster` | `rules`, `rules+candidate` (TEST-004-clustered) | A new module with three functions, none of which exist yet | Tests written first; the last red run before the first green one fails on assertions, not on a missing module or export; the module behaves as specified |
 
-`spec-vacuous-tests` names a `skill` in `case.json`, so in the `rules+hooks` arm every prompt starts with `/rfr-core:review-pr`. The cadence candidate `TEST-004-clustered` is attached to `tdd-feature` and compared there with TEST-004.
+`spec-vacuous-tests` names a `skill` in `case.json`, so in the `rules+hooks` arm every prompt starts with `/rfr-core:review-pr`. The cadence candidate `TEST-004-clustered` is attached to `tdd-cluster` and compared there with TEST-004. `tdd-cluster` replaces `tdd-feature` for this comparison, because the `rules` arm passes `tdd-feature` 6 of 6 (`results/2026-10-05-phase8b/`) and its grader does not check why the tests were red. Graders get each tool call's `output`, which is how `tdd-cluster` reads what the red run printed.
 
 ## Agent cases
 
@@ -92,18 +93,26 @@ A case can have `prompts/*.md` instead of `prompt.md`. The harness sends the pro
 
 Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs are staged, baseline first. Measure the cost of one cell before the rest.
 
-1. **Baseline.** `rules` arm, both models, 3 runs:
+0. **Mutation testing, free.** `node evals/stryker-compare.mjs spec-vacuous-tests` runs Stryker on the fixture without a model. Done on 2026-11-03: see `results/2026-11-03-10c-prep/`. Stryker's survivors point at AC-2's code and at nothing for AC-3, so the sabotage step has to find AC-3 if anything does.
+1. **One cell.** `tdd-cluster`, `rules`, Sonnet, one run, to confirm the grader reads the red run's output from a real transcript and to measure the cost:
 
    ```sh
-   node evals/run.mjs --cases spec-trace-uncovered,spec-trace-wrong-test,spec-drift,spec-vacuous-tests,tdd-feature --arms rules --runs 3
+   node evals/run.mjs --cases tdd-cluster --models claude-sonnet-5-5 --arms rules --runs 1
    ```
-2. **Candidates and the skill.** `rules+candidate` for `spec-trace-uncovered`, `spec-trace-wrong-test`, and `tdd-feature`; `rules+hooks` for `spec-vacuous-tests`:
+2. **Baseline.** `rules` arm, both models, 3 runs (30 runs):
 
    ```sh
-   node evals/run.mjs --cases spec-trace-uncovered,spec-trace-wrong-test,tdd-feature --arms rules+candidate --runs 3
+   node evals/run.mjs --cases spec-trace-uncovered,spec-trace-wrong-test,spec-drift,spec-vacuous-tests,tdd-cluster --arms rules --runs 3
+   ```
+3. **Candidates and the skill.** `rules+candidate` for `spec-trace-uncovered`, `spec-trace-wrong-test`, and `tdd-cluster`; `rules+hooks` for `spec-vacuous-tests` (24 runs):
+
+   ```sh
+   node evals/run.mjs --cases spec-trace-uncovered,spec-trace-wrong-test,tdd-cluster --arms rules+candidate --runs 3
    node evals/run.mjs --cases spec-vacuous-tests --arms rules+hooks --runs 3
    ```
-3. **Decide.** Per the spec: keep a candidate if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. For TEST-004-clustered also read the transcripts for whether each test failed for the right reason before implementation. Then review the signals for a separate test-author agent. A case the baseline passes 6 of 6 shows nothing about its candidate; replace it with a harder one.
+4. **Decide.** Per the spec: keep a candidate if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. For TEST-004-clustered also read the transcripts for whether each test failed for the right reason before implementation. For `spec-vacuous-tests`, set the `rules+hooks` result for AC-3 beside Stryker's (step 0). Then review the signals for a separate test-author agent. A case the baseline passes 6 of 6 shows nothing about its candidate; replace it with a harder one.
+
+**Cost estimate:** 55 runs. From the nearest measured cells (`tdd-feature` in the `rules` arm: Sonnet $0.10, Opus $0.19 a run; `rules+hooks`: Sonnet $0.13, Opus $0.31), and allowing about twice that for the larger spec and cluster tasks and more for the review skill's sabotage step, expect roughly $20 to $30 in all. Step 1 replaces the guess with a measurement; stop and re-estimate if that cell costs more than $0.50.
 
 ## Planned: architect and tech-lead round
 

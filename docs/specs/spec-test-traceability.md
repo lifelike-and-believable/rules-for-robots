@@ -78,6 +78,8 @@ Arms: `rules` and `rules+candidate`, both models, 3 runs. Cases, each built and 
 
 Keep the candidate if it raises the pass rate on at least one case, lowers it on none, and costs no more than 1.5 times the baseline's mean. Otherwise keep the guide text and drop the rule.
 
+Mutation testing as a comparison arm (Phase 11 research amendment, finding 1): Stryker runs on the `spec-vacuous-tests` fixture without a model (`evals/stryker-compare.mjs`). On 2026-11-03 it killed 8 of 12 mutants; the 4 survivors are all in the unknown-unit check, which is AC-2's behaviour. Nothing points at AC-3 (zero and negative values), because that behaviour has no code of its own to mutate. So Stryker finds one of the two vacuous tests, and reports code locations rather than criteria; the paid `rules+hooks` runs show whether the sabotage step finds AC-3 as well.
+
 ## Risks and decisions
 
 - ID ceremony costs time on small changes. Mitigation: the check applies only to specs marked `approved` or `implemented`, and small changes need no spec.
@@ -93,7 +95,7 @@ TEST-004 asks for one small failing test, then the least code to pass it, then t
 
 Cluster guidance, as the candidate would word it: draft the tests for one criterion group together; add stubs for the new modules and signatures first, so each test fails on its assertion and not on a missing import; run the cluster and confirm each test fails for the expected reason; commit it as that cluster's `tests-commit`; then implement in small steps with the cluster as the target. A cluster that is red only because nothing exists proves nothing about its assertions.
 
-Comparison in 10c: arms `rules` (TEST-004 as written) and `rules+candidate` (`TEST-004-clustered`, which replaces it), on the Phase 8 `tdd-feature` case and the `spec-trace-*` cases. Measures: pass rate, whether each test failed for the right reason before implementation (from the transcript), turns, and cost.
+Comparison in 10c: arms `rules` (TEST-004 as written) and `rules+candidate` (`TEST-004-clustered`, which replaces it), on the `tdd-cluster` case and the `spec-trace-*` cases. (`tdd-cluster` replaced the Phase 8 `tdd-feature` case in the 2026-11-03 preparation: the `rules` arm already passes `tdd-feature` 6 of 6, and its grader cannot tell why the tests were red. The `tdd-cluster` grader reads the last red run's output and passes it only if the tests failed on assertions, not on a missing module or export.) Measures: pass rate, whether each test failed for the right reason before implementation (from the transcript), turns, and cost.
 
 ## Watching whether a test-author agent is needed
 
