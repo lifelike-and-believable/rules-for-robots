@@ -4,8 +4,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-11-05
+
+Pull requests: #116, #117, #118, #119, #120, #121, #122, #123, #124, #125, #126, #127.
+
 ### Changed
 
+- `code-reviewer` (`rfr-core`, #127): also checks a change against the rest of the product it touches (other callers, pages that show the same data, the user documentation, settings other features read, tests that depend on the old behaviour), and reports problems there at the place they break. From the lead's principle that every change is a change to the whole project (`plugins/process/GUIDE.md`). Adopters: update the `rfr-core` plugin.
 - `rfr-process` 0.10.4 (#126): the guide opens with the principle that every change, to even the smallest component, is a change to the whole of the project. It explains why staleness flags only direct links (which approvals a change reopens) while every change is still checked against the whole product, and gives reviewers a question to ask of each change. The main README points to it. Adopters: nothing to do.
 
 - `rfr-process` 0.10.3 (#125): feedback from the Agentic XR Pipeline's personas stage, and a false approval alarm. A fourth marker, `[to validate]`, records a working assumption the approver accepted; the process check lists it without a warning, and the warning for the other markers no longer suggests rewording them (AC-46). In solo mode the approvals job finds a merge's pull request from the commit subject when GitHub's lookup is empty, accepting it only if GitHub reports it merged as that commit (AC-47), and the approvals and issue sync jobs retry server errors (AC-48). The persona template and starters have an Evidence section; the guide names the tier for artifact pull requests, restates "propose approved" in solo mode, and describes using auto-merge for "merge when green", which setup now mentions. Adopters: nothing to do; persona details accepted as working assumptions can be marked `[to validate]`.
