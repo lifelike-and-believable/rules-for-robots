@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -146,6 +146,8 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
   }
 
   const involved = new Set();
+  const open = [];
+  const artifactFiles = new Set(artifacts.map(x => x.file.replace(/\\/g, '/')));
   for (const a of artifacts) {
     const soft = adopting && a.links.length === 0;
     const problems = { push: (...msgs) => { (soft ? warnings : errors).push(...msgs); if (!soft && a.id) involved.add(a.id); } };
@@ -172,6 +174,20 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
         const sections = link.section ? [] : [...target.body.matchAll(/^##\s+(.+?)\s*$/gm)].map(m => `${target.id}#${slug(m[1])}`);
         const hint = sections.length ? `; it links the whole of ${target.id}, so any edit there stales it: link the sections it depends on instead (${sections.join(', ')})` : '';
         problems.push(`${name}: stale: ${link.key} changed since it was recorded${hint}`);
+      }
+    }
+
+    // Open-item markers (AC-42): listed for every artifact; an approved one should have none left.
+    for (const item of openItems(a.body ?? '', a.bodyLine)) {
+      open.push({ id: a.id, file: a.file, ...item });
+      if (isApproved(a)) warnings.push(`${name}: approved, but ${a.file}:${item.line} still has ${item.marker}: resolve it, or reword it as settled text`);
+    }
+
+    // An approved product artifact cannot rest on a file that has no approval of its own (AC-43).
+    if (isApproved(a) && a.file.startsWith('docs/product/')) {
+      for (const link of markdownLinks(a.body ?? '', a.file, a.bodyLine)) {
+        if (artifactFiles.has(link.target) || !fs.existsSync(path.join(root, link.target))) continue;
+        warnings.push(`${name}: ${a.file}:${link.line} links to ${link.target}, which is not a process artifact, so approving ${a.id} does not cover what it says; move the content into ${a.id}, or make the file an artifact (a discovery file, for example) and link its section in derived-from`);
       }
     }
 
@@ -235,7 +251,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
   }
 
   const unrecorded = artifacts.filter(a => !isApproved(a)).reduce((n, a) => n + a.links.filter(l => !l.hash).length, 0);
-  return { errors, warnings, checked: artifacts.length, involved: [...involved].sort(), unrecorded };
+  return { errors, warnings, openItems: open, checked: artifacts.length, involved: [...involved].sort(), unrecorded };
 }
 
 // One row per persona, epic, and story: its status, the furthest stage that approved work below
@@ -307,6 +323,10 @@ function main(argv) {
   if (json) console.log(JSON.stringify(r, null, 2));
   for (const w of r.warnings) console.warn(`warning: ${w}`);
   for (const e of r.errors) console.error(e);
+  if (!json && r.openItems?.length) {
+    console.log(`Open items (${r.openItems.length}):`);
+    for (const o of r.openItems) console.log(`  ${o.file}:${o.line} ${o.marker} ${o.text}`);
+  }
   if (r.errors.length) process.exit(1);
   if (!json) {
     if (!r.checked) console.log('No process artifacts.');

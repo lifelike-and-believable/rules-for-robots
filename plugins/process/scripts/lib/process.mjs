@@ -13,6 +13,7 @@ export const CONFIG_PATH = 'docs/product/process.yml';
 // process artifacts when they have an `id`, so plain Phase 10 specs in docs/specs/ are left alone.
 export const STAGES = [
   { name: 'concept', file: 'docs/product/concept.md' },
+  { name: 'discovery', dir: 'docs/product/discovery' },
   { name: 'requirements', dir: 'docs/product/requirements' },
   { name: 'personas', dir: 'docs/product/personas' },
   { name: 'epics', dir: 'docs/product/epics' },
@@ -201,11 +202,15 @@ export function loadArtifacts({ listDir, fileExists, read }) {
   const artifacts = [];
   const errors = [];
   for (const { file, stage } of stageFiles(listDir, fileExists)) {
-    const parsed = parseArtifact(read(file));
+    const text = read(file);
+    const parsed = parseArtifact(text);
     if (stage.needsId && !parsed.front?.id) continue;
     if (!parsed.front) { errors.push(`${file}: no front matter (a --- block with id and status)`); continue; }
     for (const e of parsed.errors) errors.push(`${file}: ${e}`);
-    artifacts.push({ file, stage: stage.name, ...parsed.front, body: parsed.body, links: parsed.links });
+    // bodyLine: the file line the body starts on, so messages can give file line numbers.
+    const at = parsed.body ? text.lastIndexOf(parsed.body) : -1;
+    const bodyLine = at < 0 ? 1 : text.slice(0, at).split('\n').length;
+    artifacts.push({ file, stage: stage.name, ...parsed.front, body: parsed.body, bodyLine, links: parsed.links });
   }
   return { artifacts, errors };
 }
@@ -299,4 +304,65 @@ export function readConfig(root) {
   const file = path.join(root, CONFIG_PATH);
   if (!fs.existsSync(file)) return null;
   return parseProcessConfig(fs.readFileSync(file, 'utf8'));
+}
+
+// ---- open-item markers ------------------------------------------------------------------------
+
+// [open], [assumed], and [proposed] mark what an artifact has not settled (AC-42). Markers inside
+// HTML comments, fenced code blocks, and inline code are examples, not markers.
+export const MARKERS = ['[open]', '[assumed]', '[proposed]'];
+
+// Body lines as prose: HTML comments, fenced code blocks, and inline code removed (examples, not
+// content). Returns [{ index, prose, raw }] with the 0-based line index.
+export function proseLines(body) {
+  const out = [];
+  let inFence = false;
+  let inComment = false;
+  for (const [index, raw] of body.split(/\r?\n/).entries()) {
+    if (/^\s*(```|~~~)/.test(raw)) { inFence = !inFence; continue; }
+    if (inFence) continue;
+    let line = '';
+    let rest = raw;
+    while (rest.length) {
+      if (inComment) {
+        const end = rest.indexOf('-->');
+        if (end < 0) { rest = ''; break; }
+        inComment = false;
+        rest = rest.slice(end + 3);
+      } else {
+        const start = rest.indexOf('<!--');
+        if (start < 0) { line += rest; break; }
+        line += rest.slice(0, start);
+        inComment = true;
+        rest = rest.slice(start + 4);
+      }
+    }
+    out.push({ index, prose: line.replace(/`[^`]*`/g, ''), raw });
+  }
+  return out;
+}
+
+export function openItems(body, firstLine = 1) {
+  const items = [];
+  for (const { index, prose, raw } of proseLines(body)) {
+    for (const marker of MARKERS) {
+      if (prose.toLowerCase().includes(marker)) items.push({ marker, line: firstLine + index, text: raw.trim() });
+    }
+  }
+  return items;
+}
+
+// Relative Markdown links to .md files in prose: [{ target (repository path), line }] (AC-43).
+export function markdownLinks(body, file, firstLine = 1) {
+  const links = [];
+  const dir = path.posix.dirname(file.replace(/\\/g, '/'));
+  for (const { index, prose } of proseLines(body)) {
+    for (const m of prose.matchAll(/\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) {
+      const href = m[1].split('#')[0];
+      if (!href || /^[a-z][a-z0-9+.-]*:/i.test(href) || !/\.md$/i.test(href)) continue;
+      const target = href.startsWith('/') ? href.slice(1) : path.posix.normalize(path.posix.join(dir, href));
+      links.push({ target, line: firstLine + index });
+    }
+  }
+  return links;
 }
