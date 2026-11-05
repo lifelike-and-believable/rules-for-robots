@@ -29,3 +29,8 @@ Configures the product for a team, then returns occasionally to add people or in
 
 - Settings with unclear effects or no audit trail.
 - Bulk actions that cannot be previewed or undone.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

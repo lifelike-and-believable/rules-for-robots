@@ -39,12 +39,16 @@ export function changedStages(root, from, to, config) {
   return gatedStages(config).filter(s => stages.has(s));
 }
 
-function client({ fetch, api, token }) {
+// A server error (HTTP 500 to 504) is retried twice after a short wait (AC-48).
+function client({ fetch, api, token, sleep }) {
   const headers = { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'content-type': 'application/json' };
   return async (method, p, body) => {
-    const response = await fetch(`${api}${p}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
-    const data = await response.json().catch(() => null);
-    return { status: response.status, ok: response.ok, data };
+    for (let attempt = 0; ; attempt++) {
+      const response = await fetch(`${api}${p}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      const data = await response.json().catch(() => null);
+      if (response.status >= 500 && response.status <= 504 && attempt < 2) { await sleep(2000 * (attempt + 1)); continue; }
+      return { status: response.status, ok: response.ok, data };
+    }
   };
 }
 
@@ -96,10 +100,24 @@ async function checkReviews({ call, repo, pr, head, required }) {
   return problems;
 }
 
-async function checkMerge({ call, repo, sha, required }) {
+// The pull request number in a merge or squash commit's subject, or null (AC-47).
+export function subjectPull(subject) {
+  const m = /^Merge pull request #(\d+)\b/.exec(subject) ?? /\(#(\d+)\)\s*$/.exec(subject);
+  return m ? Number(m[1]) : null;
+}
+
+async function checkMerge({ call, repo, sha, required, subject = '' }) {
   const pulls = await call('GET', `/repos/${repo}/commits/${sha}/pulls`);
   if (!pulls.ok) throw new Error(`GET commits/${sha}/pulls: HTTP ${pulls.status}`);
-  const pr = (pulls.data ?? []).find(p => p.merged_at && (!p.merge_commit_sha || p.merge_commit_sha === sha)) ?? null;
+  let pr = (pulls.data ?? []).find(p => p.merged_at && (!p.merge_commit_sha || p.merge_commit_sha === sha)) ?? null;
+  // GitHub's commit-to-pull-request index can stay empty for a merge (seen during an outage). Take
+  // the number from the commit subject, and accept it only if GitHub says that pull request was
+  // merged as this very commit, so a direct push with a borrowed subject still fails.
+  const number = pr ? null : subjectPull(subject);
+  if (number) {
+    const found = await call('GET', `/repos/${repo}/pulls/${number}`);
+    if (found.ok && found.data?.merged_at && found.data.merge_commit_sha === sha) pr = found.data;
+  }
   if (!pr) return { pr: null, mergedBy: null, problems: [`${sha.slice(0, 12)} changed ${required.map(r => r.stage).join(', ')} without a pull request; a gated change needs one, merged by an approver`] };
   const detail = await call('GET', `/repos/${repo}/pulls/${pr.number}`);
   const mergedBy = detail.data?.merged_by?.login ?? null;
@@ -126,7 +144,7 @@ async function openIssue({ call, repo, sha, pr, mergedBy, problems, runUrl }) {
   return call('POST', `/repos/${repo}/issues`, { title: `Process change merged without approval: ${sha.slice(0, 12)}`, body, labels: ['process-approval'] });
 }
 
-export async function runApprovals({ root = '.', env = process.env, fetch = globalThis.fetch, log = console.log } = {}) {
+export async function runApprovals({ root = '.', env = process.env, fetch = globalThis.fetch, log = console.log, sleep = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
   const result = { ok: true, problems: [], notes: [] };
   const loaded = readConfig(root);
   if (!loaded) { result.notes.push('no docs/product/process.yml; nothing to check'); return result; }
@@ -134,7 +152,7 @@ export async function runApprovals({ root = '.', env = process.env, fetch = glob
   const config = loaded.config;
   const event = env.GITHUB_EVENT_NAME;
   const isPr = event === 'pull_request' || event === 'pull_request_review' || event === 'pull_request_target';
-  const call = client({ fetch, api: env.GITHUB_API_URL || 'https://api.github.com', token: env.GITHUB_TOKEN });
+  const call = client({ fetch, api: env.GITHUB_API_URL || 'https://api.github.com', token: env.GITHUB_TOKEN, sleep });
   const repo = env.GITHUB_REPOSITORY;
   const required = stages => stages.map(stage => ({ stage, approvers: approversFor(stage, config) }));
 
@@ -148,7 +166,8 @@ export async function runApprovals({ root = '.', env = process.env, fetch = glob
     if (parent.status !== 0) { result.notes.push('no parent commit; nothing to compare'); return result; }
     const stages = changedStages(root, parent.out.trim(), sha, config);
     if (!stages.length) { result.notes.push('no gated stage changed'); return result; }
-    const merge = await checkMerge({ call, repo, sha, required: required(stages) });
+    const subject = git(root, ['log', '-1', '--format=%s', sha]).out.trim();
+    const merge = await checkMerge({ call, repo, sha, required: required(stages), subject });
     result.problems.push(...merge.problems);
     if (merge.problems.length) await openIssue({ call, repo, sha, ...merge, problems: merge.problems, runUrl: env.RUN_URL });
   } else if (config.mode === 'solo') {

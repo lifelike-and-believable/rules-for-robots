@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef]
+tests-commit: [1f67328ed21ed9f55811bcebd3ae545b9c8987ed, f3f2066cbb3a2070061147c723581c684974c449, 51f89fb172cd3527cd7fb94697184d8d18d30c88, 043f277ba18537380b7d62d20bf664621ab74cf8, e41896af8c44a939d674b60337672de413eee6c3, c59346967309205158322e9d1e1e364fba99bf52, 82d6f7de2c54b7b334e466c42aa034ec0900c0fb, 96a0855ce23e78b40af7c7e3ec2e95dd8d8391d1, ebd561f5e43f13211e0c7712accada96bb13f772, 21eb11cd3f99f77e81e81b14ae95315edc6346f3, 2304e60d1dabd0307b3eb4528b55081d1efafaee, cd9940d18a56042b3f6c704ceb89c7429d406466, 1fdd76a90d1c0dc3754565761098680c7ed7b7aa, bfaa5dc01c5b305d3d246ff29eeaa0f816732e30, fffd27a033cf46bf47fcb9aad79f10fed00dd72a, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef, 1976536227cf3d45b2227e57bb99cb523f38163d]
 unlocks:
   - test/process-trace.test.mjs: link rule 8 (AC-21, amendment approved 2026-11-01) requires an approved story to say who it is for, what they want, and why, and to have acceptance criteria; the fixture's stories gain a benefit and a criterion, and nothing else changes
   - test/process-plain-specs.test.mjs: the same AC-7 change; its merge-guard case expects no ask instead of no deny
@@ -326,6 +326,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Agentic XR Pipeline feedback, round 1: AC-41 to AC-43, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
   - Pilot fixes, round 9: AC-44, AC-45, spec-test-traceability AC-13, and the guide changes under "Pilot findings: round 9".
   - Agentic XR Pipeline feedback, round 2: the setup changes under "Project findings: Agentic XR Pipeline, round 2".
+  - Agentic XR Pipeline feedback, round 3: AC-46 to AC-48, and the guide changes under "Project findings: Agentic XR Pipeline, round 3".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".
   - Pilot fixes, round 5: AC-35 to AC-37, and the template, agent, skill, and guide changes under "Pilot findings: round 5".
   - Pilot fixes, round 4: AC-34, and the guide changes under "Pilot findings: round 4".
@@ -471,6 +472,18 @@ From running `/rfr-process:setup` on a repository that will hold web apps, Unrea
 - **Several sub-projects share one process.** The profile only chooses the starters and templates setup offers; no check reads it, and each tutorial names its own runner. So a `mixed` setup records each sub-project's folder and profile in the project's `AGENTS.md`, offers persona starters from each profile used, and offers the Stryker configuration per web sub-project. A `profiles:` key in `process.yml` waits until a check or workflow needs to read it. There is no Claude Code plugin profile yet; such a sub-project uses the closest profile's templates.
 - **Nothing to infer from.** When the repository has no code yet, setup asks for the profile instead of guessing.
 - **Setup never replaces an existing artifact.** The starter step copied the concept template without checking for a concept that was already written.
+
+## Project findings: Agentic XR Pipeline, round 3 (2026-11-05)
+
+From the project's personas stage (ten personas) and a false alarm after its first solo merge. Decisions:
+
+- **Approved working assumptions get their own marker** (AC-46). Personas on a new project with no interviews are honestly approved as working assumptions, but the 0.10.0 warning told the agent to "reword it as settled text", which invites hiding the gap, and forty warnings buried the real ones. `[to validate]` marks a detail the approver accepts to check later; it is listed with the open items and does not warn. The warning for the other markers now says that changing the wording only to clear it hides the gap.
+- **The persona template has an Evidence section,** which the guide already asked for, and so do the profile starters.
+- **Artifact pull requests name their tier, labelled when opened**: product-level artifacts are `tier:epic`, stories, designs, and user documentation `tier:story`. The project's personas pull request opened without a label and the tier job failed.
+- **"Propose approved" in solo mode** is restated so it cannot read as the agent approving: the merge is the approval, and the agent offers a read first when markers remain.
+- **"Merge when green" with auto-merge.** Setup tells the user about the repository's auto-merge setting, which lets an agent act on the instruction without waiting on CI itself. Setup does not change the setting.
+- **The approvals job looks harder before raising an alarm** (AC-47). After a solo merge made during a GitHub outage, the commit-to-pull-request lookup stayed empty although the pull request showed the merge, and the job opened a false "merged without approval" issue. It now reads the number from the merge or squash commit subject and accepts it only if GitHub reports that pull request merged as this commit, then checks the merger as usual.
+- **Server errors are retried** (AC-48). The approvals and issue sync jobs retry an HTTP 500 to 504 twice, after a short wait, instead of failing the run on the first one.
 
 ## Open questions
 

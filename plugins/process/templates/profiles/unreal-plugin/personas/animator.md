@@ -29,3 +29,8 @@ Works shot by shot under deadline, often with many clips open. Needs a tool to w
 
 - Jargon in menus and dialogs that assumes engine internals.
 - Losing work to crashes or to operations that silently change assets.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

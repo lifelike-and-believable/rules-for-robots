@@ -140,6 +140,12 @@ export async function syncIssues({
       const response = await fetch(`${api}${p}`, { method, headers, body: data ? JSON.stringify(data) : undefined });
       const json = await response.json().catch(() => null);
       const limited = response.status === 429 || (response.status === 403 && /rate limit/i.test(json?.message ?? ''));
+      // A server error is retried twice after a short wait (AC-48).
+      if (response.status >= 500 && response.status <= 504 && attempt < 2) {
+        log(`${method} ${p}: HTTP ${response.status}; retrying`);
+        await sleep(2000 * (attempt + 1));
+        continue;
+      }
       if (!limited) return { ok: response.ok, status: response.status, data: json };
       const wait = Number(response.headers.get('retry-after') ?? 60);
       if (attempt >= 2 || wait > maxWaitSeconds) throw new RateLimited(`${method} ${p}: rate limited (retry after ${wait}s)`);

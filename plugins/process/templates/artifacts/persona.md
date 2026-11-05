@@ -25,3 +25,10 @@ section, for example persona-<name>#goals, so edits elsewhere in the persona do 
 ## Frustrations
 
 - <What gets in their way today.>
+
+## Evidence
+
+- <Where each detail above comes from: interviews, support tickets, forum posts, analytics, your own
+  experience in the role. Say which profile starter this persona came from, if any, and whether it was
+  split or merged. Mark a detail with no evidence yet as `[to validate]` when the approver accepts it as a
+  working assumption.>

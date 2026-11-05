@@ -29,3 +29,8 @@ Handles many tickets a day; needs to see a customer's state quickly and safely.
 
 - Error messages customers report that do not say what went wrong.
 - Help pages that describe an older version of the screen.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.

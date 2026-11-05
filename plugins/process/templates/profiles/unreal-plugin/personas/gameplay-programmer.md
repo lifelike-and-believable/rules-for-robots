@@ -30,3 +30,8 @@ Integrates the plugin into game systems and is responsible when it costs frame t
 - Undocumented threading or lifetime rules.
 - APIs that change between minor versions without a deprecation path.
 - Work on the game thread that should be async.
+
+## Evidence
+
+- Starter from the rfr-process profile templates, not evidence. Replace this with where each detail
+  comes from, and mark details nobody has checked yet as `[to validate]`.
