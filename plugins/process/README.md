@@ -13,6 +13,7 @@ Approvers configured in `docs/product/process.yml` approve the design phase: con
 | Stage | Where it lives |
 |---|---|
 | Concept | `docs/product/concept.md` |
+| Discovery (optional) | `docs/product/discovery/<topic>.md`: use cases, the approver's answers, and assumptions that requirements link to |
 | Requirements | `docs/product/requirements/<area>.md` |
 | Personas | `docs/product/personas/<name>.md` |
 | Epics | `docs/product/epics/<name>.md` |
@@ -30,7 +31,7 @@ Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and
 2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch. It follows rules-for-robots `main`, so fixes arrive at once, and so do changes that could turn your CI red. For stable CI, pin both the `uses:` line (`...rfr-process.yml@<tag or commit>`) and the `rules-ref` input to the same release tag or commit, and update them on purpose.
 3. In team mode, run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
 4. Nothing to do for labels: the tier job creates `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic` on its first run.
-5. Start each artifact from `templates/artifacts/` (including `decision.md` for a choice that spans epics), and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`. A static site has a visitor-facing page (`user-doc.md`) and an editor guide for content in files (`user-doc-editor.md`) or in a CMS (`user-doc-editor-cms.md`). The templates link to sections (`concept#audience`, `epic-<name>#outcome`), so an edit elsewhere in an upstream artifact does not make everything below it stale.
+5. Start each artifact from `templates/artifacts/` (including `decision.md` for a choice that spans epics, and `discovery.md` when requirements need use cases and decisions written down first), and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`. A static site has a visitor-facing page (`user-doc.md`) and an editor guide for content in files (`user-doc-editor.md`) or in a CMS (`user-doc-editor-cms.md`). The templates link to sections (`concept#audience`, `epic-<name>#outcome`), so an edit elsewhere in an upstream artifact does not make everything below it stale.
 
 ## Links and staleness
 
@@ -96,7 +97,7 @@ Who approved a change is read from GitHub, never from front matter.
 - **Team mode** (`mode: team`): each gated stage a pull request changes needs an approving review, on the current head commit, from one of that stage's approvers. A member of a listed team counts if the workflow's token can read team membership. A reviewer's latest review is the one that counts.
 - **Solo mode** (`mode: solo`): GitHub does not let you approve your own pull request, so the approval is you merging it. After each merge, the job checks that an approver merged it and opens a `process-approval` issue if not, or if a gated change was pushed without a pull request.
 
-Gated stages are concept to user documentation, and tutorials. Specs are gated only when `process.yml` lists spec approvers.
+Gated stages are concept to user documentation (including discovery), and tutorials. Specs are gated only when `process.yml` lists spec approvers.
 
 Required reviews and checks need a paid GitHub plan for private repositories. Without them, the jobs still report failures and open issues, but cannot block a merge.
 

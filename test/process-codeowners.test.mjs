@@ -14,6 +14,7 @@ const TEAM = 'mode: team\ndefault: [lead]\nstages:\n  personas: [ux-lead, "@acme
 const BLOCK = [
   '# rfr-process:begin (generated from docs/product/process.yml; do not edit by hand)',
   '/docs/product/concept.md @lead',
+  '/docs/product/discovery/ @lead',
   '/docs/product/requirements/ @lead',
   '/docs/product/personas/ @ux-lead @acme/ux',
   '/docs/product/epics/ @lead',

@@ -4,6 +4,10 @@ Guide for the `rfr-process` plugin. It ships with the plugin, so the skills and 
 
 The process rests on two checks that people do and agents cannot: reading the user manual before the feature is built, and following the tutorials before the feature goes into production. Everything upstream exists to make those two reads meaningful, and everything downstream exists to make the product match what was read.
 
+## Before you start: a repository
+
+Start the process in a git repository, before the first artifact is written. Approval is a merged pull request, so drafts written in a plain folder have no history and no way to be approved until they are moved. If there is no repository yet, create one (`git init`, then a remote), and make the first commit with `process.yml`, the workflow, and the artifacts as drafts (`status: draft`) on the default branch: that commit is set-up, not an approval, needs no pull request, and the approvals job skips it because it has no parent. If the repository already has commits, add the drafts in a pull request instead (the one that adds `process.yml` needs no tier label); a direct push of process files to the default branch opens a `process-approval` issue in solo mode. From then on every change goes through a pull request, and the pull request that sets an artifact to `approved` is its approval.
+
 ## Before you start: the size tier
 
 Pick the tier before writing anything, and put it on the pull request as a label.
@@ -27,6 +31,12 @@ One page: the problem and who has it, the audience, what changes for them when t
 
 Review checks: Is the problem stated in the user's terms, not as a missing feature? Would someone outside the project understand who it is for? Are there non-goals?
 
+### Discovery (optional)
+
+When the requirements need a body of findings first (use cases, the approver's answers to a round of questions, assumptions, options weighed), write them in `docs/product/discovery/<topic>.md` from `templates/artifacts/discovery.md`. It links to the concept, is approved like the concept, and gives each use case and decision its own heading, so each requirement can link to the sections it comes from (`discovery-pipeline#uc-3-remote-audience`) instead of citing them in a comment. Skip it when the concept and a short conversation are enough.
+
+Review checks: Is each use case someone's real situation, not a feature? Is each decision the approver's own answer, with where it was given? Are the assumptions ones the approver would accept?
+
 ### Requirements
 
 One file per area (`docs/product/requirements/animation.md`), each requirement under its own ID heading (`## REQ-animation-3: Preview before applying`). Separate files keep pull requests small and stop one shared file becoming a merge hotspot.
@@ -35,10 +45,22 @@ One file per area (`docs/product/requirements/animation.md`), each requirement u
 - Make each requirement testable as written: a number, a named behaviour, or a condition someone could check.
 - Put constraints (engine versions, platforms, budgets, policies) and success measures in their own sections.
 - List open questions instead of guessing. An approver can answer a question; they may not notice a guess.
+- Mark what is not settled, in the text where it applies, so the approver sees it and the process check can list it:
+  - `[open]`: a question only the approver can answer.
+  - `[assumed]`: something you took as true without their answer.
+  - `[proposed]`: text you proposed that the approver has not accepted, as opposed to text that records their decisions. Keep it until they accept or change it, so the difference is not lost once the file is written.
+
+  `node .rfr/checks/process-trace.mjs` prints every marker with its file and line, and warns if an approved artifact still has one. Before asking for approval, resolve each marker or leave it for the approver to decide in the pull request; approving means the markers are gone.
+- Say which release each requirement is for, with a `Release:` line under its heading (`Release: first`, `Release: later`, or a named release), instead of "(later)" in the heading. Epics group their stories into release groups from these.
+- Success measures the approver will set later are written as `[open]` with the event they wait for ("[open] audience size target, set after the first rehearsal"). A requirements file can be approved with such a measure only if the approver says so in the pull request, and the marker then stays as a reminder; the check keeps warning until it is set, which is the point.
 - Keep implementation facts out of requirements (the CMS, the hosting provider, the current project ID): they change for reasons no approver needs to review, and a change to a requirements file needs at least a story tier. Put them in `docs/product/notes.md`, which is not an artifact.
 - Requirements may lead the product. On an existing project they can describe behaviour it does not have yet; the epics then close the gap. Mark such a requirement as not yet met, so nobody reads it as a description of today.
 
-Review checks: Is every requirement testable? Do any two conflict? Is anything a design choice in disguise? Are the success measures ones the project can actually observe?
+**Check across areas before approving.** Areas are often reviewed one at a time, and a later area can change an earlier one: a spend limit in one area can stop a live show promised in another, and an offline rule can conflict with a remote audience target. Before the requirements are approved, read all the area files together and list every conflict between them, with the requirement IDs on both sides; the approver resolves each one. Do this pass again whenever an area changes after the others were reviewed.
+
+**Re-opening an area.** An area discussed but not yet merged as approved is still a draft: edit it and say in the pull request which earlier answers changed. An approved area is amended like any approved artifact: edit it, keep `status: approved`, and the gated merge approves the change; artifacts that link to the changed sections go stale and are updated in turn.
+
+Review checks: Is every requirement testable? Do any two conflict, within this area or with another? Is anything a design choice in disguise? Are the success measures ones the project can actually observe? Are any markers left?
 
 ### Personas
 
