@@ -152,9 +152,13 @@ Before implementing, read the spec against the approved user documentation, prom
 
 An expected value that depends on outside facts (a time zone's daylight-saving dates, a calendar, an external format) is worked out by hand from a source, with the reasoning in a comment beside it: against stubs every test fails anyway, so a wrong expectation only shows once the real code runs. Redoing an unpushed tests-first commit to correct one is fine; once pushed, use `unlocks:`.
 
+**In a repository with a nested package** (an editor or studio with its own `package.json`), put code both packages use in the package with fewer dependencies, and have the other import or re-export it. Importing across the boundary from the side with more dependencies can pull in that side's configuration (its `tsconfig`, its framework), which works locally, where both are installed, and fails in a CI job that installs only one package. Before pushing such a change, reproduce that job: a fresh clone with only that package installed, then its build and tests.
+
 Run the project's type check whenever you run the tests, on the tests-first commit and on every fix (`astro check`, `tsc --noEmit`): against stubs every test fails anyway, and a test runner such as Vitest runs code whose types are wrong, so a type error in a test (an unneeded `@ts-expect-error`, `undefined` where the type wants `null`) shows only in the type check. Make it part of the same command, or set `typecheck:` in the process workflow caller so CI runs it on every pull request; the pilot pushed the same kind of type error three times before CI caught it.
 
 For a static site whose fixture build holds one set of content, test each page state through components: split the page into components that take their data as props, and render each state in a unit test (Astro's container API does this in Vitest). The end-to-end suite keeps the fixture build; the unit tests cover open and closed, filled and empty.
+
+The first run of the end-to-end tests against the real build often corrects a few expectations: a rule that fails on something outside the feature, a measurement read before the page finished, a margin the design did not fix. Correct them and record each under `unlocks:` with its reason; that is what the list is for, and it does not mean the tests should have come later. A test file added after `tests-commit` needs no unlock entry; if you list one anyway, mark it `(new)` (`- tests/e2e/flip.spec.ts (new): covers AC-4 at phone size`) and the lock will not warn about it. Write `tests-commit` as a single commit, an inline list, or a block list of `- <commit>` lines; the lock fails if it cannot read any commit, so a spec is never left unlocked by its formatting.
 
 When tests are committed red against stubs, make each stub return a wrong value that is not empty or false: a stub returning `[]` or `false` passes every test that expects nothing to be found or something to be refused, and those tests then prove nothing until they are changed.
 
@@ -184,6 +188,8 @@ The pilot's manual pass then found four defects the tests had missed, all where 
 - Walk a manual tutorial once yourself before the pull request is ready, or say in the pull request that it has not been walked. The pilot's first manual tutorial had a step the framework refuses.
 
 When tutorials follow fixture content and previews read a CMS that is still empty, a preview run fails for a reason that is not the product. Choose one: build previews with the fixture switch on (simplest; the preview then shows fixture content), give previews a seeded CMS dataset that matches the fixtures, or run the preview workflow only once real content exists.
+
+A web tutorial runs in a laptop-sized browser unless its front matter names another size (`viewport: 390x844`); write a separate tutorial for each size whose steps differ. When a step clicks a control by its text, the runner uses the visible one, so a page may keep a hidden copy of a control for another screen size.
 
 Run web tutorials in the project's own CI against a **fixture build**: the site built with fixed, offline content (for example an environment variable that swaps the CMS client for local fixtures), so each run is deterministic and does not depend on what the live content holds. A preview deployment is the second check, for what the fixtures cannot show.
 

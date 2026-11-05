@@ -110,7 +110,8 @@ async function perform(page, action, timeout, baseUrl) {
         .or(page.getByRole('tab', name))
         .or(page.getByRole('menuitem', name))
         .or(page.getByText(action.label, exact));
-      return target.first().click({ timeout });
+      // A hidden copy of a control (for another screen size) must not be picked (AC-49).
+      return target.filter({ visible: true }).first().click({ timeout });
     }
     case 'see': return page.getByText(action.text).first().waitFor({ state: 'visible', timeout });
     default: throw new Error(`unknown action ${action.type}`);
@@ -143,12 +144,20 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
   const parsed = parseArtifact(text);
   const { steps, errors } = parseSteps(parsed.body);
   if (errors.length) return { ok: false, steps: steps.length, failure: { step: null, text: '', message: errors.join('\n') }, artifacts: [] };
+  // A tutorial can name its browser size, "viewport: 390x844" (AC-50).
+  const viewportLine = /^viewport:\s*(.*?)\s*$/m.exec(/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? '');
+  let viewport = null;
+  if (viewportLine) {
+    const m = /^(\d{2,4})x(\d{2,4})$/.exec(viewportLine[1]);
+    if (!m) return { ok: false, steps: steps.length, failure: { step: null, text: '', message: `viewport "${viewportLine[1]}" is not WIDTHxHEIGHT in pixels, for example 390x844` }, artifacts: [] };
+    viewport = { width: Number(m[1]), height: Number(m[2]) };
+  }
   const out = record ? path.join(record, parsed.front?.id ?? 'tutorial') : null;
   if (out) fs.mkdirSync(out, { recursive: true });
   const artifacts = [];
   const own = !browser;
   const b = browser ?? await loadPlaywright(root).chromium.launch();
-  const context = await b.newContext({ baseURL: baseUrl, ...(out ? { recordVideo: { dir: out } } : {}) });
+  const context = await b.newContext({ baseURL: baseUrl, ...(viewport ? { viewport } : {}), ...(out ? { recordVideo: { dir: out, ...(viewport ? { size: viewport } : {}) } } : {}) });
   if (headers && Object.keys(headers).length) {
     const origin = new URL(baseUrl).origin;
     await context.route('**/*', route => {

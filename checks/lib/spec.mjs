@@ -11,25 +11,35 @@ const CITATION_RUN = /\b([a-z0-9][a-z0-9_-]*)#AC-(\d+)((?:(?:\s*,\s*|\s+and\s+|\
 
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
-// Front matter fields: status, tests (inline list), tests-commit (one commit, or an inline list with
-// one commit per cluster of tests), and unlocks (a block list of
-// "path: reason"). Lines starting with # are comments.
+// Front matter fields: status, tests (inline list), tests-commit (one commit, an inline list with
+// one commit per cluster of tests, or the same as a block list, AC-14), and unlocks (a block list of
+// "path: reason"; a path ending in " (new)" names a test file added later, AC-15). Lines starting
+// with # are comments. `hasTestsCommit` records that the key was present, even if nothing was read.
 function parseFrontMatter(block) {
-  const out = { status: null, testsCommits: [], testDirs: null, unlocks: [] };
+  const out = { status: null, testsCommits: [], hasTestsCommit: false, testDirs: null, unlocks: [] };
   let inUnlocks = false;
+  let inCommits = false;
   for (const raw of block.split(/\r?\n/)) {
     if (!raw.trim() || raw.trim().startsWith('#')) continue;
+    const commitItem = /^\s+-\s+([0-9a-fA-F]{7,40})\s*$/.exec(raw);
+    if (inCommits && commitItem) { out.testsCommits.push(commitItem[1]); continue; }
     const item = /^\s+-\s+(.+?):(?:\s+(.*))?$/.exec(raw);
     if (inUnlocks && item) {
-      out.unlocks.push({ file: item[1].trim(), reason: (item[2] ?? '').trim() });
+      const isNew = /\s+\(new\)$/.test(item[1].trim());
+      out.unlocks.push({ file: item[1].trim().replace(/\s+\(new\)$/, ''), reason: (item[2] ?? '').trim(), isNew });
       continue;
     }
     const field = /^([a-z-]+):\s*(.*)$/.exec(raw);
     if (!field) continue;
     inUnlocks = false;
+    inCommits = false;
     const [, key, value] = field;
     if (key === 'status') out.status = value.trim() || null;
-    else if (key === 'tests-commit') out.testsCommits = value.replace(/^\[|\]$/g, '').split(',').map(s => s.trim()).filter(Boolean);
+    else if (key === 'tests-commit') {
+      out.hasTestsCommit = true;
+      out.testsCommits = value.replace(/^\[|\]$/g, '').split(',').map(s => s.trim()).filter(Boolean);
+      inCommits = !value.trim();
+    }
     else if (key === 'tests') out.testDirs = value.replace(/^\[|\]$/g, '').split(',').map(s => s.trim()).filter(Boolean);
     else if (key === 'unlocks') inUnlocks = true;
   }

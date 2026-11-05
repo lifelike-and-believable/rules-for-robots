@@ -1,6 +1,6 @@
 ---
 status: approved
-tests-commit: [77f3846098d14c773f1c5c16157bc04d803cb56d, 50f93e402a00580852df135a5bd0f6ee047ac759, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef]
+tests-commit: [77f3846098d14c773f1c5c16157bc04d803cb56d, 50f93e402a00580852df135a5bd0f6ee047ac759, fa5eb980bbea3ddf35f3caf3faad50cb29b865ef, e1b077853beb2c5e3ed189d0a9c5bef6586b0a15]
 unlocks:
   - test/spec-lock.test.mjs: the repo() helper failed when the spec had no tests-commit (nothing to commit); the second commit may now be empty
 ---
@@ -38,6 +38,8 @@ A document-driven and test-driven hybrid: the spec's acceptance criteria are the
 | AC-11 | `tests-commit` can be a list, one commit per cluster of tests. Each commit locks the test files that cite the spec at that commit; a file in an earlier cluster stays locked when a later cluster is added. | test: one commit or a list parses; two clusters pass; an earlier cluster stays locked; a later cluster locks at its own commit; new files are only reported; a non-descendant commit fails. |
 | AC-12 | A candidate wording of TEST-004 drafts tests in clusters per criterion group, with stubs first so each test fails on its assertion, and the evals compare it with the current one-test-at-a-time wording. | Eval round (10c). |
 | AC-13 | A test can cite several criteria of one spec after one spec name, separated by spaces, commas, or "and" (`unit-converter#AC-2 AC-8`, `unit-converter#AC-2, AC-8 and AC-9`); each criterion named is counted as cited. | test: each form counts every criterion it names, and a criterion mentioned elsewhere in the line without a spec name is not counted. |
+| AC-14 | `tests-commit` can also be written as a block list, one `- <commit>` per line, like the other front matter lists. A `tests-commit:` key from which no commit can be read is an error, not a silent skip. | test: a block-list `tests-commit` locks its tests; an empty one is an error naming the spec. |
+| AC-15 | An `unlocks` entry whose path ends in ` (new)` names a test file added after `tests-commit`: the marker is not part of the path, and the entry draws no warning. | test: an entry for a new file marked ` (new)` gives no error or warning. |
 
 **Citation form.** A test cites a criterion as `<spec file name without .md>#AC-<n>`, for example `spec-test-traceability#AC-2`, in a test title or a comment anywhere in the file. The slug keeps IDs from different specs apart in a shared test folder. A criterion needs a citing test when its "Verified by" cell starts with `test:`; any other text (a command, a browser check) is skipped and listed. Front matter fields: `status` (`draft`, `approved`, `implemented`), `tests` (folders searched; default `test`, `tests`, `spec`, `__tests__`), `tests-commit`, and `unlocks` (a list of `path: reason`).
 

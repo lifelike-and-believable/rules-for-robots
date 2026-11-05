@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Reader</title>
+<style>.phone { display: none; } @media (max-width: 600px) { .phone { display: block; } .laptop { display: none; } }</style>
+</head>
+<body>
+  <div class="phone"><span onclick="document.getElementById('out').textContent = 'Page 2'">Next</span></div>
+  <div class="laptop"><span onclick="document.getElementById('out').textContent = 'Page 2'">Next</span></div>
+  <p id="out">Page 1</p>
+  <p id="width"></p>
+  <script>document.getElementById('width').textContent = 'Width ' + window.innerWidth;</script>
+</body>
+</html>
