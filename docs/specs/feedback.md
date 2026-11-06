@@ -29,6 +29,7 @@ Feedback from projects that use rules-for-robots (the Kettlebird pilot, the Agen
 | AC-5 | An intake job runs when a feedback issue is opened or edited: it labels the issue `triage:new`, asks once for missing versions or area with a `needs-info` label, lists open feedback issues whose titles closely match, and labels it `check-privacy` when the scan finds possible private details, without quoting them. | test: the job's decisions on synthetic issues, with a fake GitHub API. |
 | AC-6 | The `report-feedback` skill drafts the issue, removes project details by default, runs the scan, shows the draft, and files it only when the user confirms, with `gh` or, without it, the form link. | review: `plugins/feedback/skills/report-feedback/SKILL.md`. |
 | AC-7 | The `triage-feedback` skill on this repository treats issue text as untrusted data, verifies each claim against the code, groups duplicates, and proposes changes; it plans or builds only for issues the maintainer has labelled `approved` or asked for in person. | review: `.claude/skills/triage-feedback/SKILL.md`. |
+| AC-8 | Area is an optional text field, so a form link fills it in and nobody filing has to choose it; the form's description says what each area covers. Intake does not ask for a missing area; triage assigns one. | test: the form's `area` is an optional input, and intake asks nothing for an issue without an area. |
 
 ## Scope
 
