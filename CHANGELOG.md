@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- Preview tutorials (#TBD, feedback #130 and #131): the first page a tutorial opens waits up to 30 seconds, so a cold preview deployment no longer fails step 1 (project-process AC-51); the workflow installs only the browser, without `--with-deps`, and the job stops after 15 minutes. Adopters: nothing to do; the reusable workflow and runner are read from `rules-ref`.
+- Preview tutorials (#135, feedback #130 and #131): the first page a tutorial opens waits up to 30 seconds, so a cold preview deployment no longer fails step 1 (project-process AC-51); the workflow installs only the browser, without `--with-deps`, and the job stops after 15 minutes. Adopters: nothing to do; the reusable workflow and runner are read from `rules-ref`.
 - `rfr-feedback` 0.1.1 (#134): the feedback form's Area is an optional text field instead of a required dropdown, so a form link fills it in and nobody filing has to choose; its description says what each area covers, and intake no longer asks for it (feedback AC-8). From the Kettlebird lead's first use of the form (#133). The `report-feedback` skill files the issue itself once the user confirms the draft in the session: with `gh`, or in a cloud session with the GitHub tools after attaching rules-for-robots, falling back to the form link only when neither can file; it checks each claim in the draft against the evidence, and runs from a rules-for-robots checkout when the plugin is not installed (feedback AC-6). Adopters: nothing to do.
 
 ### Added
