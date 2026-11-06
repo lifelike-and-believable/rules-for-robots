@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- `rfr-feedback` 0.1.1: the feedback form's Area is an optional text field instead of a required dropdown, so a form link fills it in and nobody filing has to choose; its description says what each area covers, and intake no longer asks for it (feedback AC-8). From the Kettlebird lead's first use of the form (#133). Adopters: nothing to do.
+
 ### Added
 
 - `rfr-feedback` 0.1.0 (#129), an optional plugin (no other plugin depends on it): the `report-feedback` skill drafts feedback about rules-for-robots as an issue for this repository, removes project details, scans the draft for likely private ones (`scripts/feedback.mjs`), and files it only when the user confirms, with `gh` or a prefilled link to the new feedback issue form. On this repository, an intake job labels feedback issues, asks for missing versions, points out likely duplicates, and flags possible private details without repeating them; the `triage-feedback` skill verifies each issue against the code and proposes changes, building only what the maintainer approves (`docs/specs/feedback.md`, feedback AC-1 to AC-7). Adopters: nothing to do; install `rfr-feedback` to send feedback.

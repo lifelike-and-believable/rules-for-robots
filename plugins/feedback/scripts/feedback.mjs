@@ -17,7 +17,7 @@ export const MAX_URL = 8000;
 
 // The form's field IDs (.github/ISSUE_TEMPLATE/feedback.yml) and the headings GitHub renders.
 export const FIELDS = [
-  { id: 'area', label: 'Area', required: true },
+  { id: 'area', label: 'Area' },
   { id: 'versions', label: 'Versions', required: true },
   { id: 'happened', label: 'What happened', required: true },
   { id: 'evidence', label: 'Evidence' },

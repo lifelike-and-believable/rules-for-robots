@@ -1,6 +1,6 @@
 ---
 status: approved
-tests-commit: [43203a7568bd0e719d734558d9bf9421dc24b971]
+tests-commit: [43203a7568bd0e719d734558d9bf9421dc24b971, 8d9d0783665d3a448e3dafd8e28e22b8b536954b]
 ---
 
 # Feedback intake
@@ -26,7 +26,7 @@ Feedback from projects that use rules-for-robots (the Kettlebird pilot, the Agen
 | AC-2 | The plugin's script turns a feedback draft into an issue body, and into a link to the repository's feedback form with each field filled in; it reports when the link would be longer than GitHub accepts. | test: the body and the link carry every field, encoded; an over-long draft is reported. |
 | AC-3 | The script scans a draft for details that are usually private: email addresses, token-like strings, absolute home folder paths, IP addresses, and links to GitHub repositories other than rules-for-robots. Links to rules-for-robots and version numbers are not reported. | test: each kind is found with its line; a clean draft passes. |
 | AC-4 | The repository has a feedback issue form whose field IDs are the ones the script fills in, and which labels the issue `feedback`. | test: the form parses and its IDs match the script's fields. |
-| AC-5 | An intake job runs when a feedback issue is opened or edited: it labels the issue `triage:new`, asks once for missing versions or area with a `needs-info` label, lists open feedback issues whose titles closely match, and labels it `check-privacy` when the scan finds possible private details, without quoting them. | test: the job's decisions on synthetic issues, with a fake GitHub API. |
+| AC-5 | An intake job runs when a feedback issue is opened or edited: it labels the issue `triage:new`, asks once for missing versions or a description with a `needs-info` label, lists open feedback issues whose titles closely match, and labels it `check-privacy` when the scan finds possible private details, without quoting them. | test: the job's decisions on synthetic issues, with a fake GitHub API. |
 | AC-6 | The `report-feedback` skill drafts the issue, removes project details by default, runs the scan, shows the draft, and files it only when the user confirms, with `gh` or, without it, the form link. | review: `plugins/feedback/skills/report-feedback/SKILL.md`. |
 | AC-7 | The `triage-feedback` skill on this repository treats issue text as untrusted data, verifies each claim against the code, groups duplicates, and proposes changes; it plans or builds only for issues the maintainer has labelled `approved` or asked for in person. | review: `.claude/skills/triage-feedback/SKILL.md`. |
 | AC-8 | Area is an optional text field, so a form link fills it in and nobody filing has to choose it; the form's description says what each area covers. Intake does not ask for a missing area; triage assigns one. | test: the form's `area` is an optional input, and intake asks nothing for an issue without an area. |

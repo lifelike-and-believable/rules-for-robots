@@ -2,7 +2,8 @@
 // Intake for feedback issues on rules-for-robots (docs/specs/feedback.md, AC-5). Runs from
 // .github/workflows/feedback-intake.yml when an issue is opened or edited. Issue text is data: it
 // is parsed and scanned, never run, and nothing private it may contain is copied into a comment.
-//   opened: label triage:new; ask once for missing required fields (needs-info); list open feedback
+//   opened: label triage:new; ask once for missing required fields (versions, what happened; not
+//           area, which triage assigns) with needs-info; list open feedback
 //           issues with closely matching titles; label check-privacy if the scan finds anything.
 //   edited: remove needs-info once the fields are filled in; re-run the privacy scan.
 // Env: GITHUB_EVENT_PATH, GITHUB_REPOSITORY, GITHUB_TOKEN, GITHUB_API_URL.
