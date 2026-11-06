@@ -16,6 +16,11 @@
       "name": "rfr-process",
       "source": "./plugins/process",
       "description": "A staged project development process: artifact templates, links between artifacts, and a CI check for stale or broken links. Depends on rfr-core."
+    },
+    {
+      "name": "rfr-feedback",
+      "source": "./plugins/feedback",
+      "description": "Optional: report findings to the rules-for-robots repository as feedback issues, checked for private details and filed only when you confirm. No other plugin depends on it."
     }
   ]
 }

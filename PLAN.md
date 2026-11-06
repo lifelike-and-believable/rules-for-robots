@@ -314,6 +314,14 @@ Pull requests: #102 (spec), #103 (11a), #104 (11b), #105 (11c), #106 (research a
 
 A staged, iterative process from concept to demos, delivered as a second plugin, `rfr-process`, that depends on `rfr-core`. Per-stage approvers approve the design phase (concept, requirements, personas, epics, stories, design and UX, user documentation); agents run the delivery phase (technical specification, unit tests, implementation, regression tests), and approvers review again at demos and tutorials and at release. Approval is read from GitHub reviews or, in solo mode, from who merged. Artifacts link to sections of their upstream artifacts, and a stale link fails CI. Design-stage guidance ships as a practice guide until evals justify skills. Slices 11a to 11d are listed in the spec.
 
+### Phase 12: Feedback intake (planned)
+Spec: [docs/specs/feedback.md](docs/specs/feedback.md) (approved 2026-11-06).
+
+Feedback from projects that use rules-for-robots arrives as issues on this repository instead of messages between sessions, so no session has to stay open to receive it. An optional `rfr-feedback` plugin drafts the issue, removes project details, scans for private ones, and files it only when the user confirms; an intake job labels it and points out duplicates; a scheduled session triages new feedback daily and proposes changes, and builds only what the maintainer approves.
+
+- **12a:** the plugin and its `report-feedback` skill, the feedback issue form, the intake job, and the `triage-feedback` skill.
+- **12b:** the daily scheduled triage task, created after 12a merges, and a first triage of the pilots' open findings.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |

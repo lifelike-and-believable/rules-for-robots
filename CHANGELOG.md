@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- `rfr-feedback` 0.1.0, an optional plugin (no other plugin depends on it): the `report-feedback` skill drafts feedback about rules-for-robots as an issue for this repository, removes project details, scans the draft for likely private ones (`scripts/feedback.mjs`), and files it only when the user confirms, with `gh` or a prefilled link to the new feedback issue form. On this repository, an intake job labels feedback issues, asks for missing versions, points out likely duplicates, and flags possible private details without repeating them; the `triage-feedback` skill verifies each issue against the code and proposes changes, building only what the maintainer approves (`docs/specs/feedback.md`, feedback AC-1 to AC-7). Adopters: nothing to do; install `rfr-feedback` to send feedback.
+
 ### Changed
 
 - `spec-lock` reads a `tests-commit` written as a block list of `- <commit>` lines, and fails when a `tests-commit` holds no commit it can read; before, a block list was skipped in silence and the spec's tests were never locked ((spec-test-traceability AC-14, #128). An `unlocks` entry marked ` (new)` for a test file added later draws no warning (AC-15). From Kettlebird pilot entries 92 and 93. Adopters: specs that wrote `tests-commit` as a block list are now checked; a test changed since its tests commit without an `unlocks` entry will fail until one is added.

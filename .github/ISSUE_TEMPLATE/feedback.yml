@@ -1,9 +1,49 @@
-# Stub for the tests-first commit (docs/specs/feedback.md); the form follows.
-name: Feedback
-description: stub
-labels: [stub]
+# Feedback from a project that uses rules-for-robots (docs/specs/feedback.md). The rfr-feedback
+# plugin's report-feedback skill fills this form in through a link, or files the same fields with gh.
+# Field IDs must match FIELDS in plugins/feedback/scripts/feedback.mjs.
+name: Feedback from a project
+description: Something a project using rules-for-robots found, with what you would change.
+title: "Feedback: "
+labels: [feedback]
 body:
-  - type: textarea
-    id: stub
+  - type: markdown
     attributes:
-      label: Stub
+      value: |
+        This repository is public, so this issue will be too. Describe the problem in general terms: leave out names, private links, code, content, and anything else that is not yours to publish.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [rfr-core, rfr-process, rfr-feedback, rules, evals, other]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: The rfr-core and rfr-process versions, or the rules-for-robots commit you were using.
+      placeholder: rfr-core 2.2.2, rfr-process 0.10.5
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What you did, what the process, check, or skill did, and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: The message, output, or a minimal example that shows it, with private details removed.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+      description: What you would change, if you have an idea.
+  - type: input
+    id: source
+    attributes:
+      label: Kind of project
+      description: Optional, in general terms, for example "a static site in solo mode".

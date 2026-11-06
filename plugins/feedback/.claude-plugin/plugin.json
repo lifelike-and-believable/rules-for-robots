@@ -1,0 +1,15 @@
+{
+  "name": "rfr-feedback",
+  "version": "0.1.0",
+  "description": "Optional: report what your project learns from rules-for-robots as a feedback issue on the rules-for-robots repository, drafted by the agent, checked for private details, and filed only when you confirm.",
+  "author": {
+    "name": "Lifelike & Believable Animation Design"
+  },
+  "homepage": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "repository": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "license": "MIT",
+  "keywords": [
+    "feedback",
+    "issues"
+  ]
+}
