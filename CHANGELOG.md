@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- `rfr-feedback` 0.1.1: the feedback form's Area is an optional text field instead of a required dropdown, so a form link fills it in and nobody filing has to choose; its description says what each area covers, and intake no longer asks for it (feedback AC-8). From the Kettlebird lead's first use of the form (#133). Adopters: nothing to do.
+- `rfr-feedback` 0.1.1 (#134): the feedback form's Area is an optional text field instead of a required dropdown, so a form link fills it in and nobody filing has to choose; its description says what each area covers, and intake no longer asks for it (feedback AC-8). From the Kettlebird lead's first use of the form (#133). Adopters: nothing to do.
 
 ### Added
 
