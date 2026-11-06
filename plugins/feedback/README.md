@@ -13,7 +13,7 @@ Ask the agent to report feedback, or run `/rfr-feedback:report-feedback` with a 
 1. Drafts the issue in general terms, with the area, the versions you are using, what happened, the evidence, and a suggestion.
 2. Removes project details by default: names, private links, code, content, and anything not yours to publish. **rules-for-robots is public, so the issue will be too.**
 3. Scans the draft for likely private details (email addresses, tokens, home folder paths, IP addresses, links to other repositories) with `scripts/feedback.mjs check`.
-4. Shows you the draft and files it only when you confirm: with `gh issue create` under your own GitHub login if `gh` is available, or by giving you a link to the repository's feedback form with every field filled in.
+4. Shows you the draft in the session and asks whether to submit it or change it. When you confirm, it files the issue under your own GitHub login, with nothing more for you to do: with `gh` where it is signed in, or, in a cloud session, with the GitHub tools after attaching rules-for-robots to the session (this usually needs push access to the repository). Only when neither works does it give you a link to the feedback form with every field filled in, to open and submit yourself.
 
 To see what happened to feedback you filed: `gh issue list --repo lifelike-and-believable/rules-for-robots --author @me --label feedback --state all`. A fix closes its issue from the pull request that makes it, and the changelog names that pull request.
 
