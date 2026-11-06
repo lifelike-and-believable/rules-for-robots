@@ -1,0 +1,9 @@
+# Stub for the tests-first commit (docs/specs/feedback.md); the form follows.
+name: Feedback
+description: stub
+labels: [stub]
+body:
+  - type: textarea
+    id: stub
+    attributes:
+      label: Stub
