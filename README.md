@@ -27,6 +27,8 @@ In an existing repository, from Claude Code:
 
 Profiles: `web-app`, `static-site`, `unreal-plugin`. For a new project, copy the matching folder from `template-repos/`.
 
+To report what your project learns back to this repository, install the optional `rfr-feedback` plugin (`/plugin install rfr-feedback@rules-for-robots`) and ask the agent to report feedback; it drafts an issue, checks it for private details, and files it only when you confirm. See [plugins/feedback/README.md](plugins/feedback/README.md).
+
 ## Requirements
 
 - Claude Code 2.1.288 or later.

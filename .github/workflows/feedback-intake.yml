@@ -1,0 +1,29 @@
+name: feedback intake
+
+# Labels and answers new feedback issues (docs/specs/feedback.md, AC-5): triage:new, needs-info when
+# a required field is missing, likely duplicates, and check-privacy when the text may hold private
+# details. Issue text is read by checks/ci/feedback-intake.mjs from the event file; it is never
+# placed in a shell command or expression.
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  intake:
+    if: contains(github.event.issue.labels.*.name, 'feedback') || startsWith(github.event.issue.title, 'Feedback:')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Intake
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node checks/ci/feedback-intake.mjs
