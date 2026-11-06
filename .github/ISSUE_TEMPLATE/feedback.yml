@@ -10,13 +10,13 @@ body:
     attributes:
       value: |
         This repository is public, so this issue will be too. Describe the problem in general terms: leave out names, private links, code, content, and anything else that is not yours to publish.
-  - type: dropdown
+  - type: input
     id: area
     attributes:
       label: Area
-      options: [rfr-core, rfr-process, rfr-feedback, rules, evals, other]
-    validations:
-      required: true
+      description: |
+        Optional; leave it blank if you are not sure, and the maintainer will assign it. rfr-core: the coding rules, the review and audit skills, and the reviewer agents. rfr-process: the development process (stories, designs, specs, tutorials), its checks (process-trace, spec-trace, spec-lock, tutorial-run), and the reusable CI workflows. rfr-feedback: this form and the report-feedback skill. rules: the rule files themselves. evals: the evaluations. other: anything else.
+      placeholder: rfr-process
   - type: input
     id: versions
     attributes:

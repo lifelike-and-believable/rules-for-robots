@@ -316,7 +316,7 @@ A staged, iterative process from concept to demos, delivered as a second plugin,
 
 ### Phase 12: Feedback intake (planned)
 Spec: [docs/specs/feedback.md](docs/specs/feedback.md) (approved 2026-11-06).
-Pull requests: #129 (12a).
+Pull requests: #129 (12a), #134 (Area field fix).
 
 Feedback from projects that use rules-for-robots arrives as issues on this repository instead of messages between sessions, so no session has to stay open to receive it. An optional `rfr-feedback` plugin drafts the issue, removes project details, scans for private ones, and files it only when the user confirms; an intake job labels it and points out duplicates; a scheduled session triages new feedback daily and proposes changes, and builds only what the maintainer approves.
 
