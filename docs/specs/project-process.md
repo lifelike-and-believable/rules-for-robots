@@ -288,6 +288,7 @@ The repository's principle is that rules and skills earn their place with eviden
 | AC-48 | The approvals and issue sync jobs retry a GitHub API call that fails with a server error (HTTP 500 to 504) twice, after a short wait, before treating it as a failure. | test: one 502 or 500 followed by success passes; a server error on every attempt still fails. |
 | AC-49 | When a tutorial step clicks a control found by its text, the runner chooses a visible element, so a hidden copy of the control (for another screen size) is not picked. | test: a page with a hidden and a visible control of the same name passes the click step. |
 | AC-50 | A web tutorial can name its browser size in front matter (`viewport: 390x844`), so a phone-sized tutorial runs at that size; without it the runner keeps its default. | test: a tutorial with a viewport sees the page at that width; a malformed viewport is an error. |
+| AC-51 | The first page a web tutorial opens gets a longer load timeout than the other steps (30 seconds, or `firstLoadTimeout`), so a cold preview deployment does not fail step 1; later steps keep the step timeout. | test: a page that answers after longer than the step timeout opens as the first step; the same delay on a later page fails. |
 
 ## Scope
 
@@ -328,6 +329,7 @@ The repository's principle is that rules and skills earn their place with eviden
   - Agentic XR Pipeline feedback, round 1: AC-41 to AC-43, and the guide changes under "Project findings: Agentic XR Pipeline, round 1".
   - Pilot fixes, round 9: AC-44, AC-45, spec-test-traceability AC-13, and the guide changes under "Pilot findings: round 9".
   - Agentic XR Pipeline feedback, round 2: the setup changes under "Project findings: Agentic XR Pipeline, round 2".
+  - Feedback #130 to #132, round 1: AC-51 (cold preview first load), and the preview workflow's browser install and job timeout.
   - Pilot fixes, round 10: AC-49, AC-50, spec-test-traceability AC-14 and AC-15, and the guide changes under "Pilot findings: round 10".
   - Agentic XR Pipeline feedback, round 3: AC-46 to AC-48, and the guide changes under "Project findings: Agentic XR Pipeline, round 3".
   - Pilot fixes, round 6: AC-38, AC-39, and the template, agent, and guide changes under "Pilot findings: round 6".

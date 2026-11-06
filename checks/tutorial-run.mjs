@@ -82,13 +82,15 @@ export function checkCoverage(root) {
   return { errors, tutorials };
 }
 
+// The first page can hit a cold deployment, so it waits longer than the steps after it (AC-51).
+const FIRST_LOAD_TIMEOUT = 30000;
 const PROTECTED = 'the deployment is protected; give the runner its bypass token (RFR_PREVIEW_BYPASS in the preview workflow, or RFR_TUTORIAL_HEADER="<header>: <token>" locally)';
 
-async function perform(page, action, timeout, baseUrl) {
+async function perform(page, action, timeout, baseUrl, first = false) {
   const exact = { exact: true };
   switch (action.type) {
     case 'goto': {
-      const response = await page.goto(action.path, { timeout });
+      const response = await page.goto(action.path, { timeout: first ? Math.max(timeout, FIRST_LOAD_TIMEOUT) : timeout });
       const status = response?.status();
       if (status === 401 || status === 403) throw new Error(`${action.path} answered HTTP ${status}: ${PROTECTED}`);
       // A login page on another host (Vercel, Netlify, an identity provider) instead of the product.
@@ -168,13 +170,15 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
     });
   }
   const page = await context.newPage();
+  let opened = false;
   let result;
   try {
     run: {
       for (const step of steps) {
         for (const action of step.actions) {
           try {
-            await perform(page, action, timeout, baseUrl);
+            await perform(page, action, timeout, baseUrl, action.type === 'goto' && !opened);
+            if (action.type === 'goto') opened = true;
           } catch (e) {
             const why = (e.message ?? String(e)).split('\n')[0];
             let message = `step ${step.n} ("${step.text}"): could not ${describe(action)} (${why})`;
