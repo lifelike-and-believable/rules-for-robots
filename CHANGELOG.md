@@ -6,11 +6,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [3.0.2] - 2026-11-07
 
-Pull requests: #PR.
+Pull requests: #141.
 
 ### Fixed
 
-- Permission prompts with nothing at stake (`rfr-core`, #PR), from the Kettlebird pilot's prompts after 3.0.0, where three of four asked about nothing that could be lost. `guard-commands` reads the folder each command runs in, after any `cd`, and asks before discarding changes (`git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f`) only when git shows uncommitted changes or untracked files there to lose. It never asks inside an agent's own worktree under `.claude/worktrees/`. A `reset --hard` to another commit always asks. `rm -rf` no longer asks when everything it deletes is untracked and ignored by git (build output such as `dist/`) or not there; anything tracked, outside the repository, a glob, or a root-like path still asks. `guard-test-edits` reads paths and specs from the checkout a test file is in, so an `unlocks` entry is found when an agent edits tests in its own worktree; before, it was looked up against the main checkout and never matched. Adopters: update the `rfr-core` plugin.
+- Permission prompts with nothing at stake (`rfr-core`, #141), from the Kettlebird pilot's prompts after 3.0.0, where three of four asked about nothing that could be lost. `guard-commands` reads the folder each command runs in, after any `cd`, and asks before discarding changes (`git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f`) only when git shows uncommitted changes or untracked files there to lose. It never asks inside an agent's own worktree under `.claude/worktrees/`. A `reset --hard` to another commit always asks. `rm -rf` no longer asks when everything it deletes is untracked and ignored by git (build output such as `dist/`) or not there; anything tracked, outside the repository, a glob, or a root-like path still asks. `guard-test-edits` reads paths and specs from the checkout a test file is in, so an `unlocks` entry is found when an agent edits tests in its own worktree; before, it was looked up against the main checkout and never matched. Adopters: update the `rfr-core` plugin.
 
 ## [3.0.1] - 2026-11-07
 
