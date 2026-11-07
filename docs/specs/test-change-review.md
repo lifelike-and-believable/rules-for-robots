@@ -1,13 +1,13 @@
 ---
-status: draft
-tests-commit: [1955b1aafc26d057cf006c26a15f2fc7c0d4a2f2, f4ec9efb3015810805030147aa56026deba07f5e]
+status: approved
+tests-commit: [1955b1aafc26d057cf006c26a15f2fc7c0d4a2f2, f4ec9efb3015810805030147aa56026deba07f5e, b45e8c7358fb5208c30577bd91fb4d66d1a82fb1]
 unlocks:
   - test/test-change-review.test.mjs: the AC-6 hook run wrote to a file that did not exist; rfr-core 3.0.1 treats a file that does not exist as new (a bug found using 3.0.0 on this repository), so the run now writes to a file that exists, and nothing else changes
 ---
 
 # Test change review
 
-Checks that decide, on the lead's own criteria, whether a change to an existing test weakens it, and whether a changed test properly tests the new behaviour it was changed for, so that most test changes no longer need the lead's attention and the ones that do arrive with the evidence. Approved by the project lead on 2026-11-07, with the three open questions decided below. The `status` field stays `draft` until every `test:` criterion has a citing test (the end of 13c), because `spec-trace` treats every uncited criterion of an approved spec as an error.
+Checks that decide, on the lead's own criteria, whether a change to an existing test weakens it, and whether a changed test properly tests the new behaviour it was changed for, so that most test changes no longer need the lead's attention and the ones that do arrive with the evidence. Approved by the project lead on 2026-11-07, with the three open questions decided below. The `status` field was `draft` until every `test:` criterion had a citing test, because `spec-trace` treats every uncited criterion of an approved spec as an error; it is `approved` from 13c on.
 
 ## Problem
 
@@ -83,3 +83,4 @@ Run AC-11 with `evals/run.mjs` on Sonnet 5.5 and Opus 5.5, three runs each, afte
 - Pull requests: #138 (spec), #139 (13a), #140 (13b).
 - 13a notes: replaying this repository's own test changes (26 of them, from the last 150 commits) found two kinds of change that read as neutral or additive but change what a test checks. A renamed property the test reads from the code under test (`.deny` to `.ask`) is now a change, not a rename: only names the test file declares can be renamed neutrally. Additions inside an existing assertion, or to a constant an assertion compares against, are reported as `expected-value-changed` or `assertion-changed`, because a wrong extra output can be made to pass by adding it to the expected value.
 - 13b notes: run on this repository's change f3da6d7 (the merge guard asking instead of denying), the script shows each of the seven changed tests passing on head and failing on base, which is the evidence AC-9 asks for. A test run started from inside another must not inherit `NODE_TEST_CONTEXT`, and TAP escapes `#` in test names; both are handled. Using rfr-core 3.0.0 while building 13b found that `guard-commands` counted a new file, or one outside the project, as an existing test; 3.0.1 fixes it.
+- 13c notes: `checks/test-change-review.mjs` builds the reviewer's input and formats its comment, and the build copies it, the evidence script, and their libraries into `rfr-core`, so `review-pr` runs them from the installed plugin. The reviewer's decision rules are in `plugins/core/agents/test-change-reviewer.md`. Until 13d's eval passes, `review-pr` posts the reviewer's comment but adds no label, and an approval says the change is ready for `tests-reviewed`.
