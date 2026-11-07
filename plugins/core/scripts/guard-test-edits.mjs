@@ -59,6 +59,9 @@ export function decideEdit(input) {
   const file = toolInput.file_path ?? toolInput.notebook_path;
   if (!shouldAsk(file, cwd)) return null;
   const abs = path.resolve(cwd, file);
+  // A file outside the project is not one of its tests.
+  const fromRoot = path.relative(path.resolve(root), abs);
+  if (fromRoot.startsWith('..') || path.isAbsolute(fromRoot)) return null;
   const rel = path.relative(root, abs).split(path.sep).join('/');
   const intro = `rfr-core (TEST-001): ${rel} is an existing test`;
   const advice = 'Approve only if the test itself is wrong; otherwise change the implementation.';

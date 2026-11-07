@@ -202,8 +202,8 @@ test('test-change-review#AC-6: shell writes to existing tests are refused with a
   assert.equal(decideCommand('git reset --hard').decision, 'ask');
   assert.equal(decideCommand('npm test'), null);
 
-  // Outside a git repository the guard cannot tell a branch's new tests apart, so it treats them as existing.
-  const result = runHook('guard-commands.mjs', { cwd: project(), tool_name: 'Bash', tool_input: { command: 'sed -i s/a/b/ tests/a.test.ts' } });
+  // Outside a git repository the guard cannot tell a branch's new tests apart, so an existing file counts as an existing test.
+  const result = runHook('guard-commands.mjs', { cwd: project({ 'tests/a.test.ts': 'x\n' }), tool_name: 'Bash', tool_input: { command: 'sed -i s/a/b/ tests/a.test.ts' } });
   const out = JSON.parse(result.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'deny');
   assert.match(out.permissionDecisionReason, /Edit tool/);

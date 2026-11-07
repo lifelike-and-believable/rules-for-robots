@@ -739,14 +739,17 @@ function multisetMinus(xs, ys, id) {
 
 function compare(a, b, lang) {
   const findings = [];
-  const add = (kind, line, message) => findings.push({ kind, line, message });
+  // Each finding names the test it belongs to (its key in the new file), when it belongs to one.
+  let owner = null;
+  const add = (kind, line, message, key = owner) => findings.push({ kind, line, message, ...(key ? { key } : {}) });
   const { pairs, removed, added } = pairTests(a, b);
-  for (const t of removed) add('test-removed', t.line, `test "${t.key}" was removed`);
+  for (const t of removed) add('test-removed', t.line, `test "${t.key}" was removed`, null);
 
   // Facts compared per paired test.
   const regionOps = [];
   let changedTests = false;
   for (const [x, y] of pairs) {
+    owner = y.key;
     const fx = testFacts(a, x);
     const fy = testFacts(b, y);
     if (fy.assertions < fx.assertions) add('fewer-assertions', x.line, `test "${x.key}" has ${fx.assertions - fy.assertions} fewer assertion(s)`);
@@ -775,7 +778,8 @@ function compare(a, b, lang) {
     if (fy.catches.length > fx.catches.length) add('error-swallowed', fy.catches.at(-1), `test "${y.key}" now catches an error`);
     if (x.rows !== null && y.rows !== null && y.rows < x.rows) add('cases-removed', x.rowsAt ?? x.line, `test "${x.key}" has ${x.rows - y.rows} fewer case(s) in its table`);
     for (const m of multisetMinus(fy.mocks, fx.mocks, z => z.target)) add('module-mocked', m.line, `${m.target}, which the file imports, is now mocked`);
-    regionOps.push({ ops, test: true });
+    regionOps.push({ ops, test: true, key: y.key, pair: [x, y] });
+    owner = null;
   }
   const fa = fileFacts(a);
   const fb = fileFacts(b);
@@ -833,6 +837,7 @@ function compare(a, b, lang) {
   const sa = assertionSpans(a);
   const sb = assertionSpans(b);
   for (const [x, y] of pairs) {
+    owner = y.key;
     const inside = (spans, t) => spans.filter(([p, q]) => p >= t.start && q <= t.end);
     const oldSpans = inside(sa.spans, x).map(([p, q]) => ({ keys: norm(a, p, q, true) }));
     const newSpans = inside(sb.spans, y).map(([p, q]) => ({ keys: norm(b, p, q, false), p, q }));
@@ -846,6 +851,7 @@ function compare(a, b, lang) {
       else add('assertion-changed', at.line, 'an existing assertion now checks something different (its subject or options changed)');
     });
   }
+  owner = null;
   const da = declarations(a);
   const db = declarations(b);
   for (const name of sa.expected) {
@@ -861,7 +867,8 @@ function compare(a, b, lang) {
   let additions = added.length > 0;
   const explainedRemoval = t => t.role === 'title' || t.role === 'module' || t.role === 'matcher' || t.role === 'setting'
     || (t.t === 'p' && (t.v === ',' || t.v === ';')) || (t.t === 'i' && rename.has(t.v));
-  for (const { ops, test } of regionOps) {
+  for (const { ops, test, key: regionKey } of regionOps) {
+    owner = regionKey ?? null;
     for (const o of ops) {
       if (o.op === '-' && !explainedRemoval(o.a)) {
         changedTests ||= test;
@@ -889,9 +896,22 @@ function compare(a, b, lang) {
     seen.add(id);
     return true;
   }).sort((p, q) => p.line - q.line);
-  if (kept.length) return { result: 'weakening', findings: kept };
-  return { result: additions ? 'additive' : 'neutral', findings: [] };
+  owner = null;
+  // Test cases the change modified: paired tests whose tokens differ, with the kinds of finding in each.
+  const cases = regionOps.filter(r => r.test && r.ops.some(o => o.op !== '=')).map(({ pair: [, y] }) => ({
+    key: y.key, title: y.title, line: y.line,
+    kinds: [...new Set(kept.filter(f => f.key === y.key).map(f => f.kind))],
+  }));
+  if (kept.length) return { result: 'weakening', findings: kept, cases };
+  return { result: additions ? 'additive' : 'neutral', findings: [], cases };
 }
 
 // Exposed for the hooks and the pull request review.
+// The test cases a change modifies in an existing test file: [{ key, title, line, kinds }], where
+// line is the case's line in the new file and kinds are the classifier's findings in it. Empty for
+// a file the classifier cannot read.
+export function changedTestCases({ file, before, after }) {
+  return classifyTestChange({ file, before, after }).cases ?? [];
+}
+
 export const _internal = { readJs, readPy };
