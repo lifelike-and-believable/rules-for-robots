@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PreToolUse (shell commands and GitHub MCP merge tools): an agent's merge of a pull request that
+// PreToolUse (shell commands, and the GitHub MCP merge and auto-merge tools): an agent's merge of a pull request that
 // touches a gated process folder needs the person's confirmation (docs/specs/project-process.md,
 // "Approval records"). In solo mode the approver's merge is the approval, so the hook asks: the
 // permission prompt is where the approver confirms, which turns an instruction like "merge it when
@@ -21,11 +21,24 @@ function words(segment) {
   return [...segment.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)].map(m => m[1] ?? m[2] ?? m[3]);
 }
 
-// What a tool call would merge: { kind: 'gh', ref } for `gh pr merge [ref]`, { kind: 'api', owner,
-// repo, number } for `gh api ... pulls/N/merge` and the MCP merge tool, or null.
+// gh api's method: -X or --method, else POST when fields or input are passed, else GET.
+function apiMethod(w) {
+  for (let k = 0; k < w.length; k++) {
+    if (w[k] === '-X' || w[k] === '--method') return (w[k + 1] ?? '').toUpperCase();
+    const joined = /^(?:-X|--method=)(\w+)$/.exec(w[k]);
+    if (joined) return joined[1].toUpperCase();
+  }
+  return w.some(x => /^(-f|-F|--field|--raw-field|--input)$/.test(x) || /^--(raw-)?field=/.test(x)) ? 'POST' : 'GET';
+}
+
+// What a tool call would merge: { kind: 'gh', ref } for `gh pr merge [ref]` (with or without
+// --auto), { kind: 'api', owner, repo, number } for the REST merge or auto-merge endpoints and the
+// MCP merge and auto-merge tools, { kind: 'unknown' } for a GraphQL merge or auto-merge mutation,
+// whose pull request is named by node ID, or null. Turning on auto-merge counts as a merge: GitHub
+// merges the pull request once checks pass, with no further step for the guard to see (AC-53).
 export function mergeTarget(input) {
   const tool = input?.tool_name ?? '';
-  if (/^mcp__.*merge_pull_request$/i.test(tool)) {
+  if (/^mcp__.*(merge_pull_request|enable_pr_auto_merge)$/i.test(tool)) {
     const t = input.tool_input ?? {};
     return { kind: 'api', owner: t.owner, repo: t.repo, number: Number(t.pullNumber ?? t.pull_number ?? t.number) };
   }
@@ -46,14 +59,19 @@ export function mergeTarget(input) {
       return { kind: 'gh', ref };
     }
     if (w[0] === 'gh' && w[1] === 'api') {
-      const m = w.map(x => /^\/?repos\/([^/]+)\/([^/]+)\/pulls\/(\d+)\/merge$/.exec(x)).find(Boolean);
-      if (m) return { kind: 'api', owner: m[1], repo: m[2], number: Number(m[3]) };
+      if (w.includes('graphql')) {
+        if (/\b(mergePullRequest|enablePullRequestAutoMerge)\b/.test(segment)) return { kind: 'unknown' };
+        continue;
+      }
+      const m = w.map(x => /^\/?repos\/([^/]+)\/([^/]+)\/pulls\/(\d+)\/(merge|ccr\/auto_merge)$/.exec(x)).find(Boolean);
+      if (m && ['PUT', 'POST'].includes(apiMethod(w))) return { kind: 'api', owner: m[1], repo: m[2], number: Number(m[3]) };
     }
   }
   return null;
 }
 
 function listWithGh(target) {
+  if (target.kind === 'unknown') throw new Error('the call names the pull request by node ID, so the guard cannot tell which one it is');
   const args = target.kind === 'gh'
     ? ['pr', 'view', ...(target.ref ? [target.ref] : []), '--json', 'files', '--jq', '.files[].path']
     : ['api', '--paginate', `repos/${target.owner}/${target.repo}/pulls/${target.number}/files`, '--jq', '.[].filename'];
@@ -63,6 +81,7 @@ function listWithGh(target) {
 }
 
 function describeWithGh(target) {
+  if (target.kind === 'unknown') throw new Error('unknown pull request');
   const args = target.kind === 'gh'
     ? ['pr', 'view', ...(target.ref ? [target.ref] : []), '--json', 'number,createdAt', '--jq', '"\\(.number) \\(.createdAt)"']
     : ['api', `repos/${target.owner}/${target.repo}/pulls/${target.number}`, '--jq', '"\\(.number) \\(.created_at)"'];

@@ -1,9 +1,9 @@
 {
-  "description": "rfr-process hooks: ask the person to confirm agent merges of pull requests that touch gated process folders, because the approver's merge is the approval (docs/specs/project-process.md).",
+  "description": "rfr-process hooks: ask the person to confirm agent merges (and turning on auto-merge) of pull requests that touch gated process folders, unless their latest typed message says to merge, because the approver's merge is the approval (docs/specs/project-process.md).",
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell|mcp__.*merge_pull_request",
+        "matcher": "Bash|PowerShell|mcp__.*merge_pull_request|mcp__.*enable_pr_auto_merge",
         "hooks": [
           {
             "type": "command",

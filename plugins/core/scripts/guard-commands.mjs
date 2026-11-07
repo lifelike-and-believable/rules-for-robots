@@ -4,12 +4,13 @@
 // control without blocking legitimate use; headless runs treat "ask" as a denial. Also asks
 // when an Unreal editor run's -ExecCmds list never quits, which leaves the editor hanging.
 import { fileURLToPath } from 'node:url';
-import { ask, readInput } from './lib.mjs';
+import { ask, existedAtBase, readInput } from './lib.mjs';
+import { isTestPath } from './guard-test-edits.mjs';
+import { parseCommand, writeTargets } from './shell-writes.mjs';
 
 const CHECKS = [
   [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work'],
   [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files'],
-  [/\bgit\s+(checkout|restore)\b[^;&|]*\s(--\s+)?\.(\s|$)/, 'discarding all working-tree changes'],
   [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history'],
   [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch'],
   [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work'],
@@ -83,14 +84,67 @@ export function execCmdsWithoutQuit(command) {
 // Redirects that only join or discard streams (2>&1, >/dev/null, &>/dev/null) write no file.
 const STREAM_REDIRECTS = /\d*>&\d+|&>>?\s*\/dev\/null|\d*>>?\s*\/dev\/null/g;
 
-export function writesTestFile(command) {
+// The broad check: a test path anywhere in the command, and a write anywhere in it. Used for
+// PowerShell, for Windows paths, and when the command cannot be read as a shell command.
+function broadWritesTestFile(command) {
   const stripped = command.replace(STREAM_REDIRECTS, ' ');
   return TEST_PATH.test(stripped) && (WRITES.test(stripped) || psWrites(stripped));
 }
 
-export function findRisk(command) {
+// A test path in a write target: a file or glob guard-test-edits counts as a test, or a test
+// directory (tests, e2e) that find or xargs works through.
+const isTestTarget = target => {
+  const p = target.replace(/\\/g, '/').replace(/^\.\//, '');
+  return isTestPath(p) || isTestPath(`${p.replace(/\/$/, '')}/x`) || /(^|\/)e2e\//.test(p) || TEST_PATH.test(` ${p}`);
+};
+
+// Whether the command writes to, moves, or deletes an existing test file. existed(path) says
+// whether a path existed where the branch started (see existedAtBase); a test file added on the
+// branch is new, as the CI test guard counts it. Without it, every test path counts as existing.
+export function writesTestFile(command, existed = () => true) {
+  if (psWrites(command) && broadWritesTestFile(command)) return true;
+  // Windows paths (Source\\X\\Tests\\Y.cpp) are not shell words: use the broad check.
+  if ([...command.matchAll(/[\w.:-]+(?:\\[\w.-]+)+/g)].some(m => TEST_PATH.test(` ${m[0].replace(/\\/g, '/')}`))) return broadWritesTestFile(command);
+  const targets = writeTargets(command);
+  if (targets === null) return broadWritesTestFile(command);
+  return targets.some(t => isTestTarget(t) && existed(t) !== false);
+}
+
+// Snapshot updates rewrite expected values (TEST-001): vitest and jest -u, playwright --update-snapshots.
+const UPDATE_FLAGS = /^(-u|--update|--updateSnapshot|--update-snapshots(=\S+)?)$/;
+export function updatesSnapshots(command) {
+  const commands = parseCommand(command) ?? [];
+  return commands.some(({ words }) => {
+    const runner = words.some(w => /(^|\/)(vitest|jest|playwright)$/.test(w)) || (/(^|\/)(npm|pnpm|yarn|bun)$/.test(words[0] ?? '') && /^(test|t)$/.test(words[1] ?? ''));
+    return runner && words.some(w => UPDATE_FLAGS.test(w));
+  });
+}
+
+// git checkout or git restore of the whole tree discards uncommitted changes; git restore --staged
+// without --worktree only unstages them, and loses nothing.
+export function discardsWorkingTree(command) {
+  for (const { words } of parseCommand(command) ?? []) {
+    const g = words.indexOf('git');
+    if (g === -1) continue;
+    const sub = words[g + 1];
+    if (sub !== 'checkout' && sub !== 'restore') continue;
+    const rest = words.slice(g + 2);
+    if (!rest.some(w => w === '.' || w === './')) continue;
+    if (sub === 'checkout') return true;
+    const short = rest.filter(w => /^-[a-zA-Z]+$/.test(w)).join('');
+    const staged = rest.includes('--staged') || short.includes('S');
+    const worktree = rest.includes('--worktree') || short.includes('W');
+    if (!staged || worktree) return true;
+  }
+  return false;
+}
+
+export function findRisk(command, { cwd } = {}) {
   if (typeof command !== 'string') return null;
-  if (writesTestFile(command)) return 'this command appears to change a test file outside the Edit tool (TEST-001)';
+  const existed = cwd ? file => existedAtBase(file, cwd) : undefined;
+  if (writesTestFile(command, existed)) return 'this command appears to change an existing test file outside the Edit tool (TEST-001)';
+  if (updatesSnapshots(command)) return 'this command updates test snapshots, which rewrites their expected values (TEST-001)';
+  if (discardsWorkingTree(command)) return 'discarding all working-tree changes';
   if (execCmdsWithoutQuit(command)) return 'the editor -ExecCmds list does not end with Quit, so the editor will keep running after its commands finish (add ";Quit")';
   if (isForcedRecursiveRm(command)) return 'recursive forced delete (rm -rf)';
   if (isForcedRecursiveRemoveItem(command)) return 'recursive forced delete (Remove-Item -Recurse -Force)';
@@ -100,7 +154,7 @@ export function findRisk(command) {
 
 async function main() {
   const input = await readInput();
-  const risk = findRisk(input?.tool_input?.command);
+  const risk = findRisk(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (risk) ask(`rfr-core (WA-003): ${risk}. Approve only if this is intended and the target is not shared.`);
 }
 
