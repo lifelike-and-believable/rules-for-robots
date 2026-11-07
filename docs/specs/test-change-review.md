@@ -78,5 +78,5 @@ Run AC-11 with `evals/run.mjs` on Sonnet 5.5 and Opus 5.5, three runs each, afte
 
 - Plan or roadmap item: `PLAN.md`, Phase 13.
 - Slices: 13a the classifier and the session hooks (AC-1 to AC-6); 13b the evidence script (AC-7); 13c the reviewer agent and the `review-pr` step (AC-8 to AC-10); 13d the eval (AC-11), after which the reviewer may add the label.
-- Pull requests: #138 (spec).
+- Pull requests: #138 (spec), #139 (13a).
 - 13a notes: replaying this repository's own test changes (26 of them, from the last 150 commits) found two kinds of change that read as neutral or additive but change what a test checks. A renamed property the test reads from the code under test (`.deny` to `.ask`) is now a change, not a rename: only names the test file declares can be renamed neutrally. Additions inside an existing assertion, or to a constant an assertion compares against, are reported as `expected-value-changed` or `assertion-changed`, because a wrong extra output can be made to pass by adding it to the expected value.
