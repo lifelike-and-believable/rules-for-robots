@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { findRisk } from '../plugins/core/scripts/guard-commands.mjs';
+import { decideCommand, findRisk } from '../plugins/core/scripts/guard-commands.mjs';
 import { isTestPath, shouldAsk } from '../plugins/core/scripts/guard-test-edits.mjs';
 import { chooseFormatter } from '../plugins/core/scripts/format-on-edit.mjs';
 
@@ -470,5 +470,21 @@ test('test guards leave alone test files added on the current branch, as the CI 
   // A shell write to an existing test is refused with a pointer to the Edit tool (test-change-review AC-6).
   const shell = runHook('guard-commands.mjs', { cwd: dir, tool_name: 'Bash', tool_input: { command: 'sed -i s/a/b/ tests/old.test.ts' } });
   assert.equal(JSON.parse(shell.stdout).hookSpecificOutput.permissionDecision, 'deny');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('guard-commands lets a shell command create a new file, or write outside the project (rfr-core 3.0.1)', () => {
+  // Found when rfr-core 3.0.0 refused a heredoc that created a scratch test file outside the project.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-new-file-'));
+  fs.mkdirSync(path.join(dir, 'tests'));
+  fs.writeFileSync(path.join(dir, 'tests/existing.test.ts'), 'x\n');
+  const outside = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-scratch-')), 'ctx.test.mjs');
+  fs.writeFileSync(outside, 'x\n');
+  assert.equal(decideCommand("cat > tests/new.test.ts <<'EOF'\nx\nEOF", { cwd: dir }), null, 'a new file is not an existing test');
+  assert.equal(decideCommand(`echo x > ${outside}`, { cwd: dir }), null, 'a file outside the project is not one of its tests');
+  assert.equal(decideCommand('sed -i s/a/b/ tests/existing.test.ts', { cwd: dir }).decision, 'deny');
+  assert.equal(decideCommand('rm tests/*.test.ts', { cwd: dir }).decision, 'ask', 'a glob can match existing tests');
+  const write = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Write', tool_input: { file_path: outside, content: 'y' } });
+  assert.equal(write.stdout, '', 'guard-test-edits leaves files outside the project alone');
   fs.rmSync(dir, { recursive: true, force: true });
 });
