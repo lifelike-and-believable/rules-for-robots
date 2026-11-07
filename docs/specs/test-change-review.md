@@ -4,7 +4,7 @@ status: draft
 
 # Test change review
 
-Checks that decide, on the lead's own criteria, whether a change to an existing test weakens it, and whether a changed test properly tests the new behaviour it was changed for, so that most test changes no longer need the lead's attention and the ones that do arrive with the evidence. Drafted 2026-11-07 for the project lead's approval.
+Checks that decide, on the lead's own criteria, whether a change to an existing test weakens it, and whether a changed test properly tests the new behaviour it was changed for, so that most test changes no longer need the lead's attention and the ones that do arrive with the evidence. Approved by the project lead on 2026-11-07, with the three open questions decided below. The `status` field stays `draft` until every `test:` criterion has a citing test (the end of 13c), because `spec-trace` treats every uncited criterion of an approved spec as an error.
 
 ## Problem
 
@@ -70,8 +70,8 @@ Run AC-11 with `evals/run.mjs` on Sonnet 5.5 and Opus 5.5, three runs each, afte
 ## Open questions
 
 1. ~~Should the `tests-reviewed` label stay the lead's to add?~~ Decided by the lead on 2026-11-07: the reviewer adds it, once AC-11 passes (AC-10).
-2. AC-6 changes a prompt into a refusal with instructions. Is that acceptable, or should shell writes to existing tests keep asking?
-3. Should the session check consult a model for unclear changes, once prompt hooks can hand a decision to the person? Not possible today.
+2. ~~AC-6 changes a prompt into a refusal with instructions. Is that acceptable?~~ Decided by the lead on 2026-11-07: yes. A shell write to an existing test is refused with a reason that asks for the Edit tool, so the change can be classified; deleting or moving a test and updating snapshots still ask.
+3. ~~Should the session check consult a model for unclear changes?~~ Decided by the lead on 2026-11-07: not now. A prompt or agent hook can only allow or block, so a model there would either approve alone without evidence or stop the agent; unclear changes keep asking the lead. Revisit if prompt hooks can hand a decision to the person, or if unclear changes become frequent (Unreal C++ tests, for one).
 
 ## Delivery
 

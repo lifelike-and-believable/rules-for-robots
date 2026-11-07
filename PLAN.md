@@ -324,7 +324,7 @@ Feedback from projects that use rules-for-robots arrives as issues on this repos
 - **12b:** the daily scheduled triage task, created after 12a merges, and a first triage of the pilots' open findings.
 
 ### Phase 13: Test change review (planned)
-Spec: [docs/specs/test-change-review.md](docs/specs/test-change-review.md) (draft, for the lead's approval).
+Spec: [docs/specs/test-change-review.md](docs/specs/test-change-review.md) (approved 2026-11-07).
 Pull requests: #138 (spec).
 
 Most changes to existing tests can be judged on written criteria: whether the change weakens the test, and, if it does, whether an approved change in behaviour explains it and the changed test catches that behaviour when run. The session hooks let additive and neutral test changes through without asking, using a deterministic classifier; at the pull request, a `test-change-reviewer` agent checks the reasons and runs the changed tests against the old and new code before it adds `tests-reviewed`, and refers everything else to the lead.
