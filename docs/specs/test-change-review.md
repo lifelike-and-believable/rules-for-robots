@@ -77,4 +77,4 @@ Run AC-11 with `evals/run.mjs` on Sonnet 5.5 and Opus 5.5, three runs each, afte
 
 - Plan or roadmap item: `PLAN.md`, Phase 13.
 - Slices: 13a the classifier and the session hooks (AC-1 to AC-6); 13b the evidence script (AC-7); 13c the reviewer agent and the `review-pr` step (AC-8 to AC-10); 13d the eval (AC-11), after which the reviewer may add the label.
-- Pull requests: none yet.
+- Pull requests: #138 (spec).
