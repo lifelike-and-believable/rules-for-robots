@@ -399,3 +399,75 @@ test('guard-commands ignores stream redirects such as 2>&1 and >/dev/null on tes
     assert.ok(findRisk(command), command);
   }
 });
+
+test('guard-commands asks only when a command writes to a test file', () => {
+  const risky = [
+    "python3 - <<'PY'\np='tests/unit/a.test.ts'\ns=open(p).read()\nopen(p,'w').write(s.replace('1','2'))\nPY",
+    "cat >> tests/unit/a.test.ts <<'TS'\ntest('x', () => {})\nTS",
+    'sed -i "s/a/b/" src/a.test.ts && npm test',
+    "node -e \"require('fs').writeFileSync('tests/x.test.js', '')\"",
+    'git rm tests/old.test.ts', 'git mv tests/a.test.ts tests/b.test.ts',
+    'cp fixture.json tests/fixtures/story.json',
+    "bash -c 'echo x > tests/a.test.ts'",
+    'find tests -name "*.test.ts" -exec sed -i s/a/b/ {} +',
+    'ls tests/*.test.ts | xargs sed -i s/a/b/',
+  ];
+  for (const command of risky) assert.ok(findRisk(command), `should flag: ${command}`);
+  const safe = [
+    'npx vitest run src/lib/date.test.ts > /tmp/out.txt',
+    'npm test -- test/foo.test.mjs 2>&1 | tee /tmp/log.txt',
+    'cp tests/fixtures/story.json /tmp/story.json',
+    'git commit -m "tests: cover the > case in parse.test.ts"',
+    "git commit -F - <<'MSG'\nAdd tests/unit/a.test.ts\nMSG",
+    "python3 - <<'PY'\np='docs/specs/x.md'\ns=open(p).read()\ns=s.replace('a','  - tests/unit/a.test.ts: AC-2 changed')\nopen(p,'w').write(s)\nPY\nnpx vitest run tests/unit/a.test.ts",
+    "sed -i 's/old/new/' src/pages/Writing.astro && npx playwright test tests/e2e/writing.spec.ts",
+    "curl -s localhost:4321/sitemap.xml | grep loc | sed 's/<loc>//' ; npx playwright test tests/e2e/a.spec.ts",
+    'npm run build:fixtures > /tmp/build.log 2>&1 && npx playwright test tests/e2e/stories.spec.ts',
+    "sed -i 's#see tests/unit/a.test.ts#see tests/unit/b.test.ts#' docs/specs/x.md",
+  ];
+  for (const command of safe) assert.equal(findRisk(command), null, `should not flag: ${command}`);
+});
+
+test('guard-commands asks before updating test snapshots (TEST-001)', () => {
+  for (const command of ['npx vitest run -u', 'npx vitest --update', 'npx jest --updateSnapshot', 'npx jest -u src', 'npx playwright test --update-snapshots', 'npm test -- -u']) {
+    assert.ok(findRisk(command), command);
+  }
+  for (const command of ['npx vitest run', 'npx playwright test --ui', 'npm update', 'git push -u origin x']) {
+    assert.equal(findRisk(command), null, command);
+  }
+});
+
+test('guard-commands does not ask when git restore only unstages', () => {
+  for (const command of ['git restore --staged .', 'git restore --staged -- .', 'git restore -S .']) assert.equal(findRisk(command), null, command);
+  for (const command of ['git restore .', 'git restore --staged --worktree .', 'git restore -SW .', 'git checkout -- .']) assert.ok(findRisk(command), command);
+});
+
+test('test guards leave alone test files added on the current branch, as the CI test guard does', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-branch-'));
+  const git = (...args) => {
+    const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...args], { cwd: dir, encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+  };
+  const write = (file, text = 'x\n') => { fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true }); fs.writeFileSync(path.join(dir, file), text); };
+  git('init', '-q', '-b', 'main');
+  write('tests/old.test.ts');
+  git('add', '.'); git('commit', '-q', '-m', 'base');
+  git('checkout', '-q', '-b', 'feature');
+  write('tests/new.test.ts');
+  git('add', '.'); git('commit', '-q', '-m', 'tests first');
+  write('tests/untracked.test.ts');
+
+  assert.equal(shouldAsk('tests/old.test.ts', dir), true);
+  assert.equal(shouldAsk(path.join(dir, 'tests/new.test.ts'), dir), false);
+  assert.equal(shouldAsk('tests/untracked.test.ts', dir), false);
+  assert.ok(findRisk('sed -i s/a/b/ tests/old.test.ts', { cwd: dir }));
+  assert.equal(findRisk('sed -i s/a/b/ tests/new.test.ts', { cwd: dir }), null);
+  assert.equal(findRisk("python3 - <<'PY'\np='tests/new.test.ts'\nopen(p,'w').write('y')\nPY", { cwd: dir }), null);
+  assert.ok(findRisk("python3 - <<'PY'\nfor p in ['tests/new.test.ts', 'tests/old.test.ts']:\n    open(p,'w').write('y')\nPY", { cwd: dir }));
+
+  const edit = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Edit', tool_input: { file_path: path.join(dir, 'tests/new.test.ts') } });
+  assert.equal(edit.stdout, '');
+  const shell = runHook('guard-commands.mjs', { cwd: dir, tool_name: 'Bash', tool_input: { command: 'sed -i s/a/b/ tests/old.test.ts' } });
+  assert.equal(JSON.parse(shell.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
