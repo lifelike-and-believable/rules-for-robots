@@ -3,6 +3,8 @@
 // (rules WA-003 and, for databases, the node-services pack). Asking keeps the user in
 // control without blocking legitimate use; headless runs treat "ask" as a denial. Also asks
 // when an Unreal editor run's -ExecCmds list never quits, which leaves the editor hanging.
+import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ask, deny, existedAtBase, readInput } from './lib.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
@@ -151,9 +153,19 @@ export function discardsWorkingTree(command) {
 // A shell write to an existing test is refused with a pointer to the Edit tool, whose input shows
 // the change so guard-test-edits can check it (test-change-review AC-6); deleting or moving an
 // existing test, a command the hook cannot read, and snapshot updates still ask.
+// Whether a path the command names is an existing test of this project: inside the project, on
+// disk (a glob is taken to match something), and not added on the current branch.
+export function existingProjectFile(file, cwd, root = process.env.CLAUDE_PROJECT_DIR ?? cwd) {
+  const abs = path.resolve(cwd, file);
+  const rel = path.relative(path.resolve(root), abs);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return false;
+  if (!/[*?[{]/.test(file) && !fs.existsSync(abs)) return false;
+  return existedAtBase(file, cwd);
+}
+
 export function decideCommand(command, { cwd } = {}) {
   if (typeof command !== 'string') return null;
-  const existed = cwd ? file => existedAtBase(file, cwd) : undefined;
+  const existed = cwd ? file => existingProjectFile(file, cwd) : undefined;
   const change = testFileChange(command, existed);
   if (change === 'write') {
     return { decision: 'deny', reason: 'rfr-core (TEST-001): this command writes to an existing test file, so the change cannot be checked. Make the change with the Edit tool instead (one Edit per change, or MultiEdit for several in one file), so the test-change check can see it; additive and neutral changes then go through without asking.' };

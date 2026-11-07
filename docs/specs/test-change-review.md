@@ -1,6 +1,8 @@
 ---
 status: draft
 tests-commit: [1955b1aafc26d057cf006c26a15f2fc7c0d4a2f2, f4ec9efb3015810805030147aa56026deba07f5e]
+unlocks:
+  - test/test-change-review.test.mjs: the AC-6 hook run wrote to a file that did not exist; rfr-core 3.0.1 treats a file that does not exist as new (a bug found using 3.0.0 on this repository), so the run now writes to a file that exists, and nothing else changes
 ---
 
 # Test change review
@@ -80,3 +82,4 @@ Run AC-11 with `evals/run.mjs` on Sonnet 5.5 and Opus 5.5, three runs each, afte
 - Slices: 13a the classifier and the session hooks (AC-1 to AC-6); 13b the evidence script (AC-7); 13c the reviewer agent and the `review-pr` step (AC-8 to AC-10); 13d the eval (AC-11), after which the reviewer may add the label.
 - Pull requests: #138 (spec), #139 (13a).
 - 13a notes: replaying this repository's own test changes (26 of them, from the last 150 commits) found two kinds of change that read as neutral or additive but change what a test checks. A renamed property the test reads from the code under test (`.deny` to `.ask`) is now a change, not a rename: only names the test file declares can be renamed neutrally. Additions inside an existing assertion, or to a constant an assertion compares against, are reported as `expected-value-changed` or `assertion-changed`, because a wrong extra output can be made to pass by adding it to the expected value.
+- 13b notes: run on this repository's change f3da6d7 (the merge guard asking instead of denying), the script shows each of the seven changed tests passing on head and failing on base, which is the evidence AC-9 asks for. A test run started from inside another must not inherit `NODE_TEST_CONTEXT`, and TAP escapes `#` in test names; both are handled. Using rfr-core 3.0.0 while building 13b found that `guard-commands` counted a new file, or one outside the project, as an existing test; 3.0.1 fixes it.
