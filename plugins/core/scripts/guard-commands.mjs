@@ -4,15 +4,17 @@
 // control without blocking legitimate use; headless runs treat "ask" as a denial. Also asks
 // when an Unreal editor run's -ExecCmds list never quits, which leaves the editor hanging.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ask, deny, existedAtBase, readInput } from './lib.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
 
 const CHECKS = [
-  [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work'],
-  [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files'],
+  [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work', 'discard'],
+  [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files', 'discard'],
   [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history'],
   [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch'],
   [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work'],
@@ -172,17 +174,112 @@ export function decideCommand(command, { cwd } = {}) {
   }
   const risk = change === 'remove' ? 'this command deletes or moves an existing test file (TEST-001)'
     : change === 'broad' ? 'this command appears to change an existing test file outside the Edit tool (TEST-001)'
-    : findOtherRisk(command);
+    : findOtherRisk(command, cwd);
   return risk ? { decision: 'ask', reason: `rfr-core (WA-003): ${risk}. Approve only if this is intended and the target is not shared.` } : null;
 }
 
-function findOtherRisk(command) {
+// The simple commands of a command line, each with the folder it runs in: the starting folder,
+// changed by any cd (or pushd) before it, and by git -C. null when the line cannot be read.
+export function commandsWithDirs(command, cwd) {
+  const commands = parseCommand(command);
+  if (!commands) return null;
+  let dir = cwd;
+  return commands.map(({ words }) => {
+    if ((words[0] === 'cd' || words[0] === 'pushd') && words[1] && !words[1].startsWith('-')) dir = path.resolve(dir, words[1].replace(/^~(?=\/|$)/, os.homedir()));
+    return { words, dir };
+  });
+}
+
+const git = (dir, args) => {
+  const r = spawnSync('git', args, { cwd: dir, encoding: 'utf8', timeout: 5000 });
+  return r.error ? { status: -1, out: '' } : { status: r.status, out: r.stdout ?? '' };
+};
+
+// A worktree Claude Code made for an agent (isolation: worktree) lives under .claude/worktrees/;
+// discarding changes there touches only that agent's checkout.
+export const inAgentWorktree = dir => path.resolve(dir).split(path.sep).join('/').includes('/.claude/worktrees/');
+
+// Commands that discard uncommitted work (checkout or restore of the whole tree, reset --hard,
+// clean -f), asked about only when there is something to lose in the folder they run in.
+function discardRisk(entries) {
+  for (const { words, dir } of entries) {
+    const g = words.indexOf('git');
+    if (g === -1) continue;
+    let k = g + 1;
+    let where = dir;
+    while (words[k]?.startsWith('-')) {
+      if (words[k] === '-C' && words[k + 1]) { where = path.resolve(where, words[k + 1]); k += 2; } else k += words[k] === '-c' ? 2 : 1;
+    }
+    const sub = words[k];
+    const rest = words.slice(k + 1);
+    const short = rest.filter(w => /^-[a-zA-Z]+$/.test(w)).join('');
+    let kind = null;
+    if ((sub === 'checkout' || sub === 'restore') && rest.some(w => w === '.' || w === './')) {
+      const staged = sub === 'restore' && (rest.includes('--staged') || short.includes('S'));
+      const worktree = rest.includes('--worktree') || short.includes('W');
+      if (!staged || worktree) kind = 'worktree';
+    } else if (sub === 'reset' && rest.includes('--hard')) {
+      const target = rest.find(w => !w.startsWith('-'));
+      if (target && target !== 'HEAD') return 'git reset --hard to another commit can drop commits as well as uncommitted work';
+      kind = 'index';
+    } else if (sub === 'clean' && (rest.includes('--force') || /f/.test(short))) {
+      kind = /x/.test(short) ? 'untracked-all' : /X/.test(short) ? 'ignored' : 'untracked';
+    }
+    if (!kind || inAgentWorktree(where)) continue;
+    const check = {
+      worktree: () => git(where, ['diff', '--quiet']).status !== 0,
+      index: () => git(where, ['diff', '--quiet', 'HEAD']).status !== 0,
+      untracked: () => { const r = git(where, ['ls-files', '--others', '--exclude-standard']); return r.status !== 0 || r.out.trim() !== ''; },
+      'untracked-all': () => { const r = git(where, ['ls-files', '--others']); return r.status !== 0 || r.out.trim() !== ''; },
+      ignored: () => { const r = git(where, ['ls-files', '--others', '--ignored', '--exclude-standard']); return r.status !== 0 || r.out.trim() !== ''; },
+    }[kind];
+    if (check()) return kind.startsWith('untracked') || kind === 'ignored' ? 'git clean -f deletes untracked files' : 'discarding all working-tree changes';
+  }
+  return null;
+}
+
+// rm -rf whose every target is untracked and either ignored by git (build output such as dist/) or
+// not there at all loses nothing a commit or the project's sources hold. Anything tracked, outside
+// the repository, a glob, or a root-like path asks.
+function rmRisk(entries) {
+  for (const { words, dir } of entries) {
+    let k = 0;
+    while (k < words.length && /^(sudo|command|env|\w+=\S*)$/.test(words[k])) k++;
+    if (words[k] !== 'rm' && !words[k]?.endsWith('/rm')) continue;
+    const args = words.slice(k + 1);
+    const flags = args.filter(w => w.startsWith('-'));
+    const recursive = flags.some(f => f === '--recursive' || (/^-[a-zA-Z]+$/.test(f) && /[rR]/.test(f)));
+    const force = flags.some(f => f === '--force' || (/^-[a-zA-Z]+$/.test(f) && f.includes('f')));
+    if (!recursive || !force) continue;
+    for (const target of args.filter(w => !w.startsWith('-'))) {
+      if (/[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return 'recursive forced delete (rm -rf)';
+      const abs = path.resolve(dir, target);
+      const top = git(dir, ['rev-parse', '--show-toplevel']);
+      if (top.status !== 0) return 'recursive forced delete (rm -rf)';
+      const root = top.out.trim();
+      const rel = path.relative(root, abs);
+      if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return 'recursive forced delete (rm -rf)';
+      const tracked = git(root, ['ls-files', '--', rel]);
+      if (tracked.status !== 0 || tracked.out.trim()) return 'recursive forced delete (rm -rf)';
+      if (fs.existsSync(abs) && git(root, ['check-ignore', '-q', '--', rel]).status !== 0) return 'recursive forced delete (rm -rf)';
+    }
+  }
+  return null;
+}
+
+function findOtherRisk(command, cwd) {
   if (updatesSnapshots(command)) return 'this command updates test snapshots, which rewrites their expected values (TEST-001)';
-  if (discardsWorkingTree(command)) return 'discarding all working-tree changes';
+  // With the folder known, discards and rm -rf are checked against what they would remove.
+  const entries = cwd ? commandsWithDirs(command, cwd) : null;
+  if (entries) {
+    const discard = discardRisk(entries);
+    if (discard) return discard;
+  } else if (discardsWorkingTree(command)) return 'discarding all working-tree changes';
   if (execCmdsWithoutQuit(command)) return 'the editor -ExecCmds list does not end with Quit, so the editor will keep running after its commands finish (add ";Quit")';
-  if (isForcedRecursiveRm(command)) return 'recursive forced delete (rm -rf)';
+  const rm = entries ? rmRisk(entries) : (isForcedRecursiveRm(command) ? 'recursive forced delete (rm -rf)' : null);
+  if (rm) return rm;
   if (isForcedRecursiveRemoveItem(command)) return 'recursive forced delete (Remove-Item -Recurse -Force)';
-  for (const [pattern, reason] of CHECKS) if (pattern.test(command)) return reason;
+  for (const [pattern, reason, kind] of CHECKS) if (pattern.test(command) && !(entries && kind === 'discard')) return reason;
   return null;
 }
 

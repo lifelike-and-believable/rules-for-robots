@@ -6,6 +6,7 @@
 // and neutral changes are allowed; a weakening change asks unless a spec unlocks the file with a
 // criterion (AC-5); a change it cannot read asks.
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ask, existedAtBase, readInput } from './lib.mjs';
@@ -62,7 +63,11 @@ export function decideEdit(input) {
   // A file outside the project is not one of its tests.
   const fromRoot = path.relative(path.resolve(root), abs);
   if (fromRoot.startsWith('..') || path.isAbsolute(fromRoot)) return null;
-  const rel = path.relative(root, abs).split(path.sep).join('/');
+  // Paths and specs come from the checkout the file is in: for an agent's worktree under
+  // .claude/worktrees/, that worktree and its branch, not the project's main checkout.
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: path.dirname(abs), encoding: 'utf8', timeout: 5000 });
+  const repo = top.status === 0 && top.stdout.trim() ? top.stdout.trim() : root;
+  const rel = path.relative(repo, abs).split(path.sep).join('/');
   const intro = `rfr-core (TEST-001): ${rel} is an existing test`;
   const advice = 'Approve only if the test itself is wrong; otherwise change the implementation.';
   const before = fs.readFileSync(abs, 'utf8');
@@ -70,7 +75,7 @@ export function decideEdit(input) {
   if (after === null) return { decision: 'ask', reason: `${intro}, and the hook could not work out the edited file to check the change. ${advice}` };
   const { result, findings } = classifyTestChange({ file: rel, before, after });
   if (result === 'additive' || result === 'neutral') return null;
-  if (result === 'weakening' && unlockedBy(rel, root)) return null;
+  if (result === 'weakening' && unlockedBy(rel, repo)) return null;
   const listed = findings.slice(0, 5).map(f => `${f.kind} (line ${f.line}): ${f.message}`).join('; ');
   const more = findings.length > 5 ? `; and ${findings.length - 5} more` : '';
   const what = result === 'unclear' ? 'the hook could not tell whether this edit weakens it' : 'this edit weakens it';
