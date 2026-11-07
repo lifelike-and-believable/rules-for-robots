@@ -17,6 +17,7 @@ Core plugin from [rules-for-robots](../../README.md).
 | `software-architect` (experimental) | Fable 5.1, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
 | `ux-reviewer` (experimental) | Opus, medium | Read-only | Usability and interface design for Unreal Editor tools, general software (desktop, command-line, developer tools), and web pages and apps |
 | `tech-lead` (experimental) | Opus, medium | Read-only | Sequenced slices with owners, acceptance criteria, and verification; checks delegated work against them |
+| `test-change-reviewer` (experimental) | Opus, high | Read-only plus throwaway worktrees | Whether a pull request's changes to existing tests are justified: findings, approved reasons, and evidence from running the tests on old and new code; approves or refers each, from `review-pr` |
 
 Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals. `software-architect`, `tech-lead`, and `ux-reviewer` are experimental: they were added before any eval showed a benefit (recommendation R18) and will be kept or removed on the results.
 
