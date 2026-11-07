@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // PreToolUse (Edit|Write|MultiEdit): ask the user before changing an existing test file
-// (rule TEST-001). New test files are allowed without asking.
+// (rule TEST-001). New test files are allowed without asking, including test files added on the
+// current branch, which the CI test guard also counts as new.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ask, readInput } from './lib.mjs';
+import { ask, existedAtBase, readInput } from './lib.mjs';
 
 const TEST_FILE = /\.(test|spec)\.[^/\\]+$/;
 const TEST_DIR = /(^|[/\\])(test|tests|Tests|__tests__|__snapshots__)[/\\]/;
@@ -19,7 +20,8 @@ export function isTestPath(file) {
 
 export function shouldAsk(file, cwd = process.cwd()) {
   if (!isTestPath(file)) return false;
-  return fs.existsSync(path.resolve(cwd, file));
+  if (!fs.existsSync(path.resolve(cwd, file))) return false;
+  return existedAtBase(file, cwd) !== false;
 }
 
 async function main() {
