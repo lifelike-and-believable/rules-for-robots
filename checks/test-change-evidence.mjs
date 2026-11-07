@@ -17,7 +17,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { changedTestCases } from './lib/test-diff.mjs';
-import { isTestOrBaseline } from './ci/test-change-guard.mjs';
+import { isTestOrBaseline } from './lib/test-paths.mjs';
 
 const JS = /\.(?:[cm]?[jt]sx?)$/;
 const SUPPORTED = 'node:test, Vitest, and Jest';

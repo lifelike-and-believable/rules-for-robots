@@ -4,6 +4,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-07
+
+Pull requests: #142.
+
+### Added
+
+- Test change review, slice 13c (`rfr-core`, #142; `docs/specs/test-change-review.md`, AC-8 to AC-10): the experimental `test-change-reviewer` agent, and a `review-pr` step that runs it when a pull request modifies existing tests. The step builds the reviewer's input with `scripts/test-change-review.mjs`: each changed test with the classifier's findings and the evidence from running it on the head commit and against the base commit's code, the spec criteria the tests cite with their text before and after, and the `unlocks` entries. The reviewer gets nothing from the session that made the change. It approves a change only when every weakening finding has an approved reason (a changed, approved criterion, an `unlocks` entry citing one, or the lead's quoted instruction) and the evidence holds: the changed test passes on head, fails on base, and fails when the behaviour is broken on purpose. Anything else goes to the lead with what is missing. The step posts one comment for the head commit. It does not add the `tests-reviewed` label yet; that waits for the eval in 13d. The spec is now `approved`. Adopters: update the `rfr-core` plugin; nothing else changes until `review-pr` is run on a pull request that modifies tests.
+
 ## [3.0.2] - 2026-11-07
 
 Pull requests: #141.

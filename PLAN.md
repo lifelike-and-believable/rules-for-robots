@@ -186,6 +186,7 @@ Start small and add agents only when evals show benefit (R18).
 | `software-architect` (experimental) | Module boundaries, data model, interfaces, build-versus-adopt; ADRs for hard-to-reverse choices | Read-only plus ADR files | Recommended design, rejected options, ADRs |
 | `ux-reviewer` (experimental) | Usability and interface design in three areas: Unreal Editor tools and Blueprint-facing APIs, general software (desktop, command-line, developer tools), and web pages and apps; leaves WCAG conformance to `accessibility-reviewer` | Read-only | Findings in the common format |
 | `tech-lead` (experimental) | Slices a goal into sequenced, verifiable steps with an owner each; checks delegated work against acceptance criteria | Read-only | Plan or per-criterion check result |
+| `test-change-reviewer` (experimental, Phase 13) | Judges changes to existing tests in a pull request: weakening findings, approved reasons, and evidence from running the changed tests on base and head and with the behaviour broken | Read-only plus throwaway worktrees | One approve-or-refer decision with a verdict per test |
 
 Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). The three Haiku agents (1.1.0) pass the R18 test on smoke evidence: they gather or run things, return text copied from tools, and leave every judgment to the caller ([note](docs/research/notes/haiku_5_5_delegation.md)). `software-architect` and `tech-lead` were added in 1.2.0 and `ux-reviewer` in 1.3.0, all as experimental, ahead of the evals R18 asks for; an eval round decides whether they stay. Candidates to add later if evals justify them: `product-analyst`, `test-engineer`, `docs-writer`, `release-engineer`.
 
@@ -325,7 +326,7 @@ Feedback from projects that use rules-for-robots arrives as issues on this repos
 
 ### Phase 13: Test change review (planned)
 Spec: [docs/specs/test-change-review.md](docs/specs/test-change-review.md) (approved 2026-11-07).
-Pull requests: #138 (spec), #139 (13a), #140 (13b).
+Pull requests: #138 (spec), #139 (13a), #140 (13b), #142 (13c).
 
 Most changes to existing tests can be judged on written criteria: whether the change weakens the test, and, if it does, whether an approved change in behaviour explains it and the changed test catches that behaviour when run. The session hooks let additive and neutral test changes through without asking, using a deterministic classifier; at the pull request, a `test-change-reviewer` agent checks the reasons and runs the changed tests against the old and new code before it adds `tests-reviewed`, and refers everything else to the lead.
 

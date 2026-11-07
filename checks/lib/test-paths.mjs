@@ -1,0 +1,11 @@
+// Which files count as tests or visual baselines, for the CI test guard (TEST-001) and the
+// test-change evidence and review scripts. Shared so that both agree.
+const TEST_FILE = /\.(test|spec)\.[^/]+$/;
+const TEST_DIR = /(^|\/)(test|tests|Tests|__tests__|__snapshots__|e2e)\//;
+// Unreal test modules (Source/<Name>Tests/) and test files (*Tests.cpp, *Test.cpp, *Spec.cpp).
+const UNREAL_TEST = /(^|\/)Source\/(\w+Tests\/|.*\w(Tests?|Spec)\.(cpp|h)$)/;
+const BASELINE = /(-snapshots\/|\.snap$|__screenshots__\/|\.png$)/;
+
+export function isTestOrBaseline(file) {
+  return TEST_FILE.test(file) || TEST_DIR.test(file) || UNREAL_TEST.test(file) || BASELINE.test(file);
+}
