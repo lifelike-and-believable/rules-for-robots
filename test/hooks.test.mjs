@@ -36,7 +36,11 @@ test('leaves ordinary commands alone', () => {
 });
 
 test('guard-commands prints an ask decision only for risky commands', () => {
-  const risky = runHook('guard-commands.mjs', { tool_name: 'Bash', tool_input: { command: 'git reset --hard' } });
+  // Since rfr-core 3.0.2 a hard reset asks only when it would discard something, so the run needs
+  // a repository with an uncommitted change, not whatever state the checkout running the tests is in.
+  const r = gitRepo();
+  r.write({ 'src/a.ts': 'uncommitted\n' });
+  const risky = runHook('guard-commands.mjs', { cwd: r.dir, tool_name: 'Bash', tool_input: { command: 'git reset --hard' } });
   assert.equal(risky.status, 0);
   const decision = JSON.parse(risky.stdout).hookSpecificOutput;
   assert.equal(decision.hookEventName, 'PreToolUse');
