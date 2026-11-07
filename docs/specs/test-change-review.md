@@ -69,7 +69,7 @@ Run AC-11 with `evals/run.mjs` on Sonnet 5.5 and Opus 5.5, three runs each, afte
 
 ## Open questions
 
-1. Should the `tests-reviewed` label stay the lead's to add, with the reviewer's comment only speeding up the lead's reading? This spec proposes that the reviewer adds it once AC-11 passes, because the label is what saves the lead's time. A stricter option is a CI check that accepts the label only together with a current reviewer comment or a label added by a person, which GitHub's label events allow.
+1. ~~Should the `tests-reviewed` label stay the lead's to add?~~ Decided by the lead on 2026-11-07: the reviewer adds it, once AC-11 passes (AC-10).
 2. AC-6 changes a prompt into a refusal with instructions. Is that acceptable, or should shell writes to existing tests keep asking?
 3. Should the session check consult a model for unclear changes, once prompt hooks can hand a decision to the person? Not possible today.
 
