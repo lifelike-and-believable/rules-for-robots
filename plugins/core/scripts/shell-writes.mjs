@@ -173,18 +173,20 @@ function literalPaths(script) {
 const IN_PLACE = /^-[a-zA-Z]*i|^--in-place/;
 const operands = words => words.filter(w => !w.startsWith('-'));
 
-// Paths that a command writes, moves, or deletes. Pipelines into xargs, and find with -delete or
-// -exec, write files the command line does not name; every word of the command is then a
-// candidate, which keeps the check on the safe side.
-export function writeTargets(command, depth = 0) {
+// Paths that a command writes, moves, or deletes, as [{ path, op }] where op is 'write', 'move',
+// or 'remove'. Pipelines into xargs, and find with -delete or -exec, write files the command line
+// does not name; every word of the command is then a candidate, which keeps the check on the safe
+// side. Returns null when the command cannot be read.
+export function writeTargetEntries(command, depth = 0) {
   const commands = parseCommand(command);
   if (!commands) return null;
   const targets = [];
-  let broad = false;
+  const put = (op, paths) => { for (const p of paths) targets.push({ path: p, op }); };
+  let broad = null;
   const allWords = commands.flatMap(c => c.words);
 
   for (const { words: raw, redirects, scripts } of commands) {
-    for (const r of redirects) if (WRITE_REDIRECTS.has(r.op) && r.target) targets.push(r.target);
+    for (const r of redirects) if (WRITE_REDIRECTS.has(r.op) && r.target) put('write', [r.target]);
     let k = 0;
     while (k < raw.length && (PREFIXES.has(raw[k]) || /^\w+=/.test(raw[k]))) k++;
     const words = raw.slice(k);
@@ -192,7 +194,7 @@ export function writeTargets(command, depth = 0) {
     const cmd = words[0].split('/').pop();
     const args = words.slice(1);
 
-    if (cmd === 'tee') targets.push(...operands(args));
+    if (cmd === 'tee') put('write', operands(args));
     else if ((cmd === 'sed' || cmd === 'perl') && args.some(a => IN_PLACE.test(a))) {
       // The files after the script; the script is the first operand unless -e or -f gave it.
       const files = [];
@@ -201,44 +203,61 @@ export function writeTargets(command, depth = 0) {
         if (['-e', '-f', '--expression', '--file'].includes(args[a]) || (cmd === 'perl' && /^-[a-zA-Z]*e$/.test(args[a]))) { hasScript = true; a++; continue; }
         if (!args[a].startsWith('-')) files.push(args[a]);
       }
-      targets.push(...(hasScript ? files : files.slice(1)));
-    } else if (['mv', 'rm', 'unlink', 'truncate', 'shred'].includes(cmd)) targets.push(...operands(args));
+      put('write', hasScript ? files : files.slice(1));
+    } else if (cmd === 'mv') put('move', operands(args));
+    else if (['rm', 'unlink', 'truncate', 'shred'].includes(cmd)) put('remove', operands(args));
     else if (['cp', 'install', 'rsync'].includes(cmd)) {
       const t = args.indexOf('-t');
       const ops = operands(args);
-      if (t !== -1 && args[t + 1]) targets.push(args[t + 1]);
-      else if (ops.length > 1) targets.push(ops[ops.length - 1]);
-    } else if (cmd === 'dd') targets.push(...args.filter(a => a.startsWith('of=')).map(a => a.slice(3)));
+      if (t !== -1 && args[t + 1]) put('write', [args[t + 1]]);
+      else if (ops.length > 1) put('write', [ops[ops.length - 1]]);
+    } else if (cmd === 'dd') put('write', args.filter(a => a.startsWith('of=')).map(a => a.slice(3)));
     else if (cmd === 'git') {
       let s = 0;
       while (s < args.length && args[s].startsWith('-')) s += args[s] === '-C' || args[s] === '-c' ? 2 : 1;
       const sub = args[s];
-      if (sub === 'rm' || sub === 'mv') targets.push(...operands(args.slice(s + 1)));
-      if (sub === 'apply' || sub === 'am') for (const body of scripts) targets.push(...patchedFiles(body));
-    } else if (cmd === 'patch') for (const body of scripts) targets.push(...patchedFiles(body));
+      if (sub === 'rm') put('remove', operands(args.slice(s + 1)));
+      if (sub === 'mv') put('move', operands(args.slice(s + 1)));
+      if (sub === 'apply' || sub === 'am') for (const body of scripts) put('write', patchedFiles(body));
+    } else if (cmd === 'patch') for (const body of scripts) put('write', patchedFiles(body));
     else if (cmd === 'find') {
-      if (args.includes('-delete') || args.some((a, x) => (a === '-exec' || a === '-execdir') && writes(args.slice(x + 1)))) {
-        targets.push(...args);
+      if (args.includes('-delete')) put('remove', args);
+      else {
+        const x = args.findIndex(a => a === '-exec' || a === '-execdir');
+        if (x !== -1 && writes(args.slice(x + 1))) put(opOf(args.slice(x + 1)), args);
       }
     } else if (cmd === 'xargs') {
       const sub = args.findIndex(a => !a.startsWith('-'));
-      if (sub !== -1 && writes(args.slice(sub))) broad = true;
+      if (sub !== -1 && writes(args.slice(sub))) broad = opOf(args.slice(sub));
     } else if (SHELLS.test(cmd) && depth < 3) {
       const c = args.indexOf('-c');
       const inner = [...(c !== -1 && args[c + 1] ? [args[c + 1]] : []), ...scripts];
       for (const text of inner) {
-        const nested = writeTargets(text, depth + 1);
+        const nested = writeTargetEntries(text, depth + 1);
         if (nested === null) return null;
         targets.push(...nested);
       }
     } else if (INTERPRETERS.test(cmd)) {
       const texts = [...scripts];
       for (let a = 0; a < args.length; a++) if (INLINE_FLAGS.has(args[a]) && args[a + 1] !== undefined) texts.push(args[a + 1]);
-      for (const text of texts) targets.push(...literalPaths(text));
+      for (const text of texts) put('write', literalPaths(text));
     }
   }
-  if (broad) targets.push(...allWords);
+  if (broad) put(broad, allWords);
   return targets;
+}
+
+// Just the paths, for callers that do not care how they change.
+export function writeTargets(command) {
+  const entries = writeTargetEntries(command);
+  return entries === null ? null : entries.map(e => e.path);
+}
+
+function opOf(words) {
+  const cmd = (words[0] ?? '').split('/').pop();
+  if (cmd === 'rm' || cmd === 'unlink' || cmd === 'shred' || (cmd === 'git' && words.includes('rm'))) return 'remove';
+  if (cmd === 'mv' || (cmd === 'git' && words.includes('mv'))) return 'move';
+  return 'write';
 }
 
 // Whether the words of a command (as after find -exec or xargs) start a command that writes files.

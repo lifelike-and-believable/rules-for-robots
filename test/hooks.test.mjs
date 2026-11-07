@@ -467,7 +467,8 @@ test('test guards leave alone test files added on the current branch, as the CI 
 
   const edit = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Edit', tool_input: { file_path: path.join(dir, 'tests/new.test.ts') } });
   assert.equal(edit.stdout, '');
+  // A shell write to an existing test is refused with a pointer to the Edit tool (test-change-review AC-6).
   const shell = runHook('guard-commands.mjs', { cwd: dir, tool_name: 'Bash', tool_input: { command: 'sed -i s/a/b/ tests/old.test.ts' } });
-  assert.equal(JSON.parse(shell.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(JSON.parse(shell.stdout).hookSpecificOutput.permissionDecision, 'deny');
   fs.rmSync(dir, { recursive: true, force: true });
 });

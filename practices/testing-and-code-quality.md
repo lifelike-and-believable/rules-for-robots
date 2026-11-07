@@ -7,7 +7,7 @@ Practice guide for the testing (`TEST-*`) and code quality (`CODE-*`) rules. Sou
 Claude models game tasks mainly by editing tests: in ImpossibleBench, over 79% of their cheating went through test changes. Telling a model it may stop and report helps less for Claude than for some other models, and recent Claude models still gamed 12.5 to 37.5% of impossible tasks with Anthropic's anti-hack prompt. So the defence has three layers:
 
 1. **Rule:** TEST-001 and WA-002 ask the agent to change the implementation, not the test, and to report a wrong test.
-2. **Hook:** `guard-test-edits` asks you before any edit to an existing test file, and `guard-commands` before a shell command that writes to one or updates snapshots. New tests are allowed, including test files added earlier on the same branch.
+2. **Hook:** `guard-test-edits` checks each edit to an existing test file. Edits that only add to a test or tidy it go through; an edit that weakens a test, or that the hook cannot read, asks you, unless a spec lists the file under `unlocks` with the criterion that changed. `guard-commands` refuses shell writes to existing tests (use the Edit tool, so the change can be checked) and asks before moving or deleting one, or updating snapshots. New tests are allowed, including test files added earlier on the same branch.
 3. **CI:** a pull request that changes tests and implementation together is flagged for a person to look at (Phase 6 template workflows).
 
 When you do approve a test change, the agent should list each changed test and why (TEST-001).

@@ -4,9 +4,9 @@
 // control without blocking legitimate use; headless runs treat "ask" as a denial. Also asks
 // when an Unreal editor run's -ExecCmds list never quits, which leaves the editor hanging.
 import { fileURLToPath } from 'node:url';
-import { ask, existedAtBase, readInput } from './lib.mjs';
+import { ask, deny, existedAtBase, readInput } from './lib.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
-import { parseCommand, writeTargets } from './shell-writes.mjs';
+import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
 
 const CHECKS = [
   [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work'],
@@ -98,16 +98,24 @@ const isTestTarget = target => {
   return isTestPath(p) || isTestPath(`${p.replace(/\/$/, '')}/x`) || /(^|\/)e2e\//.test(p) || TEST_PATH.test(` ${p}`);
 };
 
-// Whether the command writes to, moves, or deletes an existing test file. existed(path) says
-// whether a path existed where the branch started (see existedAtBase); a test file added on the
-// branch is new, as the CI test guard counts it. Without it, every test path counts as existing.
-export function writesTestFile(command, existed = () => true) {
-  if (psWrites(command) && broadWritesTestFile(command)) return true;
+// How the command changes existing test files: 'remove' when it deletes or moves one, 'write' when
+// it only writes to one, 'broad' when it cannot be read and a test path and a write appear in it,
+// or null. existed(path) says whether a path existed where the branch started (see existedAtBase);
+// a test file added on the branch is new, as the CI test guard counts it. Without it, every test
+// path counts as existing.
+export function testFileChange(command, existed = () => true) {
+  if (psWrites(command) && broadWritesTestFile(command)) return 'broad';
   // Windows paths (Source\\X\\Tests\\Y.cpp) are not shell words: use the broad check.
-  if ([...command.matchAll(/[\w.:-]+(?:\\[\w.-]+)+/g)].some(m => TEST_PATH.test(` ${m[0].replace(/\\/g, '/')}`))) return broadWritesTestFile(command);
-  const targets = writeTargets(command);
-  if (targets === null) return broadWritesTestFile(command);
-  return targets.some(t => isTestTarget(t) && existed(t) !== false);
+  if ([...command.matchAll(/[\w.:-]+(?:\\[\w.-]+)+/g)].some(m => TEST_PATH.test(` ${m[0].replace(/\\/g, '/')}`))) return broadWritesTestFile(command) ? 'broad' : null;
+  const entries = writeTargetEntries(command);
+  if (entries === null) return broadWritesTestFile(command) ? 'broad' : null;
+  const hits = entries.filter(e => isTestTarget(e.path) && existed(e.path) !== false);
+  if (hits.some(e => e.op !== 'write')) return 'remove';
+  return hits.length ? 'write' : null;
+}
+
+export function writesTestFile(command, existed) {
+  return testFileChange(command, existed) !== null;
 }
 
 // Snapshot updates rewrite expected values (TEST-001): vitest and jest -u, playwright --update-snapshots.
@@ -139,10 +147,24 @@ export function discardsWorkingTree(command) {
   return false;
 }
 
-export function findRisk(command, { cwd } = {}) {
+// The hook's decision: { decision: 'deny' | 'ask', reason } or null to let the command run.
+// A shell write to an existing test is refused with a pointer to the Edit tool, whose input shows
+// the change so guard-test-edits can check it (test-change-review AC-6); deleting or moving an
+// existing test, a command the hook cannot read, and snapshot updates still ask.
+export function decideCommand(command, { cwd } = {}) {
   if (typeof command !== 'string') return null;
   const existed = cwd ? file => existedAtBase(file, cwd) : undefined;
-  if (writesTestFile(command, existed)) return 'this command appears to change an existing test file outside the Edit tool (TEST-001)';
+  const change = testFileChange(command, existed);
+  if (change === 'write') {
+    return { decision: 'deny', reason: 'rfr-core (TEST-001): this command writes to an existing test file, so the change cannot be checked. Make the change with the Edit tool instead (one Edit per change, or MultiEdit for several in one file), so the test-change check can see it; additive and neutral changes then go through without asking.' };
+  }
+  const risk = change === 'remove' ? 'this command deletes or moves an existing test file (TEST-001)'
+    : change === 'broad' ? 'this command appears to change an existing test file outside the Edit tool (TEST-001)'
+    : findOtherRisk(command);
+  return risk ? { decision: 'ask', reason: `rfr-core (WA-003): ${risk}. Approve only if this is intended and the target is not shared.` } : null;
+}
+
+function findOtherRisk(command) {
   if (updatesSnapshots(command)) return 'this command updates test snapshots, which rewrites their expected values (TEST-001)';
   if (discardsWorkingTree(command)) return 'discarding all working-tree changes';
   if (execCmdsWithoutQuit(command)) return 'the editor -ExecCmds list does not end with Quit, so the editor will keep running after its commands finish (add ";Quit")';
@@ -152,10 +174,17 @@ export function findRisk(command, { cwd } = {}) {
   return null;
 }
 
+// The reason for any refusal or question, or null; kept for callers that only need to know whether
+// the command is risky.
+export function findRisk(command, options) {
+  return decideCommand(command, options)?.reason ?? null;
+}
+
 async function main() {
   const input = await readInput();
-  const risk = findRisk(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
-  if (risk) ask(`rfr-core (WA-003): ${risk}. Approve only if this is intended and the target is not shared.`);
+  const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
+  if (result?.decision === 'deny') deny(result.reason);
+  else if (result) ask(result.reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

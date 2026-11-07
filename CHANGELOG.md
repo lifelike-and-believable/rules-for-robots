@@ -4,7 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-## [2.2.3] - 2026-11-07
+## [3.0.0] - 2026-11-07
+
+Pull requests: #139.
+
+### Changed
+
+- Test change review, slice 13a (`rfr-core`, #139; `docs/specs/test-change-review.md`, AC-1 to AC-6). `guard-test-edits` now checks what an edit to an existing test file does, with a new classifier (`checks/lib/test-diff.mjs`, copied into the plugin by the build), instead of asking about every such edit. Edits that only add tests, assertions, cases, or fixture data, or only rename, move imports, change types, reformat, or comment, go through without asking. An edit that weakens a test asks, and the question lists how: a removed test or assertion, a skip or `only`, a looser matcher, a loosened timeout or tolerance, a changed expected value or snapshot, a mock of the code under test, a swallowed error, removed table cases, or a change the classifier cannot show to be harmless. It does not ask when a spec lists the file under `unlocks` with a criterion ID that spec defines. JavaScript and TypeScript (Vitest, Jest, Playwright, `node:test`) and Python (pytest, unittest) are read; other test files still ask.
+- **Breaking:** `guard-commands` refuses a shell command that writes to an existing test file (a `sed -i`, a redirect, a script), with a reason that asks for the Edit tool, so the change can be checked; before, it asked. Moving or deleting an existing test, and updating snapshots, still ask. This is the major bump: a shell write that a person could approve before is now refused. Adopters: update the `rfr-core` plugin; agents that edited tests through the shell will switch to the Edit tool when refused.
+
 
 Pull requests: #128, #129, #134, #135, #136, #137.
 
