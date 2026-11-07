@@ -1,0 +1,220 @@
+#!/usr/bin/env node
+// Test-change evidence (docs/specs/test-change-review.md, AC-7). Given a base and a head commit,
+// lists each test case the change modifies in existing test files, runs those cases on the head
+// commit, and runs the head's version of them against the base commit's implementation (the base
+// commit, with the head's test files checked out over it). A case whose expected value changed for
+// a new behaviour should pass on head and fail on base; one that passes on both does not catch the
+// change. Supports node:test, Vitest, and Jest; files for any other runner are listed as not run.
+//
+// The runs happen in throwaway git worktrees outside the project folder, which are removed
+// afterwards. The project's node_modules is linked into them, so a change of dependencies between
+// base and head is not reflected; the report says so.
+//
+// Usage: node checks/test-change-evidence.mjs <base> [head] [--json]
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { changedTestCases } from './lib/test-diff.mjs';
+import { isTestOrBaseline } from './ci/test-change-guard.mjs';
+
+const JS = /\.(?:[cm]?[jt]sx?)$/;
+const SUPPORTED = 'node:test, Vitest, and Jest';
+const TIMEOUT = 5 * 60 * 1000;
+// A process started by a test runner inherits its NODE_TEST_CONTEXT, which makes a nested
+// node --test report in the runner's own protocol instead of TAP; the runs here are independent.
+const ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'NODE_TEST_CONTEXT'));
+
+function git(cwd, args, options = {}) {
+  const r = spawnSync('git', ['-c', 'core.quotepath=off', ...args], { cwd, encoding: 'utf8', maxBuffer: 1 << 28, ...options });
+  if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${(r.stderr || r.stdout).trim()}`);
+  return r.stdout;
+}
+
+// The runner a test file uses: 'node', 'vitest', 'jest', or null.
+export function runnerFor(text, pkg = {}) {
+  if (/from\s+['"]node:test['"]|require\(\s*['"]node:test['"]\s*\)/.test(text)) return 'node';
+  if (/from\s+['"]vitest['"]|require\(\s*['"]vitest['"]\s*\)/.test(text)) return 'vitest';
+  if (/from\s+['"]@jest\/globals['"]|require\(\s*['"]@jest\/globals['"]\s*\)/.test(text)) return 'jest';
+  if (/from\s+['"](ava|mocha|tap|uvu|@playwright\/test|bun:test)['"]/.test(text)) return null;
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  if (deps.vitest) return 'vitest';
+  if (deps.jest) return 'jest';
+  return null;
+}
+
+// TAP escapes # and backslash in names.
+const unescapeTap = name => name.replace(/\\([#\\])/g, '$1');
+
+// node:test TAP output: [{ key, status: 'pass' | 'fail' | 'skip', message }] in report order, with
+// the key built from the enclosing suites (describe > test).
+export function parseTap(text) {
+  const lines = text.split('\n');
+  const stack = [];
+  const results = [];
+  const level = indent => Math.floor(indent.length / 4);
+  lines.forEach((line, k) => {
+    const sub = /^(\s*)# Subtest: (.*)$/.exec(line);
+    if (sub) { stack.length = level(sub[1]); stack.push(sub[2]); return; }
+    const res = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/.exec(line);
+    if (!res) return;
+    const depth = level(res[1]);
+    const key = [...stack.slice(0, depth), res[3]].map(unescapeTap).join(' > ');
+    const status = res[4] ? 'skip' : res[2] === 'ok' ? 'pass' : 'fail';
+    let message = '';
+    if (status === 'fail') {
+      for (let j = k + 1; j < lines.length; j++) {
+        if (/^\s*\.\.\.\s*$/.test(lines[j]) || /^\s*(ok|not ok) \d+/.test(lines[j])) break;
+        const err = /^(\s*)error: (.*)$/.exec(lines[j]);
+        if (!err) continue;
+        if (err[2].startsWith('|')) {
+          const body = [];
+          for (let q = j + 1; q < lines.length && (lines[q].trim() === '' || lines[q].length - lines[q].trimStart().length > err[1].length); q++) body.push(lines[q].trim());
+          message = body.filter(Boolean).join(' ');
+        } else {
+          message = err[2].replace(/^'(.*)'$/, '$1');
+        }
+        break;
+      }
+    }
+    results.push({ key, status, message });
+  });
+  return results;
+}
+
+// Vitest's and Jest's JSON reports (the same shape): [{ key, status, message }].
+export function parseJestJson(json) {
+  return (json?.testResults ?? []).flatMap(file => (file.assertionResults ?? []).map(a => ({
+    key: [...(a.ancestorTitles ?? []), a.title].join(' > '),
+    status: a.status === 'passed' ? 'pass' : a.status === 'failed' ? 'fail' : 'skip',
+    message: (a.failureMessages ?? []).join('\n').replace(/\u001b\[[0-9;]*m/g, '').trim(),
+  })));
+}
+
+const escape = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Runs the named cases of one file in a worktree: { results } or { error }.
+function run(cwd, runner, file, cases) {
+  if (runner === 'node') {
+    const patterns = [...new Set(cases.map(c => `--test-name-pattern=^${escape(c.title)}$`))];
+    const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...patterns, file], { cwd, env: ENV, encoding: 'utf8', timeout: TIMEOUT, maxBuffer: 1 << 26 });
+    if (r.error) return { error: r.error.message };
+    return { results: parseTap(r.stdout) };
+  }
+  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-evidence-out-')), 'report.json');
+  const pattern = cases.map(c => escape(c.key.split(' > ').join(' '))).join('|');
+  const args = runner === 'vitest'
+    ? ['vitest', 'run', file, '--reporter=json', `--outputFile=${out}`, '-t', pattern]
+    : ['jest', file, '--json', `--outputFile=${out}`, '-t', pattern];
+  const r = spawnSync('npx', ['--no-install', ...args], { cwd, env: ENV, encoding: 'utf8', timeout: TIMEOUT, maxBuffer: 1 << 26, shell: process.platform === 'win32' });
+  try {
+    return { results: parseJestJson(JSON.parse(fs.readFileSync(out, 'utf8'))) };
+  } catch {
+    return { error: (r.error?.message ?? `${r.stderr}\n${r.stdout}`).trim().split('\n').slice(-5).join(' ') || `${runner} produced no report` };
+  } finally {
+    fs.rmSync(path.dirname(out), { recursive: true, force: true });
+  }
+}
+
+function worktree(root, commit) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-evidence-wt-'));
+  fs.rmdirSync(dir);
+  git(root, ['worktree', 'add', '--detach', '--quiet', dir, commit]);
+  const modules = path.join(root, 'node_modules');
+  if (fs.existsSync(modules)) fs.symlinkSync(modules, path.join(dir, 'node_modules'), 'junction');
+  return dir;
+}
+
+export async function collectEvidence({ root, base, head = 'HEAD' }) {
+  const baseSha = git(root, ['rev-parse', `${base}^{commit}`]).trim();
+  const headSha = git(root, ['rev-parse', `${head}^{commit}`]).trim();
+  const changes = git(root, ['diff', '--name-status', '--no-renames', baseSha, headSha]).trim().split('\n').filter(Boolean)
+    .map(l => { const [status, file] = l.split('\t'); return { status: status[0], file }; });
+  const testChanges = changes.filter(c => isTestOrBaseline(c.file));
+  let pkg = {};
+  try { pkg = JSON.parse(git(root, ['show', `${headSha}:package.json`])); } catch { /* no package.json */ }
+
+  const plan = [];
+  const notRun = [];
+  for (const { status, file } of testChanges) {
+    if (status !== 'M') continue;
+    const before = git(root, ['show', `${baseSha}:${file}`]);
+    const after = git(root, ['show', `${headSha}:${file}`]);
+    const cases = changedTestCases({ file, before, after });
+    if (!cases.length) continue;
+    const runner = JS.test(file) ? runnerFor(after, pkg) : null;
+    if (!runner) {
+      notRun.push({ file, cases: cases.map(c => c.key), reason: `no supported test runner for this file (supported: ${SUPPORTED})` });
+      continue;
+    }
+    plan.push({ file, runner, cases });
+  }
+  const report = { base: baseSha, head: headSha, cases: [], notRun, note: 'Runs use the project\'s node_modules for both commits, so a dependency change between them is not reflected.' };
+  if (!plan.length) return report;
+
+  const trees = [];
+  try {
+    const headTree = worktree(root, headSha);
+    trees.push(headTree);
+    const baseTree = worktree(root, baseSha);
+    trees.push(baseTree);
+    // The base implementation with the head's tests: check out every changed test file from head,
+    // and remove the ones head deleted.
+    const present = testChanges.filter(c => c.status !== 'D').map(c => c.file);
+    const deleted = testChanges.filter(c => c.status === 'D').map(c => c.file);
+    if (present.length) git(baseTree, ['checkout', headSha, '--', ...present]);
+    for (const f of deleted) fs.rmSync(path.join(baseTree, f), { force: true });
+
+    for (const { file, runner, cases } of plan) {
+      const onHead = run(headTree, runner, file, cases);
+      const onBase = run(baseTree, runner, file, cases);
+      const pick = (outcome, key) => {
+        if (outcome.error) return { status: 'not-run', message: outcome.error };
+        const hit = outcome.results.find(r => r.key === key);
+        return hit ? { status: hit.status, message: hit.message } : { status: 'not-run', message: 'the runner reported no result for this case' };
+      };
+      for (const c of cases) {
+        const h = pick(onHead, c.key);
+        const b = pick(onBase, c.key);
+        report.cases.push({ file, key: c.key, line: c.line, kinds: c.kinds, runner, head: h.status, headMessage: h.message, base: b.status, baseMessage: b.message });
+      }
+    }
+  } finally {
+    for (const dir of trees) {
+      spawnSync('git', ['worktree', 'remove', '--force', dir], { cwd: root });
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+  }
+  return report;
+}
+
+export function formatReport(report) {
+  const lines = [`Test-change evidence, ${report.base.slice(0, 7)}..${report.head.slice(0, 7)}`, ''];
+  if (!report.cases.length && !report.notRun.length) lines.push('No existing test case was modified.');
+  if (report.cases.length) {
+    lines.push('| File | Test | Findings | Head | Base (head tests, base code) |', '|---|---|---|---|---|');
+    for (const c of report.cases) {
+      const base = c.base === 'fail' ? `fail: ${c.baseMessage.slice(0, 120)}` : c.base;
+      lines.push(`| ${c.file}:${c.line} | ${c.key} | ${c.kinds.join(', ') || 'none'} | ${c.head} | ${base.replace(/\|/g, '\\|')} |`);
+    }
+  }
+  for (const n of report.notRun) lines.push('', `Not run: ${n.file} (${n.cases.join('; ')}): ${n.reason}.`);
+  if (report.cases.length) lines.push('', report.note);
+  return lines.join('\n');
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const json = args.includes('--json');
+  const [base, head = 'HEAD'] = args.filter(a => !a.startsWith('--'));
+  if (!base) {
+    console.error('Usage: node checks/test-change-evidence.mjs <base> [head] [--json]');
+    process.exit(2);
+  }
+  const report = await collectEvidence({ root: process.cwd(), base, head });
+  console.log(json ? JSON.stringify(report, null, 2) : formatReport(report));
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
