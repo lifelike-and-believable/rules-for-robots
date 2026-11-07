@@ -6,15 +6,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [3.0.1] - 2026-11-07
 
-Pull requests: #PR.
+Pull requests: #140.
 
 ### Fixed
 
-- `guard-commands` (`rfr-core`, #PR): a shell command that creates a new file, or writes to one outside the project, is no longer taken for a write to an existing test. 3.0.0 counted any test path it could not prove new as an existing test, and so refused, for one, a heredoc that created a scratch test file outside the project. `guard-test-edits` likewise leaves files outside the project alone. Adopters: update the `rfr-core` plugin.
+- `guard-commands` (`rfr-core`, #140): a shell command that creates a new file, or writes to one outside the project, is no longer taken for a write to an existing test. 3.0.0 counted any test path it could not prove new as an existing test, and so refused, for one, a heredoc that created a scratch test file outside the project. `guard-test-edits` likewise leaves files outside the project alone. Adopters: update the `rfr-core` plugin.
 
 ### Added
 
-- Test-change evidence, slice 13b (#PR; `docs/specs/test-change-review.md`, AC-7): `checks/test-change-evidence.mjs <base> [head]` lists the test cases a change modifies in existing test files, runs them on the head commit, and runs the head's version of them against the base commit's implementation, in throwaway worktrees, reporting pass or fail on each with the failure message. It supports node:test, Vitest, and Jest, and lists other files as not run. The classifier gains `changedTestCases`. The pull request reviewer (13c) will use it. Adopters: nothing to do.
+- Test-change evidence, slice 13b (#140; `docs/specs/test-change-review.md`, AC-7): `checks/test-change-evidence.mjs <base> [head]` lists the test cases a change modifies in existing test files, runs them on the head commit, and runs the head's version of them against the base commit's implementation, in throwaway worktrees, reporting pass or fail on each with the failure message. It supports node:test, Vitest, and Jest, and lists other files as not run. The classifier gains `changedTestCases`. The pull request reviewer (13c) will use it. Adopters: nothing to do.
 
 ## [3.0.0] - 2026-11-07
 
