@@ -5,7 +5,7 @@ level: MUST
 scope: core
 paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/Tests/**", "**/__snapshots__/**", "**/Source/*Tests/**", "**/Source/**/*Tests.cpp", "**/Source/**/*Test.cpp", "**/Source/**/*Spec.cpp"]
 verified-by: [hook, ci]
-check: "hook: guard-test-edits and guard-commands (ask before changing a test file that existed where the branch started, or updating snapshots); ci: test-change-guard (flags PRs that change tests alongside implementation)"
+check: "hook: guard-test-edits and guard-commands (classify each change to a test file that existed where the branch started, and ask when it weakens the test; refuse shell writes to such files; ask before snapshot updates); ci: test-change-guard (flags PRs that change tests alongside implementation)"
 targets-failure: test-gaming
 observed-on: [claude-opus-4-1, claude-opus-4-6, claude-opus-4-7, claude-sonnet-4-6]
 rationale: Claude models game tasks mainly by editing tests, and an anti-hack prompt still leaves 12.5 to 37.5% residual cheating on impossible tasks.
