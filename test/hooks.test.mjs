@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { decideCommand, findRisk } from '../plugins/core/scripts/guard-commands.mjs';
-import { isTestPath, shouldAsk } from '../plugins/core/scripts/guard-test-edits.mjs';
+import { decideEdit, isTestPath, shouldAsk } from '../plugins/core/scripts/guard-test-edits.mjs';
 import { chooseFormatter } from '../plugins/core/scripts/format-on-edit.mjs';
 
 const SCRIPTS = path.resolve('plugins/core/scripts');
@@ -36,7 +36,11 @@ test('leaves ordinary commands alone', () => {
 });
 
 test('guard-commands prints an ask decision only for risky commands', () => {
-  const risky = runHook('guard-commands.mjs', { tool_name: 'Bash', tool_input: { command: 'git reset --hard' } });
+  // Since rfr-core 3.0.2 a hard reset asks only when it would discard something, so the run needs
+  // a repository with an uncommitted change, not whatever state the checkout running the tests is in.
+  const r = gitRepo();
+  r.write({ 'src/a.ts': 'uncommitted\n' });
+  const risky = runHook('guard-commands.mjs', { cwd: r.dir, tool_name: 'Bash', tool_input: { command: 'git reset --hard' } });
   assert.equal(risky.status, 0);
   const decision = JSON.parse(risky.stdout).hookSpecificOutput;
   assert.equal(decision.hookEventName, 'PreToolUse');
@@ -487,4 +491,84 @@ test('guard-commands lets a shell command create a new file, or write outside th
   const write = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Write', tool_input: { file_path: outside, content: 'y' } });
   assert.equal(write.stdout, '', 'guard-test-edits leaves files outside the project alone');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// A git repository for the rfr-core 3.0.2 tests: one committed file in src/, plus any extra files.
+function gitRepo(files = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-repo-'));
+  const git = (...args) => {
+    const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...args], { cwd: dir, encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+  };
+  const write = (map) => {
+    for (const [file, text] of Object.entries(map)) {
+      fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+      fs.writeFileSync(path.join(dir, file), text);
+    }
+  };
+  git('init', '-q', '-b', 'main');
+  write({ 'src/a.ts': 'a\n', ...files });
+  git('add', '.');
+  git('commit', '-q', '-m', 'base');
+  return { dir, git, write };
+}
+
+test('discarding changes asks only when there are changes to lose (rfr-core 3.0.2)', () => {
+  const r = gitRepo();
+  for (const command of ['git checkout -- .', 'git restore .', 'git reset --hard', 'git clean -fd', 'git checkout -q -- . 2>/dev/null; git switch -c next']) {
+    assert.equal(decideCommand(command, { cwd: r.dir }), null, `clean tree: ${command}`);
+  }
+  assert.equal(decideCommand('git reset --hard HEAD~1', { cwd: r.dir }).decision, 'ask', 'resetting to another commit can drop commits');
+  r.write({ 'src/a.ts': 'changed\n' });
+  for (const command of ['git checkout -- .', 'git restore .', 'git reset --hard']) {
+    assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', `uncommitted change: ${command}`);
+  }
+  assert.equal(decideCommand('git clean -fd', { cwd: r.dir }), null, 'no untracked files to delete');
+  r.write({ 'src/new.ts': 'new\n' });
+  assert.equal(decideCommand('git clean -fd', { cwd: r.dir }).decision, 'ask', 'an untracked file would be deleted');
+  // The folder the command runs in is the one after any cd.
+  const other = gitRepo();
+  assert.equal(decideCommand(`cd ${other.dir} && git checkout -- .`, { cwd: r.dir }), null);
+  assert.equal(decideCommand(`cd ${other.dir} && cd ${r.dir} && git checkout -- .`, { cwd: other.dir }).decision, 'ask');
+});
+
+test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2)", () => {
+  const r = gitRepo();
+  const wt = path.join(r.dir, '.claude', 'worktrees', 'agent-1');
+  r.git('worktree', 'add', '-q', '-b', 'agent-1', wt);
+  fs.writeFileSync(path.join(wt, 'src/a.ts'), 'agent change\n');
+  r.write({ 'src/a.ts': 'lead change\n' });
+  assert.equal(decideCommand(`cd ${wt} && git status --short && git checkout -- . && git status --short`, { cwd: r.dir }), null);
+  assert.equal(decideCommand('git checkout -- .', { cwd: wt }), null);
+  assert.equal(decideCommand('git checkout -- .', { cwd: r.dir }).decision, 'ask', 'the main checkout still asks');
+});
+
+test('rm -rf asks unless everything it deletes is ignored by git and untracked (rfr-core 3.0.2)', () => {
+  const r = gitRepo({ '.gitignore': 'dist/\ncoverage/\n', 'build/make.mjs': 'x\n' });
+  r.write({ 'dist/app.js': 'built\n', 'coverage/index.html': 'x\n' });
+  assert.equal(decideCommand('rm -rf dist && CI=1 npx playwright test tests/e2e/a.spec.ts --trace off 2>&1 | tail -25', { cwd: r.dir }), null);
+  assert.equal(decideCommand('rm -rf dist coverage', { cwd: r.dir }), null);
+  assert.equal(decideCommand('rm -rf not-there', { cwd: r.dir }), null, 'nothing to delete');
+  for (const command of ['rm -rf build', 'rm -rf dist build', 'rm -rf src', 'rm -rf .', 'rm -rf /', 'rm -rf dist/*', 'rm -rf ../elsewhere']) {
+    assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', command);
+  }
+});
+
+test('guard-test-edits reads the specs and paths of the worktree an agent edits in (rfr-core 3.0.2)', () => {
+  const spec = '---\nstatus: approved\nunlocks:\n  - tests/unit/a.test.ts: AC-1 changed the width\n---\n\n| # | Criterion | Verified by |\n|---|---|---|\n| AC-1 | Width. | test |\n';
+  const body = "import { test, expect } from 'vitest';\n\ntest('width', () => {\n  expect(width()).toBe(45);\n});\n";
+  const r = gitRepo({ 'docs/specs/frame.md': spec, 'tests/unit/a.test.ts': body, 'tests/unit/b.test.ts': body });
+  const wt = path.join(r.dir, '.claude', 'worktrees', 'agent-2');
+  r.git('worktree', 'add', '-q', '-b', 'agent-2', wt);
+  const before = process.env.CLAUDE_PROJECT_DIR;
+  process.env.CLAUDE_PROJECT_DIR = r.dir;
+  try {
+    const weaken = file => decideEdit({ cwd: wt, tool_name: 'Edit', tool_input: { file_path: path.join(wt, file), old_string: 'toBe(45)', new_string: 'toBe(50)' } });
+    assert.equal(weaken('tests/unit/a.test.ts'), null, 'the unlocks entry is found in the worktree');
+    const asked = weaken('tests/unit/b.test.ts');
+    assert.equal(asked.decision, 'ask');
+    assert.match(asked.reason, /^rfr-core \(TEST-001\): tests\/unit\/b\.test\.ts is an existing test/);
+  } finally {
+    if (before === undefined) delete process.env.CLAUDE_PROJECT_DIR; else process.env.CLAUDE_PROJECT_DIR = before;
+  }
 });

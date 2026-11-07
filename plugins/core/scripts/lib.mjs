@@ -1,6 +1,7 @@
 // Shared helpers for rfr-core hook scripts. Hooks receive JSON on stdin and, for
 // PreToolUse, may print a JSON decision on stdout. See the Claude Code hooks reference.
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import nodePath from 'node:path';
 
 export async function readInput() {
@@ -47,7 +48,9 @@ const bases = new Map();
 
 export function existedAtBase(file, cwd = process.cwd()) {
   if (typeof file !== 'string' || !file) return null;
-  const top = git(cwd, ['rev-parse', '--show-toplevel']);
+  // The repository the file is in, which for an agent's worktree is the worktree, not the project.
+  const fileDir = nodePath.dirname(nodePath.resolve(cwd, file));
+  const top = git(fs.existsSync(fileDir) ? fileDir : cwd, ['rev-parse', '--show-toplevel']);
   if (!top) return null;
   if (!bases.has(top)) {
     let base = null;
