@@ -81,4 +81,4 @@ Tier 3 is only as strong as the check at the pull request. Until the test-change
 - Plan or roadmap item: `PLAN.md`, Phase 15.
 - Slices: 15a the guide, corpus, outcome log, and report (AC-1, AC-2, AC-6, AC-7); 15b the tier changes to the guards and the setting (AC-3 to AC-5); 15c the replay and the practice guide (AC-8, AC-9); 15d the eval (AC-10).
 - Depends on: #144 (the decision log and the three false-positive fixes); test-change-review AC-11 for `testWeakening: defer`.
-- Pull requests: none yet.
+- Pull requests: #145 (spec).
