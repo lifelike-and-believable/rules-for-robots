@@ -348,7 +348,7 @@ The guards ask whenever an action matches a dangerous pattern, and most prompts 
 - **15e:** the eval (AC-10).
 
 ### Phase 16: Domain plugins (planned)
-Spec: [docs/specs/plugin-split.md](docs/specs/plugin-split.md) (draft).
+Spec: [docs/specs/plugin-split.md](docs/specs/plugin-split.md) (approved 2026-11-08).
 Pull requests: #147 (spec).
 
 `rfr-core` carries web and Unreal skills, agents, and hooks that only one kind of project uses. They move into `rfr-web` and `rfr-unreal`, the `plugins/web/` and `plugins/unreal/` this plan's layout always listed, so each project installs only its domain's parts. The reviewer agents that cover both domains stay in `rfr-core`. The split ships as one breaking release: `rfr-core` 4.0.0 with `rfr-web` and `rfr-unreal` 1.0.0.

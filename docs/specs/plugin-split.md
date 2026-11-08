@@ -4,7 +4,7 @@ status: draft
 
 # Domain plugins
 
-Split the domain-specific parts of `rfr-core` into two new plugins, `rfr-web` and `rfr-unreal`, so a project installs only what its domain uses. `rfr-core` keeps everything that applies to any project. This finishes the layout `PLAN.md` section 6 always listed (`plugins/web/`, `plugins/unreal/`), which was folded into `rfr-core` for the first release.
+Split the domain-specific parts of `rfr-core` into two new plugins, `rfr-web` and `rfr-unreal`, so a project installs only what its domain uses. `rfr-core` keeps everything that applies to any project. This finishes the layout `PLAN.md` section 6 always listed (`plugins/web/`, `plugins/unreal/`), which was folded into `rfr-core` for the first release. Approved by the project lead on 2026-11-08. The `status` field stays `draft` until every `test:` criterion has a citing test.
 
 ## Problem
 
