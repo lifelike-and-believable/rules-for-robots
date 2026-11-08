@@ -100,6 +100,25 @@ test('guard-mcp asks before Vercel actions that change or expose the account', a
   }
 });
 
+test('guard-mcp asks before Vercel reads that return decrypted environment variables or tokens (NODE-002)', async () => {
+  const { vercelToolNeedsApproval } = await import('../plugins/core/scripts/guard-mcp.mjs');
+  // Vercel's tool schemas: get_project_env "get the decrypted value", get_shared_env_var "including its decrypted value".
+  for (const t of ['mcp__Vercel__get_project_env', 'mcp__vercel__get_shared_env_var', 'mcp__plugin_vercel_vercel__get_project_env', 'mcp__Vercel__get_edge_config_tokens']) {
+    assert.ok(vercelToolNeedsApproval(t, { idOrName: 'prj_1', id: 'env_1' }), t);
+  }
+  // filter_project_envs lists variables, and decrypts them only when asked to.
+  for (const decrypt of ['true', true, 'TRUE']) {
+    assert.ok(vercelToolNeedsApproval('mcp__Vercel__filter_project_envs', { idOrName: 'prj_1', decrypt }), String(decrypt));
+  }
+  for (const input of [{ idOrName: 'prj_1' }, { idOrName: 'prj_1', decrypt: 'false' }, { idOrName: 'prj_1', decrypt: false }, undefined]) {
+    assert.ok(!vercelToolNeedsApproval('mcp__Vercel__filter_project_envs', input), JSON.stringify(input));
+  }
+  // The hook passes tool_input through, so a decrypting call asks end to end.
+  const run = input => spawnSync(process.execPath, ['plugins/core/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
+  assert.match(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1', decrypt: 'true' } }).stdout, /"permissionDecision":\s*"ask"/);
+  assert.equal(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1' } }).stdout.trim(), '');
+});
+
 test('guard-commands asks before shell edits to test files', async () => {
   const { findRisk } = await import('../plugins/core/scripts/guard-commands.mjs');
   for (const command of [
