@@ -6,6 +6,7 @@ scope: core
 verified-by: [review]
 targets-failure: unverified-claim
 observed-on: [claude-sonnet-5-5]
+evaluated-on: [claude-sonnet-5-5]
 rationale: The project owner works test-driven where it makes sense; a test written first pins down the intended behaviour, and in the seed evals the test-first rule was the clearest behaviour change the rules produced.
 sources: ["practices/testing-and-code-quality.md", "evals/results/2026-10-05-seed/report.md"]
 ---

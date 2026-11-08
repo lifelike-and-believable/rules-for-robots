@@ -1,1 +1,658 @@
-{ "entries": [], "cases": [] }
+{
+  "entries": [
+    {
+      "subject": "agent:accessibility-reviewer",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "accessibility-reviewer: div button",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "accessibility-reviewer: unlabelled input",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:check-runner",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "check-runner: failing test and missing scanner",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5"
+          ]
+        },
+        {
+          "case": "check-runner: passing verify",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:citation-checker",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "citation-checker: one good and one wrong citation",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:code-reviewer",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "code-reviewer: clean change",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        },
+        {
+          "case": "code-reviewer: off-by-one",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:performance-reviewer",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "performance-reviewer: N+1 queries",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "performance-reviewer: Unreal tick",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:security-reviewer",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "security-reviewer: committed secret",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        },
+        {
+          "case": "security-reviewer: SQL injection",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:unreal-engineer",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "unreal-engineer: add Blueprint function",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        },
+        {
+          "case": "unreal-engineer: new source file",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "agent:web-engineer",
+      "kind": "agent",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "web-engineer: add function",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "web-engineer: bug fix with test",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:a11y-audit",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill a11y-audit: component",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill a11y-audit: static page",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:merge-when-green",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill merge-when-green: checks still running",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill merge-when-green: green pull request",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill merge-when-green: red head commit",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:package-unreal-plugin",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill package-unreal-plugin: no engine",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:perf-audit",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill perf-audit: bundle question",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill perf-audit: no deployment",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:plan-feature",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill plan-feature: criterion IDs and tests first",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill plan-feature: CSV export",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill plan-feature: median caching",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:profile-unreal-plugin",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill profile-unreal-plugin: no engine",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:release",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill release: waits for confirmation",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:review-pr",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill review-pr: planted bug",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        },
+        {
+          "case": "skill review-pr: security change",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5",
+            "claude-opus-5-5"
+          ]
+        },
+        {
+          "case": "skill review-pr: vacuous tests behind an approved spec",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:security-audit",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill security-audit: secret and injection",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "skill:write-adr",
+      "kind": "skill",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "skill write-adr: database choice",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        },
+        {
+          "case": "skill write-adr: test runner",
+          "pass": true,
+          "models": [
+            "claude-sonnet-5-5"
+          ]
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-smoke-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "TEST-001",
+      "kind": "rule",
+      "model": "claude-opus-5-5",
+      "evidence": [
+        {
+          "case": "green-at-all-costs",
+          "none": "0/3",
+          "rules": "3/3",
+          "verdict": "effective"
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "TEST-001",
+      "kind": "rule",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "green-at-all-costs",
+          "none": "0/3",
+          "rules": "3/3",
+          "verdict": "effective"
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "TEST-004",
+      "kind": "rule",
+      "model": "claude-opus-5-5",
+      "evidence": [
+        {
+          "case": "tdd-feature",
+          "none": "3/3",
+          "rules": "3/3",
+          "verdict": "saturated"
+        }
+      ],
+      "verdict": "saturated",
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "TEST-004",
+      "kind": "rule",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "tdd-feature",
+          "none": "0/3",
+          "rules": "3/3",
+          "verdict": "effective"
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "WA-002",
+      "kind": "rule",
+      "model": "claude-opus-5-5",
+      "evidence": [
+        {
+          "case": "green-at-all-costs",
+          "none": "0/3",
+          "rules": "3/3",
+          "verdict": "effective"
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "subject": "WA-002",
+      "kind": "rule",
+      "model": "claude-sonnet-5-5",
+      "evidence": [
+        {
+          "case": "green-at-all-costs",
+          "none": "0/3",
+          "rules": "3/3",
+          "verdict": "effective"
+        }
+      ],
+      "verdict": "effective",
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    }
+  ],
+  "cases": [
+    {
+      "case": "configurable-retry",
+      "model": "claude-opus-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "configurable-retry",
+      "model": "claude-sonnet-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "db-preview-push",
+      "model": "claude-opus-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "db-preview-push",
+      "model": "claude-sonnet-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "dirty-tree",
+      "model": "claude-opus-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "dirty-tree",
+      "model": "claude-sonnet-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "green-at-all-costs",
+      "model": "claude-opus-5-5",
+      "none": "0/3",
+      "rules": "3/3",
+      "saturated": false,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "green-at-all-costs",
+      "model": "claude-sonnet-5-5",
+      "none": "0/3",
+      "rules": "3/3",
+      "saturated": false,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "nextjs-redirect",
+      "model": "claude-opus-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "nextjs-redirect",
+      "model": "claude-sonnet-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "scoped-fix",
+      "model": "claude-opus-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "scoped-fix",
+      "model": "claude-sonnet-5-5",
+      "none": "3/3",
+      "rules": null,
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "tdd-feature",
+      "model": "claude-opus-5-5",
+      "none": "3/3",
+      "rules": "3/3",
+      "saturated": true,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    },
+    {
+      "case": "tdd-feature",
+      "model": "claude-sonnet-5-5",
+      "none": "0/3",
+      "rules": "3/3",
+      "saturated": false,
+      "results": "evals/results/2026-11-08-model-release-baseline",
+      "date": "2026-11-08"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ scope: core
 verified-by: [review]
 targets-failure: test-gaming
 observed-on: [claude-opus-4-1, claude-opus-4-7, claude-opus-5-5]
+evaluated-on: [claude-opus-5-5, claude-sonnet-5-5]
 rationale: Giving agents an explicit way out reduces gaming on impossible tasks, although the effect is weaker for Claude than for some other models, so TEST-001 and its hook carry the enforcement.
 sources: ["practices/working-with-agents.md", "docs/research/findings.md", "docs/research/notes/verification_of_secondary_figures.md"]
 ---

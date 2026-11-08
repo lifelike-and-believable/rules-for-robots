@@ -87,9 +87,10 @@ This section holds guidance that has held on two or more model generations, so i
 |---|---|
 | Generic "verify" lines | Cause over-verification on Opus 5 and later; a concrete command helps Sonnet 5.5 at low effort (Phase 0) |
 | Effort setting | Opus 5.5 at medium effort matches Opus 5 at high (Phase 0) |
-| Editing a wrong test to get CI green, without rules | Both models, 6 of 6 runs; none with TEST-001 and WA-002 (Phase 8) |
-| Test-first work without TEST-004 | Sonnet 0 of 3; Opus 3 of 3 (Phase 8) |
-| Data loss, over-engineering, scope creep, destructive git, and the Next.js 16 trap, without rules | Neither model showed them (seed and Phase 8) |
+| Editing a wrong test to get CI green, without rules | Both models, 6 of 6 runs; none with TEST-001 and WA-002 (Phase 8; again in the model-release baseline) |
+| Test-first work without TEST-004 | Sonnet 0 of 3; Opus 3 of 3 (Phase 8; again in the model-release baseline) |
+| Data loss, over-engineering, scope creep, destructive git, and the Next.js 16 trap, without rules | Neither model showed them (seed, Phase 8, and the model-release baseline) |
+| Ledger run | [2026-11-08 baseline](evals/results/2026-11-08-model-release-baseline/report.md), Claude Code 2.1.319 |
 
 ## 6. Repository structure and distribution
 
@@ -375,7 +376,7 @@ Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
 - **16a:** the two plugins, the moves, the build copies, the marketplace, and the guard changes (AC-1 to AC-6).
 - **16b:** templates, `install-rules`, the eval harness, and documentation (AC-7 to AC-9); then the release (AC-10).
 
-### Phase 17: Model adaptation (planned)
+### Phase 17: Model adaptation (complete)
 Spec: [docs/specs/model-adaptation.md](docs/specs/model-adaptation.md) (approved 2026-11-08).
 Pull requests: #149 (spec and 17a), #152 (17b and 17c).
 
@@ -434,4 +435,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a done (#146); build 15b (the tier changes to the guards).
 11. Phase 16: done (#148, #150); `rfr-v4.0.0` is published.
-12. Phase 17: 17a done (#149); 17b and the 17c baseline run are in #152.
+12. Phase 17: done (#149, #152). The next step is the procedure itself: open a model-release issue when Claude Code offers a new model.

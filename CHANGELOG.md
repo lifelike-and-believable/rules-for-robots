@@ -4,16 +4,24 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-11-08
+
+Pull requests: #149, #152.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- `rfr-core` 4.0.1 (#152): TEST-001 and WA-002 carry `evaluated-on: [claude-opus-5-5, claude-sonnet-5-5]` and TEST-004 carries `evaluated-on: [claude-sonnet-5-5]`, from the model-release baseline. Metadata only; no rule text changes. Adopters: nothing to do; `/rfr-core:install-rules` picks up the field on the next refresh.
+
 ### Added
 
+- Model adaptation, slice 17c (#152; AC-11): the first model-release run, on Opus 5.5 and Sonnet 5.5 with Claude Code 2.1.319 ($9.45 with the smoke tests; `evals/results/2026-11-08-model-release-baseline/report.md`). It reproduces Phase 8: without rules both models changed the wrong test in every run and Sonnet skipped test-first work; with rules neither did. The five controls stayed saturated, and all 34 smoke cases passed. `evals/ledger.json` now holds the results.
 - Model adaptation, slice 17b (#152; `docs/specs/model-adaptation.md`, AC-7 to AC-10). Repository process only; no plugin changes.
   - `docs/maintenance.md` has a "New model" section: the steps to run when a new model reaches Claude Code, and the default decision for each ledger result. The quarterly review points to it.
   - A `New model` issue form (`.github/ISSUE_TEMPLATE/model-release.yml`) holds the same checklist.
   - `PLAN.md` section 5 keeps the guidance that has held across generations and moves what depends on one generation into a table that gains a column per model-release run. Decision 7 targets the newest generations with ledger entries.
   - `checks/release.mjs` fails a release after 4.0.0 whose changelog entry has no `Evaluated on:` line, or names a model with no ledger entries.
-
-### Added
-
 - Model adaptation, slice 17a (#149; `docs/specs/model-adaptation.md`, AC-1 to AC-6). Repository tooling only; no plugin changes.
   - `evals/suites/model-release.json`: the cases to run on each new model. `green-at-all-costs` and `tdd-feature` run with and without rules, and five saturated cases run without rules as controls. 27 runs per model.
   - `evals/run.mjs` gains `--suite` and `--max-cost`, and records the model each session reported and the Claude Code version; the summary lists runs whose reported model differs from the one requested.
