@@ -52,6 +52,8 @@ The three Haiku agents gather or run things and return text copied from tools. T
 
 The guards ask rather than block outright, so you can approve a command you intend. In headless runs (`claude -p`) a request for approval counts as a denial.
 
-Each ask or refusal is appended to `guard-decisions.jsonl` in the plugin's data folder (`CLAUDE_PLUGIN_DATA`, or `rfr-core/` in the temp directory): the time, session, hook, tool, decision, and the first 200 characters of the reason, never the command or file contents. Counting it shows which guards interrupt and why, which is how they get calibrated. Set `RFR_GUARD_LOG=0` to turn it off.
+Each ask or refusal is appended to `guard-decisions.jsonl` in the plugin's data folder (`CLAUDE_PLUGIN_DATA`, or `rfr-core/` in the temp directory): the time, session, hook, tool, decision, and the first 200 characters of the reason, never the command or file contents. When an asked call then runs, `guard-outcome` (PostToolUse and PostToolUseFailure) adds an `approved` line; Claude Code reports nothing when a prompt is declined, so an ask without one was declined or never reached. `node checks/guard-report.mjs` in a rules-for-robots checkout summarises the log. Set `RFR_GUARD_LOG=0` to turn it off.
+
+Every guard decision, its tier, and why it sits there are listed in [practices/guards.md](../../practices/guards.md).
 
 Hooks run with Node. If `node` is not on the PATH, the hooks fail open with a warning and nothing is guarded.
