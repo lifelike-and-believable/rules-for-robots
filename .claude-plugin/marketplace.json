@@ -10,7 +10,17 @@
     {
       "name": "rfr-core",
       "source": "./plugins/core",
-      "description": "Core skills and hooks, including a skill that installs rules-for-robots rule packs into a repo."
+      "description": "Core skills, agents, and hooks for every project, including a skill that installs rules-for-robots rule packs into a repo. Add rfr-web or rfr-unreal for your domain."
+    },
+    {
+      "name": "rfr-web",
+      "source": "./plugins/web",
+      "description": "For websites and web apps: the web-engineer agent, accessibility and performance audits, and the Vercel MCP guard. Requires rfr-core."
+    },
+    {
+      "name": "rfr-unreal",
+      "source": "./plugins/unreal",
+      "description": "For Unreal Engine plugins: the unreal-engineer agent, Fab packaging, Unreal Insights profiling, and an editor -ExecCmds check. Requires rfr-core."
     },
     {
       "name": "rfr-process",

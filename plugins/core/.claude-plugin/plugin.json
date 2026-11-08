@@ -8,5 +8,11 @@
   "homepage": "https://github.com/lifelike-and-believable/rules-for-robots",
   "repository": "https://github.com/lifelike-and-believable/rules-for-robots",
   "license": "MIT",
-  "keywords": ["rules", "quality", "unreal", "nextjs", "astro"]
+  "keywords": [
+    "rules",
+    "quality",
+    "review",
+    "guards",
+    "tests"
+  ]
 }

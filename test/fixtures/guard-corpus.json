@@ -30,7 +30,7 @@
     { "id": "drizzle-push", "guard": "commands", "repo": "clean", "command": "npx drizzle-kit push", "tier": 4, "source": "PG-001" },
     { "id": "prisma-reset", "guard": "commands", "repo": "clean", "command": "npx prisma migrate reset", "tier": 4, "source": "PG-001" },
     { "id": "prisma-db-push", "guard": "commands", "repo": "clean", "command": "npx prisma db push", "tier": 4, "source": "PG-001" },
-    { "id": "execcmds-without-quit", "guard": "commands", "repo": "clean", "command": "UnrealEditor-Cmd.exe Host.uproject -ExecCmds=\"Automation RunTests Rfr\"", "tier": 2, "now": 4, "pending": "15b", "source": "Unreal practice guide" },
+    { "id": "execcmds-without-quit", "guard": "unreal", "command": "UnrealEditor-Cmd.exe Host.uproject -ExecCmds=\"Automation RunTests Rfr\"", "tier": 2, "now": 4, "pending": "15b", "source": "Unreal practice guide" },
     { "id": "ordinary-commands", "guard": "commands", "repo": "clean", "command": "git status && npm test && git push origin feature", "tier": 1, "source": "baseline" },
     { "id": "vercel-deploy", "guard": "mcp", "tool_name": "mcp__Vercel__create_deployment", "tool_input": {}, "tier": 4, "source": "NODE-002" },
     { "id": "vercel-read", "guard": "mcp", "tool_name": "mcp__Vercel__get_deployment", "tool_input": { "idOrUrl": "dpl_1" }, "tier": 1, "source": "NODE-002" },

@@ -9,7 +9,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { decideCommand } from '../plugins/core/scripts/guard-commands.mjs';
 import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
-import { vercelToolNeedsApproval } from '../plugins/core/scripts/guard-mcp.mjs';
+import { vercelToolNeedsApproval } from '../plugins/web/scripts/guard-mcp.mjs';
+import { decideUnreal } from '../plugins/unreal/scripts/guard-unreal.mjs';
 
 const corpus = JSON.parse(fs.readFileSync('test/fixtures/guard-corpus.json', 'utf8'));
 
@@ -59,6 +60,7 @@ function decide(c) {
     return decideCommand(c.command.replace('$TMPCASE', scratch), { cwd: dir });
   }
   if (c.guard === 'mcp') return vercelToolNeedsApproval(c.tool_name, c.tool_input) ? { decision: 'ask' } : null;
+  if (c.guard === 'unreal') return decideUnreal(c.command);
   if (c.guard === 'test-edits') {
     const dir = fixtureRepo('clean');
     const file = path.join(dir, 'tests', 'a.test.ts');

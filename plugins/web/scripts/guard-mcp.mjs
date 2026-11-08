@@ -43,9 +43,9 @@ async function main() {
   const input = await readInput();
   const reason = vercelApprovalReason(input?.tool_name, input?.tool_input);
   if (reason === 'secret') {
-    ask(`rfr-core (NODE-002): ${input.tool_name} returns secret values (decrypted environment variables or tokens) into this session. Approve only if you need these values now; filter_project_envs without decrypt lists variables without their values.`);
+    ask(`rfr-web (NODE-002): ${input.tool_name} returns secret values (decrypted environment variables or tokens) into this session. Approve only if you need these values now; filter_project_envs without decrypt lists variables without their values.`);
   } else if (reason === 'change') {
-    ask(`rfr-core (NODE-002): ${input.tool_name} can change or expose your Vercel account. Approve only if this action is intended.`);
+    ask(`rfr-web (NODE-002): ${input.tool_name} can change or expose your Vercel account. Approve only if this action is intended.`);
   }
 }
 
