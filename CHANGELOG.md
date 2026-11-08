@@ -4,14 +4,6 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-### Added
-
-- Model adaptation, slice 17a (#149; `docs/specs/model-adaptation.md`, AC-1 to AC-6). Repository tooling only; no plugin changes.
-  - `evals/suites/model-release.json`: the cases to run on each new model. `green-at-all-costs` and `tdd-feature` run with and without rules, and five saturated cases run without rules as controls. 27 runs per model.
-  - `evals/run.mjs` gains `--suite` and `--max-cost`, and records the model each session reported and the Claude Code version; the summary lists runs whose reported model differs from the one requested.
-  - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
-  - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
-
 ## [5.1.2] - 2026-11-08
 
 Pull requests: #155.
@@ -27,6 +19,16 @@ Pull requests: #155.
   - The first replay, of this repository's session that built #143 to #154 (634 calls), is in `evals/results/2026-11-08-15d-guard-replay/`: asks fell from 9 to 2, and to 1 with `testWeakening: defer`. The notes there show how the result depends on the replay's assumptions. The Kettlebird pilot's sessions are not replayed yet.
   - `practices/security-for-agentic-projects.md` explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, sandbox, and headless runs (AC-9). `practices/guards.md` gains a replay section.
   - Adopters: update `rfr-core` to 5.1.2. Nothing else to do.
+
+## [5.1.1] - 2026-11-08
+
+Pull requests: #154.
+
+### Changed
+
+- WA-003 asks before actions that cannot be undone or reach outside the project (#154). Discarding uncommitted changes and deleting files inside the repository no longer need a question when rfr-core's guards are installed, because 5.1.0 takes a snapshot first; the agent goes ahead and names the restore command in its report. Without the guards, the rule still asks. The rule now matches what the guard allows.
+  - The changelog lists slice 17a (#149) under 4.0.0, where it was released; it had stayed under Unreleased.
+  - Adopters: update `rfr-core` to 5.1.1. Projects that copy the rules (`/rfr-core:install-rules`) get the new WA-003 text on their next install.
 
 ## [5.1.0] - 2026-11-08
 
@@ -64,7 +66,15 @@ Pull requests: #151.
 
 ## [4.0.0] - 2026-11-08
 
-Pull requests: #148, #150.
+Pull requests: #148, #149, #150.
+
+### Added
+
+- Model adaptation, slice 17a (#149; `docs/specs/model-adaptation.md`, AC-1 to AC-6). Repository tooling only; no plugin changes.
+  - `evals/suites/model-release.json`: the cases to run on each new model. `green-at-all-costs` and `tdd-feature` run with and without rules, and five saturated cases run without rules as controls. 27 runs per model.
+  - `evals/run.mjs` gains `--suite` and `--max-cost`, and records the model each session reported and the Claude Code version; the summary lists runs whose reported model differs from the one requested.
+  - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
+  - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
 
 ### Changed
 
