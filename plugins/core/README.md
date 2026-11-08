@@ -29,7 +29,8 @@ The three Haiku agents gather or run things and return text copied from tools. T
 |---|---|---|
 | `/rfr-core:install-rules [profile \| pack ...]` | Copy rule packs into `.claude/rules/` (profiles: `web-app`, `static-site`, `unreal-plugin`) | User only |
 | `/rfr-core:plan-feature` | Spec with user stories, acceptance criteria, scope, and verification plan | User or Claude |
-| `/rfr-core:review-pr` | Parallel reviewer agents, then confirm or refute each finding | User or Claude |
+| `/rfr-core:review-pr` | Parallel reviewer agents, then confirm or refute each finding, starting with the ones a reviewer inferred rather than observed | User or Claude |
+| `/rfr-core:lookup-api` | Check an API against the installed version: an npm package's version, lock entry, declarations, and bundled docs, or each supported engine's headers | User or Claude |
 | `/rfr-core:a11y-audit` | axe plus scripted checks for WCAG 2.2 criteria axe misses | User or Claude |
 | `/rfr-core:perf-audit` | Lighthouse median of 3 against budgets, biggest wins | User or Claude |
 | `/rfr-core:security-audit` | Scanners, entry points, agent tooling risks | User or Claude |
