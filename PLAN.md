@@ -365,6 +365,16 @@ Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
 - **16a:** the two plugins, the moves, the build copies, the marketplace, and the guard changes (AC-1 to AC-6).
 - **16b:** templates, `install-rules`, the eval harness, and documentation (AC-7 to AC-9); then the release (AC-10).
 
+### Phase 17: Model adaptation (planned)
+Spec: [docs/specs/model-adaptation.md](docs/specs/model-adaptation.md) (approved 2026-11-08).
+Pull requests: #149 (spec and 17a).
+
+New models will keep arriving, and the rule set is tuned to the 5.5 generation. Principle 8 and the maintenance guide say rules are re-evaluated on each new model, but not how, at what cost, or where the result is kept. This phase makes that a routine: a fixed, budgeted eval suite that runs within days of a release, a ledger of which rules, agents, and skills have evidence on which model, saturated cases flagged, and default decisions for each result (keep, rewrite, move to a practice guide, pin an agent's model). METR's assessment of Anthropic's internal "Model 4" (2026-11-05) prompted it: faster model progress and saturated benchmarks are the two problems this phase addresses.
+
+- **17a:** the `model-release` suite, `--suite` and `--max-cost` in the runner, the reported model ID in each run record, `evals/ledger.json` and `checks/model-ledger.mjs`, and the `evaluated-on` field (AC-1 to AC-6).
+- **17b:** the "New model" section in the maintenance guide, the `model-release` issue form, section 5 and decision 7 rewritten to name no single generation, and the "Evaluated on:" changelog line and its check (AC-7 to AC-10).
+- **17c:** the baseline run on Opus 5.5 and Sonnet 5.5 (AC-11), and the first decisions it supports.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
@@ -397,7 +407,7 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 | Destructive git or database operations | PreToolUse hooks for destructive commands and migration commands (R25, R49) |
 | Privileged tools (Vercel MCP, Unreal MCP) act beyond intent | Permission prompts for write tools (R43); Unreal MCP optional and never shared between agents (R34) |
 | Self-hosted runner executes untrusted code | Trusted events only, ephemeral runner, no secrets (R31) |
-| Guidance goes stale (engine, framework, model updates) | Sources dated; quarterly reviews; `observed-on` metadata; re-run evals on new models |
+| Guidance goes stale (engine, framework, model updates) | Sources dated; quarterly reviews; `observed-on` metadata; a budgeted model-release suite and an evidence ledger per model (Phase 17) |
 | Evidence for some figures is still indirect | Claims from still-blocked sources may not support a MUST rule (R40) |
 
 ## 14. Immediate next steps
@@ -414,3 +424,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a done (#146); build 15b (the tier changes to the guards).
 11. Phase 16: 16a done (#148); 16b and the 4.0.0 release in review (#150). After it merges, tag the release (`/rfr-core:release`).
+12. Phase 17: the model-adaptation spec is approved; 17a is in #149. Build 17b, and run 17c before the next model generation reaches Claude Code, so the first comparison has a baseline.

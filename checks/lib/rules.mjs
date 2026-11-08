@@ -22,7 +22,7 @@ export const PREFIXES = {
 };
 
 export const REQUIRED = ['id', 'title', 'level', 'scope', 'verified-by', 'targets-failure', 'observed-on', 'rationale'];
-export const KNOWN_FIELDS = new Set([...REQUIRED, 'paths', 'check', 'sources']);
+export const KNOWN_FIELDS = new Set([...REQUIRED, 'paths', 'check', 'sources', 'evaluated-on']);
 export const WAIVER_FIELDS = new Set(['id', 'waiver', 'reason', 'approved-by', 'date']);
 
 export const MAX_BODY_WORDS = 120;
@@ -148,6 +148,9 @@ export function validateRule(rule, { rulesRoot, allowWaivers = false, adoptingRe
   }
   if (meta['observed-on'] !== undefined && !(Array.isArray(meta['observed-on']) && meta['observed-on'].every(m => typeof m === 'string'))) {
     errors.push('observed-on must be a list of model IDs (or [])');
+  }
+  if (meta['evaluated-on'] !== undefined && !(Array.isArray(meta['evaluated-on']) && meta['evaluated-on'].every(m => typeof m === 'string' && m.trim()))) {
+    errors.push('evaluated-on must be a list of model IDs');
   }
   if (meta.sources !== undefined && !(Array.isArray(meta.sources) && meta.sources.every(s => typeof s === 'string'))) {
     errors.push('sources must be a list of strings');

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Phase 5 smoke tests: run each rfr-core agent and skill on small tasks and check that it
 // produces output in its declared format. Uses the eval case fixtures as repositories.
-// Usage: node evals/agents/smoke.mjs [--only name,name] [--concurrency 4] [--out dir]
+// Usage: node evals/agents/smoke.mjs [--only name,name] [--concurrency 4] [--out dir] [--model id]
+// --model sets the main session's model (default claude-sonnet-5-5); each result records it,
+// so checks/model-ledger.mjs can file the agent and skill results under that model.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -277,8 +279,8 @@ export function prepare(c) {
   return dir;
 }
 
-function run(c, dir) {
-  const args = ['-p', c.prompt, '--model', 'claude-sonnet-5-5', '--output-format', 'json', '--setting-sources', 'project,local',
+function run(c, dir, model) {
+  const args = ['-p', c.prompt, '--model', model, '--output-format', 'json', '--setting-sources', 'project,local',
     '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'), '--plugin-dir', path.join(ROOT, 'plugins', 'web'), '--plugin-dir', path.join(ROOT, 'plugins', 'unreal'),
     '--allowedTools', 'Read,Grep,Glob,Edit,Write,Bash,Agent,Skill'];
   return new Promise(resolve => {
@@ -295,6 +297,7 @@ async function main() {
   const args = process.argv.slice(2);
   const only = args.includes('--only') ? args[args.indexOf('--only') + 1].split(',') : null;
   const concurrency = args.includes('--concurrency') ? Number(args[args.indexOf('--concurrency') + 1]) : 4;
+  const model = args.includes('--model') ? args[args.indexOf('--model') + 1] : 'claude-sonnet-5-5';
   const out = path.resolve(args.includes('--out') ? args[args.indexOf('--out') + 1] : path.join(ROOT, 'evals', 'results', `smoke-${new Date().toISOString().slice(0, 10)}`));
   fs.mkdirSync(out, { recursive: true });
   const cases = CASES.filter(c => !only || only.some(o => c.name.includes(o)));
@@ -304,20 +307,20 @@ async function main() {
     while (next < cases.length) {
       const c = cases[next++];
       const dir = prepare(c);
-      const r = await run(c, dir);
+      const r = await run(c, dir, model);
       const text = r.result ?? '';
       let pass = false;
       const usage = r.modelUsage ?? {};
       const modelOk = !c.expectModel || Object.keys(usage).some(m => m.includes(c.expectModel));
       try { pass = !r.is_error && modelOk && !!c.check(text, dir); } catch {}
-      results.push({ name: c.name, pass, costUsd: r.total_cost_usd ?? null, models: Object.fromEntries(Object.entries(usage).map(([m, u]) => [m, u.costUSD])), turns: r.num_turns ?? null, output: text.replaceAll(FAKE_KEY, '<fake key redacted>') });
+      results.push({ name: c.name, pass, model, costUsd: r.total_cost_usd ?? null, models: Object.fromEntries(Object.entries(usage).map(([m, u]) => [m, u.costUSD])), turns: r.num_turns ?? null, output: text.replaceAll(FAKE_KEY, '<fake key redacted>') });
       console.log(`${pass ? 'PASS' : 'FAIL'} ${c.name}`);
       fs.rmSync(dir, { recursive: true, force: true });
     }
   }));
   results.sort((a, b) => a.name.localeCompare(b.name));
   fs.writeFileSync(path.join(out, 'smoke.json'), JSON.stringify(results, null, 2));
-  const md = ['# Agent and skill smoke tests', '', `Model: claude-sonnet-5-5 (main session; agents use their own model settings). Claude Code: ${spawnSync('claude', ['--version'], { encoding: 'utf8' }).stdout.trim()}.`, '', '| Case | Result | Cost (USD) | Cost by model (USD) |', '|---|---|---|---|',
+  const md = ['# Agent and skill smoke tests', '', `Model: ${model} (main session; agents use their own model settings). Claude Code: ${spawnSync('claude', ['--version'], { encoding: 'utf8' }).stdout.trim()}.`, '', '| Case | Result | Cost (USD) | Cost by model (USD) |', '|---|---|---|---|',
     ...results.map(r => `| ${r.name} | ${r.pass ? 'pass' : 'FAIL'} | ${r.costUsd?.toFixed(3) ?? ''} | ${Object.entries(r.models ?? {}).map(([m, c]) => `${m.replace('claude-', '')} ${c.toFixed(3)}`).join(', ')} |`)];
   fs.writeFileSync(path.join(out, 'summary.md'), md.join('\n') + '\n');
   console.log(`\n${results.filter(r => r.pass).length}/${results.length} passed; total $${results.reduce((s, r) => s + (r.costUsd ?? 0), 0).toFixed(2)}`);

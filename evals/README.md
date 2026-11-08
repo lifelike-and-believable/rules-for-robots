@@ -56,6 +56,24 @@ Five cases around the spec-to-test checks (`docs/specs/spec-test-traceability.md
 
 `spec-vacuous-tests` names a `skill` in `case.json`, so in the `rules+hooks` arm every prompt starts with `/rfr-core:review-pr`. The cadence candidate `TEST-004-clustered` is attached to `tdd-cluster` and compared there with TEST-004. `tdd-cluster` replaces `tdd-feature` for this comparison, because the `rules` arm passes `tdd-feature` 6 of 6 (`results/2026-10-05-phase8b/`) and its grader does not check why the tests were red. Graders get each tool call's `output`, which is how `tdd-cluster` reads what the red run printed.
 
+## Model-release suite and ledger (Phase 17)
+
+When a new model reaches Claude Code, run the `model-release` suite on it (`docs/specs/model-adaptation.md`):
+
+```sh
+node evals/run.mjs --suite model-release --models <model id>
+node evals/agents/smoke.mjs --model <model id>
+node checks/model-ledger.mjs add evals/results/<run folder>
+node checks/model-ledger.mjs add evals/results/<smoke folder>
+node checks/model-ledger.mjs report <model id> --since <previous model id>
+```
+
+`evals/suites/model-release.json` lists each case, its arms, and why it is there: cases that have shown a rule effect run in the `none` and `rules` arms, and one saturated case per other target failure runs in `none` only, as a control. `--suite` takes the suite's runs and cost cap (`maxCostUsd`) unless `--runs` or `--max-cost` is given; `--cases` narrows it. `--max-cost` works with any run: no run starts once the finished runs have cost that much, and the summary says how many were skipped. Runs already started finish, so the total can pass the cap by up to `--concurrency` runs.
+
+Each run record has `reportedModel` and `claudeCode`, read from the session's init event, and the summary lists runs whose reported model differs from the one requested.
+
+`evals/ledger.json` holds one entry per rule, agent, or skill and model: `effective` (the rules arm passed more runs than `none`), `negative` (fewer), `saturated` (`none` passed every run), or `no-effect`; agents and skills are `effective` when all their smoke cases passed. `add` replaces earlier entries for the same subject and model, so the ledger shows the latest evidence; the pull request that adds entries names the run. `report` lists the rules with no entry and the saturated cases, and never fails.
+
 ## Agent cases
 
 Cases with an `agent` in `case.json` test whether an agent adds anything beyond the main session doing the task itself. The `rules+agents` arm loads `plugins/core` and starts every prompt with "Use the <agent> agent for this."; the `rules` arm sends the same task without that line and without the plugin. Graders get the arm and fail a `rules+agents` run in which the main session never called the agent (an `Agent` call with the agent's `subagent_type`). Compare the two arms on pass rate and cost. The main session's model is the `--models` value; the agent uses the model in its own frontmatter.
