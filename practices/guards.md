@@ -16,19 +16,20 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
 | A shell command writes to an existing test file | TEST-001 | Editing tests through the shell, where the change cannot be checked | 2 | 2 | The agent can make the same change with the Edit tool, which `guard-test-edits` checks |
-| A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4 | 4, then 3 | Removing a test is the strongest weakening; it moves to the pull request with the `testWeakening` setting (15b, AC-5) |
+| A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4, or 3 with `testWeakening: defer` | 4, then 3 | Removing a test is the strongest weakening; the `testWeakening` setting moves it to the pull request (AC-5) |
 | A command only runs, reads, or mentions a test file | TEST-001 | none | 1 | 1 | Nothing changes |
-| Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 4 | 2 (15b) | The agent can state the reason in its report or update snapshots in a separate commit the pull request check can see (AC-4) |
-| `git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f` with uncommitted changes or untracked files to lose | WA-003 | Losing uncommitted work | 4 | 1 with a snapshot (15c) | A snapshot of the working tree makes the command undoable (AC-11) |
+| A script only mentions a dangerous command (a heredoc for Python, `cat`, and others, but not one a shell reads) | WA-003, PG-001 | none | 1 | 1 | Nothing runs it; the patterns match only what runs (15d) |
+| Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 2 | 2 | The agent states the reason in the command (`RFR_SNAPSHOT_REASON="..."`) and in its report, and the update goes through (AC-4) |
+| `git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f` with uncommitted changes or untracked files to lose | WA-003 | none | 1 with a snapshot | 1 with a snapshot | A snapshot of the working tree makes the command undoable (AC-11) |
 | The same commands with nothing to lose, or inside an agent worktree under `.claude/worktrees/` | WA-003 | none | 1 | 1 | Nothing is lost |
-| `git reset --hard` to another commit | WA-003 | Losing commits and uncommitted work | 4 | 1 with a snapshot (15c) | The reflog holds the commits; a snapshot holds the working tree |
-| `git stash drop` or `git stash clear` | WA-003 | Losing stashed work | 4 | 1 with a snapshot (15c) | The snapshot keeps the stash's content (AC-11) |
+| `git reset --hard` to another commit | WA-003 | none | 1 with a snapshot | 1 with a snapshot | The snapshot's parent is the old commit, so it keeps both the commits and the working tree |
+| `git stash drop` or `git stash clear` | WA-003 | none | 1 with a snapshot | 1 with a snapshot | The snapshot keeps the stash commits, and `git stash store` puts them back (AC-11) |
 | `rm -rf` of untracked, ignored files (build output such as `dist/`), of a path that is not there, or of a scratch folder at least two levels inside the temp directory and in no repository | WA-003 | none | 1 | 1 | Nothing a commit or the project holds is lost |
-| `rm -rf` of tracked files with no uncommitted changes | WA-003 | Deleting source | 4 | 1 (15b) | Git holds them; `git checkout -- <path>` restores them (AC-12) |
-| `rm -rf` of repository content with uncommitted changes or untracked files that are not ignored | WA-003 | Losing uncommitted work | 4 | 1 with a snapshot (15c) | AC-11 |
+| `rm -rf` of tracked files with no uncommitted changes | WA-003 | none | 1 | 1 | Git holds them; the guard tells the agent the `git checkout -- <path>` that restores them (AC-12) |
+| `rm -rf` of repository content with uncommitted changes or untracked files that are not ignored | WA-003 | none | 1 with a snapshot | 1 with a snapshot | AC-11 |
 | `rm -rf` outside the repository and the temp directory, of a root-like path (`.`, `/`, `..`), a glob, or a variable with no known value; `Remove-Item -Recurse -Force` | WA-003 | Deleting files no snapshot covers | 4 | 4 | A local snapshot cannot undo it, or the guard cannot tell what it deletes |
 | Force-push (`--force`, `--force-with-lease`, `+ref`) | WA-003 | Rewriting shared history | 4 | 4 | It changes a remote |
-| `git branch -D` | WA-003 | Losing unmerged commits | 4 | 4 | The commits survive only in the reflog, which an agent rarely checks; under review in the replay (15d) |
+| `git branch -D` | WA-003 | Losing unmerged commits | 4 | 4 | The commits survive only in the reflog, which an agent rarely checks. The replay (15d) found one in a session, and it was a command that only mentioned the flag, now allowed; it stays tier 4 until a replay shows real deletes |
 | `git filter-branch`, `git filter-repo` | WA-003 | Rewriting history | 4 | 4 | Hard to undo, and usually pushed |
 | `--no-verify` | WA-003 | Skipping the project's own checks | 4 | 4 | The checks exist for a reason a person set |
 | `git config --global` or `--system` | WA-003 | Changing the machine for every project | 4 | 4 | It reaches outside the project |
@@ -41,19 +42,19 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | A new test file, a test file added on this branch, or a test line added on this branch | TEST-001 | none | 1 | 1 | Not an existing test; the pull request check sees it as new |
 | An additive or neutral edit to an existing test | TEST-001 | none | 1 | 1 | Nothing weakens |
 | A weakening edit to an existing test, with a spec `unlocks` entry citing a criterion | TEST-001 | none | 1 | 1 | The spec records the reason; the pull request review checks it |
-| A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 4 | 4, then 3 | Moves to the pull request when the test-change reviewer's eval passes (AC-5) |
+| A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 4, or 3 with `testWeakening: defer` | 4, then 3 | The default moves to the pull request when the test-change reviewer's eval passes (AC-5) |
 
 ## `guard-owned-paths` (rfr-core; Edit, Write; opt-in)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
-| An edit to a project file not on the `AGENTS.md` owned-paths list | #47 | An agent working outside its lane | 4 | 2 (15b) | The edit is reversible, and the agent can hand the change back to its caller instead |
+| An edit to a project file not on the `AGENTS.md` owned-paths list | #47 | An agent working outside its lane | 2 | 2 | The edit is reversible, and the agent can hand the change back to its caller instead |
 
 ## `guard-unreal` (rfr-unreal; shell commands)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
-| Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 4 | 2 (15b) | The agent can add `;Quit`; nothing is lost either way |
+| Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 2 | 2 | The agent can add `;Quit`; nothing is lost either way |
 
 ## `guard-mcp` (rfr-web; Vercel MCP)
 
@@ -70,10 +71,38 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | A merge or auto-merge of a gated pull request the person has not asked for | Process | Merging without approval | 4 | 4 | Merging is the approval itself |
 | A merge the person asked for in their own words | Process | none | 1 | 1 | The instruction is the approval (project-process AC-52) |
 
+## Reasons
+
+An ask reason has three parts, so the person can decide without reading the command (AC-3): `<source>: <action>. <why it cannot be undone or reaches outside the project>. If not approved: <what the agent does instead>.` A refusal names what was refused and the next step (AC-4). An allowed delete that git can undo carries the restore command as context for the agent, with no permission decision.
+
+## Snapshots
+
+Before a local command that would lose working-tree content, `guard-commands` commits the whole working tree, untracked files included and ignored files not, through a temporary index, so the working tree, the index, and the stash are not touched (AC-11). The commit is kept under `refs/rfr/snapshots/<time>`, which `git gc` leaves alone, and the command is allowed. The agent is told the restore command, for example `git restore --source=<sha> --worktree -- :/`, and the decision log records a `snapshot` line with the ref. Before `git stash drop` or `git stash clear`, the stash commits are kept the same way, and `git stash store` puts them back.
+
+- A restore brings back file content, not what was staged: staged changes come back as unstaged changes.
+- Ignored files are not kept, as for `rm -rf` of build output; `git clean -x` loses them.
+- If the snapshot fails, or does not finish in six seconds, the guard asks instead, and its reason says so.
+- A command that also needs a person (a force-push in the same line, say) asks, and takes no snapshot.
+- Snapshots older than 14 days, beyond the newest 50, are deleted when a new one is taken. `git for-each-ref refs/rfr/snapshots/` lists them, and `git update-ref -d <ref>` deletes one.
+
+## Project settings
+
+`.claude/rfr.json` at the repository root holds the guards' project settings:
+
+```json
+{ "testWeakening": "ask" }
+```
+
+`testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the guard refuses with "say so in your report", and the pull request's test-change review decides). The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
+
 ## Prompts rfr does not control
 
-Claude Code raises its own prompts for actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and writes to protected paths (`.claude`, `.git`, `.mcp.json`). rfr's guards neither add nor remove those. The practice guide for security (AC-9, slice 15d) will say which permission rules a project can set for them.
+Claude Code raises its own prompts for actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and writes to protected paths (`.claude`, `.git`, `.mcp.json`). rfr's guards neither add nor remove those. [security-for-agentic-projects.md](security-for-agentic-projects.md#the-guards-and-claude-codes-own-protections) explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, and sandbox, and which rules a project can set for these prompts.
 
 ## Measuring
 
 Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it, and an asked call that then runs adds an `approved` line. `node checks/guard-report.mjs <log>...` summarises one or more logs: asks per hour by guard and reason, and the share of asks that were approved. A reason approved in at least 95% of 20 or more asks is a candidate to move down a tier. Claude Code reports no hook event when a person declines a prompt, so an ask with no `approved` line was declined, or the session ended first.
+
+## Replay
+
+`node checks/guard-replay.mjs` replays recorded sessions through two versions of the guards. `extract` turns Claude Code transcripts into anonymised tool calls; `run` sends them through rfr-core 3.1.1 and through this checkout's guards, on a clone of the repository with edits applied in order, and writes a report. The first replay, of this repository's session that built #143 to #154, is in [evals/results/2026-11-08-15d-guard-replay](../evals/results/2026-11-08-15d-guard-replay/report.md): asks fell from 9 to 2. To replay another project's sessions, run `extract` there on the session files in `~/.claude/projects/<project>/`, read the output before sharing it, and `run` it with `--repo` pointing at that project.

@@ -253,19 +253,19 @@ test('model-adaptation#AC-6: the rule lint prints ledger mismatches as warnings 
 
 const releases = (...entries) => ['# Changelog', '', '## [Unreleased]', '', ...entries.flatMap(([v, extra]) => [`## [${v}] - 2026-11-09`, '', ...(extra ? [extra, ''] : []), '- Something.', ''])].join('\n');
 
-test('model-adaptation#AC-10: a release after 4.0.0 needs an "Evaluated on:" line naming models the ledger has', () => {
+test('model-adaptation#AC-10: a release after 5.1.3 needs an "Evaluated on:" line naming models the ledger has', () => {
   const ledgerModels = new Set(['claude-opus-5-5', 'claude-sonnet-5-5']);
   assert.deepEqual(evaluatedOn('Evaluated on: `claude-opus-5-5`, `claude-sonnet-5-5`.'), ['claude-opus-5-5', 'claude-sonnet-5-5']);
   assert.deepEqual(evaluatedOn('Evaluated on: claude-opus-5-5 and claude-sonnet-5-5'), ['claude-opus-5-5', 'claude-sonnet-5-5']);
   assert.equal(evaluatedOn('- Something.'), null);
 
-  assert.deepEqual(checkEvaluatedOn(releases(['4.1.0', 'Evaluated on: claude-opus-5-5, claude-sonnet-5-5.'], ['4.0.0']), ledgerModels), []);
+  assert.deepEqual(checkEvaluatedOn(releases(['5.2.0', 'Evaluated on: claude-opus-5-5, claude-sonnet-5-5.'], ['5.1.3']), ledgerModels), []);
 
-  const missing = checkEvaluatedOn(releases(['4.1.0'], ['4.0.0']), ledgerModels);
-  assert.deepEqual(missing, ['release 4.1.0 has no "Evaluated on:" line naming the models of the newest ledger run']);
+  const missing = checkEvaluatedOn(releases(['5.2.0'], ['5.1.3']), ledgerModels);
+  assert.deepEqual(missing, ['release 5.2.0 has no "Evaluated on:" line naming the models of the newest ledger run']);
 
-  const unknown = checkEvaluatedOn(releases(['4.0.1', 'Evaluated on: claude-opus-6']), ledgerModels);
-  assert.deepEqual(unknown, ['release 4.0.1 says it was evaluated on claude-opus-6, but evals/ledger.json has no entries for it']);
+  const unknown = checkEvaluatedOn(releases(['5.1.4', 'Evaluated on: claude-opus-6']), ledgerModels);
+  assert.deepEqual(unknown, ['release 5.1.4 says it was evaluated on claude-opus-6, but evals/ledger.json has no entries for it']);
 
-  assert.deepEqual(checkEvaluatedOn(releases(['4.0.0'], ['3.3.0'], ['0.9.0']), ledgerModels), [], 'releases up to 4.0.0 are exempt');
+  assert.deepEqual(checkEvaluatedOn(releases(['5.1.3'], ['4.0.0'], ['0.9.0']), ledgerModels), [], 'releases up to 5.1.3 are exempt');
 });

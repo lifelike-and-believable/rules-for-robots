@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ask, existedAtBase, readInput, textAtBase } from './lib.mjs';
+import { ask, askReason, deferredTestReason, deny, existedAtBase, guardSettings, readInput, textAtBase } from './lib.mjs';
 import { classifyTestChange } from './lib/test-diff.mjs';
 import { unlockedBy } from './spec-unlocks.mjs';
 
@@ -51,7 +51,9 @@ function applyEdit(tool, input, before) {
   return null;
 }
 
-// null to allow the edit, or { decision: 'ask', reason }.
+// null to allow the edit, or { decision: 'ask' | 'deny', reason }. A weakening asks (tier 4), or, when the
+// project sets testWeakening to defer in .claude/rfr.json, is refused for the pull request to decide
+// (tier 3; guard tiers AC-5).
 export function decideEdit(input) {
   const tool = input?.tool_name;
   const toolInput = input?.tool_input ?? {};
@@ -68,11 +70,14 @@ export function decideEdit(input) {
   const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: path.dirname(abs), encoding: 'utf8', timeout: 5000 });
   const repo = top.status === 0 && top.stdout.trim() ? top.stdout.trim() : root;
   const rel = path.relative(repo, abs).split(path.sep).join('/');
-  const intro = `rfr-core (TEST-001): ${rel} is an existing test`;
-  const advice = 'Approve only if the test itself is wrong; otherwise change the implementation.';
+  const settings = guardSettings(repo);
+  const decide = action => settings.testWeakening === 'defer'
+    ? { decision: 'deny', reason: deferredTestReason(action) }
+    : { decision: 'ask', reason: askReason({ source: 'rfr-core (TEST-001)', action, why: 'a weakened test can hide a broken behaviour, and only a person can say the old expectation was wrong', instead: 'leave the test as it is and change the implementation, or stop and report which test you would change and why' }) };
+  const intro = `${rel} is an existing test`;
   const before = fs.readFileSync(abs, 'utf8');
   const after = applyEdit(tool, toolInput, before);
-  if (after === null) return { decision: 'ask', reason: `${intro}, and the hook could not work out the edited file to check the change. ${advice}` };
+  if (after === null) return decide(`${intro}, and the hook could not work out the edited file to check the change`);
   // Judge the change against the file as it was where the branch started, as the pull request
   // review does: lines the branch added are the agent's own work, not an existing test. An edit
   // asks only when it brings a weakening of base content that the file did not already have
@@ -96,16 +101,14 @@ export function decideEdit(input) {
   const listed = findings.slice(0, 5).map(f => `${f.kind} (line ${f.line}): ${f.message}`).join('; ');
   const more = findings.length > 5 ? `; and ${findings.length - 5} more` : '';
   const what = result === 'unclear' ? 'the hook could not tell whether this edit weakens it' : 'this edit weakens it';
-  return {
-    decision: 'ask',
-    reason: `${intro}, and ${what}: ${listed}${more}. If a spec criterion changed, list the file under that spec's unlocks with the criterion ID. ${advice}`,
-  };
+  return decide(`${intro}, and ${what}: ${listed}${more} (if a spec criterion changed, list the file under that spec's unlocks with the criterion ID)`);
 }
 
 async function main() {
   const input = await readInput();
   const decision = decideEdit(input);
-  if (decision) ask(decision.reason);
+  if (decision?.decision === 'deny') deny(decision.reason);
+  else if (decision) ask(decision.reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

@@ -36,11 +36,10 @@ test('leaves ordinary commands alone', () => {
 });
 
 test('guard-commands prints an ask decision only for risky commands', () => {
-  // Since rfr-core 3.0.2 a hard reset asks only when it would discard something, so the run needs
-  // a repository with an uncommitted change, not whatever state the checkout running the tests is in.
+  // Since rfr-core 5.1.0 a hard reset takes a snapshot instead of asking (guard tiers AC-11), so
+  // the run asks about a force-push, which changes a remote.
   const r = gitRepo();
-  r.write({ 'src/a.ts': 'uncommitted\n' });
-  const risky = runHook('guard-commands.mjs', { cwd: r.dir, tool_name: 'Bash', tool_input: { command: 'git reset --hard' } });
+  const risky = runHook('guard-commands.mjs', { cwd: r.dir, tool_name: 'Bash', tool_input: { command: 'git push --force origin main' } });
   assert.equal(risky.status, 0);
   const decision = JSON.parse(risky.stdout).hookSpecificOutput;
   assert.equal(decision.hookEventName, 'PreToolUse');
@@ -249,7 +248,7 @@ function runOwnedPathsHook(projectDir, input) {
   });
 }
 
-test('guard-owned-paths asks before edits outside the owned paths (#47)', () => {
+test('guard-owned-paths refuses edits outside the owned paths, with a next step (#47)', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-owned-hook-'));
   fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# P\n\n## Owned paths\n\n- `Plugins/MyPlugin/**`\n');
 
@@ -261,7 +260,7 @@ test('guard-owned-paths asks before edits outside the owned paths (#47)', () => 
     const result = runOwnedPathsHook(dir, input);
     assert.equal(result.status, 0, result.stderr);
     const decision = JSON.parse(result.stdout).hookSpecificOutput;
-    assert.equal(decision.permissionDecision, 'ask');
+    assert.equal(decision.permissionDecision, 'deny');
     assert.match(decision.permissionDecisionReason, /public interface/);
     assert.match(decision.permissionDecisionReason, /missing interface/);
   }
@@ -558,23 +557,23 @@ function gitRepo(files = {}) {
   return { dir, git, write };
 }
 
-test('discarding changes asks only when there are changes to lose (rfr-core 3.0.2)', () => {
+test('discarding changes takes a snapshot only when there are changes to lose (rfr-core 3.0.2; snapshots in 5.1.0)', () => {
   const r = gitRepo();
   for (const command of ['git checkout -- .', 'git restore .', 'git reset --hard', 'git clean -fd', 'git checkout -q -- . 2>/dev/null; git switch -c next']) {
     assert.equal(decideCommand(command, { cwd: r.dir }), null, `clean tree: ${command}`);
   }
-  assert.equal(decideCommand('git reset --hard HEAD~1', { cwd: r.dir }).decision, 'ask', 'resetting to another commit can drop commits');
+  assert.equal(decideCommand('git reset --hard HEAD~1', { cwd: r.dir }).decision, 'inform', 'resetting to another commit can drop commits, so a snapshot keeps them');
   r.write({ 'src/a.ts': 'changed\n' });
   for (const command of ['git checkout -- .', 'git restore .', 'git reset --hard']) {
-    assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', `uncommitted change: ${command}`);
+    assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'inform', `uncommitted change: ${command}`);
   }
   assert.equal(decideCommand('git clean -fd', { cwd: r.dir }), null, 'no untracked files to delete');
   r.write({ 'src/new.ts': 'new\n' });
-  assert.equal(decideCommand('git clean -fd', { cwd: r.dir }).decision, 'ask', 'an untracked file would be deleted');
+  assert.equal(decideCommand('git clean -fd', { cwd: r.dir }).decision, 'inform', 'an untracked file would be deleted');
   // The folder the command runs in is the one after any cd.
   const other = gitRepo();
   assert.equal(decideCommand(`cd ${other.dir} && git checkout -- .`, { cwd: r.dir }), null);
-  assert.equal(decideCommand(`cd ${other.dir} && cd ${r.dir} && git checkout -- .`, { cwd: other.dir }).decision, 'ask');
+  assert.equal(decideCommand(`cd ${other.dir} && cd ${r.dir} && git checkout -- .`, { cwd: other.dir }).decision, 'inform');
 });
 
 test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2)", () => {
@@ -585,7 +584,7 @@ test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2
   r.write({ 'src/a.ts': 'lead change\n' });
   assert.equal(decideCommand(`cd ${wt} && git status --short && git checkout -- . && git status --short`, { cwd: r.dir }), null);
   assert.equal(decideCommand('git checkout -- .', { cwd: wt }), null);
-  assert.equal(decideCommand('git checkout -- .', { cwd: r.dir }).decision, 'ask', 'the main checkout still asks');
+  assert.equal(decideCommand('git checkout -- .', { cwd: r.dir }).decision, 'inform', 'the main checkout takes a snapshot first');
 });
 
 test('rm -rf asks unless everything it deletes is ignored by git and untracked (rfr-core 3.0.2)', () => {
@@ -594,7 +593,9 @@ test('rm -rf asks unless everything it deletes is ignored by git and untracked (
   assert.equal(decideCommand('rm -rf dist && CI=1 npx playwright test tests/e2e/a.spec.ts --trace off 2>&1 | tail -25', { cwd: r.dir }), null);
   assert.equal(decideCommand('rm -rf dist coverage', { cwd: r.dir }), null);
   assert.equal(decideCommand('rm -rf not-there', { cwd: r.dir }), null, 'nothing to delete');
-  for (const command of ['rm -rf build', 'rm -rf dist build', 'rm -rf src', 'rm -rf .', 'rm -rf /', 'rm -rf dist/*', 'rm -rf ../elsewhere']) {
+  // Tracked files with no uncommitted changes are allowed, with the command that restores them (guard tiers AC-12).
+  assert.equal(decideCommand('rm -rf dist build', { cwd: r.dir }).decision, 'inform');
+  for (const command of ['rm -rf .', 'rm -rf /', 'rm -rf dist/*', 'rm -rf ../elsewhere']) {
     assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', command);
   }
 });

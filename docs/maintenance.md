@@ -17,12 +17,22 @@ Rule IDs are never reused. A removed rule's ID stays retired so waivers and eval
 
 ## Releasing
 
-1. Move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, and name the pull requests the release contains. Add an `Evaluated on:` line naming the models of the newest model-release run in `evals/ledger.json` (for example `Evaluated on: claude-opus-5-5, claude-sonnet-5-5.`); the release check fails a release after 4.0.0 without one.
-2. Set the same version in `plugins/core/.claude-plugin/plugin.json`.
-3. Run `npm run build` and `npm run verify`. The release check fails if the changelog and plugin version disagree.
-4. Merge, then tag the merge commit `rfr-v<version>` (for example `rfr-v1.0.2`) and create a GitHub release from the changelog entry. Cloud agent sessions can push branches but not tags, so the maintainer pushes the tag.
+A release is prepared in pull requests and published from a machine that can push tags.
 
-In this repository, `/rfr-core:release` can drive these steps; it stops for confirmation before committing and tagging.
+1. In the pull request that changes a plugin, move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, name the pull request, and set the same version in `plugins/core/.claude-plugin/plugin.json`. Add an `Evaluated on:` line naming the models of the newest model-release run in `evals/ledger.json` (for example `Evaluated on: claude-opus-5-5, claude-sonnet-5-5.`). `npm run verify` fails if the changelog and plugin version disagree, or if a release after 5.1.3 has no `Evaluated on:` line.
+2. Merge. Several merged versions can go out as one release: its notes cover every version since the last tag.
+3. On a machine with git and `gh` signed in (Windows, macOS, or Linux; a cloud agent session cannot push tags), fetch and prepare:
+
+   ```
+   git fetch origin --tags
+   node checks/release.mjs prepare --commit <merge commit>
+   ```
+
+   `prepare` checks that the commit is on `origin/main`, that its plugin version has a changelog entry, and that no tag of that name exists, then writes the notes (every changelog section since the newest `rfr-v` tag) to a file and prints the commands. It changes nothing on the remote. Fetching is enough; there is no need to check out or pull `main`.
+4. Check that CI passed on the commit (`gh run list --commit <sha> --workflow verify.yml`), and confirm with the maintainer before going on. A pushed tag and a published release are public and hard to take back.
+5. Run the printed commands: an annotated tag `rfr-v<version>` on the commit, `git push origin rfr-v<version>`, and `gh release create rfr-v<version> --title rfr-v<version> --notes-file <file> --verify-tag`. Releases are titled with the tag name, and GitHub marks the newest as Latest.
+
+`node checks/release.mjs notes [--since <version>] [--to <version>]` prints the notes without the checks. `/rfr-core:release` can drive these steps; it stops for confirmation before tagging. An agent session on the maintainer's computer can run steps 3 to 5; an agent in the cloud can prepare everything up to step 2 and hand the commit to it.
 
 ## New model
 

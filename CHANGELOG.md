@@ -4,15 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-## [4.0.1] - 2026-11-08
+## [5.1.4] - 2026-11-08
 
-Pull requests: #149, #152.
+Pull requests: #152.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
-- `rfr-core` 4.0.1 (#152): TEST-001 and WA-002 carry `evaluated-on: [claude-opus-5-5, claude-sonnet-5-5]` and TEST-004 carries `evaluated-on: [claude-sonnet-5-5]`, from the model-release baseline. Metadata only; no rule text changes. Adopters: nothing to do; `/rfr-core:install-rules` picks up the field on the next refresh.
+- `rfr-core` 5.1.4 (#152): TEST-001 and WA-002 carry `evaluated-on: [claude-opus-5-5, claude-sonnet-5-5]` and TEST-004 carries `evaluated-on: [claude-sonnet-5-5]`, from the model-release baseline. Metadata only; no rule text changes. Adopters: nothing to do; `/rfr-core:install-rules` picks up the field on the next refresh.
 
 ### Added
 
@@ -21,16 +21,89 @@ Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
   - `docs/maintenance.md` has a "New model" section: the steps to run when a new model reaches Claude Code, and the default decision for each ledger result. The quarterly review points to it.
   - A `New model` issue form (`.github/ISSUE_TEMPLATE/model-release.yml`) holds the same checklist.
   - `PLAN.md` section 5 keeps the guidance that has held across generations and moves what depends on one generation into a table that gains a column per model-release run. Decision 7 targets the newest generations with ledger entries.
-  - `checks/release.mjs` fails a release after 4.0.0 whose changelog entry has no `Evaluated on:` line, or names a model with no ledger entries.
+  - `checks/release.mjs` fails a release after 5.1.3 whose changelog entry has no `Evaluated on:` line, or names a model with no ledger entries.
+
+## [5.1.3] - 2026-11-08
+
+Pull requests: #156.
+
+### Changed
+
+- `/rfr-core:release` (#156): fetch instead of pulling; confirm with the user just before pushing a tag or publishing a release, even when another session or a written procedure asked for it; name releases the way earlier ones are named; take the notes from the changelog; and prefer commands that work in every shell. These come from the first release published from a desktop session (`rfr-v5.1.1`), where the steps used `grep` on Windows, left out how to cut the notes, and titled the release differently from earlier ones.
+  - `checks/release.mjs` gains `notes` and `prepare --commit <sha>`, and `docs/maintenance.md` describes the release steps around them. Repository tooling only.
+  - Adopters: update `rfr-core` to 5.1.3. Nothing else to do.
+
+## [5.1.2] - 2026-11-08
+
+Pull requests: #155.
+
+### Fixed
+
+- `guard-commands` matches its dangerous-command patterns (force-push, `git branch -D`, `git stash drop`, `--no-verify`, `drizzle-kit push`, and the rest) only against what a command line runs: each command's words, and a heredoc's body only when a shell reads it (`bash <<EOF`). A Python script or `cat > file` heredoc that only mentions `git push --force` no longer asks (#155; found by the guard replay).
+
+### Added
+
+- Guard tiers, slice 15d (#155; `docs/specs/guard-tiers.md`, AC-8, AC-9). Repository tooling and guides; the only plugin change is the fix above.
+  - `checks/guard-replay.mjs`: `extract` turns Claude Code transcripts into anonymised tool calls; `run` replays them through rfr-core 3.1.1 and the current guards on a clone of the repository and writes a report.
+  - The first replay, of this repository's session that built #143 to #154 (634 calls), is in `evals/results/2026-11-08-15d-guard-replay/`: asks fell from 9 to 2, and to 1 with `testWeakening: defer`. The notes there show how the result depends on the replay's assumptions. The Kettlebird pilot's sessions are not replayed yet.
+  - `practices/security-for-agentic-projects.md` explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, sandbox, and headless runs (AC-9). `practices/guards.md` gains a replay section.
+  - Adopters: update `rfr-core` to 5.1.2. Nothing else to do.
+
+## [5.1.1] - 2026-11-08
+
+Pull requests: #154.
+
+### Changed
+
+- WA-003 asks before actions that cannot be undone or reach outside the project (#154). Discarding uncommitted changes and deleting files inside the repository no longer need a question when rfr-core's guards are installed, because 5.1.0 takes a snapshot first; the agent goes ahead and names the restore command in its report. Without the guards, the rule still asks. The rule now matches what the guard allows.
+  - The changelog lists slice 17a (#149) under 4.0.0, where it was released; it had stayed under Unreleased.
+  - Adopters: update `rfr-core` to 5.1.1. Projects that copy the rules (`/rfr-core:install-rules`) get the new WA-003 text on their next install.
+
+## [5.1.0] - 2026-11-08
+
+Pull requests: #153.
+
+### Changed
+
+- Guard tiers, slice 15c (#153; `docs/specs/guard-tiers.md`, AC-11). Destructive local commands no longer ask: `guard-commands` takes a snapshot first, allows the command, and tells the agent how to undo it. Released with `rfr-web` 1.0.2 and `rfr-unreal` 2.0.1.
+  - Covered: `git checkout -- .`, `git restore .`, `git reset --hard` (to `HEAD` or to another commit), `git clean -f`, `git stash drop` and `clear`, and `rm -rf` inside the repository of files with uncommitted changes or untracked files. Each used to ask when there was something to lose.
+  - A snapshot is a commit of the whole working tree, untracked files included and ignored files not, written through a temporary index, so the working tree, index, and stash are untouched. It is kept under `refs/rfr/snapshots/<time>`. Before a stash is dropped, its commits are kept the same way, and `git stash store` puts them back. A restore brings back content; staged changes come back unstaged.
+  - The guard asks instead when the snapshot fails or takes longer than six seconds, and when the same command also needs a person (a force-push, say).
+  - Snapshots older than 14 days, beyond the newest 50, are deleted when a new one is taken.
+  - The decision log records a `snapshot` line with the ref, and `checks/guard-report.mjs` counts snapshots.
+  - Every ask reason now starts its second sentence with a capital letter. `lib.mjs` carries the change, so `rfr-web` and `rfr-unreal` get patch releases for their copies.
+  - WA-003's `check:` text describes the snapshot.
+  - Adopters: update `rfr-core` to 5.1.0 (and `rfr-web` and `rfr-unreal` if you use them). Snapshot refs appear under `refs/rfr/snapshots/`; they are local and never pushed unless you push them by name.
+
+## [5.0.0] - 2026-11-08
+
+Pull requests: #151.
+
+### Changed
+
+- **Breaking:** guard tiers, slice 15b (#151; `docs/specs/guard-tiers.md`, AC-3, AC-4, AC-5, AC-12). Guards ask a person only about actions that cannot be undone or reach outside the project; problems the agent can fix itself are refused with a next step. Released with `rfr-unreal` 2.0.0 and `rfr-web` 1.0.1.
+  - Every ask reason now has three parts: the action, why a person must decide, and "If not approved:" with what the agent does instead (AC-3). This covers `guard-commands`, `guard-test-edits`, and `rfr-web`'s `guard-mcp`.
+  - `guard-commands` refuses a snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) unless the command states its reason as `RFR_SNAPSHOT_REASON="..."`, and the agent gives the same reason in its report (AC-4). It used to ask.
+  - `guard-commands` allows `rm -rf` of tracked files with no uncommitted changes, and tells the agent the `git checkout -- <path>` that restores them (AC-12). It used to ask. A folder with a modified or untracked file still asks until snapshots arrive in 15c.
+  - `guard-owned-paths` refuses an edit outside the owned paths with the next step (use the public interface, or report the missing one, or add the path to "Owned paths") instead of asking (AC-4).
+  - A new project setting, `testWeakening` in `.claude/rfr.json`: `ask` (the default) keeps asking before a weakening edit, move, or delete of an existing test; `defer` refuses it with "say so in your report", and the pull request's test-change review decides (AC-5). The default becomes `defer` in the release that records test-change-review AC-11 as passed.
+  - `rfr-unreal` 2.0.0, **breaking:** `guard-unreal` refuses an editor `-ExecCmds` list without a final `Quit` and tells the agent to add `;Quit`, instead of asking (AC-4).
+  - `rfr-web` 1.0.1: `guard-mcp`'s questions gain the "If not approved:" part; what it asks about does not change.
+  - `practices/guards.md` shows the new tiers, the reason format, and the setting.
+  - TEST-001 now tells the agent to change existing test files with the Edit tool, never through the shell, so it does so from the start rather than after a refusal. Its `check:` text names the snapshot refusal.
+  - Adopters: update `rfr-core` to 5.0.0, and `rfr-unreal` to 2.0.0 if you use it. A snapshot update the agent means to make now needs `RFR_SNAPSHOT_REASON="..."` in the command; a script or instruction that runs `-u` without it is refused. A project that keeps an `AGENTS.md` owned-paths list and relied on approving edits outside it adds those paths to the list. To defer test weakening to the pull request now, add `.claude/rfr.json` with `{ "testWeakening": "defer" }` and keep the test-change review in your pull request checks.
+
+## [4.0.0] - 2026-11-08
+
+Pull requests: #148, #149, #150.
+
+### Added
+
 - Model adaptation, slice 17a (#149; `docs/specs/model-adaptation.md`, AC-1 to AC-6). Repository tooling only; no plugin changes.
   - `evals/suites/model-release.json`: the cases to run on each new model. `green-at-all-costs` and `tdd-feature` run with and without rules, and five saturated cases run without rules as controls. 27 runs per model.
   - `evals/run.mjs` gains `--suite` and `--max-cost`, and records the model each session reported and the Claude Code version; the summary lists runs whose reported model differs from the one requested.
   - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
   - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
-
-## [4.0.0] - 2026-11-08
-
-Pull requests: #148, #150.
 
 ### Changed
 

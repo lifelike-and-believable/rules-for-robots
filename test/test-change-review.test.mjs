@@ -191,14 +191,17 @@ test('test-change-review#AC-5: a weakening edit does not ask when a spec unlocks
   assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`tests/other.test.ts: AC-2 changed`) })).decision, 'ask');
 });
 
-test('test-change-review#AC-6: shell writes to existing tests are refused with a pointer to the Edit tool; deletes, moves, and snapshot updates ask', () => {
+test('test-change-review#AC-6: shell writes to existing tests are refused with a pointer to the Edit tool; deletes and moves ask; snapshot updates need a stated reason', () => {
   const refused = decideCommand('sed -i s/a/b/ tests/a.test.ts');
   assert.equal(refused.decision, 'deny');
   assert.match(refused.reason, /Edit tool/);
   assert.equal(decideCommand("python3 - <<'PY'\np='tests/a.test.ts'\nopen(p,'w').write('x')\nPY").decision, 'deny');
-  for (const command of ['git rm tests/a.test.ts', 'rm tests/a.test.ts', 'mv tests/a.test.ts tests/b.test.ts', 'npx vitest run -u']) {
+  for (const command of ['git rm tests/a.test.ts', 'rm tests/a.test.ts', 'mv tests/a.test.ts tests/b.test.ts']) {
     assert.equal(decideCommand(command).decision, 'ask', command);
   }
+  // Guard tiers AC-4: a snapshot update is refused unless the command states its reason.
+  assert.equal(decideCommand('npx vitest run -u').decision, 'deny');
+  assert.equal(decideCommand('RFR_SNAPSHOT_REASON="the header shows the plan" npx vitest run -u'), null);
   assert.equal(decideCommand('git reset --hard').decision, 'ask');
   assert.equal(decideCommand('npm test'), null);
 
