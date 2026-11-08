@@ -347,6 +347,15 @@ The guards ask whenever an action matches a dangerous pattern, and most prompts 
 - **15d:** the replay and the practice guide (AC-8, AC-9).
 - **15e:** the eval (AC-10).
 
+### Phase 16: Domain plugins (planned)
+Spec: [docs/specs/plugin-split.md](docs/specs/plugin-split.md) (draft).
+Pull requests: none yet.
+
+`rfr-core` carries web and Unreal skills, agents, and hooks that only one kind of project uses. They move into `rfr-web` and `rfr-unreal`, the `plugins/web/` and `plugins/unreal/` this plan's layout always listed, so each project installs only its domain's parts. The reviewer agents that cover both domains stay in `rfr-core`. The split ships as one breaking release: `rfr-core` 4.0.0 with `rfr-web` and `rfr-unreal` 1.0.0.
+
+- **16a:** the two plugins, the moves, the build copies, the marketplace, and the guard changes (AC-1 to AC-6).
+- **16b:** templates, `install-rules`, the eval harness, and documentation (AC-7 to AC-9); then the release (AC-10).
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
@@ -393,3 +402,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 6. Phase 10: approve the spec-to-test traceability slice, then build 10a.
 7. Phase 11: 11a to 11c done (#103, #104, #105). Research amendment approved (#106). 11e done (#107); a pilot on the Kettlebird website is running. 11f done (#108). Pilot fixes rounds 1 to 7 done (#109, #111, #112, #114, #117, #118, #119); the pilot continues. 11g done (#113): advisory Vale and Stryker jobs, and tutorials against preview deployments. 11h done (#116): the Unreal fixture tutorial, screenshot test, and demo render on the Tier 2 GPU runner. 11d waits for Phase 10's eval round (10c), which the amendment proposes should also compare Stryker with the sabotage step.
 8. Phase 15: approve the guard-tiers spec, then build 15a once #144 (the decision log) has merged.
+9. Phase 16: approve the domain-plugins spec, then build 16a once #143 and #146 have merged.
