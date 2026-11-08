@@ -27,6 +27,7 @@ Pull requests: #151.
   - `rfr-unreal` 2.0.0, **breaking:** `guard-unreal` refuses an editor `-ExecCmds` list without a final `Quit` and tells the agent to add `;Quit`, instead of asking (AC-4).
   - `rfr-web` 1.0.1: `guard-mcp`'s questions gain the "If not approved:" part; what it asks about does not change.
   - `practices/guards.md` shows the new tiers, the reason format, and the setting.
+  - TEST-001 now tells the agent to change existing test files with the Edit tool, never through the shell, so it does so from the start rather than after a refusal. Its `check:` text names the snapshot refusal.
   - Adopters: update `rfr-core` to 5.0.0, and `rfr-unreal` to 2.0.0 if you use it. A snapshot update the agent means to make now needs `RFR_SNAPSHOT_REASON="..."` in the command; a script or instruction that runs `-u` without it is refused. A project that keeps an `AGENTS.md` owned-paths list and relied on approving edits outside it adds those paths to the list. To defer test weakening to the pull request now, add `.claude/rfr.json` with `{ "testWeakening": "defer" }` and keep the test-change review in your pull request checks.
 
 ## [4.0.0] - 2026-11-08
