@@ -4,14 +4,14 @@ status: draft
 
 # Model adaptation
 
-A standing procedure for when a new Claude model reaches Claude Code: a fixed, budgeted eval suite that can run within days of the release, a ledger that records which rules, agents, and skills have evidence on which model, and a set of decisions the results feed (keep, rewrite, demote, or remove a rule; change an agent's model; replace a saturated eval case). The plan already says rules are re-evaluated on every new model generation (principle 8; `docs/maintenance.md`, "Review cycle"), but it does not say how, at what cost, or where the result is kept. This spec fills that gap. It is written so that it does not depend on any one release.
+A standing procedure for when a new Claude model reaches Claude Code: a fixed, budgeted eval suite that can run within days of the release, a ledger that records which rules, agents, and skills have evidence on which model, and a set of decisions the results feed (keep, rewrite, demote, or remove a rule; change an agent's model; replace a saturated eval case). The plan already says rules are re-evaluated on every new model generation (principle 8; `docs/maintenance.md`, "Review cycle"), but it does not say how, at what cost, or where the result is kept. This spec fills that gap. It is written so that it does not depend on any one release. Approved by the project lead on 2026-11-08. The `status` field stays `draft` until every `test:` criterion has a citing test, because `spec-trace` treats every uncited criterion of an approved spec as an error.
 
 ## Problem
 
 New models will keep arriving, and the rule set is tuned to one generation:
 
 - Decision 7 and section 5 of `PLAN.md` are written for Opus 5.5 and Sonnet 5.5. The wording guidance in section 5 (emphatic wording over-triggers; generic "verify" causes over-verification on Opus 5 and later) changed between the 4.x and 5.x generations and may change again.
-- Nothing records which rules have evidence on which model. `observed-on` records where a failure was seen, not where a rule was tested, and 41 of 56 rules have `observed-on: []`. After a new model ships, there is no way to tell which rules have been checked against it and which are carried over on old evidence.
+- Nothing records which rules have evidence on which model. `observed-on` records where a failure was seen, not where a rule was tested, and 41 of 54 rules have `observed-on: []`. After a new model ships, there is no way to tell which rules have been checked against it and which are carried over on old evidence.
 - The eval cases saturate. The seed tasks showed none of the target failures even without rules; round 2's no-rules baseline passed 18 of 18; in Phase 8, three of five cases showed no rule effect on either model. A case the no-rules arm passes cannot show that a rule helps, and a stronger model will saturate more of them. METR's assessment of Anthropic's internal "Model 4" (2026-11-05) reports the same problem for its own benchmarks: the model scored above 50% on all 15, and METR wrote that the lack of hard benchmarks "makes us somewhat nervous".
 - Agents name `opus` or `sonnet` as aliases (9 of 12 `rfr-core` agents), so a new model reaches adopters when the alias moves, with no eval. That is the right default for adopters, but the changelog cannot say which model a release was tested on.
 - Releases are getting closer together. The same METR report estimates that Anthropic's benchmark progress has run at about 1.9 times its earlier rate since October 2025, and three internal models finished training between July and October 2026. A quarterly review alone can fall a full generation behind.
@@ -63,9 +63,11 @@ The report informs these; the maintainer decides, and each change goes through t
 
 ## APIs and assumptions
 
-- `claude -p --output-format stream-json --verbose` emits a `system` event of subtype `init` that names the session's model, and the final `result` event reports usage per model ID. `evals/run.mjs` already reads this stream for cost. To be confirmed on the installed Claude Code version in 17a.
+- `claude -p --output-format stream-json --verbose` emits a `system` event of subtype `init` that names the session's model, and the final `result` event reports usage per model ID. `evals/run.mjs` already reads this stream for cost. Confirmed in 17a on Claude Code 2.1.319: the init event has `model` and `claude_code_version`, an alias such as `haiku` is reported as the ID it resolved to (`claude-haiku-5-5`), and the result has `modelUsage` keyed by model ID.
+- Smoke tests pass or fail per case, so an agent or skill is `effective` on a model when every one of its smoke cases passed and `negative` when any failed. Smoke results record the main session's model; results from before 17a used `claude-sonnet-5-5`.
+- When one results folder has several cases for a rule, the verdict that most needs attention wins: `negative`, then `effective`, `no-effect`, and `saturated`.
 - Model aliases (`opus`, `sonnet`, `haiku`) in agent frontmatter resolve to the newest model of that family that Claude Code offers; pinned IDs do not move.
-- A model-release run of the current suite is estimated at 60 to 120 runs per new model (one model, two arms, three runs, plus controls), about $15 to $40 at Phase 8's mean cost per run. The long-session cases from #69 cost more per run and join the suite only once they show an effect.
+- The suite built in 17a has 27 runs per model: two effect cases in two arms and five controls in one, three runs each. At Phase 8's mean cost per run that is about $3 for Sonnet and $5 for Opus; the suite's `maxCostUsd` of $40 leaves room for harder and long-session cases. (The draft estimated 60 to 120 runs before the suite was chosen.) The long-session cases from #69 cost more per run and join the suite only once they show an effect.
 
 ## Non-functional requirements
 
@@ -77,4 +79,4 @@ The report informs these; the maintainer decides, and each change goes through t
 
 - Plan or roadmap item: `PLAN.md`, Phase 17.
 - Slices: 17a the suite, the runner options, model ID recording, and the ledger and its check (AC-1 to AC-6); 17b the maintenance section, the issue form, the plan restructure, and the changelog check (AC-7 to AC-10); 17c the baseline run (AC-11), with the first decisions it supports.
-- Pull requests: #149 (spec).
+- Pull requests: #149 (spec and 17a).

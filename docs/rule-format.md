@@ -51,6 +51,7 @@ sources: ["docs/research/findings.md#agents-cheat-mainly-by-editing-tests"]
 | `observed-on` | Yes | List of model IDs, or `[]` | Models on which the failure was documented or measured |
 | `rationale` | Yes | One sentence | Why the rule exists, for maintainers |
 | `sources` | No | List of repo paths or URLs | Evidence |
+| `evaluated-on` | No | List of model IDs | Models on which an eval showed the rule changes behaviour. The lint warns when it disagrees with the `effective` verdicts in `evals/ledger.json` ([model adaptation](specs/model-adaptation.md)) |
 
 ### Failure vocabulary
 

@@ -19,10 +19,19 @@
 // A case's bin/ folder, if present, goes first on PATH (for fake CLIs such as gh). It stays
 // outside the workspace so the agent sees the commands, not their source.
 //
+// A suite (evals/suites/<name>.json, docs/specs/model-adaptation.md) fixes the cases, arms,
+// and runs for a recurring round such as the model-release run; --cases narrows it.
+// --max-cost stops starting runs once the finished runs have cost that much; runs already
+// started finish, so the total can pass the cap by up to --concurrency runs.
+//
+// Each run record has the model the session reported and the Claude Code version, read
+// from the stream's init event, so an alias or a fallback shows in the results.
+//
 // Usage:
 //   node evals/run.mjs [--cases a,b] [--models claude-sonnet-5-5,claude-opus-5-5]
 //                      [--arms none,rules,rules+hooks] [--runs 3] [--concurrency 4]
 //                      [--effort medium] [--out evals/results/<stamp>]
+//                      [--suite model-release] [--max-cost 40]
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -32,13 +41,17 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CASES = path.join(ROOT, 'evals', 'cases');
 const CANDIDATES = path.join(ROOT, 'evals', 'candidates');
+const SUITES = path.join(ROOT, 'evals', 'suites');
 const ALL_ARMS = ['none', 'rules', 'rules+hooks'];
+export const KNOWN_ARMS = [...ALL_ARMS, 'rules+agents', 'rules+candidate'];
 
-function parseArgs(argv) {
-  const opts = { runs: 3, concurrency: 4, models: ['claude-sonnet-5-5', 'claude-opus-5-5'], arms: ALL_ARMS, effort: null, cases: null };
+export function parseArgs(argv) {
+  const opts = { runs: 3, runsGiven: false, concurrency: 4, models: ['claude-sonnet-5-5', 'claude-opus-5-5'], arms: ALL_ARMS, effort: null, cases: null, suite: null, maxCost: null };
   for (let i = 0; i < argv.length; i++) {
     const [key, value] = [argv[i], argv[i + 1]];
-    if (key === '--runs') opts.runs = Number(value), i++;
+    if (key === '--runs') opts.runs = Number(value), opts.runsGiven = true, i++;
+    else if (key === '--suite') opts.suite = value, i++;
+    else if (key === '--max-cost') opts.maxCost = Number(value), i++;
     else if (key === '--concurrency') opts.concurrency = Number(value), i++;
     else if (key === '--models') opts.models = value.split(','), i++;
     else if (key === '--arms') opts.arms = value.split(','), i++;
@@ -112,6 +125,67 @@ export function loadCases(filter) {
   return fs.readdirSync(CASES, { withFileTypes: true })
     .filter(e => e.isDirectory() && (!filter || filter.includes(e.name)))
     .map(e => loadCase(path.join(CASES, e.name)));
+}
+
+// A suite file: { description, runs, maxCostUsd, entries: [{ case, arms, reason }] }.
+// Returns the problems found, so a test can check every suite in the repository.
+export function suiteProblems(suite, caseNames) {
+  const problems = [];
+  if (!Array.isArray(suite?.entries) || !suite.entries.length) return ['entries must be a non-empty list'];
+  if (suite.runs !== undefined && !(Number.isInteger(suite.runs) && suite.runs > 0)) problems.push('runs must be a positive whole number');
+  if (suite.maxCostUsd !== undefined && !(typeof suite.maxCostUsd === 'number' && suite.maxCostUsd > 0)) problems.push('maxCostUsd must be a positive number');
+  const seen = new Set();
+  for (const [i, e] of suite.entries.entries()) {
+    const at = `entry ${i + 1}${e?.case ? ` (${e.case})` : ''}`;
+    if (!e?.case || !caseNames.includes(e.case)) problems.push(`${at}: no case named "${e?.case ?? ''}" in evals/cases/`);
+    if (seen.has(e?.case)) problems.push(`${at}: listed twice`);
+    seen.add(e?.case);
+    if (!Array.isArray(e?.arms) || !e.arms.length) problems.push(`${at}: arms must be a non-empty list`);
+    else for (const a of e.arms) if (!KNOWN_ARMS.includes(a)) problems.push(`${at}: unknown arm "${a}"`);
+    if (typeof e?.reason !== 'string' || !e.reason.trim()) problems.push(`${at}: needs a reason`);
+  }
+  return problems;
+}
+
+export function loadSuite(name, dir = SUITES) {
+  const suite = JSON.parse(fs.readFileSync(path.join(dir, `${name}.json`), 'utf8'));
+  return { name, ...suite };
+}
+
+// The jobs for one invocation. With a suite, its entries give the cases and arms (narrowed by
+// --cases), and its runs apply unless --runs was given; otherwise every case runs every arm.
+export function planJobs(cases, opts, suite = null) {
+  const jobs = [];
+  if (suite) {
+    const runs = opts.runsGiven ? opts.runs : (suite.runs ?? opts.runs);
+    const byName = new Map(cases.map(c => [c.name, c]));
+    for (const entry of suite.entries) {
+      if (opts.cases && !opts.cases.includes(entry.case)) continue;
+      const testCase = byName.get(entry.case);
+      if (!testCase) throw new Error(`suite ${suite.name}: no case named ${entry.case}`);
+      for (const model of opts.models) for (const arm of entry.arms) {
+        for (let run = 1; run <= runs; run++) jobs.push({ testCase, model, arm, run });
+      }
+    }
+    return jobs;
+  }
+  for (const testCase of cases) for (const model of opts.models) for (const arm of opts.arms) {
+    for (let run = 1; run <= opts.runs; run++) jobs.push({ testCase, model, arm, run });
+  }
+  return jobs;
+}
+
+// What the session said about itself: the model from the first init event (an alias such as
+// "opus" is reported as the ID it resolved to), else the model with the largest cost in the
+// last result's usage, and the Claude Code version from the init event.
+export function reportedRun(events) {
+  const init = events.find(e => e.type === 'system' && e.subtype === 'init');
+  let model = init?.model ?? null;
+  if (!model) {
+    const usage = [...events].reverse().find(e => e.type === 'result' && e.modelUsage)?.modelUsage ?? {};
+    model = Object.entries(usage).sort((a, b) => (b[1]?.costUSD ?? 0) - (a[1]?.costUSD ?? 0))[0]?.[0] ?? null;
+  }
+  return { reportedModel: model, claudeCode: init?.claude_code_version ?? null };
 }
 
 function parseEvents(text) {
@@ -331,16 +405,34 @@ async function gradeRun(testCase, dir, run, arm) {
   };
 }
 
-async function pool(items, limit, worker) {
-  const results = new Array(items.length);
+// Runs the jobs with a concurrency limit. With maxCost, no job starts once the records
+// finished so far have cost that much; skipped jobs are counted, not recorded.
+export async function runJobs(items, { concurrency = 4, maxCost = null, worker }) {
+  const records = [];
   let next = 0;
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+  let spent = 0;
+  let skipped = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, async () => {
     while (next < items.length) {
       const i = next++;
-      results[i] = await worker(items[i], i);
+      if (maxCost !== null && spent >= maxCost) { skipped++; continue; }
+      const record = await worker(items[i], i);
+      spent += record?.costUsd ?? 0;
+      records[i] = record;
     }
   }));
-  return results;
+  return { records: records.filter(Boolean), skipped, spent: +spent.toFixed(4) };
+}
+
+// Runs whose session reported a model other than the one requested, grouped.
+export function modelMismatches(records) {
+  const counts = new Map();
+  for (const r of records) {
+    if (!r.reportedModel || r.reportedModel === r.model) continue;
+    const key = `${r.model}|${r.reportedModel}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts].map(([key, runs]) => { const [requested, reported] = key.split('|'); return { requested, reported, runs }; });
 }
 
 function summarize(records) {
@@ -360,12 +452,15 @@ function summarize(records) {
   return rows;
 }
 
-function markdown(rows, opts) {
+export function markdown(rows, opts, { mismatches = [], skipped = 0, spent = null, maxCost = null, claudeCode = null } = {}) {
   const lines = [
     `# Eval results`,
     '',
-    `Runs per cell: ${opts.runs}. Models: ${opts.models.join(', ')}. Effort: ${opts.effort ?? 'default'}. Claude Code: ${spawnSync('claude', ['--version'], { encoding: 'utf8' }).stdout.trim()}.`,
+    `${opts.suite ? `Suite: ${opts.suite}. ` : ''}Runs per cell: ${opts.runs}. Models: ${opts.models.join(', ')}. Effort: ${opts.effort ?? 'default'}. Claude Code: ${claudeCode ?? 'unknown'}.`,
     '',
+    ...mismatches.map(m => `Requested ${m.requested}, but the session reported ${m.reported} in ${m.runs} run(s); the table groups by the requested model.`),
+    ...(skipped ? [`Skipped ${skipped} run(s): the cost cap of $${maxCost} was reached ($${spent} spent).`] : []),
+    ...(mismatches.length || skipped ? [''] : []),
     '| Case | Model | Arm | Pass | pass^k | Mean cost (USD) |',
     '|---|---|---|---|---|---|',
     ...rows.map(r => `| ${r.case} | ${r.model} | ${r.arm} | ${r.passes}/${r.runs} | ${r.passAll ? 'yes' : 'no'} | ${r.meanCostUsd} |`),
@@ -375,33 +470,39 @@ function markdown(rows, opts) {
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
-  const cases = loadCases(opts.cases);
+  const suite = opts.suite ? loadSuite(opts.suite) : null;
+  if (suite) {
+    const problems = suiteProblems(suite, loadCases(null).map(c => c.name));
+    if (problems.length) throw new Error(`suite ${suite.name}: ${problems.join('; ')}`);
+    if (!opts.runsGiven) opts.runs = suite.runs ?? opts.runs;
+    if (opts.maxCost === null && suite.maxCostUsd) opts.maxCost = suite.maxCostUsd;
+  }
+  const cases = loadCases(suite ? suite.entries.map(e => e.case).filter(n => !opts.cases || opts.cases.includes(n)) : opts.cases);
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const out = path.resolve(opts.out ?? path.join(ROOT, 'evals', 'results', stamp));
   fs.mkdirSync(out, { recursive: true });
 
-  const jobs = [];
-  for (const testCase of cases) for (const model of opts.models) for (const arm of opts.arms) {
-    for (let run = 1; run <= opts.runs; run++) jobs.push({ testCase, model, arm, run });
-  }
-  console.log(`${jobs.length} run(s) across ${cases.length} case(s); results in ${path.relative(ROOT, out)}`);
+  const jobs = planJobs(cases, opts, suite);
+  console.log(`${jobs.length} run(s) across ${cases.length} case(s)${opts.maxCost !== null ? `, capped at $${opts.maxCost}` : ''}; results in ${path.relative(ROOT, out)}`);
 
-  const records = await pool(jobs, opts.concurrency, async ({ testCase, model, arm, run }) => {
+  const { records, skipped, spent } = await runJobs(jobs, { concurrency: opts.concurrency, maxCost: opts.maxCost, worker: async ({ testCase, model, arm, run }) => {
     const dir = await prepareWorkspace(testCase, arm);
     const result = await runClaude({ dir, prompts: testCase.prompts, model, arm, meta: testCase.meta, effort: opts.effort, testCase });
     const graded = await gradeRun(testCase, dir, result, arm);
-    const record = { case: testCase.name, model, arm, run, ...graded };
+    const record = { case: testCase.name, model, ...reportedRun(result.events), arm, run, effort: opts.effort ?? 'default', ...graded };
     const tag = `${testCase.name}.${model}.${arm.replace('+', '-')}.${run}`;
     fs.writeFileSync(path.join(out, `${tag}.transcript.jsonl`), result.events.map(e => JSON.stringify(e)).join('\n'));
     fs.rmSync(dir, { recursive: true, force: true });
     console.log(`${record.pass ? 'PASS' : 'FAIL'} ${tag} ${JSON.stringify(graded.checks ?? {})}`);
     return record;
-  });
+  } });
 
   const rows = summarize(records);
+  const claudeCode = records.find(r => r.claudeCode)?.claudeCode ?? spawnSync('claude', ['--version'], { encoding: 'utf8' }).stdout.trim();
+  const notes = { mismatches: modelMismatches(records), skipped, spent, maxCost: opts.maxCost, claudeCode };
   fs.writeFileSync(path.join(out, 'runs.json'), JSON.stringify(records, null, 2));
-  fs.writeFileSync(path.join(out, 'summary.md'), markdown(rows, opts));
-  console.log('\n' + markdown(rows, opts));
+  fs.writeFileSync(path.join(out, 'summary.md'), markdown(rows, opts, notes));
+  console.log('\n' + markdown(rows, opts, notes));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
