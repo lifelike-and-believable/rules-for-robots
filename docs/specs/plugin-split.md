@@ -69,4 +69,4 @@ Split the domain-specific parts of `rfr-core` into two new plugins, `rfr-web` an
 - Plan or roadmap item: `PLAN.md`, Phase 16.
 - Order: after #143 and #146 merge, because both change `plugins/core/` heavily.
 - Slices: 16a the two plugins, the moves, the build copies, the marketplace, and the guard changes (AC-1 to AC-6); 16b templates, `install-rules`, the eval harness, and documentation (AC-7 to AC-9); then the release (AC-10). `main` holds the moves between 16a and 16b under `[Unreleased]`; nothing is released until both slices are in.
-- Pull requests: #147 (spec), #148 (16a).
+- Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
