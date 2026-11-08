@@ -19,7 +19,7 @@ Rule IDs are never reused. A removed rule's ID stays retired so waivers and eval
 
 A release is prepared in pull requests and published from a machine that can push tags.
 
-1. In the pull request that changes a plugin, move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, name the pull request, and set the same version in `plugins/core/.claude-plugin/plugin.json`. `npm run verify` fails if the changelog and plugin version disagree.
+1. In the pull request that changes a plugin, move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, name the pull request, and set the same version in `plugins/core/.claude-plugin/plugin.json`. Add an `Evaluated on:` line naming the models of the newest model-release run in `evals/ledger.json` (for example `Evaluated on: claude-opus-5-5, claude-sonnet-5-5.`). `npm run verify` fails if the changelog and plugin version disagree, or if a release after 5.1.3 has no `Evaluated on:` line.
 2. Merge. Several merged versions can go out as one release: its notes cover every version since the last tag.
 3. On a machine with git and `gh` signed in (Windows, macOS, or Linux; a cloud agent session cannot push tags), fetch and prepare:
 
@@ -34,12 +34,34 @@ A release is prepared in pull requests and published from a machine that can pus
 
 `node checks/release.mjs notes [--since <version>] [--to <version>]` prints the notes without the checks. `/rfr-core:release` can drive these steps; it stops for confirmation before tagging. An agent session on the maintainer's computer can run steps 3 to 5; an agent in the cloud can prepare everything up to step 2 and hand the commit to it.
 
+## New model
+
+When Claude Code offers a model ID it did not offer before, or an alias (`opus`, `sonnet`, `haiku`) starts resolving to a new ID, open a [model-release issue](../.github/ISSUE_TEMPLATE/model-release.yml) and work through it within two weeks. The procedure and its reasons are in [docs/specs/model-adaptation.md](specs/model-adaptation.md).
+
+1. Run the suite on the new model, at default effort and at each effort level the agents set in their frontmatter: `node evals/run.mjs --suite model-release --models <id> [--effort <level>]`. The suite holds 27 runs per model and stops at its $40 cap (`--max-cost` overrides it). Check the summary for runs whose reported model differs from the one requested.
+2. Run the agent and skill smoke tests with the new model as the main session: `node evals/agents/smoke.mjs --model <id>`.
+3. Add both results folders to the ledger: `node checks/model-ledger.mjs add evals/results/<folder>`.
+4. Read the report against the previous generation: `node checks/model-ledger.mjs report <id> --since <previous id>`.
+5. Decide, using the table below, and make each change in its own pull request with the run named in it. Add a column for the new generation to the table in `PLAN.md` section 5, and update decision 7 once the model has ledger entries.
+
+| Ledger result on the new model | Default decision |
+|---|---|
+| A rule is `effective` | Keep it, and add the model to its `evaluated-on` field. |
+| A rule is `negative` | Rewrite or remove it before the next release, and say which in the changelog. |
+| A SHOULD or MAY rule is `no-effect` or `saturated` on the two newest generations | Move its advice to the practice guide it links to, and retire the rule ID (R38). |
+| A MUST rule is `no-effect` or `saturated` | Keep the hook or CI check; consider moving the text to the practice guide. The guard decision log shows whether the hook still fires. |
+| A target failure reappears in a `none`-arm control | Treat its rules as `effective` again, and add a harder case for it. |
+| A case is `saturated` on every current model | Mark it in `evals/README.md`, keep it as a control, and add a harder variant before it counts as evidence. |
+| An agent or skill smoke test fails | Pin that agent to the last model it passed on, with the reason in a comment, until it is fixed. |
+| A Haiku or Sonnet agent passes where the plan gave it a larger model | Consider the cheaper model, with a smoke test as evidence (R21). |
+
+A case joins the suite when it shows a rule effect on any model; record why in its `reason`.
+
 ## Review cycle
 
-Each quarter, and whenever a new model generation ships:
+Each quarter:
 
-- Re-run the eval suite (`node evals/run.mjs`) on the current models. Remove or rewrite rules that show no effect or a negative one, and record the run in the pull request (R38).
-- Re-run the agent and skill smoke tests (`node evals/agents/smoke.mjs`).
+- Re-run the model-release suite and smoke tests on the current models if Claude Code has changed since the last ledger run, and follow "New model" above for the results (R38).
 - Check framework and engine versions against the packs: Next.js, Astro, Node LTS, Postgres, TypeScript, and the Unreal versions Fab builds by default. When Epic's default three-version set moves, update `unreal-tier2.yml` and the `unreal-plugin` template.
 - Re-read the sources behind MUST rules for changes. Lightly repeat the Phase 0 research for anything that moved.
 - Review open waivers in the reference projects; a waiver older than two review cycles should become a rule change or be removed.

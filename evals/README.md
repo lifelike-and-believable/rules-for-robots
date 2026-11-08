@@ -72,6 +72,8 @@ node checks/model-ledger.mjs report <model id> --since <previous model id>
 
 Each run record has `reportedModel` and `claudeCode`, read from the session's init event, and the summary lists runs whose reported model differs from the one requested.
 
+Saturated on every current model (the 2026-11-08 baseline): `scoped-fix`, `dirty-tree`, `db-preview-push`, `configurable-retry`, and `nextjs-redirect`. They stay in the suite as controls; a harder variant is needed before any of them counts as evidence for a rule.
+
 `evals/ledger.json` holds one entry per rule, agent, or skill and model: `effective` (the rules arm passed more runs than `none`), `negative` (fewer), `saturated` (`none` passed every run), or `no-effect`; agents and skills are `effective` when all their smoke cases passed. `add` replaces earlier entries for the same subject and model, so the ledger shows the latest evidence; the pull request that adds entries names the run. `report` lists the rules with no entry and the saturated cases, and never fails.
 
 ## Agent cases

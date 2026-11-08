@@ -27,7 +27,7 @@ Security, privacy, and observability are treated as cross-cutting requirements u
 | 4 | Strictness | MUST-level rules are enforced by a hook, CI, or both where practical and relevant (R24). |
 | 5 | Distribution | Template repos carry instructions, rules, and settings; Claude Code plugins carry skills, agents, and hooks (R13). MIT licence. |
 | 6 | Spelling | Canadian English (e.g. "centre", "colour", "behaviour", "organize", "licence" as noun). |
-| 7 | Target models | Opus 5.5 and Sonnet 5.5-class agents (section 5). |
+| 7 | Target models | The newest Opus and Sonnet generations with entries in `evals/ledger.json`, currently Opus 5.5 and Sonnet 5.5. A new generation becomes a target after its model-release run (section 5; Phase 17). |
 | 8 | Research first | Phase 0 research preceded the format spec. Complete; findings and recommendations are in `docs/research/`. |
 | 9 | Unreal versions | Unreal Engine 5.6 and later. This currently matches Fab's default build set (the three latest engine versions). |
 | 10 | Unreal build machine | Self-hosted GitHub Actions runner (Windows, x64, labels `self-hosted`, `Windows`, `X64`, `ue5`). Tier 2 checks run on it. |
@@ -66,20 +66,31 @@ Security, privacy, and observability are treated as cross-cutting requirements u
 7. **Layered by removal.** Claude Code concatenates instruction files and resolves conflicts arbitrarily, so layers remove or replace rule files; they never add a contradicting line (R17).
 8. **Rules earn their place.** A rule stays only if evals show it lowers its target failure rate without reducing success or adding disproportionate cost (R38). Rules are re-evaluated on every new model generation.
 
-## 5. Designing for Opus/Sonnet 5.5-class agents
+## 5. Designing for current models
 
-Phase 0 confirmed or revised each working assumption (see the verdict table in findings.md).
+This section holds guidance that has held on two or more model generations, so it changes only when evidence on a new generation contradicts it. What depends on one generation is in the table under "By generation", which gains a column after each model-release run (Phase 17; [docs/specs/model-adaptation.md](docs/specs/model-adaptation.md)). Phase 0's verdicts and their sources are in the verdict table in findings.md, and the per-rule evidence for each model is in `evals/ledger.json` (`node checks/model-ledger.mjs report <model>`).
 
-1. **Don't restate what the model knows.** Confirmed and strengthened: context files that describe the repo add cost without improving success.
-2. **Explain intent, then trust judgement.** Confirmed. Give the goal and reason; keep fixed procedures for releases, migrations, and packaging.
-3. **Calibrated, plain wording.** Confirmed. Emphatic wording over-triggers on current models; levels move into metadata.
-4. **Say what to do.** Confirmed with nuance: positive framing by default, plus short lists that name concrete patterns to avoid.
-5. **Target known failure modes.** Confirmed. The main ones are editing tests to pass (the dominant gaming route for Claude), scope creep and over-engineering, destructive git and database operations, invented or version-mismatched APIs, and unsupported claims of success.
-6. **Concrete verification, not generic "verify".** Revised. Generic verification lines cause over-verification on Opus 5+, while a concrete command helps Sonnet 5.5 at low effort. Give the command and require its output.
-7. **Context as a resource.** Confirmed, with session hygiene added: adherence drops as sessions grow, so keep sessions focused, start fresh after repeated failed corrections, and use sub-agents for exploration (R12).
-8. **Model and effort per agent.** Confirmed. Set `model` and `effort` in agent frontmatter instead of "think carefully" in the body (R21).
-9. **Parallel reading, single-threaded writing.** Narrowed. Parallel agents for research and review; one writing agent at a time (R20). Never share one Unreal MCP editor between agents.
-10. **Literal reading of filters.** New. Reviewers report every finding with severity; filtering happens in a separate pass, because "only report high severity" suppresses real findings (R19).
+1. **Don't restate what the model knows.** Context files that describe the repo add cost without improving success (studies up to Sonnet 4.6 and Opus 4.7; our seed and Phase 8 evals on the 5.5 models).
+2. **Explain intent, then trust judgement.** Give the goal and reason; keep fixed procedures for releases, migrations, and packaging.
+3. **Calibrated, plain wording.** Emphatic wording over-triggers on current models; levels move into metadata.
+4. **Say what to do.** Positive framing by default, plus short lists that name concrete patterns to avoid.
+5. **Target known failure modes.** The main ones are editing tests to pass (the dominant gaming route for Claude, documented from Opus 4.1 to 5.5), scope creep and over-engineering, destructive git and database operations, invented or version-mismatched APIs, and unsupported claims of success. Which of these a given model still shows without rules is a per-generation question; see the table.
+6. **Concrete verification, not generic "verify".** Give the command that proves compliance and require its output.
+7. **Context as a resource.** Adherence drops as sessions grow, so keep sessions focused, start fresh after repeated failed corrections, and use sub-agents for exploration (R12).
+8. **Model and effort per agent.** Set `model` and `effort` in agent frontmatter instead of "think carefully" in the body (R21).
+9. **Parallel reading, single-threaded writing.** Parallel agents for research and review; one writing agent at a time (R20). Never share one Unreal MCP editor between agents.
+10. **Literal reading of filters.** Reviewers report every finding with severity; filtering happens in a separate pass, because "only report high severity" suppresses real findings (R19).
+
+### By generation
+
+| Finding | Opus 5.5 and Sonnet 5.5 |
+|---|---|
+| Generic "verify" lines | Cause over-verification on Opus 5 and later; a concrete command helps Sonnet 5.5 at low effort (Phase 0) |
+| Effort setting | Opus 5.5 at medium effort matches Opus 5 at high (Phase 0) |
+| Editing a wrong test to get CI green, without rules | Both models, 6 of 6 runs; none with TEST-001 and WA-002 (Phase 8; again in the model-release baseline) |
+| Test-first work without TEST-004 | Sonnet 0 of 3; Opus 3 of 3 (Phase 8; again in the model-release baseline) |
+| Data loss, over-engineering, scope creep, destructive git, and the Next.js 16 trap, without rules | Neither model showed them (seed, Phase 8, and the model-release baseline) |
+| Ledger run | [2026-11-08 baseline](evals/results/2026-11-08-model-release-baseline/report.md), Claude Code 2.1.319 |
 
 ## 6. Repository structure and distribution
 
@@ -365,9 +376,9 @@ Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
 - **16a:** the two plugins, the moves, the build copies, the marketplace, and the guard changes (AC-1 to AC-6).
 - **16b:** templates, `install-rules`, the eval harness, and documentation (AC-7 to AC-9); then the release (AC-10).
 
-### Phase 17: Model adaptation (planned)
+### Phase 17: Model adaptation (complete)
 Spec: [docs/specs/model-adaptation.md](docs/specs/model-adaptation.md) (approved 2026-11-08).
-Pull requests: #149 (spec and 17a).
+Pull requests: #149 (spec and 17a), #152 (17b and 17c).
 
 New models will keep arriving, and the rule set is tuned to the 5.5 generation. Principle 8 and the maintenance guide say rules are re-evaluated on each new model, but not how, at what cost, or where the result is kept. This phase makes that a routine: a fixed, budgeted eval suite that runs within days of a release, a ledger of which rules, agents, and skills have evidence on which model, saturated cases flagged, and default decisions for each result (keep, rewrite, move to a practice guide, pin an agent's model). METR's assessment of Anthropic's internal "Model 4" (2026-11-05) prompted it: faster model progress and saturated benchmarks are the two problems this phase addresses.
 
@@ -423,5 +434,5 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 8. Phase 14: 14a done (#143); build the 14b eval cases.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a to 15c done (#146, #151, #153); 15d in review (#155). Replay the Kettlebird pilot's sessions when their transcripts can be extracted there. Then 15e (the eval).
-11. Phase 16: 16a done (#148); 16b and the 4.0.0 release in review (#150). After it merges, tag the release (`/rfr-core:release`).
-12. Phase 17: the model-adaptation spec is approved; 17a is in #149. Build 17b, and run 17c before the next model generation reaches Claude Code, so the first comparison has a baseline.
+11. Phase 16: done (#148, #150); `rfr-v4.0.0` is published.
+12. Phase 17: done (#149, #152). The next step is the procedure itself: open a model-release issue when Claude Code offers a new model.

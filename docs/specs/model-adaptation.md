@@ -1,10 +1,10 @@
 ---
-status: draft
+status: implemented
 ---
 
 # Model adaptation
 
-A standing procedure for when a new Claude model reaches Claude Code: a fixed, budgeted eval suite that can run within days of the release, a ledger that records which rules, agents, and skills have evidence on which model, and a set of decisions the results feed (keep, rewrite, demote, or remove a rule; change an agent's model; replace a saturated eval case). The plan already says rules are re-evaluated on every new model generation (principle 8; `docs/maintenance.md`, "Review cycle"), but it does not say how, at what cost, or where the result is kept. This spec fills that gap. It is written so that it does not depend on any one release. Approved by the project lead on 2026-11-08. The `status` field stays `draft` until every `test:` criterion has a citing test, because `spec-trace` treats every uncited criterion of an approved spec as an error.
+A standing procedure for when a new Claude model reaches Claude Code: a fixed, budgeted eval suite that can run within days of the release, a ledger that records which rules, agents, and skills have evidence on which model, and a set of decisions the results feed (keep, rewrite, demote, or remove a rule; change an agent's model; replace a saturated eval case). The plan already says rules are re-evaluated on every new model generation (principle 8; `docs/maintenance.md`, "Review cycle"), but it does not say how, at what cost, or where the result is kept. This spec fills that gap. It is written so that it does not depend on any one release. Approved by the project lead on 2026-11-08.
 
 ## Problem
 
@@ -79,4 +79,4 @@ The report informs these; the maintainer decides, and each change goes through t
 
 - Plan or roadmap item: `PLAN.md`, Phase 17.
 - Slices: 17a the suite, the runner options, model ID recording, and the ledger and its check (AC-1 to AC-6); 17b the maintenance section, the issue form, the plan restructure, and the changelog check (AC-7 to AC-10); 17c the baseline run (AC-11), with the first decisions it supports.
-- Pull requests: #149 (spec and 17a).
+- Pull requests: #149 (spec and 17a), #152 (17b and 17c).
