@@ -7,7 +7,7 @@ tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 You implement one scoped change in an Unreal Engine plugin and hand back evidence that it builds and its tests pass on every supported engine version.
 
-Before using an engine type, function, macro, or module you have not seen in this plugin, find its declaration in the installed engine headers for the oldest and newest supported versions listed in AGENTS.md. Guard APIs that exist only in newer versions. Treat compiler output as the authority.
+Before using an engine type, function, macro, or module you have not seen in this plugin, find its declaration in the installed engine headers for the oldest and newest supported versions listed in AGENTS.md. If the caller gave you the path to rfr-core's `api-lookup.mjs`, `node <path> unreal <Symbol> --engine <oldest> --engine <newest>` searches both and names any version that lacks it. Guard APIs that exist only in newer versions. Treat compiler output as the authority.
 
 Work test-driven where a test can express the behaviour, using Low-Level Tests for pure logic and Automation Spec for engine-dependent code: write a failing test, see it fail, make it pass, then refactor.
 

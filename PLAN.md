@@ -335,6 +335,15 @@ Most changes to existing tests can be judged on written criteria: whether the ch
 - **13c:** the reviewer agent and its `review-pr` step (AC-8 to AC-10).
 - **13d:** the eval (AC-11); the reviewer adds the label only after it passes.
 
+### Phase 14: Grounded evidence (planned)
+Spec: [docs/specs/grounded-evidence.md](docs/specs/grounded-evidence.md) (approved 2026-11-08).
+Pull requests: #143 (spec and 14a).
+
+Two ideas taken from an evaluation of Context7 and Graphify (2026-11-08), without adopting either tool. A lookup script answers whether an API exists in the installed version, from the installed package (version, lock entry, declarations, bundled docs) or each supported engine's headers, so WA-006 and UE-001 can name a command. Each review finding says whether the reviewer observed the failure or inferred it, and `review-pr` confirms inferred findings by doing the check they name.
+
+- **14a:** `checks/api-lookup.mjs` and the `lookup-api` skill; the `Basis:` line in the five reviewer agents, `checks/review-findings.mjs`, and the `review-pr` and `citation-checker` changes; the candidate WA-006 text (AC-1 to AC-9).
+- **14b:** the eval (AC-10); WA-006 and UE-001 name the lookup only if it passes.
+
 ### Phase 15: Guard tiers (planned)
 Spec: [docs/specs/guard-tiers.md](docs/specs/guard-tiers.md) (approved 2026-11-08).
 Pull requests: #145 (spec), #146 (15a).
@@ -392,4 +401,6 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 6. Phase 10: approve the spec-to-test traceability slice, then build 10a.
 7. Phase 11: 11a to 11c done (#103, #104, #105). Research amendment approved (#106). 11e done (#107); a pilot on the Kettlebird website is running. 11f done (#108). Pilot fixes rounds 1 to 7 done (#109, #111, #112, #114, #117, #118, #119); the pilot continues. 11g done (#113): advisory Vale and Stryker jobs, and tutorials against preview deployments. 11h done (#116): the Unreal fixture tutorial, screenshot test, and demo render on the Tier 2 GPU runner. 11d waits for Phase 10's eval round (10c), which the amendment proposes should also compare Stryker with the sabotage step.
-8. Phase 15: approve the guard-tiers spec, then build 15a once #144 (the decision log) has merged.
+8. Phase 14: 14a done (#143); build the 14b eval cases.
+9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
+10. Phase 15: the guard-tiers spec is approved (#145); 15a is in #146.

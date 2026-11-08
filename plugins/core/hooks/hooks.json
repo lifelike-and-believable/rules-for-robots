@@ -28,7 +28,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*[Vv]ercel.*",
+        "matcher": "mcp__.*[Vv][Ee][Rr][Cc][Ee][Ll].*",
         "hooks": [
           {
             "type": "command",

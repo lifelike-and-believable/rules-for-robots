@@ -35,7 +35,7 @@
     { "id": "vercel-deploy", "guard": "mcp", "tool_name": "mcp__Vercel__create_deployment", "tool_input": {}, "tier": 4, "source": "NODE-002" },
     { "id": "vercel-read", "guard": "mcp", "tool_name": "mcp__Vercel__get_deployment", "tool_input": { "idOrUrl": "dpl_1" }, "tier": 1, "source": "NODE-002" },
     { "id": "vercel-token", "guard": "mcp", "tool_name": "mcp__Vercel__get_auth_token", "tool_input": {}, "tier": 4, "source": "NODE-002" },
-    { "id": "vercel-decrypted-env", "guard": "mcp", "tool_name": "mcp__Vercel__get_project_env", "tool_input": { "idOrName": "p", "id": "e" }, "tier": 4, "now": 1, "pending": "#143", "source": "NODE-002; research note 2026-11-08" },
+    { "id": "vercel-decrypted-env", "guard": "mcp", "tool_name": "mcp__Vercel__get_project_env", "tool_input": { "idOrName": "p", "id": "e" }, "tier": 4, "source": "NODE-002; research note 2026-11-08 (fixed in #143)" },
     { "id": "edit-new-branch-test-line", "guard": "test-edits", "edit": "branch-line", "tier": 1, "source": "PR #143 session (asked before #144)" },
     { "id": "edit-additive", "guard": "test-edits", "edit": "additive", "tier": 1, "source": "test-change-review AC-2" },
     { "id": "edit-weakens-base-test", "guard": "test-edits", "edit": "weaken-base", "tier": 4, "source": "TEST-001; Phase 8 (6 of 6 runs gamed a test without rules)" }
