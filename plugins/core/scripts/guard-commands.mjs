@@ -238,11 +238,67 @@ function discardRisk(entries) {
   return null;
 }
 
+// Folders that hold only throwaway files: the system temp directory (where session scratchpads and
+// test fixtures live) and TMPDIR. A target at least two levels inside one (inside a folder someone
+// made there, such as /tmp/claude-0/<session>/scratchpad/x or a mkdtemp fixture), after resolving
+// `..` and symlinks in its existing parent, loses nothing a project holds. A folder directly under
+// the temp directory may be another tool's or project's working area, so it still asks.
+function tempRoots() {
+  const roots = new Set([os.tmpdir(), process.env.TMPDIR, '/tmp'].filter(Boolean).map(p => path.resolve(p)));
+  for (const r of [...roots]) {
+    try {
+      roots.add(fs.realpathSync(r));
+    } catch {
+      // A root that does not exist adds nothing.
+    }
+  }
+  return [...roots];
+}
+
+function insideTemp(abs) {
+  let real = abs;
+  try {
+    real = path.join(fs.realpathSync(path.dirname(abs)), path.basename(abs));
+  } catch {
+    // The parent does not exist: judge the path as written.
+  }
+  return tempRoots().some(root => {
+    const rel = path.relative(root, real);
+    return rel && !rel.startsWith('..') && !path.isAbsolute(rel) && rel.split(path.sep).length >= 2;
+  });
+}
+
+// $NAME and ${NAME} in a word, from assignments made earlier in the same command (`R=/tmp/x; rm -rf $R/y`).
+// Returns null when a variable has no known value, or its value came from a substitution.
+function expand(word, vars) {
+  let unknown = false;
+  const out = word.replace(/\$(?:\{(\w+)\}|(\w+))/g, (_, a, b) => {
+    const v = vars.get(a ?? b);
+    if (v === undefined) unknown = true;
+    return v ?? '';
+  });
+  return unknown ? null : out;
+}
+
 // rm -rf whose every target is untracked and either ignored by git (build output such as dist/) or
-// not there at all loses nothing a commit or the project's sources hold. Anything tracked, outside
-// the repository, a glob, or a root-like path asks.
+// not there at all loses nothing a commit or the project's sources hold, and neither does one inside
+// the temp directory. Anything tracked, outside the repository and temp, a glob, or a root-like path asks.
 function rmRisk(entries) {
+  const vars = new Map();
   for (const { words, dir } of entries) {
+    if (words.length && words.every(w => /^\w+=/.test(w))) {
+      for (const w of words) {
+        const [name, ...rest] = w.split('=');
+        const value = rest.join('=');
+        if (/[`]|\$\(/.test(value)) vars.delete(name);
+        else {
+          const expanded = expand(value, vars);
+          if (expanded === null) vars.delete(name);
+          else vars.set(name, expanded);
+        }
+      }
+      continue;
+    }
     let k = 0;
     while (k < words.length && /^(sudo|command|env|\w+=\S*)$/.test(words[k])) k++;
     if (words[k] !== 'rm' && !words[k]?.endsWith('/rm')) continue;
@@ -251,9 +307,15 @@ function rmRisk(entries) {
     const recursive = flags.some(f => f === '--recursive' || (/^-[a-zA-Z]+$/.test(f) && /[rR]/.test(f)));
     const force = flags.some(f => f === '--force' || (/^-[a-zA-Z]+$/.test(f) && f.includes('f')));
     if (!recursive || !force) continue;
-    for (const target of args.filter(w => !w.startsWith('-'))) {
-      if (/[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return 'recursive forced delete (rm -rf)';
+    for (const word of args.filter(w => !w.startsWith('-'))) {
+      const target = word.includes('$') ? expand(word, vars) : word;
+      if (target === null || /[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return 'recursive forced delete (rm -rf)';
       const abs = path.resolve(dir, target);
+      // A target in no git repository is throwaway only inside the temp directory; one in a
+      // repository (even a repository under the temp directory) gets the git checks below.
+      let near = path.dirname(abs);
+      while (!fs.existsSync(near) && path.dirname(near) !== near) near = path.dirname(near);
+      if (git(near, ['rev-parse', '--show-toplevel']).status !== 0 && insideTemp(abs)) continue;
       const top = git(dir, ['rev-parse', '--show-toplevel']);
       if (top.status !== 0) return 'recursive forced delete (rm -rf)';
       const root = top.out.trim();
