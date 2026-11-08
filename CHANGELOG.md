@@ -14,11 +14,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.0.0] - 2026-11-08
 
-Pull requests: #PR15B.
+Pull requests: #151.
 
 ### Changed
 
-- **Breaking:** guard tiers, slice 15b (#PR15B; `docs/specs/guard-tiers.md`, AC-3, AC-4, AC-5, AC-12). Guards ask a person only about actions that cannot be undone or reach outside the project; problems the agent can fix itself are refused with a next step. Released with `rfr-unreal` 2.0.0 and `rfr-web` 1.0.1.
+- **Breaking:** guard tiers, slice 15b (#151; `docs/specs/guard-tiers.md`, AC-3, AC-4, AC-5, AC-12). Guards ask a person only about actions that cannot be undone or reach outside the project; problems the agent can fix itself are refused with a next step. Released with `rfr-unreal` 2.0.0 and `rfr-web` 1.0.1.
   - Every ask reason now has three parts: the action, why a person must decide, and "If not approved:" with what the agent does instead (AC-3). This covers `guard-commands`, `guard-test-edits`, and `rfr-web`'s `guard-mcp`.
   - `guard-commands` refuses a snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) unless the command states its reason as `RFR_SNAPSHOT_REASON="..."`, and the agent gives the same reason in its report (AC-4). It used to ask.
   - `guard-commands` allows `rm -rf` of tracked files with no uncommitted changes, and tells the agent the `git checkout -- <path>` that restores them (AC-12). It used to ask. A folder with a modified or untracked file still asks until snapshots arrive in 15c.
