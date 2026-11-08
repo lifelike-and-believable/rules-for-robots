@@ -413,4 +413,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 8. Phase 14: 14a done (#143); build the 14b eval cases.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a done (#146); build 15b (the tier changes to the guards).
-11. Phase 16: the domain-plugins spec is approved (#147); build 16a (the two plugins and the moves).
+11. Phase 16: 16a done (#148); 16b and the 4.0.0 release in review. After it merges, tag the release (`/rfr-core:release`).

@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 unlocks:
   - test/hooks.test.mjs: AC-2 moves the editor -ExecCmds check from guard-commands to rfr-unreal's guard-unreal, so the #56 test calls guard-unreal and asserts guard-commands no longer decides it; AC-1 moves guard-mcp to rfr-web, so its imports change path; nothing else changes
   - test/guard-corpus.test.mjs: AC-1 and AC-2 move guard-mcp and the ExecCmds check to rfr-web and rfr-unreal, so the runner imports them from their new plugins and runs an `unreal` guard; nothing else changes
@@ -9,7 +9,7 @@ unlocks:
 
 # Domain plugins
 
-Split the domain-specific parts of `rfr-core` into two new plugins, `rfr-web` and `rfr-unreal`, so a project installs only what its domain uses. `rfr-core` keeps everything that applies to any project. This finishes the layout `PLAN.md` section 6 always listed (`plugins/web/`, `plugins/unreal/`), which was folded into `rfr-core` for the first release. Approved by the project lead on 2026-11-08. The `status` field stays `draft` until every `test:` criterion has a citing test.
+Split the domain-specific parts of `rfr-core` into two new plugins, `rfr-web` and `rfr-unreal`, so a project installs only what its domain uses. `rfr-core` keeps everything that applies to any project. This finishes the layout `PLAN.md` section 6 always listed (`plugins/web/`, `plugins/unreal/`), which was folded into `rfr-core` for the first release. Approved by the project lead on 2026-11-08.
 
 ## Problem
 

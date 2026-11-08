@@ -35,4 +35,4 @@ Request and response bodies 4.5 MB; default function duration 300 s (up to 800 s
 
 ## Vercel MCP (NODE-002)
 
-The Vercel MCP server has the same access as your Vercel account, including deploying, editing and decrypting environment variables, deleting projects, and purchasing. The `rfr-core` `guard-mcp` hook asks before anything other than reads.
+The Vercel MCP server has the same access as your Vercel account, including deploying, editing and decrypting environment variables, deleting projects, and purchasing. The `rfr-web` `guard-mcp` hook asks before anything other than reads.

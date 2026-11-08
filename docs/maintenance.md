@@ -4,7 +4,7 @@ How the rule set is versioned, released, and kept current.
 
 ## Versioning
 
-The rule set and the `rfr-core` plugin share one semantic version, set in `plugins/core/.claude-plugin/plugin.json`. Claude Code uses that field to decide whether an installed plugin needs updating, so every change to rules, skills, agents, hooks, or the install-rules payload bumps it (R16).
+The rule set and the `rfr-core` plugin share one semantic version, set in `plugins/core/.claude-plugin/plugin.json`. `rfr-web`, `rfr-unreal`, `rfr-process`, and `rfr-feedback` each have their own version in their `plugin.json`, bumped the same way when their contents change. Claude Code uses that field to decide whether an installed plugin needs updating, so every change to rules, skills, agents, hooks, or the install-rules payload bumps it (R16).
 
 | Change | Bump |
 |---|---|
@@ -36,4 +36,4 @@ Each quarter, and whenever a new model generation ships:
 
 ## Adopting repos
 
-Adopting repos update with `/plugin update rfr-core@rules-for-robots`, then `/rfr-core:install-rules <profile>` to refresh `.claude/rules/`. The skill keeps waivers and asks before replacing files you changed; see [layering-and-overrides.md](layering-and-overrides.md).
+Adopting repos update with `/plugin update rfr-core@rules-for-robots` (and `rfr-web` or `rfr-unreal` if they use it), then `/rfr-core:install-rules <profile>` to refresh `.claude/rules/`. The skill keeps waivers and asks before replacing files you changed; see [layering-and-overrides.md](layering-and-overrides.md).

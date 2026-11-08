@@ -21,7 +21,7 @@ Agents read web pages, issues, pull request comments, dependency files, and tool
 | Tool | Risk | Guard |
 |---|---|---|
 | Shell | Destructive git, file, and database commands | `guard-commands` hook asks first (WA-003, PG-001) |
-| Vercel MCP | Same access as your Vercel account | `guard-mcp` hook asks before anything but reads (NODE-002) |
+| Vercel MCP | Same access as your Vercel account | `guard-mcp` hook (`rfr-web`) asks before anything but reads, and before reads that return secrets (NODE-002) |
 | Unreal editor MCP (5.8) | No authentication; runs Python with full editor access | Optional; commit first; never shared between agents |
 | Self-hosted CI runner | Runs repository code on your machine | Tier 2 runs only on pushes to `main` and manual dispatch, never fork PRs |
 
