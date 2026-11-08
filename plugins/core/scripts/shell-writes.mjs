@@ -163,11 +163,35 @@ const WRITE_API = new RegExp([
   /\bopen\s*\(\s*(?:my\s+)?\$?\w+\s*,\s*['"][+>]/.source,
 ].join('|'));
 const LITERAL = /(['"`])((?:\\.|(?!\1)[^\\\n])*)\1/g;
+// Backticks quote strings only in JavaScript; elsewhere they are Markdown in text the script writes.
+const LITERAL_NO_BACKTICK = /(['"])((?:\\.|(?!\1)[^\\\n])*)\1/g;
 const PATH_LIKE = /^[\w./*?{},@+-]+$/;
+const JS_INTERPRETERS = /^(node|nodejs|deno|bun|tsx|ts-node)$/;
+const isPath = s => PATH_LIKE.test(s) && /[/.]/.test(s);
 
-function literalPaths(script) {
+// The path literals a script writes to. A path counts when it is a literal on a line that calls a
+// file-writing function, or a literal assigned to a variable that such a line uses
+// (`p = 'a.test.ts'` ... `open(p, 'w')`). A path that appears only in other text, such as the
+// content a script writes into a changelog, is not a target. When a writing line names its file in
+// a way this cannot follow (a loop variable, a computed path), every path literal in the script is
+// a candidate, which keeps the check on the safe side.
+function literalPaths(script, js = false) {
   if (!WRITE_API.test(script)) return [];
-  return [...script.matchAll(LITERAL)].map(m => m[2]).filter(s => PATH_LIKE.test(s) && /[/.]/.test(s));
+  const re = js ? LITERAL : LITERAL_NO_BACKTICK;
+  const pathsIn = text => [...text.matchAll(re)].map(m => m[2]).filter(isPath);
+  const assigned = new Map();
+  for (const m of script.matchAll(/\b([A-Za-z_$][\w$]*)\s*:?=\s*(['"`])([^'"`\n]*)\2/g)) {
+    if (isPath(m[3]) && (js || m[2] !== '`')) assigned.set(m[1], [...(assigned.get(m[1]) ?? []), m[3]]);
+  }
+  const found = [];
+  for (const line of script.split('\n')) {
+    if (!WRITE_API.test(line)) continue;
+    const direct = pathsIn(line);
+    const viaVariables = [...line.matchAll(/[A-Za-z_$][\w$]*/g)].flatMap(m => assigned.get(m[0]) ?? []);
+    if (!direct.length && !viaVariables.length) return pathsIn(script);
+    found.push(...direct, ...viaVariables);
+  }
+  return [...new Set(found)];
 }
 
 const IN_PLACE = /^-[a-zA-Z]*i|^--in-place/;
@@ -240,7 +264,7 @@ export function writeTargetEntries(command, depth = 0) {
     } else if (INTERPRETERS.test(cmd)) {
       const texts = [...scripts];
       for (let a = 0; a < args.length; a++) if (INLINE_FLAGS.has(args[a]) && args[a + 1] !== undefined) texts.push(args[a + 1]);
-      for (const text of texts) put('write', literalPaths(text));
+      for (const text of texts) put('write', literalPaths(text, JS_INTERPRETERS.test(cmd)));
     }
   }
   if (broad) put(broad, allWords);

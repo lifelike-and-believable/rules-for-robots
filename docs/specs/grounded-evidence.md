@@ -1,10 +1,10 @@
 ---
-status: draft
+status: approved
 ---
 
 # Grounded evidence
 
-Two small tools that make agents say where a claim comes from. A lookup script answers "does this API exist in the version we have installed?" from the installed package or engine, so that WA-006 and UE-001 name a command instead of asking agents to check by hand. A basis line on every review finding says whether the reviewer saw the failure or reasoned its way to it, so that the confirm-or-refute pass in `review-pr` knows which findings still need checking. Both ideas come from an evaluation of Context7 and Graphify (2026-11-08): Context7 resolves a library and returns only the part of its documentation that matches a query, and Graphify tags each edge it records as found in the source or inferred. Neither tool is adopted; the lookup reads only what is installed, and nothing leaves the machine.
+Two small tools that make agents say where a claim comes from. A lookup script answers "does this API exist in the version we have installed?" from the installed package or engine, so that WA-006 and UE-001 name a command instead of asking agents to check by hand. A basis line on every review finding says whether the reviewer saw the failure or reasoned its way to it, so that the confirm-or-refute pass in `review-pr` knows which findings still need checking. Both ideas come from an evaluation of Context7 and Graphify (2026-11-08): Context7 resolves a library and returns only the part of its documentation that matches a query, and Graphify tags each edge it records as found in the source or inferred. Neither tool is adopted; the lookup reads only what is installed, and nothing leaves the machine. Approved by the project lead on 2026-11-08.
 
 ## Problem
 

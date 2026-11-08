@@ -336,7 +336,7 @@ Most changes to existing tests can be judged on written criteria: whether the ch
 - **13d:** the eval (AC-11); the reviewer adds the label only after it passes.
 
 ### Phase 14: Grounded evidence (planned)
-Spec: [docs/specs/grounded-evidence.md](docs/specs/grounded-evidence.md) (draft).
+Spec: [docs/specs/grounded-evidence.md](docs/specs/grounded-evidence.md) (approved 2026-11-08).
 Pull requests: #143 (spec and 14a).
 
 Two ideas taken from an evaluation of Context7 and Graphify (2026-11-08), without adopting either tool. A lookup script answers whether an API exists in the installed version, from the installed package (version, lock entry, declarations, bundled docs) or each supported engine's headers, so WA-006 and UE-001 can name a command. Each review finding says whether the reviewer observed the failure or inferred it, and `review-pr` confirms inferred findings by doing the check they name.

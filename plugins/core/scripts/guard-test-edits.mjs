@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ask, existedAtBase, readInput } from './lib.mjs';
+import { ask, existedAtBase, readInput, textAtBase } from './lib.mjs';
 import { classifyTestChange } from './lib/test-diff.mjs';
 import { unlockedBy } from './spec-unlocks.mjs';
 
@@ -73,7 +73,24 @@ export function decideEdit(input) {
   const before = fs.readFileSync(abs, 'utf8');
   const after = applyEdit(tool, toolInput, before);
   if (after === null) return { decision: 'ask', reason: `${intro}, and the hook could not work out the edited file to check the change. ${advice}` };
-  const { result, findings } = classifyTestChange({ file: rel, before, after });
+  // Judge the change against the file as it was where the branch started, as the pull request
+  // review does: lines the branch added are the agent's own work, not an existing test. An edit
+  // asks only when it brings a weakening of base content that the file did not already have
+  // (one approved earlier is not asked about again).
+  const base = textAtBase(abs, cwd);
+  let { result, findings } = classifyTestChange({ file: rel, before, after });
+  if (base !== null && result !== 'additive' && result !== 'neutral') {
+    const sinceBase = classifyTestChange({ file: rel, before: base, after });
+    if (sinceBase.result === 'additive' || sinceBase.result === 'neutral') return null;
+    if (sinceBase.result === 'weakening') {
+      const key = f => `${f.kind}\u0000${f.message}`;
+      const already = new Set(classifyTestChange({ file: rel, before: base, after: before }).findings.map(key));
+      const fresh = sinceBase.findings.filter(f => !already.has(key(f)));
+      if (!fresh.length) return null;
+      result = 'weakening';
+      findings = fresh;
+    }
+  }
   if (result === 'additive' || result === 'neutral') return null;
   if (result === 'weakening' && unlockedBy(rel, repo)) return null;
   const listed = findings.slice(0, 5).map(f => `${f.kind} (line ${f.line}): ${f.message}`).join('; ');
