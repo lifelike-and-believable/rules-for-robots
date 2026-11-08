@@ -45,13 +45,35 @@ test('guard-tiers#AC-6: a call that was not asked about, or was asked and never 
 });
 
 test('guard-tiers#AC-6: the outcome hook is registered for the tools the guards cover, after success and failure', () => {
-  const hooks = JSON.parse(fs.readFileSync('plugins/core/hooks/hooks.json', 'utf8')).hooks;
-  for (const event of ['PostToolUse', 'PostToolUseFailure']) {
-    const entry = hooks[event]?.find(h => h.hooks.some(x => x.command.includes('guard-outcome.mjs')));
-    assert.ok(entry, event);
-    const matcher = new RegExp(`^(?:${entry.matcher})$`);
-    for (const tool of ['Bash', 'PowerShell', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'mcp__Vercel__create_deployment']) assert.match(tool, matcher, `${event} ${tool}`);
+  // plugin-split AC-1 and AC-2: each plugin with guards carries the outcome hook for the tools its own guards cover.
+  const covers = {
+    core: [['Bash', 'PowerShell', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit'], ['mcp__Vercel__create_deployment']],
+    web: [['mcp__Vercel__create_deployment', 'mcp__claude_ai_VERCEL__get_project_env'], ['Bash', 'Edit']],
+    unreal: [['Bash', 'PowerShell'], ['Edit', 'mcp__Vercel__create_deployment']],
+  };
+  for (const [plugin, [yes, no]] of Object.entries(covers)) {
+    const hooks = JSON.parse(fs.readFileSync(`plugins/${plugin}/hooks/hooks.json`, 'utf8')).hooks;
+    for (const event of ['PostToolUse', 'PostToolUseFailure']) {
+      const entry = hooks[event]?.find(h => h.hooks.some(x => x.command.includes('guard-outcome.mjs')));
+      assert.ok(entry, `${plugin} ${event}`);
+      const matcher = new RegExp(`^(?:${entry.matcher})$`);
+      for (const tool of yes) assert.match(tool, matcher, `${plugin} ${event} ${tool}`);
+      for (const tool of no) assert.doesNotMatch(tool, matcher, `${plugin} ${event} ${tool}`);
+    }
   }
+});
+
+test('plugin-split#AC-6: the report reads several plugins\' logs together', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-report-'));
+  const core = path.join(dir, 'core.jsonl');
+  const web = path.join(dir, 'web.jsonl');
+  fs.writeFileSync(core, `${JSON.stringify(entry('guard-commands', 'ask', 'rfr-core (WA-003): force-push rewrites remote history.', 0))}\n`);
+  fs.writeFileSync(web, [entry('guard-mcp', 'ask', 'rfr-core (NODE-002): mcp__Vercel__x can change or expose your Vercel account.', 5), entry('guard-mcp', 'approved', 'rfr-core (NODE-002): mcp__Vercel__x can change or expose your Vercel account.', 6)].map(l => JSON.stringify(l)).join('\n') + '\n');
+  const cli = spawnSync(process.execPath, ['checks/guard-report.mjs', core, web, '--json'], { encoding: 'utf8' });
+  assert.equal(cli.status, 0, cli.stderr);
+  const r = JSON.parse(cli.stdout);
+  assert.deepEqual([r.asks, r.approved], [2, 1]);
+  assert.deepEqual(r.reasons.map(x => x.hook).sort(), ['guard-commands', 'guard-mcp']);
 });
 
 const entry = (hook, decision, reason, minute) => ({ time: new Date(Date.UTC(2026, 10, 8, 10, minute)).toISOString(), session: 's', hook, tool: 'Bash', decision, reason });

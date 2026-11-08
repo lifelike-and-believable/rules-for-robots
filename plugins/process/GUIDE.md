@@ -125,7 +125,7 @@ Flows, layouts or editor UI, and every state: empty, loading, partial, error, su
 - Say which persona goals and frustrations the design answers, and link those sections (`persona-fan#frustrations`).
 - A choice that spans several stories or epics, such as a URL scheme or a content model, gets its own decision note (`templates/artifacts/decision.md`, in `docs/design/decisions/`), which designs link to. It is gated like any design.
 
-Review checks: the `ux-reviewer` and `accessibility-reviewer` checklists. Does every screen and state have a mock-up? Does every control the text names appear in one? Does every error say what to do next?
+Review checks: the `rfr-core:ux-reviewer` and `rfr-core:accessibility-reviewer` checklists. Does every screen and state have a mock-up? Does every control the text names appear in one? Does every error say what to do next?
 
 ### User documentation
 

@@ -6,8 +6,9 @@
 // grouped once file paths, numbers, and quoted values are set aside, so one rule asking about many
 // files counts as one reason.
 //
-// Usage: node checks/guard-report.mjs [log] [--json]
-//   log defaults to $CLAUDE_PLUGIN_DATA/guard-decisions.jsonl.
+// Usage: node checks/guard-report.mjs [log...] [--json]
+//   With no log, reads $CLAUDE_PLUGIN_DATA/guard-decisions.jsonl. Several logs (one per plugin) are
+//   reported together.
 // Exit codes: 0 report printed, 2 no log or a usage error.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -90,17 +91,23 @@ export function readLog(file) {
 function main(argv) {
   const json = argv.includes('--json');
   const args = argv.filter(a => a !== '--json');
-  if (args.length > 1 || args.some(a => a.startsWith('-'))) {
-    console.error('Usage: guard-report.mjs [log] [--json]');
+  if (args.some(a => a.startsWith('-'))) {
+    console.error('Usage: guard-report.mjs [log...] [--json]');
     process.exit(2);
   }
-  const file = args[0] ?? path.join(process.env.CLAUDE_PLUGIN_DATA || path.join(os.tmpdir(), 'rfr-core'), 'guard-decisions.jsonl');
-  let log;
-  try {
-    log = readLog(file);
-  } catch (e) {
-    console.error(`cannot read ${file}: ${e.code ?? e.message}`);
-    process.exit(2);
+  // Each plugin with guards (rfr-core, rfr-web, rfr-unreal) logs to its own data folder, so a
+  // report can take several logs (plugin-split AC-6).
+  const files = args.length ? args : [path.join(process.env.CLAUDE_PLUGIN_DATA || path.join(os.tmpdir(), 'rfr-core'), 'guard-decisions.jsonl')];
+  const log = { entries: [], unreadable: 0 };
+  for (const file of files) {
+    try {
+      const one = readLog(file);
+      log.entries.push(...one.entries);
+      log.unreadable += one.unreadable;
+    } catch (e) {
+      console.error(`cannot read ${file}: ${e.code ?? e.message}`);
+      process.exit(2);
+    }
   }
   const r = summarise(log.entries);
   console.log(json ? JSON.stringify({ ...r, unreadable: log.unreadable }, null, 2) : formatReport(r, log.unreadable));

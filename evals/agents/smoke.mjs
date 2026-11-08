@@ -167,38 +167,38 @@ export const CASES = [
   },
   {
     name: 'skill package-unreal-plugin: no engine', fixture: null, unreal: true,
-    prompt: '/rfr-core:package-unreal-plugin 5.6',
+    prompt: '/rfr-unreal:package-unreal-plugin 5.6',
     check: t => /(not (installed|found|available)|no engine|cannot|can't|unable)/i.test(t) && /(FabURL|Tier 1|tier1)/i.test(t),
   },
   {
     name: 'skill profile-unreal-plugin: no engine', fixture: null, unreal: true,
-    prompt: '/rfr-core:profile-unreal-plugin score updates in a test map',
+    prompt: '/rfr-unreal:profile-unreal-plugin score updates in a test map',
     check: t => /(trace|Insights)/i.test(t),
   },
   {
     name: 'skill a11y-audit: static page', fixture: 'verify-and-report',
     change: d => write(d, 'public/index.html', '<!doctype html><html><head><title>Shop</title></head><body><div onclick="buy()">Buy</div><img src="hero.jpg"><input placeholder="Email"><p style="color:#aaa;background:#fff">Sale ends soon</p></body></html>'),
     commitChange: true,
-    prompt: '/rfr-core:a11y-audit public/index.html (a static file; open it with file:// if you run a browser, or review the markup if you cannot)',
+    prompt: '/rfr-web:a11y-audit public/index.html (a static file; open it with file:// if you run a browser, or review the markup if you cannot)',
     check: t => /(1\.1\.1|alt)/i.test(t) && /(4\.1\.2|button|role)/i.test(t) && /(1\.4\.3|contrast)/i.test(t),
   },
   {
     name: 'skill a11y-audit: component', fixture: 'verify-and-report',
     change: d => write(d, 'src/Search.jsx', 'export function Search() {\n  return <form><input type="text" placeholder="Search" /><span onClick={() => {}}>Go</span></form>;\n}\n'),
     commitChange: true,
-    prompt: '/rfr-core:a11y-audit src/Search.jsx (no dev server exists; review the component)',
+    prompt: '/rfr-web:a11y-audit src/Search.jsx (no dev server exists; review the component)',
     check: t => /label/i.test(t) && /(manual|assistive|not (run|covered)|automated)/i.test(t),
   },
   {
     name: 'skill perf-audit: no deployment', fixture: 'verify-and-report',
     change: d => write(d, 'public/index.html', '<!doctype html><html><head><script src="https://cdn.example.com/huge-lib.js"></script></head><body><img src="hero.jpg"><div id="app"></div></body></html>'),
     commitChange: true,
-    prompt: '/rfr-core:perf-audit public/index.html (static file, no server or deployment exists)',
+    prompt: '/rfr-web:perf-audit public/index.html (static file, no server or deployment exists)',
     check: t => /(LCP|CLS|INP|Lighthouse)/.test(t) && /(script|render-blocking|blocking|width|height|dimensions)/i.test(t),
   },
   {
     name: 'skill perf-audit: bundle question', fixture: 'scoped-fix',
-    prompt: '/rfr-core:perf-audit src/price.js is imported on every page; is there anything heavy here? No server or deployment exists.',
+    prompt: '/rfr-web:perf-audit src/price.js is imported on every page; is there anything heavy here? No server or deployment exists.',
     check: t => /(budget|size|LCP|Lighthouse|measure)/i.test(t),
   },
   {
@@ -281,7 +281,7 @@ export function prepare(c) {
 
 function run(c, dir, model) {
   const args = ['-p', c.prompt, '--model', model, '--output-format', 'json', '--setting-sources', 'project,local',
-    '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'),
+    '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'), '--plugin-dir', path.join(ROOT, 'plugins', 'web'), '--plugin-dir', path.join(ROOT, 'plugins', 'unreal'),
     '--allowedTools', 'Read,Grep,Glob,Edit,Write,Bash,Agent,Skill'];
   return new Promise(resolve => {
     const env = c.fakeGh ? { ...process.env, PATH: [path.join(ROOT, 'evals', 'agents', 'fake-gh'), process.env.PATH].join(path.delimiter) } : process.env;

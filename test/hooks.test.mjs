@@ -91,7 +91,7 @@ test('format-on-edit uses only formatters the project has', () => {
 });
 
 test('guard-mcp asks before Vercel actions that change or expose the account', async () => {
-  const { vercelToolNeedsApproval } = await import('../plugins/core/scripts/guard-mcp.mjs');
+  const { vercelToolNeedsApproval } = await import('../plugins/web/scripts/guard-mcp.mjs');
   for (const t of ['mcp__Vercel__create_deployment', 'mcp__vercel__edit_project_env', 'mcp__plugin_vercel_vercel__delete_project', 'mcp__Vercel__buy_domain', 'mcp__Vercel__get_auth_token', 'mcp__Vercel__request_rollback', 'mcp__Vercel__update_project_protection_bypass']) {
     assert.ok(vercelToolNeedsApproval(t), t);
   }
@@ -101,7 +101,7 @@ test('guard-mcp asks before Vercel actions that change or expose the account', a
 });
 
 test('guard-mcp asks before Vercel reads that return decrypted environment variables or tokens (NODE-002)', async () => {
-  const { vercelToolNeedsApproval } = await import('../plugins/core/scripts/guard-mcp.mjs');
+  const { vercelToolNeedsApproval } = await import('../plugins/web/scripts/guard-mcp.mjs');
   // Vercel's tool schemas: get_project_env "get the decrypted value", get_shared_env_var "including its decrypted value".
   for (const t of ['mcp__Vercel__get_project_env', 'mcp__vercel__get_shared_env_var', 'mcp__plugin_vercel_vercel__get_project_env', 'mcp__Vercel__get_edge_config_tokens']) {
     assert.ok(vercelToolNeedsApproval(t, { idOrName: 'prj_1', id: 'env_1' }), t);
@@ -114,13 +114,13 @@ test('guard-mcp asks before Vercel reads that return decrypted environment varia
     assert.ok(!vercelToolNeedsApproval('mcp__Vercel__filter_project_envs', input), JSON.stringify(input));
   }
   // The hook passes tool_input through, so a decrypting call asks end to end.
-  const run = input => spawnSync(process.execPath, ['plugins/core/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
+  const run = input => spawnSync(process.execPath, ['plugins/web/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
   assert.match(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1', decrypt: 'true' } }).stdout, /"permissionDecision":\s*"ask"/);
   assert.equal(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1' } }).stdout.trim(), '');
 });
 
 test('guard-mcp asks on any form of decrypt, names secrets in its question, and matches the server name in any case (NODE-002)', async () => {
-  const { vercelToolNeedsApproval } = await import('../plugins/core/scripts/guard-mcp.mjs');
+  const { vercelToolNeedsApproval } = await import('../plugins/web/scripts/guard-mcp.mjs');
   const f = 'mcp__Vercel__filter_project_envs';
   for (const input of [{ decrypt: 1 }, { decrypt: '1' }, { decrypt: 'yes' }, { decrypt: 'true ' }, { Decrypt: 'true' }, { query: { decrypt: 'true' } }, '{"idOrName":"p","decrypt":"true"}']) {
     assert.ok(vercelToolNeedsApproval(f, input), JSON.stringify(input));
@@ -131,11 +131,11 @@ test('guard-mcp asks on any form of decrypt, names secrets in its question, and 
   // Read tools Vercel documents as returning masked or non-secret data still pass.
   for (const t of ['mcp__Vercel__list_feature_flag_sdk_keys', 'mcp__Vercel__get_bypass_ip']) assert.ok(!vercelToolNeedsApproval(t, {}), t);
 
-  const run = input => spawnSync(process.execPath, ['plugins/core/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
+  const run = input => spawnSync(process.execPath, ['plugins/web/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
   assert.match(run({ tool_name: 'mcp__Vercel__get_project_env', tool_input: { idOrName: 'p', id: 'e' } }).stdout, /returns secret values \(decrypted environment variables or tokens\)/);
   assert.match(run({ tool_name: 'mcp__Vercel__create_deployment', tool_input: {} }).stdout, /can change or expose your Vercel account/);
 
-  const hooks = JSON.parse(fs.readFileSync('plugins/core/hooks/hooks.json', 'utf8'));
+  const hooks = JSON.parse(fs.readFileSync('plugins/web/hooks/hooks.json', 'utf8'));
   const entry = hooks.hooks.PreToolUse.find(h => h.hooks.some(x => x.command.includes('guard-mcp.mjs')));
   const matcher = new RegExp(`^(?:${entry.matcher})$`);
   for (const t of ['mcp__Vercel__get_project_env', 'mcp__claude_ai_VERCEL__get_project_env', 'mcp__plugin_vercel_vercel__get_project_env']) assert.match(t, matcher);
@@ -225,18 +225,22 @@ test('guard-commands asks before changing machine-wide git configuration (#31)',
   }
 });
 
-test('guard-commands asks when an editor -ExecCmds list does not quit (#56)', () => {
+test('guard-unreal asks when an editor -ExecCmds list does not quit (#56); guard-commands no longer does', async () => {
+  const { decideUnreal } = await import('../plugins/unreal/scripts/guard-unreal.mjs');
   for (const command of [
     '"C:/UE_5.7/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" Host.uproject -ExecCmds="Automation RunTests RfrSample" -unattended',
     'UnrealEditor-Cmd Host.uproject -ExecCmds="py run.py" -nullrhi',
     "& UnrealEditor.exe Host.uproject '-ExecCmds=DumpConsoleCommands' -unattended",
-  ]) assert.ok(findRisk(command), command);
+  ]) {
+    assert.ok(decideUnreal(command), command);
+    assert.equal(findRisk(command), null, `guard-commands: ${command}`);
+  }
   for (const command of [
     '"C:/UE_5.7/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" Host.uproject -ExecCmds="Automation RunTests RfrSample;Quit" -unattended',
     'UnrealEditor-Cmd Host.uproject -ExecCmds="py run.py; quit" -nullrhi',
     'UnrealEditor-Cmd Host.uproject -run=ResavePackages',
     'grep -n ExecCmds Scripts/Verify.ps1',
-  ]) assert.equal(findRisk(command), null, command);
+  ]) assert.equal(decideUnreal(command), null, command);
 });
 
 function runOwnedPathsHook(projectDir, input) {

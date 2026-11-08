@@ -12,6 +12,23 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
   - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
   - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
 
+## [4.0.0] - 2026-11-08
+
+Pull requests: #148, #150.
+
+### Changed
+
+- **Breaking:** domain plugins, slices 16a and 16b (#148, #150; `docs/specs/plugin-split.md`). `rfr-core` keeps what every project uses; the web and Unreal parts move to two new plugins, `rfr-web` 1.0.0 and `rfr-unreal` 1.0.0, released with `rfr-core` 4.0.0. The reviewer agents that cover both domains (`accessibility-reviewer`, `performance-reviewer`, `ux-reviewer`) stay in `rfr-core`.
+  - New `rfr-web` (`plugins/web/`): the `web-engineer` agent, the `a11y-audit` and `perf-audit` skills, and the Vercel MCP guard `guard-mcp` (NODE-002), moved from `rfr-core`, with its own outcome hook. Its messages now start `rfr-web (NODE-002)`.
+  - New `rfr-unreal` (`plugins/unreal/`): the `unreal-engineer` agent and the `package-unreal-plugin` and `profile-unreal-plugin` skills, moved from `rfr-core`, and a `guard-unreal` hook that takes over the editor `-ExecCmds … Quit` check from `guard-commands`.
+  - `rfr-core` names the moved agents and skills with their new plugins (`rfr-web:web-engineer`, `/rfr-unreal:package-unreal-plugin`), and says what to do when a domain plugin is not installed. A new check, `checks/plugin-refs.mjs`, run by the tests, fails when any plugin names another plugin's agent or skill without that plugin's prefix; the domain skills now call `rfr-core:check-runner`, and `rfr-process` names `rfr-core`'s reviewers and `/rfr-core:merge-when-green`.
+  - The build copies `lib.mjs` and `guard-outcome.mjs` from `rfr-core` into each domain plugin. Each plugin with guards logs to its own data folder, and `checks/guard-report.mjs` takes several logs. The marketplace lists both new plugins, and `npm run validate:plugins` checks all five.
+  - Adopters: nothing yet. At the release, web projects enable `rfr-web` and Unreal projects enable `rfr-unreal` alongside `rfr-core`.
+  - Slice 16b: each template repo enables `rfr-core` with its domain plugin (`build/profiles.json` lists each profile's `plugins`, and the build writes `enabledPlugins` from it), as do the reference projects in `examples/`. `/rfr-core:install-rules` names the domain plugin a profile needs and offers to enable it. The eval harness loads every plugin a case names (`plugins` in `case.json`), and the `tech-lead` cases load the domain plugin of the agent they expect. The README, adoption guide, maintenance guide, and practice guides use the new names, and a test fails on any `rfr-core:` name of a moved agent or skill outside the changelog and research notes.
+  - `rfr-process` 0.12.2: names `rfr-core`'s reviewers and `/rfr-core:merge-when-green` with their plugin.
+  - Moved, with their new names: `/rfr-core:a11y-audit` is now `/rfr-web:a11y-audit`; `/rfr-core:perf-audit` is `/rfr-web:perf-audit`; `/rfr-core:package-unreal-plugin` is `/rfr-unreal:package-unreal-plugin`; `/rfr-core:profile-unreal-plugin` is `/rfr-unreal:profile-unreal-plugin`; the `web-engineer` agent is `rfr-web:web-engineer`; the `unreal-engineer` agent is `rfr-unreal:unreal-engineer`; the `guard-mcp` hook is in `rfr-web`; the editor `-ExecCmds` check is `rfr-unreal`'s `guard-unreal`.
+  - Adopters: update `rfr-core` to 4.0.0, then enable the domain plugin for your project, `/plugin install rfr-web@rules-for-robots` for a website or web app, or `/plugin install rfr-unreal@rules-for-robots` for an Unreal plugin, and add it to `enabledPlugins` in `.claude/settings.json` if you commit one. Use the new names above in any instructions or scripts that call the moved skills. A web project without `rfr-web` keeps rfr-core's guards and reviewers but loses the web audits, the `web-engineer` agent, and the Vercel guard.
+
 ## [3.3.0] - 2026-11-08
 
 Pull requests: #146.

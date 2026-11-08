@@ -1,0 +1,19 @@
+{
+  "name": "rfr-web",
+  "version": "1.0.0",
+  "description": "Web skills, agents, and hooks from rules-for-robots: the web-engineer agent, accessibility and performance audits, and the Vercel MCP guard. Requires rfr-core.",
+  "author": {
+    "name": "Lifelike & Believable Animation Design"
+  },
+  "homepage": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "repository": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "license": "MIT",
+  "keywords": [
+    "web",
+    "nextjs",
+    "astro",
+    "accessibility",
+    "performance",
+    "vercel"
+  ]
+}
