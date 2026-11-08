@@ -6,11 +6,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.1.1] - 2026-11-08
 
-Pull requests: #PRWA.
+Pull requests: #154.
 
 ### Changed
 
-- WA-003 asks before actions that cannot be undone or reach outside the project (#PRWA). Discarding uncommitted changes and deleting files inside the repository no longer need a question when rfr-core's guards are installed, because 5.1.0 takes a snapshot first; the agent goes ahead and names the restore command in its report. Without the guards, the rule still asks. The rule now matches what the guard allows.
+- WA-003 asks before actions that cannot be undone or reach outside the project (#154). Discarding uncommitted changes and deleting files inside the repository no longer need a question when rfr-core's guards are installed, because 5.1.0 takes a snapshot first; the agent goes ahead and names the restore command in its report. Without the guards, the rule still asks. The rule now matches what the guard allows.
   - The changelog lists slice 17a (#149) under 4.0.0, where it was released; it had stayed under Unreleased.
   - Adopters: update `rfr-core` to 5.1.1. Projects that copy the rules (`/rfr-core:install-rules`) get the new WA-003 text on their next install.
 
