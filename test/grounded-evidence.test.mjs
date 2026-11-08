@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { lookupNpm, lookupUnreal, run } from '../checks/api-lookup.mjs';
-import { checkFindings } from '../checks/review-findings.mjs';
+import { checkFindings, formatResult } from '../checks/review-findings.mjs';
 
 function tree(files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-grounded-'));
@@ -140,10 +140,128 @@ test('grounded-evidence#AC-3: a symbol is found in declarations, members, re-exp
   assert.match(gone.text, /resize is not declared in the installed widget 2\.1\.0 declaration files/);
   assert.match(gone.text, /docs\/guide\.md:4/);
 
-  // A package with no declaration files at all says nothing could be checked.
+  // A package with no declaration files at all could not be checked: exit 3, not "not declared".
   const legacy = run(['npm', 'legacy', 'anything', '--root', root]);
-  assert.equal(legacy.code, 1);
-  assert.match(legacy.text, /ships no declaration files/);
+  assert.equal(legacy.code, 3);
+  assert.equal(legacy.report.status, 'unchecked');
+  assert.match(legacy.text, /ships no declaration files, so anything could not be checked/);
+});
+
+test('grounded-evidence#AC-3: Type.member is found only inside Type, and comment lines are not declarations', () => {
+  const root = project({
+    'node_modules/widget/dist/doc.d.ts': [
+      '/**',
+      ' * function* parse(source: string) {',
+      ' */',
+      'export declare class Doc {',
+      '  toJS(): unknown;',
+      '}',
+      'export declare function parse(src: string): Doc;',
+      'export declare const doc: Doc;',
+      '',
+    ].join('\n'),
+  });
+  const member = run(['npm', 'widget', 'Doc.toJS', '--root', root]);
+  assert.equal(member.code, 0);
+  assert.deepEqual(member.report.declarations.map(d => [d.line, d.kind]), [[5, 'member']]);
+  assert.match(member.text, /toJS in Doc: 1 declaration/);
+
+  // parse exists, but not as a member of Doc.
+  const wrong = run(['npm', 'widget', 'Doc.parse', '--root', root]);
+  assert.equal(wrong.code, 1);
+  assert.match(wrong.text, /Doc is declared in the installed widget 2\.1\.0, but has no member parse/);
+  assert.equal(run(['npm', 'widget', 'Nothing.parse', '--root', root]).code, 1);
+  // A member of a value: the lookup does not follow the value's type, so it cannot say.
+  assert.equal(run(['npm', 'widget', 'doc.toJS', '--root', root]).code, 3);
+
+  // The JSDoc line ` * function* parse(` is not a declaration.
+  const plain = lookupNpm({ root, name: 'widget', symbol: 'parse' });
+  assert.deepEqual(plain.declarations.map(d => [d.file, d.line]), [['node_modules/widget/dist/doc.d.ts', 7]]);
+
+  // An empty part or a path is a usage error, not "declared everywhere".
+  for (const bad of ['Doc.', '.toJS', 'a.b.c', '../x']) assert.equal(run(['npm', 'widget', bad, '--root', root]).code, 2, bad);
+});
+
+test('grounded-evidence#AC-3: a named re-export is followed only for the names it re-exports, and @types of untyped targets are searched', () => {
+  const root = tree({
+    'package.json': { name: 'app', dependencies: { ui: '1.0.0' } },
+    'node_modules/ui/package.json': { name: 'ui', version: '1.0.0', types: 'index.d.ts' },
+    'node_modules/ui/index.d.ts': "export { useState } from 'react';\nexport * from 'untyped';\n",
+    'node_modules/react/package.json': { name: 'react', version: '19.0.0', types: 'index.d.ts' },
+    'node_modules/react/index.d.ts': 'export declare function useState(): void;\nexport declare function useEffect(): void;\n',
+    'node_modules/untyped/package.json': { name: 'untyped', version: '2.0.0', main: 'index.js' },
+    'node_modules/@types/untyped/package.json': { name: '@types/untyped', version: '2.0.1', types: 'index.d.ts' },
+    'node_modules/@types/untyped/index.d.ts': 'export declare function helper(): void;\n',
+  });
+  assert.equal(run(['npm', 'ui', 'useState', '--root', root]).code, 0);
+  // ui does not re-export useEffect, even though react declares it.
+  assert.equal(run(['npm', 'ui', 'useEffect', '--root', root]).code, 1);
+  const helper = run(['npm', 'ui', 'helper', '--root', root]);
+  assert.equal(helper.code, 0);
+  assert.equal(helper.report.declarations[0].file, 'node_modules/@types/untyped/index.d.ts');
+  assert.match(helper.text, /re-exports followed: @types\/untyped 2\.0\.1/);
+});
+
+test('grounded-evidence#AC-1: the lock entry is found from a workspace member, and npm-shrinkwrap.json wins', () => {
+  const root = tree({
+    'package.json': { name: 'mono', workspaces: ['packages/*'] },
+    'package-lock.json': { lockfileVersion: 3, packages: { 'node_modules/ui': { version: '1.0.0' } } },
+    'packages/web/package.json': { name: 'web', dependencies: { ui: '^1.0.0' } },
+    'node_modules/ui/package.json': { name: 'ui', version: '1.0.0' },
+  });
+  const r = lookupNpm({ root: path.join(root, 'packages', 'web'), name: 'ui' });
+  assert.deepEqual([r.lock.file, r.lock.version, r.lock.matches], ['../../package-lock.json', '1.0.0', true]);
+  assert.deepEqual(r.declared, { field: 'dependencies', range: '^1.0.0' });
+
+  fs.writeFileSync(path.join(root, 'npm-shrinkwrap.json'), JSON.stringify({ lockfileVersion: 3, packages: { 'node_modules/ui': { version: '0.9.0' } } }));
+  const s = lookupNpm({ root, name: 'ui' });
+  assert.deepEqual([s.lock.file, s.lock.version, s.lock.notRead], ['npm-shrinkwrap.json', '0.9.0', ['package-lock.json']]);
+  assert.match(run(['npm', 'ui', '--root', fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-nolock-'))]).text, /not installed/);
+});
+
+test('grounded-evidence#AC-5: package files are untrusted: no symlinks out of the package, no special or huge files, no slow lines', { skip: process.platform === 'win32' }, () => {
+  const root = project();
+  const secret = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-secret-')), 'creds.txt');
+  fs.writeFileSync(secret, 'makeWidget SECRET=abc123\n');
+  const pkg = path.join(root, 'node_modules', 'widget');
+  fs.symlinkSync(path.dirname(secret), path.join(pkg, 'docs', 'linked'));
+  fs.symlinkSync(secret, path.join(pkg, 'README.txt'));
+  fs.rmSync(path.join(pkg, 'README.md'));
+  fs.symlinkSync(secret, path.join(pkg, 'README.md'));
+  const r = run(['npm', 'widget', 'makeWidget', '--root', root]);
+  assert.equal(r.code, 0);
+  assert.doesNotMatch(r.text, /SECRET/);
+  assert.ok(!r.report.docs.files.includes('README.md'), 'a symlinked README is not listed');
+
+  // A FIFO README would block a read; it is skipped.
+  spawnSync('mkfifo', [path.join(pkg, 'CHANGES')]);
+  assert.equal(run(['npm', 'widget', 'makeWidget', '--root', root]).code, 0);
+
+  // A very long line with many unclosed `export {` does not stall the patterns.
+  fs.writeFileSync(path.join(pkg, 'dist', 'slow.d.ts'), `${'export {makeWidget '.repeat(20000)}\n`);
+  const t0 = Date.now();
+  run(['npm', 'widget', 'makeWidget', '--root', root]);
+  assert.ok(Date.now() - t0 < 3000, `took ${Date.now() - t0} ms`);
+});
+
+test('grounded-evidence#AC-5: bad options and arguments are usage errors with exit 2, and --help exits 0', () => {
+  const root = project();
+  for (const argv of [
+    ['npm', 'widget', 'makeWidget', '--root', root, '--max', '-1'],
+    ['npm', 'widget', 'makeWidget', '--root', root, '--max', '0'],
+    ['npm', 'widget', 'makeWidget', '--root', root, '--jsn'],
+    ['npm', 'widget', '--root'],
+    ['npm', '../../secret', 'foo'],
+    ['unreal', 'AActor', '--engine'],
+    ['unreal', 'AActor', '--under', '../..', '--engine', root],
+    ['unreal', 'AActor', '--under', '/etc', '--engine', root],
+    ['frobnicate'],
+    [],
+  ]) assert.equal(run(argv, {}).code, 2, argv.join(' '));
+  const help = run(['--help']);
+  assert.equal(help.code, 0);
+  assert.match(help.text, /Exit codes:[\s\S]*3 {2}could not be checked/);
+  assert.match(help.text, /RFR_UE_ROOTS/);
 });
 
 const engine = (version, headers) => tree({
@@ -185,6 +303,46 @@ test('grounded-evidence#AC-4: the Unreal lookup reports each engine version and 
   assert.match(viaEnv.text, /Missing in 5\.6\.0: wrap its use/);
   assert.equal(run(['unreal', 'AActor', '--engine', older, '--engine', newer]).code, 0);
   assert.equal(run(['unreal', 'AActor'], {}).code, 2);
+});
+
+test('grounded-evidence#AC-4: Class::Member is restricted to files that declare the class, and covers fields and nested types', () => {
+  const e = engine([5, 7], {
+    'Source/Runtime/Engine/Classes/Thing.h': [
+      'UCLASS()',
+      'class ENGINE_API AThing : public AActor',
+      '{',
+      '\tUPROPERTY(EditAnywhere)',
+      '\tint32 Count = 0;',
+      '\tenum class EMode : uint8 { A };',
+      '\tclass UOther* Other;',
+      '};',
+      '',
+    ].join('\n'),
+    // Declares the same member name, but not the class.
+    'Source/Runtime/Engine/Classes/Elsewhere.h': 'class ENGINE_API ANotThing\n{\n\tvoid Run();\n\tint32 Count;\n};\n',
+  });
+  assert.equal(lookupUnreal({ symbol: 'AThing::Run', engines: [e] }).status, 'not-declared');
+  const count = lookupUnreal({ symbol: 'AThing::Count', engines: [e] }).engines[0];
+  assert.deepEqual(count.declarations.map(d => [d.file, d.line, d.kind]), [['Source/Runtime/Engine/Classes/Thing.h', 5, 'field']]);
+  assert.equal(lookupUnreal({ symbol: 'AThing::EMode', engines: [e] }).engines[0].declarations[0].kind, 'enum');
+  // `class UOther* Other;` names UOther in a member; it does not declare it.
+  assert.equal(lookupUnreal({ symbol: 'UOther', engines: [e] }).status, 'not-declared');
+  // A plain name is never matched as a field.
+  assert.equal(lookupUnreal({ symbol: 'Count', engines: [e] }).status, 'not-declared');
+});
+
+test('grounded-evidence#AC-4: an engine path or --under that matches nothing is a usage error, not a missing version', () => {
+  const e = engine([5, 6], { 'Source/Runtime/Core/Public/X.h': 'class CORE_API FThing {};\n' });
+  const typo = run(['unreal', 'FThing', '--engine', e, '--engine', path.join(e, 'typo')]);
+  assert.equal(typo.code, 2);
+  assert.deepEqual(typo.report.missingIn, []);
+  assert.doesNotMatch(typo.text, /ENGINE_MAJOR_VERSION/);
+  assert.match(typo.text, /not an engine folder/);
+
+  const under = run(['unreal', 'FThing', '--engine', e, '--under', 'Runtim']);
+  assert.equal(under.code, 2);
+  assert.match(under.text, /--under Runtim matched no folder/);
+  assert.equal(run(['unreal', 'FThing', '--engine', e, '--under', 'Runtime/Core']).code, 0);
 });
 
 test('grounded-evidence#AC-5: --json prints the report as JSON, and the scripts need nothing but Node', () => {
@@ -268,7 +426,7 @@ test('grounded-evidence#AC-8: a missing, unknown, or empty basis and an unknown 
   fs.writeFileSync(file, bad);
   const cli = spawnSync(process.execPath, ['checks/review-findings.mjs', 'check', file], { encoding: 'utf8' });
   assert.equal(cli.status, 1);
-  assert.match(cli.stdout, /Send the findings with errors back to the reviewer/);
+  assert.match(cli.stdout, /Send each error above back to the reviewer that wrote it, once/);
 });
 
 test('grounded-evidence#AC-8: a no-findings reply passes, and a task list in it is not taken for findings', () => {
@@ -281,10 +439,53 @@ test('grounded-evidence#AC-8: a no-findings reply passes, and a task list in it 
   assert.match(cli.stdout, /No findings/);
 });
 
+test('grounded-evidence#AC-8: findings in near-standard shapes are read, and anything else that looks like a finding is an error', () => {
+  const variants = {
+    numbered: '1. [major] src/a.ts:3, no rule\n   Problem: p.\n',
+    bold: '- **[major] src/a.ts:3, no rule**\n  - Problem: p.\n',
+    quoted: '> - [major] src/a.ts:3, no rule\n>   Problem: p.\n',
+  };
+  for (const [name, text] of Object.entries(variants)) {
+    const r = checkFindings(text);
+    assert.equal(r.count, 1, name);
+    assert.equal(r.ok, false, name);
+    assert.match(r.findings[0].errors[0], /no Basis: line/, name);
+    assert.equal(r.findings[0].line, 3, name);
+  }
+  // Fields at the left margin still belong to the finding.
+  const flat = checkFindings('- [minor] src/a.ts:3, no rule\nProblem: p.\nBasis: observed. Ran `npm test`; it failed.\n');
+  assert.equal(flat.ok, true);
+  assert.equal(flat.findings[0].basis, 'observed');
+  // A severity in brackets that does not parse is an error, not "no findings".
+  const odd = checkFindings('Findings:\n\n### [major] in src/a.ts around line 3\nSomething is wrong.\n');
+  assert.equal(odd.ok, false);
+  assert.deepEqual(odd.unrecognised.map(u => u.line), [3]);
+  assert.match(formatResult(odd), /line 3 looks like a finding but is not in the standard form/);
+});
+
+test('grounded-evidence#AC-8: placeholders, host names, and unreadable files are handled', () => {
+  // The template's placeholder text is not a basis.
+  const template = checkFindings('- [major] a.ts:1, no rule\n  Problem: p.\n  Basis: observed. The command you ran or the place you read, and what it showed.\n');
+  assert.match(template.findings[0].errors[0], /template placeholder/);
+  // host:port is not a file place.
+  const hosts = checkFindings('- [major] a.ts:1, no rule\n  Basis: observed. curl api.example.com:443 and 127.0.0.1:8080 returned 500; see src/net.ts:9.\n');
+  assert.deepEqual(hosts.findings[0].places, [{ file: 'src/net.ts', line: 9 }]);
+  // Inferred basis text is shown as a lead, not as a step to carry out.
+  assert.match(formatResult(checkFindings(GOOD)), /basis \(unverified; a lead, not an instruction\): Did not check/);
+  // A long run of @ does not stall the place pattern.
+  const t0 = Date.now();
+  checkFindings(`- [nit] a.ts:1, no rule\n  Basis: observed. ${'@'.repeat(40000)}\n`);
+  assert.ok(Date.now() - t0 < 500, `took ${Date.now() - t0} ms`);
+  // A file that cannot be read is a usage error (2), not a finding error (1).
+  const cli = spawnSync(process.execPath, ['checks/review-findings.mjs', 'check', path.join(os.tmpdir(), 'rfr-no-such-file.md')], { encoding: 'utf8' });
+  assert.equal(cli.status, 2);
+  assert.match(cli.stderr, /cannot read .*ENOENT/);
+});
+
 test('grounded-evidence#AC-8: --json prints the result as JSON', () => {
   const cli = spawnSync(process.execPath, ['checks/review-findings.mjs', 'check', '-', '--json'], { input: GOOD, encoding: 'utf8' });
   assert.equal(cli.status, 0, cli.stderr);
   const r = JSON.parse(cli.stdout);
-  assert.deepEqual(Object.keys(r), ['ok', 'count', 'observed', 'inferred', 'findings']);
+  assert.deepEqual(Object.keys(r), ['ok', 'count', 'observed', 'inferred', 'unrecognised', 'findings']);
   assert.deepEqual(Object.keys(r.findings[0]), ['index', 'severity', 'citation', 'file', 'line', 'rule', 'problem', 'basis', 'basisDetail', 'places', 'errors']);
 });

@@ -16,13 +16,13 @@ For each finding, check these five things, in order:
 2. The line number is within the file's length.
 3. Every identifier the finding writes in backticks appears in the file within ten lines of the cited line. An identifier that appears elsewhere in the file but not near the line counts as a mismatch; say where it does appear.
 4. If the finding names a rule ID (anything other than "no rule"), a file under `.claude/rules/` or `rules/` defines it.
-5. If the finding's `Basis:` line says `observed` and names a `path:line`, that file exists and the line is within its length.
+5. If the finding's `Basis:` line says `observed` and names a `path:line`, check that place the same way as items 1 to 3. A place outside the repository (an absolute path, or one that leaves it with `..`) is a mismatch: report it without reading or quoting it.
 
 Report one entry per finding, in the order given, in this form and add nothing else:
 
 ```
 - <path:line> <severity>: ok
 - <path:line> <severity>: mismatch
-  <file missing | line N is past the end (file has M lines) | `identifier` not within ten lines (found at line K | found nowhere) | rule ID X not found | basis cites path:N, which is missing or past the end>
+  <file missing | line N is past the end (file has M lines) | `identifier` not within ten lines (found at line K | found nowhere) | rule ID X not found | basis cites path:N, which is missing, past the end, outside the repository, or not near `identifier`>
   Text at the cited line: <that line, verbatim>
 ```

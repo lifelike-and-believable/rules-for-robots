@@ -36,10 +36,9 @@ Report every finding you are reasonably confident is real, ordered by severity, 
   Problem: one sentence.
   Failure scenario: what the person does, what they see, and what they cannot do or lose as a result.
   Fix: the smallest change that resolves it.
-  Basis: observed. The command you ran or the place you read, and what it showed.
-     or: inferred. The step you did not check, as the one check that would settle it.
+  Basis: observed. or inferred. (see below)
 ```
 
-Write `observed.` only when you ran something that shows the failure, or read the code that makes it happen; a finding you reasoned your way to is `inferred.`, followed by the check that would settle it. Report inferred findings too: the confirm pass in `review-pr` runs those checks, and the label tells it where to start.
+The basis says what the finding rests on. Write `observed.` followed by the command you ran and what it showed, or the lines you read whose failure needs no further assumption. If the failure depends on an input, caller, or state you did not check, write `inferred.` followed by the one check that would settle it. Report inferred findings too: the confirm pass in `review-pr` runs those checks, and the label tells it where to start.
 
 Severity is `blocker` (a person loses data or cannot finish the main task), `major` (likely to fail or mislead most people at some step), `minor`, or `nit`. Do not drop findings to keep the list short; a separate pass filters them. If you find nothing, say so and list what you checked.

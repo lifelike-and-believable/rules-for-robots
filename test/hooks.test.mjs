@@ -119,6 +119,28 @@ test('guard-mcp asks before Vercel reads that return decrypted environment varia
   assert.equal(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1' } }).stdout.trim(), '');
 });
 
+test('guard-mcp asks on any form of decrypt, names secrets in its question, and matches the server name in any case (NODE-002)', async () => {
+  const { vercelToolNeedsApproval } = await import('../plugins/core/scripts/guard-mcp.mjs');
+  const f = 'mcp__Vercel__filter_project_envs';
+  for (const input of [{ decrypt: 1 }, { decrypt: '1' }, { decrypt: 'yes' }, { decrypt: 'true ' }, { Decrypt: 'true' }, { query: { decrypt: 'true' } }, '{"idOrName":"p","decrypt":"true"}']) {
+    assert.ok(vercelToolNeedsApproval(f, input), JSON.stringify(input));
+  }
+  for (const input of [{ decrypt: 'False' }, { decrypt: false }, { decrypt: null }, '{"idOrName":"p"}', {}]) {
+    assert.ok(!vercelToolNeedsApproval(f, input), JSON.stringify(input));
+  }
+  // Read tools Vercel documents as returning masked or non-secret data still pass.
+  for (const t of ['mcp__Vercel__list_feature_flag_sdk_keys', 'mcp__Vercel__get_bypass_ip']) assert.ok(!vercelToolNeedsApproval(t, {}), t);
+
+  const run = input => spawnSync(process.execPath, ['plugins/core/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
+  assert.match(run({ tool_name: 'mcp__Vercel__get_project_env', tool_input: { idOrName: 'p', id: 'e' } }).stdout, /returns secret values \(decrypted environment variables or tokens\)/);
+  assert.match(run({ tool_name: 'mcp__Vercel__create_deployment', tool_input: {} }).stdout, /can change or expose your Vercel account/);
+
+  const hooks = JSON.parse(fs.readFileSync('plugins/core/hooks/hooks.json', 'utf8'));
+  const entry = hooks.hooks.PreToolUse.find(h => h.hooks.some(x => x.command.includes('guard-mcp.mjs')));
+  const matcher = new RegExp(`^(?:${entry.matcher})$`);
+  for (const t of ['mcp__Vercel__get_project_env', 'mcp__claude_ai_VERCEL__get_project_env', 'mcp__plugin_vercel_vercel__get_project_env']) assert.match(t, matcher);
+});
+
 test('guard-commands asks before shell edits to test files', async () => {
   const { findRisk } = await import('../plugins/core/scripts/guard-commands.mjs');
   for (const command of [
