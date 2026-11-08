@@ -76,6 +76,51 @@ export function ask(reason) {
   }));
 }
 
+// Context for the agent on a call the guard allows (tier 1 with a way back, such as the command that
+// restores what an rm -rf removes): no permission decision, so Claude Code's own rules still apply.
+export function inform(context) {
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      additionalContext: context,
+    },
+  }));
+}
+
+// The reason for an ask (guard tiers AC-3): the action, why a person must decide (it cannot be
+// undone, or it reaches outside the project), and what the agent can do if the person says no.
+export const askReason = ({ source, action, why, instead }) => `${source}: ${action}. ${why}. If not approved: ${instead}.`;
+
+// The reason for a refusal the agent acts on (tier 2), or one deferred to the pull request (tier 3):
+// what was refused, and the next step.
+export const refuseReason = ({ source, action, next }) => `${source}: ${action}. ${next}.`;
+
+// Project settings for the guards, from .claude/rfr.json at the repository root (guard tiers AC-5).
+// testWeakening: 'ask' (a person decides now) or 'defer' (the agent stops and reports, and the pull
+// request's test-change review decides). The default switches to 'defer' in the change that records
+// test-change-review AC-11 as passed.
+export const DEFAULT_TEST_WEAKENING = 'ask';
+
+export function guardSettings(cwd = process.cwd()) {
+  const settings = { testWeakening: DEFAULT_TEST_WEAKENING };
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', timeout: 5000 });
+  const root = r.status === 0 ? r.stdout.trim() : (process.env.CLAUDE_PROJECT_DIR ?? cwd);
+  try {
+    const json = JSON.parse(fs.readFileSync(nodePath.join(root, '.claude', 'rfr.json'), 'utf8'));
+    if (json?.testWeakening === 'ask' || json?.testWeakening === 'defer') settings.testWeakening = json.testWeakening;
+  } catch {
+    // No settings file, or one that cannot be read: the defaults hold.
+  }
+  return settings;
+}
+
+// The refusal for a test change when the project defers test weakening to the pull request.
+export const deferredTestReason = action => refuseReason({
+  source: 'rfr-core (TEST-001)',
+  action: `${action}, and this project defers test weakening to the pull request (testWeakening: defer)`,
+  next: 'Do not make this change now. Say so in your report: which test, what you would change, and the approved behaviour change or spec criterion that calls for it; the pull request decides, with the test-change review',
+});
+
 // Whether a file existed where the current branch started: at the merge base of HEAD and the
 // default branch (origin/HEAD, origin/main, origin/master, main, master, in that order). A test
 // file added on the branch is new, as the CI test guard (test-change-guard) counts it, so

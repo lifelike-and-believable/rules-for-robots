@@ -5,7 +5,7 @@ level: MUST
 scope: core
 paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**", "**/Tests/**", "**/__snapshots__/**", "**/Source/*Tests/**", "**/Source/**/*Tests.cpp", "**/Source/**/*Test.cpp", "**/Source/**/*Spec.cpp"]
 verified-by: [hook, ci]
-check: "hook: guard-test-edits and guard-commands (classify each change to a test file that existed where the branch started, and ask when it weakens the test; refuse shell writes to such files; ask before snapshot updates); ci: test-change-guard (flags PRs that change tests alongside implementation)"
+check: "hook: guard-test-edits and guard-commands (classify each change to a test file that existed where the branch started, and ask when it weakens the test; refuse shell writes to such files; refuse snapshot updates that state no reason); ci: test-change-guard (flags PRs that change tests alongside implementation)"
 targets-failure: test-gaming
 observed-on: [claude-opus-4-1, claude-opus-4-6, claude-opus-4-7, claude-sonnet-4-6]
 rationale: Claude models game tasks mainly by editing tests, and an anti-hack prompt still leaves 12.5 to 37.5% residual cheating on impossible tasks.
@@ -13,6 +13,8 @@ sources: ["practices/testing-and-code-quality.md", "practices/guards.md", "docs/
 ---
 <!-- Worked example for docs/rule-format.md. Enforcement lands in Phase 2 (hook) and Phase 6 (CI). -->
 Make failing tests pass by changing the implementation. Leave existing assertions, expected values, snapshots, and skip markers as they are, because a weakened test hides the defect it was written to catch.
+
+Change an existing test file with the Edit tool (or MultiEdit), never through shell commands or scripts, so the change can be checked; a shell write to one is refused.
 
 If a test looks wrong, or the task cannot be done without changing a test, stop and say which test and why instead of editing it. Add new tests freely.
 

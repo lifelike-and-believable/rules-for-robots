@@ -4,7 +4,7 @@
 // pass through, except those that return credentials or decrypted environment variables,
 // and filter_project_envs when it is asked to decrypt.
 import { fileURLToPath } from 'node:url';
-import { ask, readInput } from './lib.mjs';
+import { ask, askReason, readInput } from './lib.mjs';
 
 const READ_PREFIXES = ['get_', 'list_', 'search_', 'read_', 'count_', 'aggregate_', 'filter_', 'status', 'web_fetch', 'artifact_query'];
 // get_project_env and get_shared_env_var return decrypted values (Vercel's tool schemas:
@@ -39,14 +39,18 @@ export function vercelApprovalReason(toolName, toolInput) {
 
 export const vercelToolNeedsApproval = (toolName, toolInput) => vercelApprovalReason(toolName, toolInput) !== null;
 
+// The ask reason for a Vercel MCP call that needs approval, or null (guard tiers AC-3).
+export function vercelAskReason(toolName, toolInput) {
+  const kind = vercelApprovalReason(toolName, toolInput);
+  if (kind === 'secret') return askReason({ source: 'rfr-web (NODE-002)', action: `${toolName} returns secret values (decrypted environment variables or tokens) into this session`, why: 'a secret read into the session cannot be unread, and it can reach logs and transcripts', instead: 'list the variables without their values (filter_project_envs without decrypt), or refer to the variable by name in code or configuration without reading its value' });
+  if (kind === 'change') return askReason({ source: 'rfr-web (NODE-002)', action: `${toolName} can change or expose your Vercel account`, why: 'it acts on the live account, outside this project, and some changes cannot be undone', instead: 'describe the change in your report for a person to make, or use a read-only tool' });
+  return null;
+}
+
 async function main() {
   const input = await readInput();
-  const reason = vercelApprovalReason(input?.tool_name, input?.tool_input);
-  if (reason === 'secret') {
-    ask(`rfr-web (NODE-002): ${input.tool_name} returns secret values (decrypted environment variables or tokens) into this session. Approve only if you need these values now; filter_project_envs without decrypt lists variables without their values.`);
-  } else if (reason === 'change') {
-    ask(`rfr-web (NODE-002): ${input.tool_name} can change or expose your Vercel account. Approve only if this action is intended.`);
-  }
+  const reason = vercelAskReason(input?.tool_name, input?.tool_input);
+  if (reason) ask(reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

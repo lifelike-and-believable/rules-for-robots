@@ -26,7 +26,7 @@ test('plugin-split#AC-2: rfr-unreal holds unreal-engineer, the Unreal skills, an
   for (const p of ['plugins/unreal/agents/unreal-engineer.md', 'plugins/unreal/skills/package-unreal-plugin/SKILL.md', 'plugins/unreal/skills/profile-unreal-plugin/SKILL.md', 'plugins/unreal/scripts/guard-unreal.mjs']) assert.ok(has(p), p);
   for (const p of ['plugins/core/agents/unreal-engineer.md', 'plugins/core/skills/package-unreal-plugin', 'plugins/core/skills/profile-unreal-plugin']) assert.ok(!has(p), `moved: ${p}`);
   const command = 'UnrealEditor-Cmd Host.uproject -ExecCmds="Automation RunTests Rfr" -unattended';
-  assert.equal(decideUnreal(command)?.decision, 'ask');
+  assert.equal(decideUnreal(command)?.decision, 'deny');
   assert.equal(decideCommand(command, { cwd: ROOT }), null);
   assert.match(commandsIn(hooksOf('unreal')), /guard-unreal\.mjs/);
 });
