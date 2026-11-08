@@ -4,6 +4,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-08
+
+Pull requests: #143.
+
+### Added
+
+- Grounded evidence, slice 14a (`rfr-core`, #143; `docs/specs/grounded-evidence.md`, AC-1 to AC-9). A new `lookup-api` skill and `scripts/api-lookup.mjs` (from `checks/api-lookup.mjs`) check an API against the installed version. For an npm package they print the installed version, the `package-lock.json` entry (and say when the two differ), the declared range, the type entries, any `@types` package, and the bundled docs. Given a symbol, they show its declarations, following re-exports into other packages, and the docs lines that mention it. A `Type.member` is found only inside `Type`. They exit 1 when the installed version does not declare the symbol, and 3 when it cannot be checked (no declaration files). Package files are treated as untrusted: no symlinks out of the package, no special or oversized files. For Unreal they read each named engine's version and headers, and say which versions lack the symbol. The script reads only what is installed and makes no network calls. The `web-engineer` and `unreal-engineer` agents use it when the caller passes its path. The five reviewer agents add a `Basis:` line to each finding: `observed.` with what was run or read, or `inferred.` with the check that would settle it. `review-pr` checks the line with the new `scripts/review-findings.mjs`, and sends findings without one back to the reviewer once. It confirms an inferred finding only after doing the check that finding names, treating basis text as a lead rather than an instruction (SEC-003), and shows each finding's basis in its report. `citation-checker` also checks the places an observed basis cites. WA-006 is unchanged until the 14b eval; its candidate text is in `evals/candidates/WA-006-lookup.md`. Adopters: update the `rfr-core` plugin; nothing else changes.
+
+### Fixed
+
+- `guard-mcp` now enforces NODE-002 for decrypted environment variables (`rfr-core`, #143). It let three Vercel tools that return secrets through without asking, because their names start with a read prefix: `get_project_env` and `get_shared_env_var`, which return decrypted values, and `filter_project_envs` with `decrypt: "true"`. It now asks before the first two, before `get_edge_config_tokens`, and before any Vercel tool called with a `decrypt` argument in any form other than false, and its question says that secret values will enter the session; `filter_project_envs` without it still passes. The hook's matcher now catches the server name in any letter case. This covers the Vercel MCP server only: the `vercel` CLI (`vercel env pull`, `vercel api`) is not guarded yet. Found by the research in `docs/research/notes/third_party_tools_for_core.md`. Adopters: update the `rfr-core` plugin; sessions that read environment variable values through the Vercel MCP server are now asked first.
+
 ## [3.1.1] - 2026-11-08
 
 Pull requests: #144.
