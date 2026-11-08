@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Added
 
-- Model adaptation, slice 17b (`docs/specs/model-adaptation.md`, AC-7 to AC-10). Repository process only; no plugin changes.
+- Model adaptation, slice 17b (#152; `docs/specs/model-adaptation.md`, AC-7 to AC-10). Repository process only; no plugin changes.
   - `docs/maintenance.md` has a "New model" section: the steps to run when a new model reaches Claude Code, and the default decision for each ledger result. The quarterly review points to it.
   - A `New model` issue form (`.github/ISSUE_TEMPLATE/model-release.yml`) holds the same checklist.
   - `PLAN.md` section 5 keeps the guidance that has held across generations and moves what depends on one generation into a table that gains a column per model-release run. Decision 7 targets the newest generations with ledger entries.

@@ -377,7 +377,7 @@ Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
 
 ### Phase 17: Model adaptation (planned)
 Spec: [docs/specs/model-adaptation.md](docs/specs/model-adaptation.md) (approved 2026-11-08).
-Pull requests: #149 (spec and 17a).
+Pull requests: #149 (spec and 17a), #152 (17b and 17c).
 
 New models will keep arriving, and the rule set is tuned to the 5.5 generation. Principle 8 and the maintenance guide say rules are re-evaluated on each new model, but not how, at what cost, or where the result is kept. This phase makes that a routine: a fixed, budgeted eval suite that runs within days of a release, a ledger of which rules, agents, and skills have evidence on which model, saturated cases flagged, and default decisions for each result (keep, rewrite, move to a practice guide, pin an agent's model). METR's assessment of Anthropic's internal "Model 4" (2026-11-05) prompted it: faster model progress and saturated benchmarks are the two problems this phase addresses.
 
@@ -434,4 +434,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a done (#146); build 15b (the tier changes to the guards).
 11. Phase 16: done (#148, #150); `rfr-v4.0.0` is published.
-12. Phase 17: 17a done (#149); 17b and the 17c baseline run are in progress.
+12. Phase 17: 17a done (#149); 17b and the 17c baseline run are in #152.
