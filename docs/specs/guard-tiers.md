@@ -1,5 +1,11 @@
 ---
 status: draft
+unlocks:
+  - test/hooks.test.mjs: AC-4 makes guard-owned-paths refuse with a next step instead of asking, so its test expects a deny; AC-12 allows rm -rf of clean tracked files with a restore hint, so the 3.0.2 rm test expects that for build/; nothing else changes
+  - test/plugin-split.test.mjs: AC-4 makes guard-unreal refuse with the fix instead of asking, so the AC-2 test expects a deny; nothing else changes
+  - test/test-change-review.test.mjs: AC-4 moves snapshot updates from an ask to a refusal unless the command states a reason, so the AC-6 test expects a deny for an update without one; nothing else changes
+  - test/guard-corpus.test.mjs: AC-12 adds a decision that allows the call with context (inform), which counts as tier 1; nothing else changes
+  - test/fixtures/guard-corpus.json: slice 15b delivers the snapshot, clean tracked rm, and ExecCmds cases, so their pending marks go; tiers do not change
 ---
 
 # Guard tiers

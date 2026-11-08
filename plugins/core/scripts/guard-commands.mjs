@@ -8,23 +8,26 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ask, deny, existedAtBase, readInput } from './lib.mjs';
+import { ask, askReason, deferredTestReason, deny, existedAtBase, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
 
+// [pattern, action, kind, rule, why, instead]: why a person must decide, and what the agent can do
+// if the person says no (guard tiers AC-3).
+const LOCAL_LOSS = 'the uncommitted work it removes is in no commit, so git cannot bring it back';
 const CHECKS = [
-  [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work', 'discard'],
-  [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files', 'discard'],
-  [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history'],
-  [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch'],
-  [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work'],
-  [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history'],
-  [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)'],
-  [/\bgit\s+config\b(?![^;&|\n]*\s(--get\S*|--list|-l)\b)[^;&|\n]*\s--(global|system)\b/, 'changing machine-wide git configuration (pass the setting for one command with git -c instead)'],
-  [/\bdrizzle-kit\s+push\b/, 'drizzle-kit push applies schema changes directly to a database'],
-  [/\bdrizzle-kit\b[^;&|]*\s--force\b/, 'drizzle-kit --force accepts data-loss statements'],
-  [/\bprisma\s+migrate\s+(dev|reset)\b/, 'prisma migrate dev/reset can reset or alter a database'],
-  [/\bprisma\s+db\s+(push|migrate)\b/, 'prisma db push/migrate applies changes, including destructive ones, without review'],
+  [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work', 'discard', 'WA-003', LOCAL_LOSS, 'commit or stash the changes first (git stash push -u), then run it'],
+  [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files', 'discard', 'WA-003', 'untracked files are in no commit, so git cannot bring them back', 'list them with git clean -n and delete only the files you made, or move them aside'],
+  [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history', null, 'WA-003', 'it replaces history on the remote that others may already have pulled', 'push to a new branch, or bring the remote changes in and push normally'],
+  [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch', null, 'WA-003', 'commits only on that branch then survive only in the reflog', 'use git branch -d, which refuses to delete unmerged work'],
+  [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work', null, 'WA-003', 'a dropped stash is hard to find again', 'apply the stash, or leave it in place'],
+  [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history', null, 'WA-003', 'it rewrites every commit, and pushing the result replaces shared history', 'stop and report what you want removed from history'],
+  [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)', null, 'WA-003', 'it skips the checks the project set for every commit and push', 'run the hooks and fix what they report'],
+  [/\bgit\s+config\b(?![^;&|\n]*\s(--get\S*|--list|-l)\b)[^;&|\n]*\s--(global|system)\b/, 'changing machine-wide git configuration', null, 'WA-003', 'it changes git for every repository on this machine, outside the project', 'pass the setting for one command with git -c instead'],
+  [/\bdrizzle-kit\s+push\b/, 'drizzle-kit push applies schema changes directly to a database', null, 'PG-001', 'it changes a database outside the repository, and data it drops has no snapshot', "generate a migration and apply it through the project's reviewed migration step"],
+  [/\bdrizzle-kit\b[^;&|]*\s--force\b/, 'drizzle-kit --force accepts data-loss statements', null, 'PG-001', 'it applies statements that drop data, without review', 'run it without --force and report the statements it wants to run'],
+  [/\bprisma\s+migrate\s+(dev|reset)\b/, 'prisma migrate dev/reset can reset or alter a database', null, 'PG-001', 'it can reset a database outside the repository, losing its data', 'create the migration with --create-only and report it for review, or run it against a disposable database'],
+  [/\bprisma\s+db\s+(push|migrate)\b/, 'prisma db push/migrate applies changes, including destructive ones, without review', null, 'PG-001', 'it changes a database outside the repository, and data it drops has no snapshot', 'create a reviewed migration instead'],
 ];
 
 // rm with both recursive and force flags, in any order or form (-rf, -r -f, --recursive --force).
@@ -157,17 +160,33 @@ export function existingProjectFile(file, cwd, root = process.env.CLAUDE_PROJECT
   return existedAtBase(file, cwd);
 }
 
-export function decideCommand(command, { cwd } = {}) {
+// Snapshot updates rewrite expected values; the agent may run one only when it states why in the
+// command, so the reason reaches the log and its report (guard tiers AC-4).
+const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s"';&|]+)/;
+
+// The decision for a shell command: null to allow, { decision: 'inform', reason } to allow with
+// context for the agent, { decision: 'deny', reason } for the agent to act on, or
+// { decision: 'ask', reason } for a person (docs/specs/guard-tiers.md).
+export function decideCommand(command, { cwd, settings } = {}) {
   if (typeof command !== 'string') return null;
   const existed = cwd ? file => existingProjectFile(file, cwd) : undefined;
   const change = testFileChange(command, existed);
   if (change === 'write') {
-    return { decision: 'deny', reason: 'rfr-core (TEST-001): this command writes to an existing test file, so the change cannot be checked. Make the change with the Edit tool instead (one Edit per change, or MultiEdit for several in one file), so the test-change check can see it; additive and neutral changes then go through without asking.' };
+    return { decision: 'deny', reason: refuseReason({ source: 'rfr-core (TEST-001)', action: 'this command writes to an existing test file, so the change cannot be checked', next: 'Make the change with the Edit tool instead (one Edit per change, or MultiEdit for several in one file), so the test-change check can see it; additive and neutral changes then go through without asking' }) };
   }
-  const risk = change === 'remove' ? 'this command deletes or moves an existing test file (TEST-001)'
-    : change === 'broad' ? 'this command appears to change an existing test file outside the Edit tool (TEST-001)'
-    : findOtherRisk(command, cwd);
-  return risk ? { decision: 'ask', reason: `rfr-core (WA-003): ${risk}. Approve only if this is intended and the target is not shared.` } : null;
+  if (change === 'remove' || change === 'broad') {
+    const action = change === 'remove' ? 'this command deletes or moves an existing test file' : 'this command appears to change an existing test file outside the Edit tool';
+    if ((settings ?? guardSettings(cwd)).testWeakening === 'defer') return { decision: 'deny', reason: deferredTestReason(action) };
+    return { decision: 'ask', reason: askReason({ source: 'rfr-core (TEST-001)', action, why: 'a person decides whether a test is wrong, because the agent that wants it gone is the one it checks', instead: 'leave the test in place and report why you think it should change' }) };
+  }
+  if (updatesSnapshots(command) && !SNAPSHOT_REASON.test(command)) {
+    return { decision: 'deny', reason: refuseReason({ source: 'rfr-core (TEST-001)', action: 'this command updates test snapshots, which rewrites their expected values', next: 'If the output changed on purpose, run it again with the reason in the command, for example RFR_SNAPSHOT_REASON="the header now shows the plan name" npx vitest -u, and give the same reason in your report; otherwise leave the snapshots and report which ones fail' }) };
+  }
+  const hints = [];
+  const risk = findOtherRisk(command, cwd, hints);
+  if (risk) return { decision: 'ask', reason: askReason({ source: `rfr-core (${risk.rule})`, action: risk.action, why: risk.why, instead: risk.instead }) };
+  if (hints.length) return { decision: 'inform', reason: `rfr-core (WA-003): the files this command deletes are committed with no changes, so git can restore them: ${hints.join('; ')}.` };
+  return null;
 }
 
 // The simple commands of a command line, each with the folder it runs in: the starting folder,
@@ -212,7 +231,7 @@ function discardRisk(entries) {
       if (!staged || worktree) kind = 'worktree';
     } else if (sub === 'reset' && rest.includes('--hard')) {
       const target = rest.find(w => !w.startsWith('-'));
-      if (target && target !== 'HEAD') return 'git reset --hard to another commit can drop commits as well as uncommitted work';
+      if (target && target !== 'HEAD') return { rule: 'WA-003', action: 'git reset --hard to another commit can drop commits as well as uncommitted work', why: 'the commits it leaves behind survive only in the reflog, and uncommitted work is lost', instead: 'commit or stash first; to undo commits on a shared branch, use git revert' };
       kind = 'index';
     } else if (sub === 'clean' && (rest.includes('--force') || /f/.test(short))) {
       kind = /x/.test(short) ? 'untracked-all' : /X/.test(short) ? 'ignored' : 'untracked';
@@ -225,7 +244,11 @@ function discardRisk(entries) {
       'untracked-all': () => { const r = git(where, ['ls-files', '--others']); return r.status !== 0 || r.out.trim() !== ''; },
       ignored: () => { const r = git(where, ['ls-files', '--others', '--ignored', '--exclude-standard']); return r.status !== 0 || r.out.trim() !== ''; },
     }[kind];
-    if (check()) return kind.startsWith('untracked') || kind === 'ignored' ? 'git clean -f deletes untracked files' : 'discarding all working-tree changes';
+    if (check()) {
+      return kind.startsWith('untracked') || kind === 'ignored'
+        ? { rule: 'WA-003', action: 'git clean -f deletes untracked files', why: 'untracked files are in no commit, so git cannot bring them back', instead: 'list them with git clean -n and delete only the files you made, or move them aside' }
+        : { rule: 'WA-003', action: 'discarding all working-tree changes', why: 'the uncommitted work it removes is in no commit, so git cannot bring it back', instead: 'commit or stash the changes first (git stash push -u), then run it' };
+    }
   }
   return null;
 }
@@ -275,7 +298,10 @@ function expand(word, vars) {
 // rm -rf whose every target is untracked and either ignored by git (build output such as dist/) or
 // not there at all loses nothing a commit or the project's sources hold, and neither does one inside
 // the temp directory. Anything tracked, outside the repository and temp, a glob, or a root-like path asks.
-function rmRisk(entries) {
+const RM = { rule: 'WA-003', action: 'recursive forced delete (rm -rf)', why: 'it deletes files that no commit holds, or that the guard cannot identify, so git cannot bring them back', instead: 'delete specific paths inside the repository, or move the files aside instead of deleting them' };
+const RM_CHANGED = { ...RM, why: 'some of these files have uncommitted changes or are untracked, so git cannot bring them back', instead: 'commit or stash the changes first (git stash push -u), then delete' };
+
+function rmRisk(entries, hints = []) {
   const vars = new Map();
   for (const { words, dir } of entries) {
     if (words.length && words.every(w => /^\w+=/.test(w))) {
@@ -301,7 +327,7 @@ function rmRisk(entries) {
     if (!recursive || !force) continue;
     for (const word of args.filter(w => !w.startsWith('-'))) {
       const target = word.includes('$') ? expand(word, vars) : word;
-      if (target === null || /[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return 'recursive forced delete (rm -rf)';
+      if (target === null || /[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return RM;
       const abs = path.resolve(dir, target);
       // A target in no git repository is throwaway only inside the temp directory; one in a
       // repository (even a repository under the temp directory) gets the git checks below.
@@ -309,30 +335,37 @@ function rmRisk(entries) {
       while (!fs.existsSync(near) && path.dirname(near) !== near) near = path.dirname(near);
       if (git(near, ['rev-parse', '--show-toplevel']).status !== 0 && insideTemp(abs)) continue;
       const top = git(dir, ['rev-parse', '--show-toplevel']);
-      if (top.status !== 0) return 'recursive forced delete (rm -rf)';
+      if (top.status !== 0) return RM;
       const root = top.out.trim();
       const rel = path.relative(root, abs);
-      if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return 'recursive forced delete (rm -rf)';
+      if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return RM;
       const tracked = git(root, ['ls-files', '--', rel]);
-      if (tracked.status !== 0 || tracked.out.trim()) return 'recursive forced delete (rm -rf)';
-      if (fs.existsSync(abs) && git(root, ['check-ignore', '-q', '--', rel]).status !== 0) return 'recursive forced delete (rm -rf)';
+      if (tracked.status !== 0) return RM;
+      if (tracked.out.trim()) {
+        // Tracked files with nothing uncommitted and nothing untracked: git holds them, so the
+        // delete can be undone (guard tiers AC-12). Ignored files inside are build output.
+        const status = git(root, ['status', '--porcelain', '--', rel]);
+        if (status.status !== 0 || status.out.trim()) return RM_CHANGED;
+        hints.push(`git checkout -- ${rel.split(path.sep).join('/')}`);
+        continue;
+      }
+      if (fs.existsSync(abs) && git(root, ['check-ignore', '-q', '--', rel]).status !== 0) return RM;
     }
   }
   return null;
 }
 
-function findOtherRisk(command, cwd) {
-  if (updatesSnapshots(command)) return 'this command updates test snapshots, which rewrites their expected values (TEST-001)';
+function findOtherRisk(command, cwd, hints = []) {
   // With the folder known, discards and rm -rf are checked against what they would remove.
   const entries = cwd ? commandsWithDirs(command, cwd) : null;
   if (entries) {
     const discard = discardRisk(entries);
     if (discard) return discard;
-  } else if (discardsWorkingTree(command)) return 'discarding all working-tree changes';
-  const rm = entries ? rmRisk(entries) : (isForcedRecursiveRm(command) ? 'recursive forced delete (rm -rf)' : null);
+  } else if (discardsWorkingTree(command)) return { rule: 'WA-003', action: 'discarding all working-tree changes', why: 'the uncommitted work it removes is in no commit, so git cannot bring it back', instead: 'commit or stash the changes first (git stash push -u), then run it' };
+  const rm = entries ? rmRisk(entries, hints) : (isForcedRecursiveRm(command) ? RM : null);
   if (rm) return rm;
-  if (isForcedRecursiveRemoveItem(command)) return 'recursive forced delete (Remove-Item -Recurse -Force)';
-  for (const [pattern, reason, kind] of CHECKS) if (pattern.test(command) && !(entries && kind === 'discard')) return reason;
+  if (isForcedRecursiveRemoveItem(command)) return { ...RM, action: 'recursive forced delete (Remove-Item -Recurse -Force)' };
+  for (const [pattern, action, kind, rule, why, instead] of CHECKS) if (pattern.test(command) && !(entries && kind === 'discard')) return { rule, action, why, instead };
   return null;
 }
 
@@ -346,6 +379,7 @@ async function main() {
   const input = await readInput();
   const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result?.decision === 'deny') deny(result.reason);
+  else if (result?.decision === 'inform') inform(result.reason);
   else if (result) ask(result.reason);
 }
 

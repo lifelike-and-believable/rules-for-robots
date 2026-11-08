@@ -21,9 +21,9 @@ Unreal Engine plugin from [rules-for-robots](../../README.md), for Unreal Engine
 
 | Event | Hook | What it does | Rule |
 |---|---|---|---|
-| PreToolUse (Bash, PowerShell) | `guard-unreal` | Asks when an `UnrealEditor` command's `-ExecCmds` list does not end with `Quit`, which would leave the editor running after its commands finish (#56) | Unreal practice guide |
+| PreToolUse (Bash, PowerShell) | `guard-unreal` | Refuses an `UnrealEditor` command whose `-ExecCmds` list does not end with `Quit`, and tells the agent to add `;Quit`, which would leave the editor running after its commands finish (#56) | Unreal practice guide |
 | PostToolUse, PostToolUseFailure (Bash, PowerShell) | `guard-outcome` | Logs `approved` when a command the guard asked about then runs | |
 
-The guard asks rather than blocks; in headless runs (`claude -p`) a request for approval counts as a denial. Its decisions go to `guard-decisions.jsonl` in this plugin's data folder, separate from rfr-core's; `node checks/guard-report.mjs` in a rules-for-robots checkout reports several logs together. The guard's tier is listed in [practices/guards.md](../../practices/guards.md).
+The guard refuses with the fix rather than asking a person, so headless runs (`claude -p`) can carry on. Its decisions go to `guard-decisions.jsonl` in this plugin's data folder, separate from rfr-core's; `node checks/guard-report.mjs` in a rules-for-robots checkout reports several logs together. The guard's tier is listed in [practices/guards.md](../../practices/guards.md).
 
 `scripts/lib.mjs` and `scripts/guard-outcome.mjs` are copied from `plugins/core/scripts/` by `npm run build`; edit them there.

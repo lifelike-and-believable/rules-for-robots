@@ -44,10 +44,10 @@ function fixtureRepo(state) {
   return dir;
 }
 
-// The tier a decision represents: none is 1, deny is 2 (or 3 when the reason defers to the pull
-// request), ask is 4.
+// The tier a decision represents: none, or context only (inform), is 1; deny is 2 (or 3 when the
+// reason defers to the pull request); ask is 4.
 function tierOf(decision) {
-  if (!decision) return 1;
+  if (!decision || decision.decision === 'inform') return 1;
   if (decision.decision === 'ask') return 4;
   return /say so in your report|pull request decides/i.test(decision.reason ?? '') ? 3 : 2;
 }

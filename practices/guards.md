@@ -16,15 +16,15 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
 | A shell command writes to an existing test file | TEST-001 | Editing tests through the shell, where the change cannot be checked | 2 | 2 | The agent can make the same change with the Edit tool, which `guard-test-edits` checks |
-| A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4 | 4, then 3 | Removing a test is the strongest weakening; it moves to the pull request with the `testWeakening` setting (15b, AC-5) |
+| A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4, or 3 with `testWeakening: defer` | 4, then 3 | Removing a test is the strongest weakening; the `testWeakening` setting moves it to the pull request (AC-5) |
 | A command only runs, reads, or mentions a test file | TEST-001 | none | 1 | 1 | Nothing changes |
-| Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 4 | 2 (15b) | The agent can state the reason in its report or update snapshots in a separate commit the pull request check can see (AC-4) |
+| Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 2 | 2 | The agent states the reason in the command (`RFR_SNAPSHOT_REASON="..."`) and in its report, and the update goes through (AC-4) |
 | `git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f` with uncommitted changes or untracked files to lose | WA-003 | Losing uncommitted work | 4 | 1 with a snapshot (15c) | A snapshot of the working tree makes the command undoable (AC-11) |
 | The same commands with nothing to lose, or inside an agent worktree under `.claude/worktrees/` | WA-003 | none | 1 | 1 | Nothing is lost |
 | `git reset --hard` to another commit | WA-003 | Losing commits and uncommitted work | 4 | 1 with a snapshot (15c) | The reflog holds the commits; a snapshot holds the working tree |
 | `git stash drop` or `git stash clear` | WA-003 | Losing stashed work | 4 | 1 with a snapshot (15c) | The snapshot keeps the stash's content (AC-11) |
 | `rm -rf` of untracked, ignored files (build output such as `dist/`), of a path that is not there, or of a scratch folder at least two levels inside the temp directory and in no repository | WA-003 | none | 1 | 1 | Nothing a commit or the project holds is lost |
-| `rm -rf` of tracked files with no uncommitted changes | WA-003 | Deleting source | 4 | 1 (15b) | Git holds them; `git checkout -- <path>` restores them (AC-12) |
+| `rm -rf` of tracked files with no uncommitted changes | WA-003 | none | 1 | 1 | Git holds them; the guard tells the agent the `git checkout -- <path>` that restores them (AC-12) |
 | `rm -rf` of repository content with uncommitted changes or untracked files that are not ignored | WA-003 | Losing uncommitted work | 4 | 1 with a snapshot (15c) | AC-11 |
 | `rm -rf` outside the repository and the temp directory, of a root-like path (`.`, `/`, `..`), a glob, or a variable with no known value; `Remove-Item -Recurse -Force` | WA-003 | Deleting files no snapshot covers | 4 | 4 | A local snapshot cannot undo it, or the guard cannot tell what it deletes |
 | Force-push (`--force`, `--force-with-lease`, `+ref`) | WA-003 | Rewriting shared history | 4 | 4 | It changes a remote |
@@ -41,19 +41,19 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | A new test file, a test file added on this branch, or a test line added on this branch | TEST-001 | none | 1 | 1 | Not an existing test; the pull request check sees it as new |
 | An additive or neutral edit to an existing test | TEST-001 | none | 1 | 1 | Nothing weakens |
 | A weakening edit to an existing test, with a spec `unlocks` entry citing a criterion | TEST-001 | none | 1 | 1 | The spec records the reason; the pull request review checks it |
-| A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 4 | 4, then 3 | Moves to the pull request when the test-change reviewer's eval passes (AC-5) |
+| A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 4, or 3 with `testWeakening: defer` | 4, then 3 | The default moves to the pull request when the test-change reviewer's eval passes (AC-5) |
 
 ## `guard-owned-paths` (rfr-core; Edit, Write; opt-in)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
-| An edit to a project file not on the `AGENTS.md` owned-paths list | #47 | An agent working outside its lane | 4 | 2 (15b) | The edit is reversible, and the agent can hand the change back to its caller instead |
+| An edit to a project file not on the `AGENTS.md` owned-paths list | #47 | An agent working outside its lane | 2 | 2 | The edit is reversible, and the agent can hand the change back to its caller instead |
 
 ## `guard-unreal` (rfr-unreal; shell commands)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
-| Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 4 | 2 (15b) | The agent can add `;Quit`; nothing is lost either way |
+| Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 2 | 2 | The agent can add `;Quit`; nothing is lost either way |
 
 ## `guard-mcp` (rfr-web; Vercel MCP)
 
@@ -69,6 +69,20 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 |---|---|---|---|---|---|
 | A merge or auto-merge of a gated pull request the person has not asked for | Process | Merging without approval | 4 | 4 | Merging is the approval itself |
 | A merge the person asked for in their own words | Process | none | 1 | 1 | The instruction is the approval (project-process AC-52) |
+
+## Reasons
+
+An ask reason has three parts, so the person can decide without reading the command (AC-3): `<source>: <action>. <why it cannot be undone or reaches outside the project>. If not approved: <what the agent does instead>.` A refusal names what was refused and the next step (AC-4). An allowed delete that git can undo carries the restore command as context for the agent, with no permission decision.
+
+## Project settings
+
+`.claude/rfr.json` at the repository root holds the guards' project settings:
+
+```json
+{ "testWeakening": "ask" }
+```
+
+`testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the guard refuses with "say so in your report", and the pull request's test-change review decides). The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
 
 ## Prompts rfr does not control
 

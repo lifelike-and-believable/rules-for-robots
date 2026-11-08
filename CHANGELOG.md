@@ -12,6 +12,23 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
   - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
   - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
 
+## [5.0.0] - 2026-11-08
+
+Pull requests: #PR15B.
+
+### Changed
+
+- **Breaking:** guard tiers, slice 15b (#PR15B; `docs/specs/guard-tiers.md`, AC-3, AC-4, AC-5, AC-12). Guards ask a person only about actions that cannot be undone or reach outside the project; problems the agent can fix itself are refused with a next step. Released with `rfr-unreal` 2.0.0 and `rfr-web` 1.0.1.
+  - Every ask reason now has three parts: the action, why a person must decide, and "If not approved:" with what the agent does instead (AC-3). This covers `guard-commands`, `guard-test-edits`, and `rfr-web`'s `guard-mcp`.
+  - `guard-commands` refuses a snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) unless the command states its reason as `RFR_SNAPSHOT_REASON="..."`, and the agent gives the same reason in its report (AC-4). It used to ask.
+  - `guard-commands` allows `rm -rf` of tracked files with no uncommitted changes, and tells the agent the `git checkout -- <path>` that restores them (AC-12). It used to ask. A folder with a modified or untracked file still asks until snapshots arrive in 15c.
+  - `guard-owned-paths` refuses an edit outside the owned paths with the next step (use the public interface, or report the missing one, or add the path to "Owned paths") instead of asking (AC-4).
+  - A new project setting, `testWeakening` in `.claude/rfr.json`: `ask` (the default) keeps asking before a weakening edit, move, or delete of an existing test; `defer` refuses it with "say so in your report", and the pull request's test-change review decides (AC-5). The default becomes `defer` in the release that records test-change-review AC-11 as passed.
+  - `rfr-unreal` 2.0.0, **breaking:** `guard-unreal` refuses an editor `-ExecCmds` list without a final `Quit` and tells the agent to add `;Quit`, instead of asking (AC-4).
+  - `rfr-web` 1.0.1: `guard-mcp`'s questions gain the "If not approved:" part; what it asks about does not change.
+  - `practices/guards.md` shows the new tiers, the reason format, and the setting.
+  - Adopters: update `rfr-core` to 5.0.0, and `rfr-unreal` to 2.0.0 if you use it. A snapshot update the agent means to make now needs `RFR_SNAPSHOT_REASON="..."` in the command; a script or instruction that runs `-u` without it is refused. A project that keeps an `AGENTS.md` owned-paths list and relied on approving edits outside it adds those paths to the list. To defer test weakening to the pull request now, add `.claude/rfr.json` with `{ "testWeakening": "defer" }` and keep the test-change review in your pull request checks.
+
 ## [4.0.0] - 2026-11-08
 
 Pull requests: #148, #150.

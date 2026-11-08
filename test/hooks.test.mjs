@@ -249,7 +249,7 @@ function runOwnedPathsHook(projectDir, input) {
   });
 }
 
-test('guard-owned-paths asks before edits outside the owned paths (#47)', () => {
+test('guard-owned-paths refuses edits outside the owned paths, with a next step (#47)', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-owned-hook-'));
   fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# P\n\n## Owned paths\n\n- `Plugins/MyPlugin/**`\n');
 
@@ -261,7 +261,7 @@ test('guard-owned-paths asks before edits outside the owned paths (#47)', () => 
     const result = runOwnedPathsHook(dir, input);
     assert.equal(result.status, 0, result.stderr);
     const decision = JSON.parse(result.stdout).hookSpecificOutput;
-    assert.equal(decision.permissionDecision, 'ask');
+    assert.equal(decision.permissionDecision, 'deny');
     assert.match(decision.permissionDecisionReason, /public interface/);
     assert.match(decision.permissionDecisionReason, /missing interface/);
   }
@@ -594,7 +594,9 @@ test('rm -rf asks unless everything it deletes is ignored by git and untracked (
   assert.equal(decideCommand('rm -rf dist && CI=1 npx playwright test tests/e2e/a.spec.ts --trace off 2>&1 | tail -25', { cwd: r.dir }), null);
   assert.equal(decideCommand('rm -rf dist coverage', { cwd: r.dir }), null);
   assert.equal(decideCommand('rm -rf not-there', { cwd: r.dir }), null, 'nothing to delete');
-  for (const command of ['rm -rf build', 'rm -rf dist build', 'rm -rf src', 'rm -rf .', 'rm -rf /', 'rm -rf dist/*', 'rm -rf ../elsewhere']) {
+  // Tracked files with no uncommitted changes are allowed, with the command that restores them (guard tiers AC-12).
+  assert.equal(decideCommand('rm -rf dist build', { cwd: r.dir }).decision, 'inform');
+  for (const command of ['rm -rf .', 'rm -rf /', 'rm -rf dist/*', 'rm -rf ../elsewhere']) {
     assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', command);
   }
 });
