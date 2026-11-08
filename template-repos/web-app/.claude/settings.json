@@ -9,7 +9,8 @@
     }
   },
   "enabledPlugins": {
-    "rfr-core@rules-for-robots": true
+    "rfr-core@rules-for-robots": true,
+    "rfr-web@rules-for-robots": true
   },
   "permissions": {
     "deny": [

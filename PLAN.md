@@ -358,7 +358,7 @@ The guards ask whenever an action matches a dangerous pattern, and most prompts 
 
 ### Phase 16: Domain plugins (planned)
 Spec: [docs/specs/plugin-split.md](docs/specs/plugin-split.md) (approved 2026-11-08).
-Pull requests: #147 (spec), #148 (16a).
+Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
 
 `rfr-core` carries web and Unreal skills, agents, and hooks that only one kind of project uses. They move into `rfr-web` and `rfr-unreal`, the `plugins/web/` and `plugins/unreal/` this plan's layout always listed, so each project installs only its domain's parts. The reviewer agents that cover both domains stay in `rfr-core`. The split ships as one breaking release: `rfr-core` 4.0.0 with `rfr-web` and `rfr-unreal` 1.0.0.
 
@@ -413,4 +413,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 8. Phase 14: 14a done (#143); build the 14b eval cases.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a done (#146); build 15b (the tier changes to the guards).
-11. Phase 16: the domain-plugins spec is approved (#147); build 16a (the two plugins and the moves).
+11. Phase 16: 16a done (#148); 16b and the 4.0.0 release in review (#150). After it merges, tag the release (`/rfr-core:release`).

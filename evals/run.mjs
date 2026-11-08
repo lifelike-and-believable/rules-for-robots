@@ -8,7 +8,7 @@
 // Arms:
 //   none        fixture only
 //   rules       fixture + core rules in .claude/rules/
-//   rules+hooks rules + the rfr-core plugin (hooks) via --plugin-dir
+//   rules+hooks rules + the rfr-core plugin (hooks), and any plugins the case names, via --plugin-dir
 //   rules+agents  rules + the rfr-core plugin, and each prompt starts by naming the case's
 //               `agent` (case.json), so the main session delegates to it; compare with `rules`
 //               to see what the agent adds. Not in the default arms, pass it with --arms
@@ -225,6 +225,19 @@ export function armPrompts(arm, meta, prompts) {
   return prompts.map(p => `Use the ${meta.agent} agent for this.\n\n${p}`);
 }
 
+// The plugin arms load every plugin a case names in `plugins` (default rfr-core), so a case whose
+// agent lives in a domain plugin loads it too (docs/specs/plugin-split.md, AC-8). RFR_PLUGIN_DIR
+// points rfr-core at another copy of plugins/core (a worktree of an earlier commit, to compare prompts).
+const PLUGIN_FOLDERS = { 'rfr-core': 'core', 'rfr-web': 'web', 'rfr-unreal': 'unreal', 'rfr-process': 'process', 'rfr-feedback': 'feedback' };
+
+export function pluginArgs(meta, env = process.env) {
+  return (meta?.plugins ?? ['rfr-core']).flatMap(name => {
+    const folder = PLUGIN_FOLDERS[name];
+    if (!folder) throw new Error(`unknown plugin ${name} (known: ${Object.keys(PLUGIN_FOLDERS).join(', ')})`);
+    return ['--plugin-dir', name === 'rfr-core' && env.RFR_PLUGIN_DIR ? env.RFR_PLUGIN_DIR : path.join(ROOT, 'plugins', folder)];
+  });
+}
+
 export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(path.join(testCase.dir, 'bin'))) {
   if (!hasBin) return { ...base };
   return { ...base, PATH: [path.join(testCase.dir, 'bin'), base.PATH].filter(Boolean).join(path.delimiter) };
@@ -243,8 +256,7 @@ function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCa
     '--allowedTools', [...(meta.allowedTools ?? ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep']), ...(arm === 'rules+agents' ? ['Agent', 'Task'] : [])].join(','),
   ];
   if (effort) args.push('--effort', effort);
-  // RFR_PLUGIN_DIR points the plugin arms at another copy of plugins/core (a worktree of an earlier commit, to compare prompts).
-  if (arm === 'rules+hooks' || arm === 'rules+agents') args.push('--plugin-dir', process.env.RFR_PLUGIN_DIR ?? path.join(ROOT, 'plugins', 'core'));
+  if (arm === 'rules+hooks' || arm === 'rules+agents') args.push(...pluginArgs(meta));
   if (multi) {
     return (async () => {
       const merged = { code: 0, events: [], stderr: '', seconds: 0 };

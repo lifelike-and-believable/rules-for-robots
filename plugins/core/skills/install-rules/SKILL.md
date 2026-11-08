@@ -12,7 +12,7 @@ Copy rule files from this skill's payload into the current repository so Claude 
 Payload: `${CLAUDE_SKILL_DIR}/payload/`
 - `rules/core/` holds rules every project gets.
 - `rules/packs/<pack>/` holds stack packs.
-- `profiles.json` maps profile names (`web-app`, `static-site`, `unreal-plugin`) to packs.
+- `profiles.json` maps profile names (`web-app`, `static-site`, `unreal-plugin`) to packs, and lists each profile's `plugins`: `rfr-core` plus `rfr-web` for the web profiles or `rfr-unreal` for `unreal-plugin`.
 
 ## Steps
 
@@ -37,7 +37,7 @@ Payload: `${CLAUDE_SKILL_DIR}/payload/`
 
 4. **Point the project at the rules.** If the repository has neither `AGENTS.md` nor `CLAUDE.md`, tell the user and offer to create `AGENTS.md` with the project's verification command and a thin `CLAUDE.md` containing `@AGENTS.md`. Do not edit tool-managed blocks in an existing `AGENTS.md`, such as the Next.js `nextjs-agent-rules` markers.
 
-5. **Report.** List the files added, updated, skipped, and kept as waivers, and the packs installed. Remind the user to commit `.claude/rules/` so the rules apply to everyone working in the repository.
+5. **Report.** List the files added, updated, skipped, and kept as waivers, and the packs installed. Remind the user to commit `.claude/rules/` so the rules apply to everyone working in the repository. Name the plugins the profile lists under `plugins` that the project does not enable yet, usually `rfr-web` or `rfr-unreal`, and how to enable them (`/plugin install rfr-web@rules-for-robots`, or `enabledPlugins` in `.claude/settings.json`); offer to add them to the settings file, and write it only if the user agrees.
 
 ## Waivers
 

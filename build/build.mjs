@@ -50,6 +50,14 @@ export function renderProfile(name, profile, { rulesRoot = RULES, root = ROOT, d
     const dir = path.join(root, 'templates', 'repo-files', layer);
     if (fs.existsSync(dir)) fs.cpSync(dir, dest, { recursive: true });
   }
+  // The profile's plugins (rfr-core plus its domain plugin) are what the template enables
+  // (docs/specs/plugin-split.md, AC-7).
+  const settings = path.join(dest, '.claude', 'settings.json');
+  if (profile.plugins && fs.existsSync(settings)) {
+    const json = JSON.parse(fs.readFileSync(settings, 'utf8'));
+    json.enabledPlugins = Object.fromEntries(profile.plugins.map(name => [`${name}@rules-for-robots`, true]));
+    fs.writeFileSync(settings, `${JSON.stringify(json, null, 2)}\n`);
+  }
   fs.writeFileSync(path.join(dest, 'AGENTS.md'), agentsMd);
   fs.writeFileSync(path.join(dest, 'CLAUDE.md'), '@AGENTS.md\n');
   for (const file of ruleFiles) {
