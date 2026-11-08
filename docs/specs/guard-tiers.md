@@ -85,4 +85,4 @@ The lead answered the draft's three open questions:
 - Plan or roadmap item: `PLAN.md`, Phase 15.
 - Slices: 15a the guide, corpus, outcome log, and report (AC-1, AC-2, AC-6, AC-7); 15b the tier changes to the guards and the setting (AC-3 to AC-5, AC-12); 15c snapshots (AC-11); 15d the replay and the practice guide (AC-8, AC-9); 15e the eval (AC-10).
 - Depends on: #144 (the decision log and the three false-positive fixes); test-change-review AC-11 for `testWeakening: defer`.
-- Pull requests: #145 (spec).
+- Pull requests: #145 (spec), #146 (15a).

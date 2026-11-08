@@ -337,7 +337,7 @@ Most changes to existing tests can be judged on written criteria: whether the ch
 
 ### Phase 15: Guard tiers (planned)
 Spec: [docs/specs/guard-tiers.md](docs/specs/guard-tiers.md) (approved 2026-11-08).
-Pull requests: #145 (spec).
+Pull requests: #145 (spec), #146 (15a).
 
 The guards ask whenever an action matches a dangerous pattern, and most prompts in the pilots protected nothing. Under the tier rule, a guard asks only when an action cannot be undone or reaches outside the project and a person must decide; everything else is allowed, refused with a reason the agent acts on, or judged at the pull request. The guard decision log from #144 measures the result.
 
