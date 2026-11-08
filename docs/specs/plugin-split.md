@@ -1,5 +1,10 @@
 ---
 status: draft
+unlocks:
+  - test/hooks.test.mjs: AC-2 moves the editor -ExecCmds check from guard-commands to rfr-unreal's guard-unreal, so the #56 test calls guard-unreal and asserts guard-commands no longer decides it; AC-1 moves guard-mcp to rfr-web, so its imports change path; nothing else changes
+  - test/guard-corpus.test.mjs: AC-1 and AC-2 move guard-mcp and the ExecCmds check to rfr-web and rfr-unreal, so the runner imports them from their new plugins and runs an `unreal` guard; nothing else changes
+  - test/fixtures/guard-corpus.json: AC-2 makes the ExecCmds case an `unreal` guard case; its tier and source do not change
+  - test/guard-outcomes.test.mjs: AC-1 and AC-2 give each domain plugin its own guard-outcome hook for the tools its guards cover, so rfr-core's no longer covers MCP tools and the registration test checks each plugin; AC-6 adds a test for several logs
 ---
 
 # Domain plugins

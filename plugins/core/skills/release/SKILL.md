@@ -11,4 +11,4 @@ argument-hint: "[major | minor | patch | <version>]"
 2. **Choose the version** from `$ARGUMENTS` or from the changes since the last tag (semantic versioning). Show the proposed version and the list of changes, and wait for the user's confirmation.
 3. **Update** the version in the project's manifest(s) (`package.json`, `.uplugin` `VersionName` and `Version`, plugin manifests) and add a changelog entry grouped by Added, Changed, Fixed, and Removed.
 4. **Verify** with the project's verify command and include its output.
-5. **Commit and tag** only after the user confirms. Do not push tags or publish packages unless the user explicitly asks; for Unreal plugins, use `/rfr-core:package-unreal-plugin` for Fab packages.
+5. **Commit and tag** only after the user confirms. Do not push tags or publish packages unless the user explicitly asks; for Unreal plugins, use `/rfr-unreal:package-unreal-plugin` for Fab packages (in the `rfr-unreal` plugin; without it, follow `practices/unreal-plugin-development.md`).

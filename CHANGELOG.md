@@ -4,6 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- Domain plugins, slice 16a (`docs/specs/plugin-split.md`, AC-1 to AC-6). Not released yet: `rfr-core` 4.0.0, `rfr-web` 1.0.0, and `rfr-unreal` 1.0.0 ship together after slice 16b, and plugin versions are unchanged until then, so installed copies do not change.
+  - New `rfr-web` (`plugins/web/`): the `web-engineer` agent, the `a11y-audit` and `perf-audit` skills, and the Vercel MCP guard `guard-mcp` (NODE-002), moved from `rfr-core`, with its own outcome hook. Its messages now start `rfr-web (NODE-002)`.
+  - New `rfr-unreal` (`plugins/unreal/`): the `unreal-engineer` agent and the `package-unreal-plugin` and `profile-unreal-plugin` skills, moved from `rfr-core`, and a `guard-unreal` hook that takes over the editor `-ExecCmds … Quit` check from `guard-commands`.
+  - `rfr-core` names the moved agents and skills with their new plugins (`rfr-web:web-engineer`, `/rfr-unreal:package-unreal-plugin`), and says what to do when a domain plugin is not installed. A new check, `checks/plugin-refs.mjs`, run by the tests, fails when any plugin names another plugin's agent or skill without that plugin's prefix; the domain skills now call `rfr-core:check-runner`, and `rfr-process` names `rfr-core`'s reviewers and `/rfr-core:merge-when-green`.
+  - The build copies `lib.mjs` and `guard-outcome.mjs` from `rfr-core` into each domain plugin. Each plugin with guards logs to its own data folder, and `checks/guard-report.mjs` takes several logs. The marketplace lists both new plugins, and `npm run validate:plugins` checks all five.
+  - Adopters: nothing yet. At the release, web projects enable `rfr-web` and Unreal projects enable `rfr-unreal` alongside `rfr-core`.
+
 ## [3.3.0] - 2026-11-08
 
 Pull requests: #146.

@@ -4,7 +4,7 @@ title: Treat the Vercel MCP server as a privileged credential
 level: MUST
 scope: pack:node-services
 verified-by: [hook]
-check: "hook: rfr-core guard-mcp asks before Vercel MCP tools that deploy, change settings or environment variables, decrypt, delete, or purchase"
+check: "hook: rfr-web guard-mcp asks before Vercel MCP tools that deploy, change settings or environment variables, decrypt, delete, or purchase"
 targets-failure: destructive-action
 observed-on: []
 rationale: The Vercel MCP server acts with the full access of the user's Vercel account, including deployments, secrets, deletions, and purchases.

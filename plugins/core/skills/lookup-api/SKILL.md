@@ -6,7 +6,7 @@ argument-hint: "npm <package> [symbol] | unreal <Symbol or Class::Member>"
 
 # Look up an API in the installed version
 
-`<api-lookup.mjs>` below is `${CLAUDE_SKILL_DIR}/../../scripts/api-lookup.mjs`. It has no dependencies, reads only, and makes no network requests. When you delegate implementation to the `web-engineer` or `unreal-engineer` agent, give it this path with `${CLAUDE_SKILL_DIR}` already expanded to an absolute path; subagents cannot run skills or expand the variable.
+`<api-lookup.mjs>` below is `${CLAUDE_SKILL_DIR}/../../scripts/api-lookup.mjs`. It has no dependencies, reads only, and makes no network requests. When you delegate implementation to the `rfr-web:web-engineer` or `rfr-unreal:unreal-engineer` agent (installed with those plugins), give it this path with `${CLAUDE_SKILL_DIR}` already expanded to an absolute path; subagents cannot run skills or expand the variable.
 
 1. **Run the lookup** from the project root.
    - npm: `node <api-lookup.mjs> npm <package> [symbol]`. A member is `Type.member`, and is found only inside `Type`'s declaration.

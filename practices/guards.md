@@ -1,6 +1,6 @@
 # Guards and their tiers
 
-Every decision the rfr-core and rfr-process guards make, the tier it belongs to, and why ([docs/specs/guard-tiers.md](../docs/specs/guard-tiers.md)). A guard should interrupt a person only when an action cannot be undone, or reaches outside the project, and a person is the one who has to decide. Everything else is allowed, refused with a reason the agent acts on, or judged at the pull request.
+Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, the tier it belongs to, and why ([docs/specs/guard-tiers.md](../docs/specs/guard-tiers.md)). A guard should interrupt a person only when an action cannot be undone, or reaches outside the project, and a person is the one who has to decide. Everything else is allowed, refused with a reason the agent acts on, or judged at the pull request.
 
 | Tier | The guard | Who acts |
 |---|---|---|
@@ -11,7 +11,7 @@ Every decision the rfr-core and rfr-process guards make, the tier it belongs to,
 
 "Now" is what the guard does in this release. "Target" is the tier the spec sets; where they differ, the slice that moves it is named. The corpus in `test/fixtures/guard-corpus.json` holds a case for each row and fails when a guard's decision drifts from its tier.
 
-## `guard-commands` (shell commands)
+## `guard-commands` (rfr-core; shell commands)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
@@ -33,9 +33,8 @@ Every decision the rfr-core and rfr-process guards make, the tier it belongs to,
 | `--no-verify` | WA-003 | Skipping the project's own checks | 4 | 4 | The checks exist for a reason a person set |
 | `git config --global` or `--system` | WA-003 | Changing the machine for every project | 4 | 4 | It reaches outside the project |
 | `drizzle-kit push`, `drizzle-kit --force`, `prisma migrate dev/reset`, `prisma db push/migrate` | PG-001 | Losing data in a database | 4 | 4 | A database is outside the repository, and its data has no snapshot |
-| Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 4 | 2 (15b) | The agent can add `;Quit`; nothing is lost either way |
 
-## `guard-test-edits` (Edit, Write, MultiEdit, NotebookEdit)
+## `guard-test-edits` (rfr-core; Edit, Write, MultiEdit, NotebookEdit)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
@@ -44,13 +43,19 @@ Every decision the rfr-core and rfr-process guards make, the tier it belongs to,
 | A weakening edit to an existing test, with a spec `unlocks` entry citing a criterion | TEST-001 | none | 1 | 1 | The spec records the reason; the pull request review checks it |
 | A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 4 | 4, then 3 | Moves to the pull request when the test-change reviewer's eval passes (AC-5) |
 
-## `guard-owned-paths` (Edit, Write; opt-in)
+## `guard-owned-paths` (rfr-core; Edit, Write; opt-in)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
 | An edit to a project file not on the `AGENTS.md` owned-paths list | #47 | An agent working outside its lane | 4 | 2 (15b) | The edit is reversible, and the agent can hand the change back to its caller instead |
 
-## `guard-mcp` (Vercel MCP)
+## `guard-unreal` (rfr-unreal; shell commands)
+
+| Decision | Rule | Failure it prevents | Now | Target | Why |
+|---|---|---|---|---|---|
+| Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 4 | 2 (15b) | The agent can add `;Quit`; nothing is lost either way |
+
+## `guard-mcp` (rfr-web; Vercel MCP)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
@@ -71,4 +76,4 @@ Claude Code raises its own prompts for actions its permission settings do not al
 
 ## Measuring
 
-Each ask or refusal is appended to `guard-decisions.jsonl` in the plugin's data folder, and an asked call that then runs adds an `approved` line. `node checks/guard-report.mjs` summarises the log: asks per hour by guard and reason, and the share of asks that were approved. A reason approved in at least 95% of 20 or more asks is a candidate to move down a tier. Claude Code reports no hook event when a person declines a prompt, so an ask with no `approved` line was declined, or the session ended first.
+Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it, and an asked call that then runs adds an `approved` line. `node checks/guard-report.mjs <log>...` summarises one or more logs: asks per hour by guard and reason, and the share of asks that were approved. A reason approved in at least 95% of 20 or more asks is a candidate to move down a tier. Claude Code reports no hook event when a person declines a prompt, so an ask with no `approved` line was declined, or the session ended first.

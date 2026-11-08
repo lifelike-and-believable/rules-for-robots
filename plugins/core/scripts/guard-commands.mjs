@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // PreToolUse (Bash, PowerShell): ask the user before destructive git, file, and database commands
 // (rules WA-003 and, for databases, the node-services pack). Asking keeps the user in
-// control without blocking legitimate use; headless runs treat "ask" as a denial. Also asks
-// when an Unreal editor run's -ExecCmds list never quits, which leaves the editor hanging.
+// control without blocking legitimate use; headless runs treat "ask" as a denial. The Unreal
+// editor -ExecCmds check moved to rfr-unreal's guard-unreal (docs/specs/plugin-split.md, AC-2).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -76,14 +76,6 @@ const PS_CMDLETS = /\b(Set-Content|Add-Content|Out-File|Move-Item|Copy-Item|Remo
 const PS_ALIASES = /(^|[;&|(]|\n)\s*(sc|ac|mi|move|cpi|copy|ri|del|erase|rni|ren|clc)\s/i;
 const PS_NEW_ITEM_FORCE = /\bNew-Item\b[^;&|\n]*\s-fo(r(c(e)?)?)?\b/i;
 const psWrites = command => PS_CMDLETS.test(command) || PS_ALIASES.test(command) || PS_NEW_ITEM_FORCE.test(command);
-
-// An editor run whose -ExecCmds list never quits keeps running after its commands finish,
-// unless the only command is a test run (#56). Requiring Quit is simpler and always safe.
-export function execCmdsWithoutQuit(command) {
-  if (!/\bUnrealEditor(-Cmd)?(\.exe)?\b/i.test(command)) return false;
-  const match = command.match(/-ExecCmds=("[^"]*"|'[^']*'|\S+)/i);
-  return Boolean(match) && !/\bquit\b/i.test(match[1]);
-}
 
 // Redirects that only join or discard streams (2>&1, >/dev/null, &>/dev/null) write no file.
 const STREAM_REDIRECTS = /\d*>&\d+|&>>?\s*\/dev\/null|\d*>>?\s*\/dev\/null/g;
@@ -337,7 +329,6 @@ function findOtherRisk(command, cwd) {
     const discard = discardRisk(entries);
     if (discard) return discard;
   } else if (discardsWorkingTree(command)) return 'discarding all working-tree changes';
-  if (execCmdsWithoutQuit(command)) return 'the editor -ExecCmds list does not end with Quit, so the editor will keep running after its commands finish (add ";Quit")';
   const rm = entries ? rmRisk(entries) : (isForcedRecursiveRm(command) ? 'recursive forced delete (rm -rf)' : null);
   if (rm) return rm;
   if (isForcedRecursiveRemoveItem(command)) return 'recursive forced delete (Remove-Item -Recurse -Force)';
