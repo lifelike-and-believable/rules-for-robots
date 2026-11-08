@@ -342,9 +342,10 @@ Pull requests: #145 (spec).
 The guards ask whenever an action matches a dangerous pattern, and most prompts in the pilots protected nothing. Under the tier rule, a guard asks only when an action cannot be undone or reaches outside the project and a person must decide; everything else is allowed, refused with a reason the agent acts on, or judged at the pull request. The guard decision log from #144 measures the result.
 
 - **15a:** the tier guide, the guard corpus, outcome logging, and the report script (AC-1, AC-2, AC-6, AC-7).
-- **15b:** the tier changes to the guards and the `testWeakening` setting (AC-3 to AC-5).
-- **15c:** the replay and the practice guide (AC-8, AC-9).
-- **15d:** the eval (AC-10).
+- **15b:** the tier changes to the guards and the `testWeakening` setting (AC-3 to AC-5, AC-12).
+- **15c:** snapshots before destructive local commands, which are then allowed (AC-11).
+- **15d:** the replay and the practice guide (AC-8, AC-9).
+- **15e:** the eval (AC-10).
 
 ## 11. Milestones
 

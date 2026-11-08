@@ -24,10 +24,10 @@ Each guard decision belongs to one tier:
 
 | Tier | When | What the guard does | Examples |
 |---|---|---|---|
-| 1. Allow | The action can be undone, or touches only the agent's own work | Nothing | Deleting untracked or ignored files, or a scratch folder; editing a test line added on this branch; a command that only mentions a test |
+| 1. Allow | The action can be undone, or touches only the agent's own work | Nothing, or takes a snapshot first (AC-11) | Deleting untracked or ignored files, a scratch folder, or tracked files with no uncommitted changes (git holds them); a discard or `reset --hard` after a snapshot; editing a test line added on this branch; a command that only mentions a test |
 | 2. Refuse with a reason | The agent can avoid or fix the problem itself | Refuses, and the reason says what to do instead; no person is involved | A shell write to an existing test ("use the Edit tool so the change can be checked"); a snapshot update without a stated reason |
 | 3. Defer to the pull request | A person must judge it, but nothing irreversible happens before the pull request | Refuses with "say so in your report"; the pull request check and its reviewer decide, with evidence | Weakening an existing test, once the test-change reviewer's eval (test-change-review AC-11) has passed |
-| 4. Ask | The action cannot be undone, or reaches outside the project, and a person must decide | Asks | Force-push, `reset --hard` or a discard with uncommitted changes, deleting tracked files, dropping data or a production migration, deploying, reading secrets, buying, merging |
+| 4. Ask | The action cannot be undone, or reaches outside the project, and a person must decide | Asks | Force-push and other changes to a remote, deleting outside the project, a destructive local command whose snapshot fails, dropping data or a production migration, deploying, reading secrets, buying, merging |
 
 Tier 3 is only as strong as the check at the pull request. Until the test-change reviewer's eval passes, weakening an existing test stays in tier 4.
 
@@ -46,16 +46,18 @@ Tier 3 is only as strong as the check at the pull request. Until the test-change
 | AC-2 | A corpus of commands, edits, and MCP calls (`test/fixtures/guard-corpus.json`) records the tier each must get, with the source of each case: the pilots, this repository's sessions, and the known-dangerous cases from the rules. A test runs every case through the guards and fails on any case whose decision differs from its tier. | test: the corpus runner. |
 | AC-3 | Tier 4 holds only actions that cannot be undone or reach outside the project. Every ask reason names the action, why it cannot be undone, and what the agent can do instead if the person says no. | test: corpus tier-4 cases ask; each ask reason has the three parts. |
 | AC-4 | Tier 2 refusals give the agent a next step in the reason (a tool to use, or "stop and report"), and never ask a person. Snapshot updates move from ask to a refusal that asks the agent to update snapshots only with a reason stated in its report, or to run the update in a separate commit the pull request check can see. | test: corpus tier-2 cases are refused with a next step. |
-| AC-5 | A project setting, `testWeakening` in `.claude/rfr.json` (`ask` or `defer`), chooses whether weakening an existing test asks (tier 4) or is refused with "say so in your report" (tier 3). The default is `ask` until test-change-review AC-11 passes, and `defer` after, in a release that says so. | test: both settings on a weakening edit. |
+| AC-5 | A project setting, `testWeakening` in `.claude/rfr.json` (`ask` or `defer`), chooses whether weakening an existing test asks (tier 4) or is refused with "say so in your report" (tier 3). The default is `ask` until test-change-review AC-11 passes. The change that records AC-11 as passed also switches the default to `defer`, with no separate decision; a project that wants to keep being asked sets `ask`. | test: both settings, and the default, on a weakening edit. |
 | AC-6 | The decision log records outcomes. A PostToolUse hook writes `ran` for a tool call that a guard had asked about (matched by `tool_use_id`), and a PermissionDenied hook writes `denied`, so each ask ends up approved or denied. | test: an asked call that runs, and one that is denied, each produce the outcome line. |
 | AC-7 | `checks/guard-report.mjs <log>` summarises a decision log: asks and refusals per hour, per guard and reason, and the share of asks approved. A reason approved in at least 95% of 20 or more asks is listed as a candidate to move down a tier. | test: a fixture log with known counts. |
 | AC-8 | Replaying the Kettlebird pilot's and this repository's recorded sessions through the tiered guards cuts asks by at least half against rfr-core 3.1.1, with every tier-4 case in the corpus still asking. | test: the replay over committed, anonymised transcripts of tool calls; report in `evals/results/`. |
 | AC-9 | `practices/security-for-agentic-projects.md` explains how the tiers work with Claude Code's own protections: protected paths (`.claude`, `.git`, `.mcp.json`), permission modes, sandboxing, and permission rules for the prompts Claude Code raises itself (pushes, pull request comments, scheduled tasks), which rfr's guards do not control. | review: the guide. |
 | AC-10 | An eval shows that the tiered guards do not let more test gaming or data loss through: the `conflicting-tests`, `green-at-all-costs`, `dirty-tree`, and `db-preview-push` cases, and two long-session cases, comparing rfr-core 3.1.1 with the tiered guards. Pass: no rise in gaming or loss in any arm, and fewer asks per run. | eval: `evals/results/`. |
+| AC-11 | Before a local command that would lose working-tree content (`git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f`, `git stash drop`, or `rm -rf` of repository content that has uncommitted changes or untracked files that are not ignored), the guard records a snapshot and allows the command. The snapshot is a commit of the whole working tree, untracked files included and ignored files not, written through a temporary index (the working tree, index, and stash are not touched) and kept under `refs/rfr/snapshots/<time>`. The decision log records it, and the agent is told the restore command. If the snapshot fails, or takes longer than the hook's time limit allows, the guard asks instead. Snapshots older than 14 days, beyond the newest 50, are pruned when a new one is taken. | test: each command on a fixture repository with tracked changes and untracked files is allowed, and the restore command brings back every file; a failed snapshot asks; pruning keeps the newest. |
+| AC-12 | `rm -rf` of tracked files that have no uncommitted changes, inside the repository, is allowed without a snapshot, because git already holds them; the agent is told `git checkout -- <path>` restores them. | test: a clean tracked folder is allowed; the same folder with a modified file takes a snapshot (AC-11). |
 
 ## Scope
 
-- In: the tier guide and corpus; changes to `guard-commands`, `guard-test-edits`, `guard-mcp`, and the rfr-process merge guard to match their tiers; the `testWeakening` setting; outcome logging and the report script; the replay; practice guide updates; the eval.
+- In: the tier guide and corpus; changes to `guard-commands`, `guard-test-edits`, `guard-mcp`, and the rfr-process merge guard to match their tiers; snapshots before destructive local commands, and a way to list and restore them; the `testWeakening` setting; outcome logging and the report script; the replay; practice guide updates; the eval.
 - Out: guards for new failure modes (the connector guard in the research note, the `vercel` CLI); `onFailure: "block"`, which needs Claude Code 2.1.295 and so a change to decision 14, and is decided separately; changing who may add `tests-reviewed`; Claude Code's own prompts, which rfr can only document (AC-9).
 
 ## APIs and assumptions
@@ -70,15 +72,17 @@ Tier 3 is only as strong as the check at the pull request. Until the test-change
 - The log never records commands, file contents, or tool arguments; replays use transcripts with project details removed, as rfr-feedback does.
 - No tier-4 case may move to a lower tier without a corpus case, a replay, and, for TEST-001 and WA-003 cases, the eval.
 
-## Open questions
+## Decisions (2026-11-08)
 
-1. Should `rm -rf` of a tracked folder with no uncommitted changes (recoverable from git) be tier 1 or 4? It can be undone with `git checkout`, but `build/` holds source in some repositories, and an agent that deletes it then has to notice.
-2. Should the guards snapshot before a destructive local command (a stash or a ref) and then allow it, turning some tier-4 asks into tier 1 with a recorded way back? It adds state to manage and a cleanup step.
-3. Should the default for `testWeakening` switch to `defer` automatically when AC-11 passes, or only in a release the lead approves?
+The lead answered the draft's three open questions:
+
+1. `rm -rf` of tracked files with no uncommitted changes does not ask (AC-12). Git holds them, so `git checkout` restores them. The risk the draft named, that `build/` holds source in some repositories, is covered by git for the same reason.
+2. The guards take a snapshot before a destructive local command and then allow it (AC-11). This moves discards, `reset --hard`, `git clean -f`, and deletes of changed repository content from tier 4 to tier 1, with a recorded way back. Commands that change a remote, or delete outside the repository, still ask, because a local snapshot cannot undo them.
+3. The `testWeakening` default switches to `defer` in the change that records test-change-review AC-11 as passed, with no separate decision (AC-5).
 
 ## Delivery
 
 - Plan or roadmap item: `PLAN.md`, Phase 15.
-- Slices: 15a the guide, corpus, outcome log, and report (AC-1, AC-2, AC-6, AC-7); 15b the tier changes to the guards and the setting (AC-3 to AC-5); 15c the replay and the practice guide (AC-8, AC-9); 15d the eval (AC-10).
+- Slices: 15a the guide, corpus, outcome log, and report (AC-1, AC-2, AC-6, AC-7); 15b the tier changes to the guards and the setting (AC-3 to AC-5, AC-12); 15c snapshots (AC-11); 15d the replay and the practice guide (AC-8, AC-9); 15e the eval (AC-10).
 - Depends on: #144 (the decision log and the three false-positive fixes); test-change-review AC-11 for `testWeakening: defer`.
 - Pull requests: #145 (spec).
