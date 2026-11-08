@@ -4,6 +4,21 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-11-08
+
+Pull requests: #144.
+
+### Fixed
+
+- Three guard false positives found while building #143, each a prompt or refusal that protected nothing (`rfr-core`, #144). Replaying that session's 122 shell commands, the guards now flag none of them, against two before; existing guard tests are unchanged.
+  - `guard-commands` no longer asks before `rm -rf` of a path at least two levels inside the temp directory and in no git repository (such as a session scratchpad or a test fixture), including when the path comes from a variable set earlier in the same command (`R=/tmp/x; rm -rf $R/wt`). The temp directory itself, a folder directly under it, a path that escapes it, a git repository under it, and a variable with no known value still ask.
+  - `guard-commands` no longer refuses a script that only mentions a test path in the text it writes, such as a Python script adding a changelog line that names a test file in Markdown backticks. A path now counts when it is on a line that calls a file-writing function, or is assigned to a variable such a line uses; backticks quote strings only in JavaScript. A script whose writing line it cannot follow (a loop variable, a computed path) is still checked against every path it names.
+  - `guard-test-edits` judges an edit against the test file as it was where the branch started, as the pull request review does. Rewriting lines the branch added no longer asks, and a weakening approved earlier is not asked about again on later edits; a new weakening of a test that exists on the base branch still asks.
+
+### Added
+
+- A guard decision log (`rfr-core`, #144): each ask or refusal from the rfr-core guards is appended to `guard-decisions.jsonl` in the plugin's data folder, with the hook, tool, decision, session, and the start of the reason, never the command or file contents. It is the measurement the planned guard tiers (`docs/specs/guard-tiers.md`) calibrate against. `RFR_GUARD_LOG=0` turns it off. Adopters: update the `rfr-core` plugin; nothing else changes.
+
 ## [3.1.0] - 2026-11-07
 
 Pull requests: #142.
