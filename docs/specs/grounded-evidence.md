@@ -54,4 +54,4 @@ Review findings are reported in one form by five reviewer agents, and `review-pr
 
 - Plan or roadmap item: `PLAN.md`, Phase 14.
 - Slices: 14a the lookup, the skill, the basis line, and the findings check (AC-1 to AC-9); 14b the eval (AC-10), after which WA-006 and UE-001 may name the lookup.
-- Pull requests: none yet.
+- Pull requests: #143 (spec and 14a).
