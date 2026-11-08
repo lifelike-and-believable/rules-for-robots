@@ -28,7 +28,10 @@ test('rm -rf inside a git repository under the temp directory still gets the git
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'src', 'a.js'), 'x\n');
   spawnSync('git', ['add', '.'], { cwd: dir });
-  assert.match(decideCommand(`rm -rf ${dir}/src`, { cwd: dir })?.reason ?? '', /recursive forced delete/);
+  // The staged files are in no commit, so the guard takes a snapshot first (guard tiers AC-11).
+  const decision = decideCommand(`rm -rf ${dir}/src`, { cwd: dir });
+  assert.equal(decision?.decision, 'inform');
+  assert.match(decision.reason, /took a snapshot/);
 });
 
 test('rm -rf still asks for the temp directory itself, an escape from it, an unknown variable, or a path outside it', () => {

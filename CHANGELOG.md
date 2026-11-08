@@ -12,6 +12,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
   - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
   - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
 
+## [5.1.0] - 2026-11-08
+
+Pull requests: #PR15C.
+
+### Changed
+
+- Guard tiers, slice 15c (#PR15C; `docs/specs/guard-tiers.md`, AC-11). Destructive local commands no longer ask: `guard-commands` takes a snapshot first, allows the command, and tells the agent how to undo it. Released with `rfr-web` 1.0.2 and `rfr-unreal` 2.0.1.
+  - Covered: `git checkout -- .`, `git restore .`, `git reset --hard` (to `HEAD` or to another commit), `git clean -f`, `git stash drop` and `clear`, and `rm -rf` inside the repository of files with uncommitted changes or untracked files. Each used to ask when there was something to lose.
+  - A snapshot is a commit of the whole working tree, untracked files included and ignored files not, written through a temporary index, so the working tree, index, and stash are untouched. It is kept under `refs/rfr/snapshots/<time>`. Before a stash is dropped, its commits are kept the same way, and `git stash store` puts them back. A restore brings back content; staged changes come back unstaged.
+  - The guard asks instead when the snapshot fails or takes longer than six seconds, and when the same command also needs a person (a force-push, say).
+  - Snapshots older than 14 days, beyond the newest 50, are deleted when a new one is taken.
+  - The decision log records a `snapshot` line with the ref, and `checks/guard-report.mjs` counts snapshots.
+  - Every ask reason now starts its second sentence with a capital letter. `lib.mjs` carries the change, so `rfr-web` and `rfr-unreal` get patch releases for their copies.
+  - WA-003's `check:` text describes the snapshot.
+  - Adopters: update `rfr-core` to 5.1.0 (and `rfr-web` and `rfr-unreal` if you use them). Snapshot refs appear under `refs/rfr/snapshots/`; they are local and never pushed unless you push them by name.
+
 ## [5.0.0] - 2026-11-08
 
 Pull requests: #151.

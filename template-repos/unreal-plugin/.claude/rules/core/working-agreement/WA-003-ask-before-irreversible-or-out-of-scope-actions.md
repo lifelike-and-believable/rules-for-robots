@@ -4,7 +4,7 @@ title: Ask before irreversible or out-of-scope actions
 level: MUST
 scope: core
 verified-by: [hook]
-check: "hook: rfr-core guard-commands asks for approval before destructive git, file, and database commands"
+check: "hook: rfr-core guard-commands takes a snapshot before destructive local git and file commands, and asks for approval when the snapshot fails and before commands that change a remote, rewrite history, delete outside the repository, or change a database"
 targets-failure: destructive-action
 observed-on: [claude-opus-4-6]
 rationale: Agents have destroyed uncommitted work and run destructive commands; naming the specific stops works better than a general "ask when unsure".

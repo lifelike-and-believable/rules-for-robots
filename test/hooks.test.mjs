@@ -36,11 +36,10 @@ test('leaves ordinary commands alone', () => {
 });
 
 test('guard-commands prints an ask decision only for risky commands', () => {
-  // Since rfr-core 3.0.2 a hard reset asks only when it would discard something, so the run needs
-  // a repository with an uncommitted change, not whatever state the checkout running the tests is in.
+  // Since rfr-core 5.1.0 a hard reset takes a snapshot instead of asking (guard tiers AC-11), so
+  // the run asks about a force-push, which changes a remote.
   const r = gitRepo();
-  r.write({ 'src/a.ts': 'uncommitted\n' });
-  const risky = runHook('guard-commands.mjs', { cwd: r.dir, tool_name: 'Bash', tool_input: { command: 'git reset --hard' } });
+  const risky = runHook('guard-commands.mjs', { cwd: r.dir, tool_name: 'Bash', tool_input: { command: 'git push --force origin main' } });
   assert.equal(risky.status, 0);
   const decision = JSON.parse(risky.stdout).hookSpecificOutput;
   assert.equal(decision.hookEventName, 'PreToolUse');
@@ -558,23 +557,23 @@ function gitRepo(files = {}) {
   return { dir, git, write };
 }
 
-test('discarding changes asks only when there are changes to lose (rfr-core 3.0.2)', () => {
+test('discarding changes takes a snapshot only when there are changes to lose (rfr-core 3.0.2; snapshots in 5.1.0)', () => {
   const r = gitRepo();
   for (const command of ['git checkout -- .', 'git restore .', 'git reset --hard', 'git clean -fd', 'git checkout -q -- . 2>/dev/null; git switch -c next']) {
     assert.equal(decideCommand(command, { cwd: r.dir }), null, `clean tree: ${command}`);
   }
-  assert.equal(decideCommand('git reset --hard HEAD~1', { cwd: r.dir }).decision, 'ask', 'resetting to another commit can drop commits');
+  assert.equal(decideCommand('git reset --hard HEAD~1', { cwd: r.dir }).decision, 'inform', 'resetting to another commit can drop commits, so a snapshot keeps them');
   r.write({ 'src/a.ts': 'changed\n' });
   for (const command of ['git checkout -- .', 'git restore .', 'git reset --hard']) {
-    assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', `uncommitted change: ${command}`);
+    assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'inform', `uncommitted change: ${command}`);
   }
   assert.equal(decideCommand('git clean -fd', { cwd: r.dir }), null, 'no untracked files to delete');
   r.write({ 'src/new.ts': 'new\n' });
-  assert.equal(decideCommand('git clean -fd', { cwd: r.dir }).decision, 'ask', 'an untracked file would be deleted');
+  assert.equal(decideCommand('git clean -fd', { cwd: r.dir }).decision, 'inform', 'an untracked file would be deleted');
   // The folder the command runs in is the one after any cd.
   const other = gitRepo();
   assert.equal(decideCommand(`cd ${other.dir} && git checkout -- .`, { cwd: r.dir }), null);
-  assert.equal(decideCommand(`cd ${other.dir} && cd ${r.dir} && git checkout -- .`, { cwd: other.dir }).decision, 'ask');
+  assert.equal(decideCommand(`cd ${other.dir} && cd ${r.dir} && git checkout -- .`, { cwd: other.dir }).decision, 'inform');
 });
 
 test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2)", () => {
@@ -585,7 +584,7 @@ test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2
   r.write({ 'src/a.ts': 'lead change\n' });
   assert.equal(decideCommand(`cd ${wt} && git status --short && git checkout -- . && git status --short`, { cwd: r.dir }), null);
   assert.equal(decideCommand('git checkout -- .', { cwd: wt }), null);
-  assert.equal(decideCommand('git checkout -- .', { cwd: r.dir }).decision, 'ask', 'the main checkout still asks');
+  assert.equal(decideCommand('git checkout -- .', { cwd: r.dir }).decision, 'inform', 'the main checkout takes a snapshot first');
 });
 
 test('rm -rf asks unless everything it deletes is ignored by git and untracked (rfr-core 3.0.2)', () => {

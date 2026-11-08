@@ -88,7 +88,8 @@ export function inform(context) {
 
 // The reason for an ask (guard tiers AC-3): the action, why a person must decide (it cannot be
 // undone, or it reaches outside the project), and what the agent can do if the person says no.
-export const askReason = ({ source, action, why, instead }) => `${source}: ${action}. ${why}. If not approved: ${instead}.`;
+const sentence = text => text.charAt(0).toUpperCase() + text.slice(1);
+export const askReason = ({ source, action, why, instead }) => `${source}: ${action}. ${sentence(why)}. If not approved: ${instead}.`;
 
 // The reason for a refusal the agent acts on (tier 2), or one deferred to the pull request (tier 3):
 // what was refused, and the next step.
