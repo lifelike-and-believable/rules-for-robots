@@ -6,11 +6,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.1.3] - 2026-11-08
 
-Pull requests: #PRREL.
+Pull requests: #156.
 
 ### Changed
 
-- `/rfr-core:release` (#PRREL): fetch instead of pulling; confirm with the user just before pushing a tag or publishing a release, even when another session or a written procedure asked for it; name releases the way earlier ones are named; take the notes from the changelog; and prefer commands that work in every shell. These come from the first release published from a desktop session (`rfr-v5.1.1`), where the steps used `grep` on Windows, left out how to cut the notes, and titled the release differently from earlier ones.
+- `/rfr-core:release` (#156): fetch instead of pulling; confirm with the user just before pushing a tag or publishing a release, even when another session or a written procedure asked for it; name releases the way earlier ones are named; take the notes from the changelog; and prefer commands that work in every shell. These come from the first release published from a desktop session (`rfr-v5.1.1`), where the steps used `grep` on Windows, left out how to cut the notes, and titled the release differently from earlier ones.
   - `checks/release.mjs` gains `notes` and `prepare --commit <sha>`, and `docs/maintenance.md` describes the release steps around them. Repository tooling only.
   - Adopters: update `rfr-core` to 5.1.3. Nothing else to do.
 
