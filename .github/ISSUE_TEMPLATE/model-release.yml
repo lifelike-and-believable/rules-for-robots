@@ -1,0 +1,43 @@
+# A new Claude model reached Claude Code (docs/specs/model-adaptation.md, AC-8). The steps match
+# "New model" in docs/maintenance.md.
+name: New model
+description: A new Claude model is available in Claude Code; run the model-release review.
+title: "New model: "
+labels: [model-release]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Model ID
+      description: The ID Claude Code reports for the new model, as in an eval run's reportedModel.
+      placeholder: claude-opus-6
+    validations:
+      required: true
+  - type: input
+    id: available
+    attributes:
+      label: Date it reached Claude Code
+      placeholder: "2027-01-15"
+    validations:
+      required: true
+  - type: input
+    id: previous
+    attributes:
+      label: Previous model to compare with
+      placeholder: claude-opus-5-5
+    validations:
+      required: true
+  - type: checkboxes
+    id: steps
+    attributes:
+      label: Steps
+      description: docs/maintenance.md, "New model". Name each pull request in a comment as it opens.
+      options:
+        - label: "Suite run at default effort: node evals/run.mjs --suite model-release --models <id>"
+        - label: Suite run at each effort level the agents set
+        - label: "Smoke tests: node evals/agents/smoke.mjs --model <id>"
+        - label: "Results added to the ledger: node checks/model-ledger.mjs add <folder>"
+        - label: "Report read: node checks/model-ledger.mjs report <id> --since <previous>"
+        - label: Decisions made from the table in docs/maintenance.md, each in its own pull request
+        - label: PLAN.md section 5 has a column for the new generation, and decision 7 is updated
+        - label: The next release's changelog entry names the model on its "Evaluated on:" line

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Release checks (Phase 9): CHANGELOG.md has an Unreleased section, its releases are in
 // descending order without duplicates, and the newest release matches the rfr-core
-// plugin version.
+// plugin version. Each release after 4.0.0 has an "Evaluated on:" line naming the models of
+// the newest ledger run, each of which has entries in evals/ledger.json
+// (docs/specs/model-adaptation.md, AC-10).
 // Usage: node checks/release.mjs
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +11,33 @@ import { fileURLToPath } from 'node:url';
 const RELEASE = /^## \[(\d+)\.(\d+)\.(\d+)\]/gm;
 
 const compare = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+// The last release before the "Evaluated on:" line was required.
+export const EVALUATED_ON_SINCE = [4, 0, 0];
+
+// The models a release names on its "Evaluated on:" line, or null when it has none.
+export function evaluatedOn(section) {
+  const line = /^Evaluated on: *(.*)$/m.exec(section)?.[1];
+  if (line === undefined) return null;
+  return line.replace(/[`.]+$/, '').split(/[,;]|\band\b/).map(m => m.replace(/`/g, '').trim()).filter(Boolean);
+}
+
+export function checkEvaluatedOn(text, ledgerModels) {
+  const errors = [];
+  const sections = text.split(/^(?=## \[)/m);
+  for (const section of sections) {
+    const m = /^## \[(\d+)\.(\d+)\.(\d+)\]/.exec(section);
+    if (!m) continue;
+    const version = [Number(m[1]), Number(m[2]), Number(m[3])];
+    if (compare(version, EVALUATED_ON_SINCE) <= 0) continue;
+    const name = version.join('.');
+    const models = evaluatedOn(section);
+    if (!models?.length) { errors.push(`release ${name} has no "Evaluated on:" line naming the models of the newest ledger run`); continue; }
+    for (const model of models) {
+      if (!ledgerModels.has(model)) errors.push(`release ${name} says it was evaluated on ${model}, but evals/ledger.json has no entries for it`);
+    }
+  }
+  return errors;
+}
 
 export function checkChangelog(text, pluginVersion) {
   const errors = [];
@@ -29,7 +58,9 @@ export function checkChangelog(text, pluginVersion) {
 
 function main() {
   const plugin = JSON.parse(fs.readFileSync('plugins/core/.claude-plugin/plugin.json', 'utf8'));
-  const errors = checkChangelog(fs.readFileSync('CHANGELOG.md', 'utf8'), plugin.version);
+  const text = fs.readFileSync('CHANGELOG.md', 'utf8');
+  const ledger = fs.existsSync('evals/ledger.json') ? JSON.parse(fs.readFileSync('evals/ledger.json', 'utf8')) : { entries: [] };
+  const errors = [...checkChangelog(text, plugin.version), ...checkEvaluatedOn(text, new Set(ledger.entries.map(e => e.model)))];
   for (const e of errors) console.error(e);
   if (errors.length) process.exit(1);
   console.log(`CHANGELOG.md matches rfr-core ${plugin.version}.`);

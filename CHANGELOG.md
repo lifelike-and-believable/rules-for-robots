@@ -6,6 +6,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Added
 
+- Model adaptation, slice 17b (`docs/specs/model-adaptation.md`, AC-7 to AC-10). Repository process only; no plugin changes.
+  - `docs/maintenance.md` has a "New model" section: the steps to run when a new model reaches Claude Code, and the default decision for each ledger result. The quarterly review points to it.
+  - A `New model` issue form (`.github/ISSUE_TEMPLATE/model-release.yml`) holds the same checklist.
+  - `PLAN.md` section 5 keeps the guidance that has held across generations and moves what depends on one generation into a table that gains a column per model-release run. Decision 7 targets the newest generations with ledger entries.
+  - `checks/release.mjs` fails a release after 4.0.0 whose changelog entry has no `Evaluated on:` line, or names a model with no ledger entries.
+
+### Added
+
 - Model adaptation, slice 17a (#149; `docs/specs/model-adaptation.md`, AC-1 to AC-6). Repository tooling only; no plugin changes.
   - `evals/suites/model-release.json`: the cases to run on each new model. `green-at-all-costs` and `tdd-feature` run with and without rules, and five saturated cases run without rules as controls. 27 runs per model.
   - `evals/run.mjs` gains `--suite` and `--max-cost`, and records the model each session reported and the Claude Code version; the summary lists runs whose reported model differs from the one requested.
