@@ -4,7 +4,7 @@ status: draft
 
 # Guard tiers
 
-A rule for when the rfr-core and rfr-process guards interrupt a person, and the changes that apply it. Today a guard asks whenever an action matches a dangerous pattern. Under this spec a guard asks only when the action cannot be undone or reaches outside the project, and a person is the one who has to decide. Everything else is allowed, refused with a reason the agent acts on, or judged at the pull request. The guard decision log from #144 measures the result.
+A rule for when the rfr-core and rfr-process guards interrupt a person, and the changes that apply it. Today a guard asks whenever an action matches a dangerous pattern. Under this spec a guard asks only when the action cannot be undone or reaches outside the project, and a person is the one who has to decide. Everything else is allowed, refused with a reason the agent acts on, or judged at the pull request. The guard decision log from #144 measures the result. Approved by the project lead on 2026-11-08, with the three open questions decided below. The `status` field stays `draft` until every `test:` criterion has a citing test, because `spec-trace` treats every uncited criterion of an approved spec as an error.
 
 ## Problem
 
