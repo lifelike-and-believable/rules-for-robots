@@ -133,12 +133,10 @@ test('guard-tiers#AC-12: rm -rf of clean tracked files is allowed with the comma
   assert.equal(out.permissionDecision, undefined);
   assert.match(out.additionalContext, /git checkout -- build/);
 
-  // A modified file or an untracked file inside: git cannot bring it back (a snapshot comes in 15c).
+  // A modified file or an untracked file inside: git cannot bring it back, so the guard takes a snapshot (AC-11).
   r.write({ 'build/make.mjs': 'changed\n' });
-  assert.equal(decideCommand('rm -rf build', { cwd: r.dir }).decision, 'ask');
+  assert.match(decideCommand('rm -rf build', { cwd: r.dir }).reason, /took a snapshot/);
   const u = repo();
   u.write({ 'build/notes.txt': 'mine\n' });
-  const asked = decideCommand('rm -rf build', { cwd: u.dir });
-  assert.equal(asked.decision, 'ask');
-  assert.match(asked.reason, /uncommitted changes or are untracked/);
+  assert.match(decideCommand('rm -rf build', { cwd: u.dir }).reason, /took a snapshot/);
 });

@@ -8,7 +8,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ask, askReason, deferredTestReason, deny, existedAtBase, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { appendGuardLog, ask, askReason, deferredTestReason, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
 
@@ -20,7 +21,7 @@ const CHECKS = [
   [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files', 'discard', 'WA-003', 'untracked files are in no commit, so git cannot bring them back', 'list them with git clean -n and delete only the files you made, or move them aside'],
   [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history', null, 'WA-003', 'it replaces history on the remote that others may already have pulled', 'push to a new branch, or bring the remote changes in and push normally'],
   [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch', null, 'WA-003', 'commits only on that branch then survive only in the reflog', 'use git branch -d, which refuses to delete unmerged work'],
-  [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work', null, 'WA-003', 'a dropped stash is hard to find again', 'apply the stash, or leave it in place'],
+  [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work', 'stash', 'WA-003', 'a dropped stash is hard to find again', 'apply the stash, or leave it in place'],
   [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history', null, 'WA-003', 'it rewrites every commit, and pushing the result replaces shared history', 'stop and report what you want removed from history'],
   [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)', null, 'WA-003', 'it skips the checks the project set for every commit and push', 'run the hooks and fix what they report'],
   [/\bgit\s+config\b(?![^;&|\n]*\s(--get\S*|--list|-l)\b)[^;&|\n]*\s--(global|system)\b/, 'changing machine-wide git configuration', null, 'WA-003', 'it changes git for every repository on this machine, outside the project', 'pass the setting for one command with git -c instead'],
@@ -167,7 +168,7 @@ const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s
 // The decision for a shell command: null to allow, { decision: 'inform', reason } to allow with
 // context for the agent, { decision: 'deny', reason } for the agent to act on, or
 // { decision: 'ask', reason } for a person (docs/specs/guard-tiers.md).
-export function decideCommand(command, { cwd, settings } = {}) {
+export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots } = {}) {
   if (typeof command !== 'string') return null;
   const existed = cwd ? file => existingProjectFile(file, cwd) : undefined;
   const change = testFileChange(command, existed);
@@ -183,9 +184,21 @@ export function decideCommand(command, { cwd, settings } = {}) {
     return { decision: 'deny', reason: refuseReason({ source: 'rfr-core (TEST-001)', action: 'this command updates test snapshots, which rewrites their expected values', next: 'If the output changed on purpose, run it again with the reason in the command, for example RFR_SNAPSHOT_REASON="the header now shows the plan name" npx vitest -u, and give the same reason in your report; otherwise leave the snapshots and report which ones fail' }) };
   }
   const hints = [];
-  const risk = findOtherRisk(command, cwd, hints);
-  if (risk) return { decision: 'ask', reason: askReason({ source: `rfr-core (${risk.rule})`, action: risk.action, why: risk.why, instead: risk.instead }) };
-  if (hints.length) return { decision: 'inform', reason: `rfr-core (WA-003): the files this command deletes are committed with no changes, so git can restore them: ${hints.join('; ')}.` };
+  const snaps = [];
+  const asking = r => ({ decision: 'ask', reason: askReason({ source: `rfr-core (${r.rule})`, action: r.action, why: r.why, instead: r.instead }) });
+  const risk = findOtherRisk(command, cwd, hints, snaps);
+  if (risk) return asking(risk);
+  const notes = [];
+  let snapshots = [];
+  if (snaps.length) {
+    const taken = snapshot(snaps, command);
+    // No snapshot, no way back: a person decides, and the reason says the snapshot failed.
+    if (taken.failed) return asking({ ...taken.failed, why: `${taken.failed.why}, and the guard could not take a snapshot first` });
+    snapshots = taken.refs;
+    notes.push(`the guard took a snapshot of what this command removes; to undo it: ${taken.lines.join('; ')}`);
+  }
+  if (hints.length) notes.push(`the files this command deletes are committed with no changes, so git can restore them: ${hints.join('; ')}`);
+  if (notes.length) return { decision: 'inform', reason: `rfr-core (WA-003): ${notes.join('. ')}.`, snapshots };
   return null;
 }
 
@@ -212,7 +225,7 @@ export const inAgentWorktree = dir => path.resolve(dir).split(path.sep).join('/'
 
 // Commands that discard uncommitted work (checkout or restore of the whole tree, reset --hard,
 // clean -f), asked about only when there is something to lose in the folder they run in.
-function discardRisk(entries) {
+function discardRisk(entries, snaps) {
   for (const { words, dir } of entries) {
     const g = words.indexOf('git');
     if (g === -1) continue;
@@ -231,7 +244,12 @@ function discardRisk(entries) {
       if (!staged || worktree) kind = 'worktree';
     } else if (sub === 'reset' && rest.includes('--hard')) {
       const target = rest.find(w => !w.startsWith('-'));
-      if (target && target !== 'HEAD') return { rule: 'WA-003', action: 'git reset --hard to another commit can drop commits as well as uncommitted work', why: 'the commits it leaves behind survive only in the reflog, and uncommitted work is lost', instead: 'commit or stash first; to undo commits on a shared branch, use git revert' };
+      if (target && target !== 'HEAD' && !inAgentWorktree(where)) {
+        // The snapshot's parent is the commit HEAD points at now, so it keeps both the commits the
+        // reset leaves behind and the uncommitted work (guard tiers AC-11).
+        snaps.push({ kind: 'tree', dir: where, path: '.', moves: true, risk: { rule: 'WA-003', action: 'git reset --hard to another commit can drop commits as well as uncommitted work', why: 'the commits it leaves behind survive only in the reflog, and uncommitted work is lost', instead: 'commit or stash first; to undo commits on a shared branch, use git revert' } });
+        continue;
+      }
       kind = 'index';
     } else if (sub === 'clean' && (rest.includes('--force') || /f/.test(short))) {
       kind = /x/.test(short) ? 'untracked-all' : /X/.test(short) ? 'ignored' : 'untracked';
@@ -245,9 +263,12 @@ function discardRisk(entries) {
       ignored: () => { const r = git(where, ['ls-files', '--others', '--ignored', '--exclude-standard']); return r.status !== 0 || r.out.trim() !== ''; },
     }[kind];
     if (check()) {
-      return kind.startsWith('untracked') || kind === 'ignored'
+      // Something would be lost: a snapshot first makes it undoable (guard tiers AC-11). Ignored
+      // files that git clean -x or -X deletes are build output, as for rm -rf, and are not kept.
+      const risk = kind.startsWith('untracked') || kind === 'ignored'
         ? { rule: 'WA-003', action: 'git clean -f deletes untracked files', why: 'untracked files are in no commit, so git cannot bring them back', instead: 'list them with git clean -n and delete only the files you made, or move them aside' }
         : { rule: 'WA-003', action: 'discarding all working-tree changes', why: 'the uncommitted work it removes is in no commit, so git cannot bring it back', instead: 'commit or stash the changes first (git stash push -u), then run it' };
+      snaps.push({ kind: 'tree', dir: where, path: '.', risk });
     }
   }
   return null;
@@ -301,7 +322,7 @@ function expand(word, vars) {
 const RM = { rule: 'WA-003', action: 'recursive forced delete (rm -rf)', why: 'it deletes files that no commit holds, or that the guard cannot identify, so git cannot bring them back', instead: 'delete specific paths inside the repository, or move the files aside instead of deleting them' };
 const RM_CHANGED = { ...RM, why: 'some of these files have uncommitted changes or are untracked, so git cannot bring them back', instead: 'commit or stash the changes first (git stash push -u), then delete' };
 
-function rmRisk(entries, hints = []) {
+function rmRisk(entries, hints = [], snaps = []) {
   const vars = new Map();
   for (const { words, dir } of entries) {
     if (words.length && words.every(w => /^\w+=/.test(w))) {
@@ -345,28 +366,102 @@ function rmRisk(entries, hints = []) {
         // Tracked files with nothing uncommitted and nothing untracked: git holds them, so the
         // delete can be undone (guard tiers AC-12). Ignored files inside are build output.
         const status = git(root, ['status', '--porcelain', '--', rel]);
-        if (status.status !== 0 || status.out.trim()) return RM_CHANGED;
+        if (status.status !== 0) return RM;
+        if (status.out.trim()) {
+          snaps.push({ kind: 'tree', dir: root, path: rel, risk: RM_CHANGED });
+          continue;
+        }
         hints.push(`git checkout -- ${rel.split(path.sep).join('/')}`);
         continue;
       }
-      if (fs.existsSync(abs) && git(root, ['check-ignore', '-q', '--', rel]).status !== 0) return RM;
+      // Untracked files that are not ignored: a snapshot keeps them (AC-11).
+      if (fs.existsSync(abs) && git(root, ['check-ignore', '-q', '--', rel]).status !== 0) snaps.push({ kind: 'tree', dir: root, path: rel, risk: RM_CHANGED });
     }
   }
   return null;
 }
 
-function findOtherRisk(command, cwd, hints = []) {
-  // With the folder known, discards and rm -rf are checked against what they would remove.
+const STASH_RISK = { rule: 'WA-003', action: 'dropping stashed work', why: 'a dropped stash is hard to find again', instead: 'apply the stash, or leave it in place' };
+
+// git stash drop and git stash clear: the stash commits they would drop, kept by a snapshot first.
+function stashSnaps(entries, snaps) {
+  for (const { words, dir } of entries) {
+    const g = words.indexOf('git');
+    if (g === -1 || words[g + 1] !== 'stash' || !['drop', 'clear'].includes(words[g + 2])) continue;
+    let shas;
+    if (words[g + 2] === 'clear') {
+      const r = git(dir, ['stash', 'list', '--format=%H']);
+      if (r.status !== 0) return STASH_RISK;
+      shas = r.out.split('\n').filter(Boolean);
+    } else {
+      const which = words.slice(g + 3).find(w => !w.startsWith('-')) ?? 'stash@{0}';
+      const ref = /^\d+$/.test(which) ? `stash@{${which}}` : which;
+      if (!/^stash@\{\d+\}$/.test(ref)) return STASH_RISK;
+      const r = git(dir, ['rev-parse', '--verify', '--quiet', ref]);
+      shas = r.status === 0 ? [r.out.trim()] : [];
+    }
+    if (shas.length) snaps.push({ kind: 'stash', dir, shas, risk: STASH_RISK });
+  }
+  return null;
+}
+
+// The first risk a person must decide about, or null. Losses a snapshot can undo go to snaps
+// instead (guard tiers AC-11), and tracked, unchanged deletes add their restore command to hints.
+function findOtherRisk(command, cwd, hints = [], snaps = []) {
+  // With the folder known, discards, stash drops, and rm -rf are checked against what they would remove.
   const entries = cwd ? commandsWithDirs(command, cwd) : null;
   if (entries) {
-    const discard = discardRisk(entries);
-    if (discard) return discard;
+    discardRisk(entries, snaps);
+    const stash = stashSnaps(entries, snaps);
+    if (stash) return stash;
   } else if (discardsWorkingTree(command)) return { rule: 'WA-003', action: 'discarding all working-tree changes', why: 'the uncommitted work it removes is in no commit, so git cannot bring it back', instead: 'commit or stash the changes first (git stash push -u), then run it' };
-  const rm = entries ? rmRisk(entries, hints) : (isForcedRecursiveRm(command) ? RM : null);
+  const rm = entries ? rmRisk(entries, hints, snaps) : (isForcedRecursiveRm(command) ? RM : null);
   if (rm) return rm;
   if (isForcedRecursiveRemoveItem(command)) return { ...RM, action: 'recursive forced delete (Remove-Item -Recurse -Force)' };
-  for (const [pattern, action, kind, rule, why, instead] of CHECKS) if (pattern.test(command) && !(entries && kind === 'discard')) return { rule, action, why, instead };
+  for (const [pattern, action, kind, rule, why, instead] of CHECKS) {
+    if (!pattern.test(command)) continue;
+    if (entries && (kind === 'discard' || kind === 'stash')) continue;
+    return { rule, action, why, instead };
+  }
   return null;
+}
+
+const shellPath = p => (/^[\w./@:+-]+$/.test(p) ? p : `'${p.replace(/'/g, "'\\''")}'`);
+
+// Takes the snapshots snaps call for, at most one of the working tree per repository. Returns
+// { lines, refs } with a restore command for each, or { failed } with the risk to ask about.
+export function takeSnapshots(snaps, command, { now = new Date(), deadline = Date.now() + 6000 } = {}) {
+  const lines = [];
+  const refs = [];
+  const trees = new Map();
+  for (const snap of snaps) {
+    const top = git(snap.dir, ['rev-parse', '--show-toplevel']);
+    if (top.status !== 0) return { failed: snap.risk };
+    const root = top.out.trim();
+    const rel = snap.kind === 'tree' ? path.relative(root, path.resolve(snap.dir, snap.path)).split(path.sep).join('/') || '.' : null;
+    try {
+      if (snap.kind === 'stash') {
+        for (const { ref, sha } of snapshotStashes(root, snap.shas, { now, deadline })) {
+          refs.push(ref);
+          lines.push(`git stash store -m "restored by rfr-core" ${sha} (kept as ${ref})`);
+        }
+        continue;
+      }
+      if (!trees.has(root)) {
+        const taken = snapshotTree(root, { label: command.split('\n')[0], now, deadline });
+        trees.set(root, taken);
+        refs.push(taken.ref);
+      }
+      const { sha, ref } = trees.get(root);
+      const where = root === path.resolve(snap.dir) || rel === '.' ? '' : `git -C ${shellPath(root)} `;
+      const restore = `${where}git restore --source=${sha} --worktree -- ${rel === '.' ? ':/' : shellPath(rel)}`;
+      lines.push(snap.moves ? `${where}git reset --hard ${sha}~1 && ${restore} (kept as ${ref})` : `${restore} (kept as ${ref})`);
+    } catch {
+      return { failed: snap.risk };
+    }
+  }
+  for (const root of trees.keys()) pruneSnapshots(root, { now });
+  return { lines: [...new Set(lines)], refs };
 }
 
 // The reason for any refusal or question, or null; kept for callers that only need to know whether
@@ -379,7 +474,17 @@ async function main() {
   const input = await readInput();
   const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result?.decision === 'deny') deny(result.reason);
-  else if (result?.decision === 'inform') inform(result.reason);
+  else if (result?.decision === 'inform') {
+    // A snapshot goes in the decision log with its refs, so it can be found again (AC-11).
+    if (result.snapshots?.length && guardLogEnabled()) {
+      try {
+        appendGuardLog({ time: new Date().toISOString(), session: input?.session_id ?? null, hook: 'guard-commands', tool: input?.tool_name ?? null, decision: 'snapshot', reason: result.reason.slice(0, 200), refs: result.snapshots });
+      } catch {
+        // Logging never blocks a decision.
+      }
+    }
+    inform(result.reason);
+  }
   else if (result) ask(result.reason);
 }
 

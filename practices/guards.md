@@ -19,13 +19,13 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4, or 3 with `testWeakening: defer` | 4, then 3 | Removing a test is the strongest weakening; the `testWeakening` setting moves it to the pull request (AC-5) |
 | A command only runs, reads, or mentions a test file | TEST-001 | none | 1 | 1 | Nothing changes |
 | Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 2 | 2 | The agent states the reason in the command (`RFR_SNAPSHOT_REASON="..."`) and in its report, and the update goes through (AC-4) |
-| `git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f` with uncommitted changes or untracked files to lose | WA-003 | Losing uncommitted work | 4 | 1 with a snapshot (15c) | A snapshot of the working tree makes the command undoable (AC-11) |
+| `git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f` with uncommitted changes or untracked files to lose | WA-003 | none | 1 with a snapshot | 1 with a snapshot | A snapshot of the working tree makes the command undoable (AC-11) |
 | The same commands with nothing to lose, or inside an agent worktree under `.claude/worktrees/` | WA-003 | none | 1 | 1 | Nothing is lost |
-| `git reset --hard` to another commit | WA-003 | Losing commits and uncommitted work | 4 | 1 with a snapshot (15c) | The reflog holds the commits; a snapshot holds the working tree |
-| `git stash drop` or `git stash clear` | WA-003 | Losing stashed work | 4 | 1 with a snapshot (15c) | The snapshot keeps the stash's content (AC-11) |
+| `git reset --hard` to another commit | WA-003 | none | 1 with a snapshot | 1 with a snapshot | The snapshot's parent is the old commit, so it keeps both the commits and the working tree |
+| `git stash drop` or `git stash clear` | WA-003 | none | 1 with a snapshot | 1 with a snapshot | The snapshot keeps the stash commits, and `git stash store` puts them back (AC-11) |
 | `rm -rf` of untracked, ignored files (build output such as `dist/`), of a path that is not there, or of a scratch folder at least two levels inside the temp directory and in no repository | WA-003 | none | 1 | 1 | Nothing a commit or the project holds is lost |
 | `rm -rf` of tracked files with no uncommitted changes | WA-003 | none | 1 | 1 | Git holds them; the guard tells the agent the `git checkout -- <path>` that restores them (AC-12) |
-| `rm -rf` of repository content with uncommitted changes or untracked files that are not ignored | WA-003 | Losing uncommitted work | 4 | 1 with a snapshot (15c) | AC-11 |
+| `rm -rf` of repository content with uncommitted changes or untracked files that are not ignored | WA-003 | none | 1 with a snapshot | 1 with a snapshot | AC-11 |
 | `rm -rf` outside the repository and the temp directory, of a root-like path (`.`, `/`, `..`), a glob, or a variable with no known value; `Remove-Item -Recurse -Force` | WA-003 | Deleting files no snapshot covers | 4 | 4 | A local snapshot cannot undo it, or the guard cannot tell what it deletes |
 | Force-push (`--force`, `--force-with-lease`, `+ref`) | WA-003 | Rewriting shared history | 4 | 4 | It changes a remote |
 | `git branch -D` | WA-003 | Losing unmerged commits | 4 | 4 | The commits survive only in the reflog, which an agent rarely checks; under review in the replay (15d) |
@@ -73,6 +73,16 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 ## Reasons
 
 An ask reason has three parts, so the person can decide without reading the command (AC-3): `<source>: <action>. <why it cannot be undone or reaches outside the project>. If not approved: <what the agent does instead>.` A refusal names what was refused and the next step (AC-4). An allowed delete that git can undo carries the restore command as context for the agent, with no permission decision.
+
+## Snapshots
+
+Before a local command that would lose working-tree content, `guard-commands` commits the whole working tree, untracked files included and ignored files not, through a temporary index, so the working tree, the index, and the stash are not touched (AC-11). The commit is kept under `refs/rfr/snapshots/<time>`, which `git gc` leaves alone, and the command is allowed. The agent is told the restore command, for example `git restore --source=<sha> --worktree -- :/`, and the decision log records a `snapshot` line with the ref. Before `git stash drop` or `git stash clear`, the stash commits are kept the same way, and `git stash store` puts them back.
+
+- A restore brings back file content, not what was staged: staged changes come back as unstaged changes.
+- Ignored files are not kept, as for `rm -rf` of build output; `git clean -x` loses them.
+- If the snapshot fails, or does not finish in six seconds, the guard asks instead, and its reason says so.
+- A command that also needs a person (a force-push in the same line, say) asks, and takes no snapshot.
+- Snapshots older than 14 days, beyond the newest 50, are deleted when a new one is taken. `git for-each-ref refs/rfr/snapshots/` lists them, and `git update-ref -d <ref>` deletes one.
 
 ## Project settings
 
