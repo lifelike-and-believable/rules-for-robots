@@ -14,11 +14,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.1.0] - 2026-11-08
 
-Pull requests: #PR15C.
+Pull requests: #153.
 
 ### Changed
 
-- Guard tiers, slice 15c (#PR15C; `docs/specs/guard-tiers.md`, AC-11). Destructive local commands no longer ask: `guard-commands` takes a snapshot first, allows the command, and tells the agent how to undo it. Released with `rfr-web` 1.0.2 and `rfr-unreal` 2.0.1.
+- Guard tiers, slice 15c (#153; `docs/specs/guard-tiers.md`, AC-11). Destructive local commands no longer ask: `guard-commands` takes a snapshot first, allows the command, and tells the agent how to undo it. Released with `rfr-web` 1.0.2 and `rfr-unreal` 2.0.1.
   - Covered: `git checkout -- .`, `git restore .`, `git reset --hard` (to `HEAD` or to another commit), `git clean -f`, `git stash drop` and `clear`, and `rm -rf` inside the repository of files with uncommitted changes or untracked files. Each used to ask when there was something to lose.
   - A snapshot is a commit of the whole working tree, untracked files included and ignored files not, written through a temporary index, so the working tree, index, and stash are untouched. It is kept under `refs/rfr/snapshots/<time>`. Before a stash is dropped, its commits are kept the same way, and `git stash store` puts them back. A restore brings back content; staged changes come back unstaged.
   - The guard asks instead when the snapshot fails or takes longer than six seconds, and when the same command also needs a person (a force-push, say).
