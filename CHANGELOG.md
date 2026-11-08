@@ -12,6 +12,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
   - `evals/ledger.json` and `checks/model-ledger.mjs`: `add` files a results folder's evidence per rule, agent, or skill and model; `report` lists verdicts, rules with no evidence, saturated cases, and changes since an earlier model.
   - Rules may carry an `evaluated-on` field; the rule lint warns when it disagrees with the ledger. `evals/agents/smoke.mjs` takes `--model`.
 
+## [5.1.2] - 2026-11-08
+
+Pull requests: #PR15D.
+
+### Fixed
+
+- `guard-commands` matches its dangerous-command patterns (force-push, `git branch -D`, `git stash drop`, `--no-verify`, `drizzle-kit push`, and the rest) only against what a command line runs: each command's words, and a heredoc's body only when a shell reads it (`bash <<EOF`). A Python script or `cat > file` heredoc that only mentions `git push --force` no longer asks (#PR15D; found by the guard replay).
+
+### Added
+
+- Guard tiers, slice 15d (#PR15D; `docs/specs/guard-tiers.md`, AC-8, AC-9). Repository tooling and guides; the only plugin change is the fix above.
+  - `checks/guard-replay.mjs`: `extract` turns Claude Code transcripts into anonymised tool calls; `run` replays them through rfr-core 3.1.1 and the current guards on a clone of the repository and writes a report.
+  - The first replay, of this repository's session that built #143 to #154 (634 calls), is in `evals/results/2026-11-08-15d-guard-replay/`: asks fell from 9 to 2, and to 1 with `testWeakening: defer`. The notes there show how the result depends on the replay's assumptions. The Kettlebird pilot's sessions are not replayed yet.
+  - `practices/security-for-agentic-projects.md` explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, sandbox, and headless runs (AC-9). `practices/guards.md` gains a replay section.
+  - Adopters: update `rfr-core` to 5.1.2. Nothing else to do.
+
 ## [5.1.0] - 2026-11-08
 
 Pull requests: #153.

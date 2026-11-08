@@ -405,6 +405,21 @@ function stashSnaps(entries, snaps) {
   return null;
 }
 
+// What a command line runs, for the pattern checks: each simple command's words, and a heredoc's
+// body only when a shell reads it (bash <<EOF). A script that only mentions git push --force in a
+// heredoc, such as Python that edits a file, runs nothing (guard tiers replay, 15d). null when the
+// line cannot be parsed, so the caller falls back to the whole text.
+const SHELLS = /^(?:.*\/)?(bash|sh|zsh|dash|ksh|ssh|pwsh|powershell)$/;
+export function executedText(command) {
+  const commands = parseCommand(command);
+  if (!commands) return null;
+  return commands.map(({ words, scripts = [] }) => {
+    let k = 0;
+    while (k < words.length && /^(sudo|command|env|exec|\w+=\S*)$/.test(words[k])) k++;
+    return [words.join(' '), ...(SHELLS.test(words[k] ?? '') ? scripts : [])].join(' ; ');
+  }).join(' ; ');
+}
+
 // The first risk a person must decide about, or null. Losses a snapshot can undo go to snaps
 // instead (guard tiers AC-11), and tracked, unchanged deletes add their restore command to hints.
 function findOtherRisk(command, cwd, hints = [], snaps = []) {
@@ -418,8 +433,9 @@ function findOtherRisk(command, cwd, hints = [], snaps = []) {
   const rm = entries ? rmRisk(entries, hints, snaps) : (isForcedRecursiveRm(command) ? RM : null);
   if (rm) return rm;
   if (isForcedRecursiveRemoveItem(command)) return { ...RM, action: 'recursive forced delete (Remove-Item -Recurse -Force)' };
+  const text = executedText(command) ?? command;
   for (const [pattern, action, kind, rule, why, instead] of CHECKS) {
-    if (!pattern.test(command)) continue;
+    if (!pattern.test(text)) continue;
     if (entries && (kind === 'discard' || kind === 'stash')) continue;
     return { rule, action, why, instead };
   }

@@ -24,6 +24,8 @@
     { "id": "force-push", "guard": "commands", "repo": "clean", "command": "git push --force origin main", "tier": 4, "source": "WA-003" },
     { "id": "force-push-lease", "guard": "commands", "repo": "clean", "command": "git push --force-with-lease", "tier": 4, "source": "WA-003" },
     { "id": "branch-force-delete", "guard": "commands", "repo": "clean", "command": "git branch -D feature", "tier": 4, "source": "WA-003" },
+    { "id": "danger-mentioned-in-script-text", "guard": "commands", "repo": "clean", "command": "python3 - <<'EOF'\np='docs/notes.md'; s=open(p).read()\nopen(p,'w').write(s+'Never run git push --force or npx drizzle-kit push here.\\n')\nEOF", "tier": 1, "source": "guard replay, 15d (three asks in this repository's session)" },
+    { "id": "force-push-in-shell-heredoc", "guard": "commands", "repo": "clean", "command": "bash <<'EOF'\ngit push --force origin main\nEOF", "tier": 4, "source": "WA-003; guard replay, 15d (a heredoc a shell reads still runs)" },
     { "id": "filter-repo", "guard": "commands", "repo": "clean", "command": "git filter-repo --path secrets.txt --invert-paths", "tier": 4, "source": "WA-003" },
     { "id": "no-verify", "guard": "commands", "repo": "clean", "command": "git commit --no-verify -m wip", "tier": 4, "source": "WA-003" },
     { "id": "config-global", "guard": "commands", "repo": "clean", "command": "git config --global user.email a@example.com", "tier": 4, "source": "WA-003" },
