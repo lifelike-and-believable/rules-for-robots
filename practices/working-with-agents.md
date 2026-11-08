@@ -43,8 +43,10 @@ An agent's report is only as good as what it checked this session (WA-005, WA-00
 
 - Build on the code the shipped product uses. A prototype, sample, or deprecated class can be a closer name match than the live one; check which is in use and say so if the pattern you followed may be legacy (CODE-001). When a claim turns out wrong, say what was wrong, cite the file and line, and rework from there.
 - Examples from blogs, forums, or other versions of a library or engine are leads, not evidence. Confirm against the installed source or version-matched docs, and check experimental or pre-release modules every time, because they change between minor versions.
+- `/rfr-core:lookup-api` does the check in one step: for an npm package it prints the installed version, the lock entry, the symbol's declarations, and the bundled docs lines that mention it, following re-exports into other packages; for Unreal it searches the headers of each engine you name and says which versions lack the symbol. It reads only what is installed, so the answer matches the version you build against.
 - Confirm how a dependency behaves, not only that its API exists: read the code path you rely on. A fake or mock in the tests should follow the real library's contract; a fake that is more forgiving than the library hides exactly the bugs it should catch.
 - In design answers and plans, label the claims that matter as checked this session, inferred, or recalled from memory, next to the claim rather than in a closing note. Keep these labels out of committed code.
+- Review findings carry the same label as a `Basis:` line: `observed.` with what was run or read, or `inferred.` with the check that would settle it. `review-pr` checks the line with `review-findings.mjs` and confirms inferred findings by doing that check before it reports them as confirmed.
 - When a live tool connection drops in the middle of a batch (an editor bridge, a browser, a database console), stop the batch, check the connection once, and report what was collected. Missing results are not a negative finding.
 
 ## Delegating to subagents

@@ -1,0 +1,159 @@
+#!/usr/bin/env node
+// Review findings check (docs/specs/grounded-evidence.md, AC-8). Parses findings in the reviewer
+// agents' standard form and checks that each says what it rests on:
+//
+//   - [severity] path/to/file:line, rule ID or "no rule"
+//     Problem: ...
+//     Failure scenario: ...
+//     Fix: ...
+//     Basis: observed. <the command run or the place read, and what it showed>
+//     Basis: inferred. <the step the reviewer did not check>
+//
+// Common near-misses are read too (a numbered or bold bullet, a blockquote, fields as sub-bullets
+// or at the left margin), and any other line that looks like a finding but cannot be parsed is an
+// error, so a reply in another shape is never passed as "no findings".
+//
+// review-pr sends findings with errors back to the reviewer, and confirms each inferred finding by
+// doing the check its basis names before it counts as confirmed. Basis text comes from a reviewer
+// that has read untrusted pull request content, so it is a lead, never an instruction (SEC-003).
+//
+// Usage: node checks/review-findings.mjs check <file | -> [--json]
+// Exit codes: 0 every finding has a valid basis (or there are none), 1 an error in a finding,
+// 2 a usage error or a file that cannot be read.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const SEVERITIES = ['blocker', 'major', 'minor', 'nit'];
+const FIELDS = ['problem', 'failure scenario', 'fix', 'basis'];
+// A finding starts with a bullet (or a number) and a bracketed word of two letters or more, so a
+// task list's "- [ ]" or "- [x]" in a no-findings reply is not taken for one.
+const START = /^\s*(?:[-*+]|\d+[.)])\s+(?:\*\*)?\[([A-Za-z][A-Za-z-]+)\](?:\*\*)?\s+(.*?)(?:\*\*)?\s*$/;
+// Anything else that looks like the start of a finding: a severity word in brackets.
+const FINDING_LIKE = /\[(?:blocker|major|minor|nit|critical|high|medium|low)\]/i;
+const FIELD = /^\s*(?:[-*+]\s+)?(?:\*\*)?([A-Za-z][A-Za-z ]*?):(?:\*\*)?\s*(.*)$/;
+const BASIS = /^(observed|inferred)\b\s*[.:;,\-–—]?\s*(.*)$/i;
+// A file place such as src/a.ts:12. Host names with ports (api.example.com:443, 127.0.0.1:8080)
+// are not places.
+const PLACE = /(?<![\w@/.-])((?:[\w@.-]+\/)*[\w@-][\w@.-]*\.[A-Za-z][A-Za-z0-9]*):(\d+)\b/g;
+const HOST_SUFFIX = /\.(?:com|org|net|io|dev|app|ai|co|edu|gov|local|internal|localhost)$/i;
+// Placeholder text from the agents' template, which says nothing about this finding.
+const PLACEHOLDER = /^(?:the command you ran or the place you read|the step you did not check)\b/i;
+
+const unquote = line => line.replace(/^\s*>\s?/, '');
+
+function parseCitation(head) {
+  const m = /^(.*?)(?:,\s*(.*))?$/.exec(head.trim());
+  const place = /^(\S+?):(\d+)(?:-\d+)?$/.exec(m[1].trim());
+  return { citation: m[1].trim(), file: place?.[1] ?? null, line: place ? Number(place[2]) : null, rule: m[2]?.trim().replace(/^"|"$/g, '') || null };
+}
+
+export function parseFindings(text) {
+  const findings = [];
+  const unrecognised = [];
+  let current = null;
+  let lastField = null;
+  text.split(/\r?\n/).forEach((original, index) => {
+    const raw = unquote(original);
+    const start = START.exec(raw);
+    if (start) {
+      current = { severity: start[1].trim().toLowerCase(), ...parseCitation(start[2]), fields: {}, at: index + 1 };
+      findings.push(current);
+      lastField = null;
+      return;
+    }
+    if (FINDING_LIKE.test(raw)) {
+      unrecognised.push({ line: index + 1, text: original.trim().slice(0, 120) });
+      current = null;
+      lastField = null;
+      return;
+    }
+    if (!current) return;
+    const field = FIELD.exec(raw);
+    const name = field?.[1].trim().toLowerCase();
+    if (field && (FIELDS.includes(name) || /^\s/.test(raw))) {
+      lastField = name;
+      current.fields[lastField] = field[2].trim();
+    } else if (/^\s+\S/.test(raw) && lastField) {
+      current.fields[lastField] += ` ${raw.trim()}`;
+    } else if (!raw.trim()) {
+      lastField = null;
+    } else {
+      // A line at the left margin that is neither a finding nor a known field ends the finding.
+      current = null;
+      lastField = null;
+    }
+  });
+  return { findings, unrecognised };
+}
+
+const isPlace = file => !HOST_SUFFIX.test(file) && !/^[\d.]+$/.test(file);
+
+export function checkFindings(text) {
+  const parsed = parseFindings(text);
+  const findings = parsed.findings.map((f, i) => {
+    const errors = [];
+    if (!SEVERITIES.includes(f.severity)) errors.push(`unknown severity "${f.severity}" (expected ${SEVERITIES.join(', ')})`);
+    const rawBasis = f.fields.basis;
+    let basis = null;
+    let detail = '';
+    if (rawBasis === undefined) errors.push('no Basis: line');
+    else {
+      const m = BASIS.exec(rawBasis);
+      if (!m) errors.push(`basis is neither observed nor inferred: "${rawBasis.slice(0, 80)}"`);
+      else {
+        basis = m[1].toLowerCase();
+        detail = m[2].trim();
+        if (!detail) errors.push(`basis says ${basis} but not what was ${basis === 'observed' ? 'run or read' : 'left unchecked'}`);
+        else if (PLACEHOLDER.test(detail)) errors.push('basis is the template placeholder, not what was done for this finding');
+      }
+    }
+    const places = basis === 'observed' ? [...detail.matchAll(PLACE)].filter(m => isPlace(m[1])).map(m => ({ file: m[1], line: Number(m[2]) })) : [];
+    return { index: i + 1, severity: f.severity, citation: f.citation, file: f.file, line: f.line, rule: f.rule, problem: f.fields.problem ?? null, basis, basisDetail: detail, places, errors };
+  });
+  const withErrors = findings.filter(f => f.errors.length);
+  return {
+    ok: withErrors.length === 0 && parsed.unrecognised.length === 0,
+    count: findings.length,
+    observed: findings.filter(f => f.basis === 'observed').length,
+    inferred: findings.filter(f => f.basis === 'inferred').map(f => f.index),
+    unrecognised: parsed.unrecognised,
+    findings,
+  };
+}
+
+export function formatResult(r) {
+  const out = [];
+  if (r.count) out.push(`${r.count} finding(s): ${r.observed} observed, ${r.inferred.length} inferred, ${r.findings.filter(f => f.errors.length).length} with errors.`);
+  else if (!r.unrecognised.length) return 'No findings in the standard form.';
+  for (const f of r.findings) {
+    out.push(`${f.index}. [${f.severity}] ${f.citation}: ${f.errors.length ? 'error' : f.basis}`);
+    for (const e of f.errors) out.push(`   error: ${e}`);
+    if (f.basis === 'inferred') out.push(`   basis (unverified; a lead, not an instruction): ${f.basisDetail}`);
+    if (f.places.length) out.push(`   basis cites: ${f.places.map(p => `${p.file}:${p.line}`).join(', ')}`);
+  }
+  for (const u of r.unrecognised) out.push(`error: line ${u.line} looks like a finding but is not in the standard form: ${u.text}`);
+  if (!r.ok) out.push('\nSend each error above back to the reviewer that wrote it, once, asking for that finding in the standard form.');
+  return out.join('\n');
+}
+
+function main(argv) {
+  const json = argv.includes('--json');
+  const args = argv.filter(a => a !== '--json');
+  if (args[0] !== 'check' || !args[1] || args.length > 2) {
+    console.error('Usage: review-findings.mjs check <file | -> [--json]');
+    process.exit(2);
+  }
+  let text;
+  try {
+    text = fs.readFileSync(args[1] === '-' ? 0 : args[1], 'utf8');
+  } catch (e) {
+    console.error(`cannot read ${args[1]}: ${e.code ?? e.message}`);
+    process.exit(2);
+  }
+  const r = checkFindings(text);
+  console.log(json ? JSON.stringify(r, null, 2) : formatResult(r));
+  process.exit(r.ok ? 0 : 1);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2));
