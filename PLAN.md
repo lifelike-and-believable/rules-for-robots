@@ -367,6 +367,7 @@ Pull requests: #147 (spec).
 
 ### Phase 17: Model adaptation (planned)
 Spec: [docs/specs/model-adaptation.md](docs/specs/model-adaptation.md) (draft).
+Pull requests: #149 (spec).
 
 New models will keep arriving, and the rule set is tuned to the 5.5 generation. Principle 8 and the maintenance guide say rules are re-evaluated on each new model, but not how, at what cost, or where the result is kept. This phase makes that a routine: a fixed, budgeted eval suite that runs within days of a release, a ledger of which rules, agents, and skills have evidence on which model, saturated cases flagged, and default decisions for each result (keep, rewrite, move to a practice guide, pin an agent's model). METR's assessment of Anthropic's internal "Model 4" (2026-11-05) prompted it: faster model progress and saturated benchmarks are the two problems this phase addresses.
 
@@ -423,4 +424,4 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
 10. Phase 15: 15a done (#146); build 15b (the tier changes to the guards).
 11. Phase 16: the domain-plugins spec is approved (#147); build 16a (the two plugins and the moves).
-12. Phase 17: approve the model-adaptation spec, then build 17a. Run 17c before the next model generation reaches Claude Code, so the first comparison has a baseline.
+12. Phase 17: approve the model-adaptation spec (#149), then build 17a. Run 17c before the next model generation reaches Claude Code, so the first comparison has a baseline.

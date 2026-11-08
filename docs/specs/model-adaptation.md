@@ -77,4 +77,4 @@ The report informs these; the maintainer decides, and each change goes through t
 
 - Plan or roadmap item: `PLAN.md`, Phase 17.
 - Slices: 17a the suite, the runner options, model ID recording, and the ledger and its check (AC-1 to AC-6); 17b the maintenance section, the issue form, the plan restructure, and the changelog check (AC-7 to AC-10); 17c the baseline run (AC-11), with the first decisions it supports.
-- Pull requests: (spec).
+- Pull requests: #149 (spec).
