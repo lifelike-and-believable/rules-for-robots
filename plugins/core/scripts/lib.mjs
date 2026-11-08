@@ -23,14 +23,31 @@ export async function readInput() {
 // first 200 characters of the reason, never the command or file contents. The file is
 // guard-decisions.jsonl in the plugin's data folder (CLAUDE_PLUGIN_DATA), or in rfr-core/ under the
 // temp directory. RFR_GUARD_LOG=0 turns it off. A failure to write is ignored.
+export const guardLogEnabled = () => process.env.RFR_GUARD_LOG !== '0';
+export const guardDataDir = () => process.env.CLAUDE_PLUGIN_DATA || nodePath.join(os.tmpdir(), 'rfr-core');
+export const pendingDir = () => nodePath.join(guardDataDir(), 'pending-asks');
+// A tool_use_id as a file name: letters, digits, _ and - only.
+export const safeId = id => String(id).replace(/[^\w-]/g, '_').slice(0, 120);
+
+export function appendGuardLog(entry) {
+  const dir = guardDataDir();
+  fs.mkdirSync(dir, { recursive: true });
+  fs.appendFileSync(nodePath.join(dir, 'guard-decisions.jsonl'), `${JSON.stringify(entry)}\n`);
+}
+
 function logDecision(decision, reason) {
-  if (process.env.RFR_GUARD_LOG === '0') return;
+  if (!guardLogEnabled()) return;
   try {
-    const dir = process.env.CLAUDE_PLUGIN_DATA || nodePath.join(os.tmpdir(), 'rfr-core');
-    fs.mkdirSync(dir, { recursive: true });
     const hook = nodePath.basename(process.argv[1] ?? '', '.mjs') || null;
     const entry = { time: new Date().toISOString(), session: lastInput.session_id ?? null, hook, tool: lastInput.tool_name ?? null, decision, reason: String(reason).slice(0, 200) };
-    fs.appendFileSync(nodePath.join(dir, 'guard-decisions.jsonl'), `${JSON.stringify(entry)}\n`);
+    appendGuardLog(entry);
+    // An ask leaves a pending record keyed by the tool call; guard-outcome turns it into an
+    // `approved` line if the call then runs (guard-tiers AC-6). One record per guard, because two
+    // guards can ask about the same call.
+    if (decision === 'ask' && lastInput.tool_use_id) {
+      fs.mkdirSync(pendingDir(), { recursive: true });
+      fs.writeFileSync(nodePath.join(pendingDir(), `${safeId(lastInput.tool_use_id)}__${safeId(hook)}.json`), JSON.stringify({ hook, tool: entry.tool, reason: entry.reason }));
+    }
   } catch {
     // Logging never blocks a decision.
   }

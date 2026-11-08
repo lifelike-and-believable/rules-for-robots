@@ -4,6 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-11-08
+
+### Added
+
+- Guard tiers, slice 15a (`rfr-core`; `docs/specs/guard-tiers.md`, AC-1, AC-2, AC-6, AC-7). No guard decision changes in this release; it adds what the tier changes in 15b and 15c will be measured against.
+  - `practices/guards.md` lists every decision the rfr-core and rfr-process guards make, with its tier now and the tier the spec sets, the rule, the failure it prevents, and why.
+  - `test/fixtures/guard-corpus.json` holds 38 cases, each with its target tier and source, and `test/guard-corpus.test.mjs` fails when a guard's decision drifts from it. Ten cases wait for 15b, 15c, or #143, and the runner checks their current decision until then. A dangerous core (force-push, deleting outside the project, root-like deletes, database pushes and resets, Vercel deploys, weakening an existing test) must stay tier 4.
+  - A new `guard-outcome` hook (PostToolUse and PostToolUseFailure, for the tools the guards cover) adds an `approved` line to the guard decision log when an asked call then runs. Claude Code reports no hook event when a person declines a prompt, so an ask without one was declined or never reached; the spec's AC-6 is amended to say so.
+  - `checks/guard-report.mjs` summarises a decision log: asks and refusals per hour, per guard and reason (with file paths, numbers, and quoted values set aside), the share approved, and the reasons approved in 95% or more of 20 or more asks, which are candidates to move down a tier.
+- `rfr-process` 0.12.1: the README links to the guard guide. Adopters: update the `rfr-core` plugin; nothing else changes. If #143 (3.2.0) merges first, this release follows it.
+
 ## [3.1.1] - 2026-11-08
 
 Pull requests: #144.
