@@ -18,6 +18,7 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | A shell command writes to an existing test file | TEST-001 | Editing tests through the shell, where the change cannot be checked | 2 | 2 | The agent can make the same change with the Edit tool, which `guard-test-edits` checks |
 | A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4, or 3 with `testWeakening: defer` | 4, then 3 | Removing a test is the strongest weakening; the `testWeakening` setting moves it to the pull request (AC-5) |
 | A command only runs, reads, or mentions a test file | TEST-001 | none | 1 | 1 | Nothing changes |
+| A script only mentions a dangerous command (a heredoc for Python, `cat`, and others, but not one a shell reads) | WA-003, PG-001 | none | 1 | 1 | Nothing runs it; the patterns match only what runs (15d) |
 | Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 2 | 2 | The agent states the reason in the command (`RFR_SNAPSHOT_REASON="..."`) and in its report, and the update goes through (AC-4) |
 | `git checkout -- .`, `git restore .`, `git reset --hard`, `git clean -f` with uncommitted changes or untracked files to lose | WA-003 | none | 1 with a snapshot | 1 with a snapshot | A snapshot of the working tree makes the command undoable (AC-11) |
 | The same commands with nothing to lose, or inside an agent worktree under `.claude/worktrees/` | WA-003 | none | 1 | 1 | Nothing is lost |
@@ -28,7 +29,7 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | `rm -rf` of repository content with uncommitted changes or untracked files that are not ignored | WA-003 | none | 1 with a snapshot | 1 with a snapshot | AC-11 |
 | `rm -rf` outside the repository and the temp directory, of a root-like path (`.`, `/`, `..`), a glob, or a variable with no known value; `Remove-Item -Recurse -Force` | WA-003 | Deleting files no snapshot covers | 4 | 4 | A local snapshot cannot undo it, or the guard cannot tell what it deletes |
 | Force-push (`--force`, `--force-with-lease`, `+ref`) | WA-003 | Rewriting shared history | 4 | 4 | It changes a remote |
-| `git branch -D` | WA-003 | Losing unmerged commits | 4 | 4 | The commits survive only in the reflog, which an agent rarely checks; under review in the replay (15d) |
+| `git branch -D` | WA-003 | Losing unmerged commits | 4 | 4 | The commits survive only in the reflog, which an agent rarely checks. The replay (15d) found one in a session, and it was a command that only mentioned the flag, now allowed; it stays tier 4 until a replay shows real deletes |
 | `git filter-branch`, `git filter-repo` | WA-003 | Rewriting history | 4 | 4 | Hard to undo, and usually pushed |
 | `--no-verify` | WA-003 | Skipping the project's own checks | 4 | 4 | The checks exist for a reason a person set |
 | `git config --global` or `--system` | WA-003 | Changing the machine for every project | 4 | 4 | It reaches outside the project |
@@ -96,8 +97,12 @@ Before a local command that would lose working-tree content, `guard-commands` co
 
 ## Prompts rfr does not control
 
-Claude Code raises its own prompts for actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and writes to protected paths (`.claude`, `.git`, `.mcp.json`). rfr's guards neither add nor remove those. The practice guide for security (AC-9, slice 15d) will say which permission rules a project can set for them.
+Claude Code raises its own prompts for actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and writes to protected paths (`.claude`, `.git`, `.mcp.json`). rfr's guards neither add nor remove those. [security-for-agentic-projects.md](security-for-agentic-projects.md#the-guards-and-claude-codes-own-protections) explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, and sandbox, and which rules a project can set for these prompts.
 
 ## Measuring
 
 Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it, and an asked call that then runs adds an `approved` line. `node checks/guard-report.mjs <log>...` summarises one or more logs: asks per hour by guard and reason, and the share of asks that were approved. A reason approved in at least 95% of 20 or more asks is a candidate to move down a tier. Claude Code reports no hook event when a person declines a prompt, so an ask with no `approved` line was declined, or the session ended first.
+
+## Replay
+
+`node checks/guard-replay.mjs` replays recorded sessions through two versions of the guards. `extract` turns Claude Code transcripts into anonymised tool calls; `run` sends them through rfr-core 3.1.1 and through this checkout's guards, on a clone of the repository with edits applied in order, and writes a report. The first replay, of this repository's session that built #143 to #154, is in [evals/results/2026-11-08-15d-guard-replay](../evals/results/2026-11-08-15d-guard-replay/report.md): asks fell from 9 to 2. To replay another project's sessions, run `extract` there on the session files in `~/.claude/projects/<project>/`, read the output before sharing it, and `run` it with `--repo` pointing at that project.
