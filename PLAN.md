@@ -366,6 +366,7 @@ The guards ask whenever an action matches a dangerous pattern, and most prompts 
 - **15c:** snapshots before destructive local commands, which are then allowed (AC-11). Done (#153).
 - **15d:** the replay and the practice guide (AC-8, AC-9). In review (#155); the Kettlebird pilot's sessions are still to replay.
 - **15e:** the eval (AC-10).
+- **`defer` goes ahead** (AC-5 amended, 2026-11-09): under `testWeakening: defer` a weakening test change is allowed with context and logged, instead of refused, so the pull request's test change check and `test-change-reviewer` are the gate. From the Kettlebird pilot, where the lead approved test-edit prompts as soon as they appeared. In review (#PR).
 - **Ask once and default permissions** (outside the spec, from an adopter report on 2026-11-09): the guards decide when to ask, but nothing said what is allowed, so a new repository prompted on every file. WA-009 (SHOULD) has the agent ask once for a batch of actions; the templates and `install-rules` set default allow rules for read-only and local git commands and each profile's verify commands, leaving pushes, new dependencies, and MCP tools to prompt. Decision: allow named scripts rather than `npm run *`, so a new script is a change the user sees; leave `git push` to prompt. An eval case that scaffolds a project and counts prompts would move WA-009 from review to measured. In review (#157).
 
 ### Phase 16: Domain plugins (planned)

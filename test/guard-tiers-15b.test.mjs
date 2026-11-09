@@ -11,6 +11,7 @@ import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
 import { ownedPathsReason } from '../plugins/core/scripts/guard-owned-paths.mjs';
 import { vercelAskReason } from '../plugins/web/scripts/guard-mcp.mjs';
 import { decideUnreal } from '../plugins/unreal/scripts/guard-unreal.mjs';
+import { formatReport, summarise } from '../checks/guard-report.mjs';
 
 const corpus = JSON.parse(fs.readFileSync('test/fixtures/guard-corpus.json', 'utf8')).cases;
 
@@ -95,7 +96,7 @@ test('guard-tiers#AC-4: tier-2 corpus cases are refused with a next step, and ne
 });
 
 test('guard-tiers#AC-5: testWeakening chooses between asking and deferring to the pull request, and defaults to ask', () => {
-  const tierOf = d => (d.decision === 'ask' ? 4 : /say so in your report|pull request decides/i.test(d.reason) ? 3 : 2);
+  const tierOf = d => (d.decision === 'ask' ? 4 : d.decision === 'defer' ? 3 : 2);
 
   const plain = repo();
   assert.equal(tierOf(weaken(plain.dir)), 4, 'no setting: ask');
@@ -106,18 +107,43 @@ test('guard-tiers#AC-5: testWeakening chooses between asking and deferring to th
 
   const deferring = repo({ '.claude/rfr.json': '{ "testWeakening": "defer" }\n' });
   const deferred = weaken(deferring.dir);
-  assert.equal(tierOf(deferred), 3, 'defer: refused for the pull request');
+  assert.equal(tierOf(deferred), 3, 'defer: goes ahead for the pull request to judge');
   assert.match(deferred.reason, /tests\/a\.test\.ts is an existing test, and this edit weakens it/);
   assert.match(deferred.reason, /testWeakening: defer/);
+  assert.match(deferred.reason, /so the change goes ahead/);
+  assert.match(deferred.reason, /Say so in your report: which test, what changed, and why/);
+  assert.match(deferred.reason, /never to get a failing test to pass/);
   for (const command of ['git rm tests/a.test.ts', 'mv tests/a.test.ts tests/b.test.ts']) {
-    assert.equal(tierOf(decideCommand(command, { cwd: deferring.dir })), 3, command);
+    const d = decideCommand(command, { cwd: deferring.dir });
+    assert.equal(tierOf(d), 3, command);
+    assert.match(d.reason, /Say so in your report/, command);
   }
+  // A deferral never lets through the rest of a command that would ask on its own.
+  assert.equal(decideCommand('git rm tests/a.test.ts && git push --force origin feature', { cwd: deferring.dir }).decision, 'ask');
   // A shell write is still a tier-2 refusal, whatever the setting.
   assert.equal(tierOf(decideCommand("sed -i 's/2/3/' tests/a.test.ts", { cwd: deferring.dir })), 2);
 
   // An unknown value keeps the default.
   const odd = repo({ '.claude/rfr.json': '{ "testWeakening": "never" }\n' });
   assert.equal(tierOf(weaken(odd.dir)), 4);
+});
+
+test('guard-tiers#AC-5: a deferred test change reaches the agent as context with no permission decision, is logged as defer, and the report counts it', () => {
+  const r = repo({ '.claude/rfr.json': '{ "testWeakening": "defer" }\n' });
+  const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-defer-log-'));
+  const input = { session_id: 's', tool_use_id: 't1', tool_name: 'Edit', cwd: r.dir, tool_input: { file_path: path.join(r.dir, 'tests', 'a.test.ts'), old_string: 'toBe(2)', new_string: 'toBe(3)' } };
+  const run = spawnSync(process.execPath, ['plugins/core/scripts/guard-test-edits.mjs'], { input: JSON.stringify(input), encoding: 'utf8', env: { ...process.env, CLAUDE_PLUGIN_DATA: logDir, CLAUDE_PROJECT_DIR: r.dir } });
+  assert.equal(run.status, 0, run.stderr);
+  const out = JSON.parse(run.stdout).hookSpecificOutput;
+  assert.equal(out.permissionDecision, undefined, 'nobody is asked');
+  assert.match(out.additionalContext, /Say so in your report/);
+  const log = fs.readFileSync(path.join(logDir, 'guard-decisions.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
+  assert.deepEqual(log.map(e => e.decision), ['defer']);
+  assert.ok(!fs.existsSync(path.join(logDir, 'pending-asks')), 'no pending ask is recorded');
+  const report = summarise(log);
+  assert.equal(report.deferred, 1);
+  assert.equal(report.asks, 0);
+  assert.match(formatReport(report), /1 test change deferred to the pull request/);
 });
 
 test('guard-tiers#AC-12: rm -rf of clean tracked files is allowed with the command that restores them; a modified file still stops it', () => {
