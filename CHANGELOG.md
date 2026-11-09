@@ -4,6 +4,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.3.1] - 2026-11-09
+
+Pull requests: #159.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- `software-architect` runs on `claude-fable-5-2` (was `claude-fable-5-1`; #159). Fable 5.2 was released on 2026-11-09 in the same tier at $8 / $40 per million tokens, against $10 / $50 for Fable 5.1. The architect is still experimental. Its October eval round ran on Fable 5.1 (37 runs): every ADR weighed alternatives and three cases rose from 4/6 to 6/6, at five to seven times the time; it has not been run on Fable 5.2. `PLAN.md`, `evals/README.md`, the rfr-core README, and the agent's description now record that round, which they still described as not yet run.
+- The 5.3.0 entry no longer says TEST-001 was otherwise unchanged: the tightened body also dropped the sentence saying the guard refuses shell writes to tests, which still holds.
+- `rfr-core` 5.3.1. Adopters: nothing to do; the plugin update brings the new model.
+
 ## [5.3.0] - 2026-11-09
 
 Pull requests: #158.
@@ -13,7 +25,7 @@ Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 ### Changed
 
 - `testWeakening: defer` lets the change go ahead (#158; guard tiers AC-5, amended). Before, `defer` refused a weakening test edit or a test removal and asked the agent to report it, which left a person deciding each change later. Now `guard-test-edits` and `guard-commands` allow it without asking, tell the agent to name it in its report (and to make it only for an approved behaviour change, never to get a failing test to pass), and log it as `defer`. The rest of a shell command is still checked, so a test removal joined to a force-push still asks. The pull request's test change check stays red until `tests-reviewed` is added, and `test-change-reviewer` brings the lead only the changes it cannot approve, with evidence. `checks/guard-report.mjs` counts deferred changes. The default stays `ask` until the test-change reviewer's eval passes. From the Kettlebird pilot, where the lead approved test-edit prompts as soon as they appeared.
-- TEST-001 says to add a test file to its spec's `unlocks:` before editing the test, not after (#158). The guard checks for the entry when the edit happens, so in the Kettlebird pilot entries added after the edit still prompted. The rule body is tightened to stay within 120 words; nothing else in it changes. `plan-feature` and the `rfr-process` guide say the same, and the guide no longer suggests correcting the test first.
+- TEST-001 says to add a test file to its spec's `unlocks:` before editing the test, not after (#158). The guard checks for the entry when the edit happens, so in the Kettlebird pilot entries added after the edit still prompted. The rule body is tightened to stay within 120 words; it no longer repeats that the guard refuses shell writes to tests, which still holds. `plan-feature` and the `rfr-process` guide say the same, and the guide no longer suggests correcting the test first.
 - `rfr-process` 0.12.4 for the guide. Adopters: nothing to do.
 - `rfr-core` 5.3.0; `rfr-web` 1.0.3 and `rfr-unreal` 2.0.2 carry the updated hook library. Adopters: nothing to do unless you want the change; to stop test-edit prompts, add `{ "testWeakening": "defer" }` to `.claude/rfr.json` and run `/rfr-core:review-pr` before merging.
 
