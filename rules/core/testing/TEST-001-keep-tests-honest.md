@@ -15,8 +15,10 @@ sources: ["practices/testing-and-code-quality.md", "practices/guards.md", "docs/
 <!-- Worked example for docs/rule-format.md. Enforcement lands in Phase 2 (hook) and Phase 6 (CI). -->
 Make failing tests pass by changing the implementation. Leave existing assertions, expected values, snapshots, and skip markers as they are, because a weakened test hides the defect it was written to catch.
 
-Change an existing test file with the Edit tool (or MultiEdit), never through shell commands or scripts, so the change can be checked; a shell write to one is refused.
+Change existing test files with Edit or MultiEdit, never through shell commands or scripts, so the change can be checked.
 
-If a test looks wrong, or the task cannot be done without changing a test, stop and say which test and why instead of editing it. Add new tests freely.
+If a test looks wrong, stop and say which and why instead of editing it. Add new tests freely.
 
-When you change a test file for any reason, list each changed test and the reason in your final report.
+If an approved spec criterion changed what a test expects, first add the file to that spec's `unlocks:` with the criterion ID, then edit it; the hook checks for the entry at the edit.
+
+List each changed test and its reason in your final report.

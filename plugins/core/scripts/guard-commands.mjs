@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { appendGuardLog, ask, askReason, deferredTestReason, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { appendGuardLog, ask, askReason, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -166,7 +166,8 @@ export function existingProjectFile(file, cwd, root = process.env.CLAUDE_PROJECT
 const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s"';&|]+)/;
 
 // The decision for a shell command: null to allow, { decision: 'inform', reason } to allow with
-// context for the agent, { decision: 'deny', reason } for the agent to act on, or
+// context for the agent, { decision: 'defer', reason } to allow a test removal for the pull request
+// to judge, { decision: 'deny', reason } for the agent to act on, or
 // { decision: 'ask', reason } for a person (docs/specs/guard-tiers.md).
 export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots } = {}) {
   if (typeof command !== 'string') return null;
@@ -175,10 +176,15 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   if (change === 'write') {
     return { decision: 'deny', reason: refuseReason({ source: 'rfr-core (TEST-001)', action: 'this command writes to an existing test file, so the change cannot be checked', next: 'Make the change with the Edit tool instead (one Edit per change, or MultiEdit for several in one file), so the test-change check can see it; additive and neutral changes then go through without asking' }) };
   }
+  // With testWeakening: defer, removing a test goes ahead with context (tier 3), but the rest of the
+  // command is still checked: a deferral never lets through something that would otherwise ask.
+  let deferred = null;
   if (change === 'remove' || change === 'broad') {
     const action = change === 'remove' ? 'this command deletes or moves an existing test file' : 'this command appears to change an existing test file outside the Edit tool';
-    if ((settings ?? guardSettings(cwd)).testWeakening === 'defer') return { decision: 'deny', reason: deferredTestReason(action) };
-    return { decision: 'ask', reason: askReason({ source: 'rfr-core (TEST-001)', action, why: 'a person decides whether a test is wrong, because the agent that wants it gone is the one it checks', instead: 'leave the test in place and report why you think it should change' }) };
+    if ((settings ?? guardSettings(cwd)).testWeakening !== 'defer') {
+      return { decision: 'ask', reason: askReason({ source: 'rfr-core (TEST-001)', action, why: 'a person decides whether a test is wrong, because the agent that wants it gone is the one it checks', instead: 'leave the test in place and report why you think it should change' }) };
+    }
+    deferred = deferredTestContext(action);
   }
   if (updatesSnapshots(command) && !SNAPSHOT_REASON.test(command)) {
     return { decision: 'deny', reason: refuseReason({ source: 'rfr-core (TEST-001)', action: 'this command updates test snapshots, which rewrites their expected values', next: 'If the output changed on purpose, run it again with the reason in the command, for example RFR_SNAPSHOT_REASON="the header now shows the plan name" npx vitest -u, and give the same reason in your report; otherwise leave the snapshots and report which ones fail' }) };
@@ -198,7 +204,9 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
     notes.push(`the guard took a snapshot of what this command removes; to undo it: ${taken.lines.join('; ')}`);
   }
   if (hints.length) notes.push(`the files this command deletes are committed with no changes, so git can restore them: ${hints.join('; ')}`);
-  if (notes.length) return { decision: 'inform', reason: `rfr-core (WA-003): ${notes.join('. ')}.`, snapshots };
+  const noted = notes.length ? `rfr-core (WA-003): ${notes.join('. ')}.` : null;
+  if (deferred) return { decision: 'defer', reason: noted ? `${deferred} ${noted}` : deferred, snapshots };
+  if (noted) return { decision: 'inform', reason: noted, snapshots };
   return null;
 }
 
@@ -490,7 +498,7 @@ async function main() {
   const input = await readInput();
   const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result?.decision === 'deny') deny(result.reason);
-  else if (result?.decision === 'inform') {
+  else if (result?.decision === 'inform' || result?.decision === 'defer') {
     // A snapshot goes in the decision log with its refs, so it can be found again (AC-11).
     if (result.snapshots?.length && guardLogEnabled()) {
       try {
@@ -499,7 +507,8 @@ async function main() {
         // Logging never blocks a decision.
       }
     }
-    inform(result.reason);
+    if (result.decision === 'defer') defer(result.reason);
+    else inform(result.reason);
   }
   else if (result) ask(result.reason);
 }

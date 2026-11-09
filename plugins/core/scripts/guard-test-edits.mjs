@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ask, askReason, deferredTestReason, deny, existedAtBase, guardSettings, readInput, textAtBase } from './lib.mjs';
+import { ask, askReason, deferredTestContext, defer, existedAtBase, guardSettings, readInput, textAtBase } from './lib.mjs';
 import { classifyTestChange } from './lib/test-diff.mjs';
 import { unlockedBy } from './spec-unlocks.mjs';
 
@@ -51,9 +51,9 @@ function applyEdit(tool, input, before) {
   return null;
 }
 
-// null to allow the edit, or { decision: 'ask' | 'deny', reason }. A weakening asks (tier 4), or, when the
-// project sets testWeakening to defer in .claude/rfr.json, is refused for the pull request to decide
-// (tier 3; guard tiers AC-5).
+// null to allow the edit, or { decision: 'ask' | 'defer', reason }. A weakening asks (tier 4), or, when
+// the project sets testWeakening to defer in .claude/rfr.json, goes ahead with context telling the
+// agent to report it, for the pull request to decide (tier 3; guard tiers AC-5).
 export function decideEdit(input) {
   const tool = input?.tool_name;
   const toolInput = input?.tool_input ?? {};
@@ -72,7 +72,7 @@ export function decideEdit(input) {
   const rel = path.relative(repo, abs).split(path.sep).join('/');
   const settings = guardSettings(repo);
   const decide = action => settings.testWeakening === 'defer'
-    ? { decision: 'deny', reason: deferredTestReason(action) }
+    ? { decision: 'defer', reason: deferredTestContext(action) }
     : { decision: 'ask', reason: askReason({ source: 'rfr-core (TEST-001)', action, why: 'a weakened test can hide a broken behaviour, and only a person can say the old expectation was wrong', instead: 'leave the test as it is and change the implementation, or stop and report which test you would change and why' }) };
   const intro = `${rel} is an existing test`;
   const before = fs.readFileSync(abs, 'utf8');
@@ -107,7 +107,7 @@ export function decideEdit(input) {
 async function main() {
   const input = await readInput();
   const decision = decideEdit(input);
-  if (decision?.decision === 'deny') deny(decision.reason);
+  if (decision?.decision === 'defer') defer(decision.reason);
   else if (decision) ask(decision.reason);
 }
 

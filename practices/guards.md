@@ -6,7 +6,7 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 |---|---|---|
 | 1. Allow | does nothing, or takes a snapshot first | nobody |
 | 2. Refuse with a reason | refuses, and the reason says what to do instead | the agent |
-| 3. Defer to the pull request | refuses with "say so in your report" | the pull request check and its reviewer |
+| 3. Defer to the pull request | lets the action go ahead, and tells the agent to say so in its report | the pull request check and its reviewer |
 | 4. Ask | asks | a person, now |
 
 "Now" is what the guard does in this release. "Target" is the tier the spec sets; where they differ, the slice that moves it is named. The corpus in `test/fixtures/guard-corpus.json` holds a case for each row and fails when a guard's decision drifts from its tier.
@@ -93,7 +93,7 @@ Before a local command that would lose working-tree content, `guard-commands` co
 { "testWeakening": "ask" }
 ```
 
-`testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the guard refuses with "say so in your report", and the pull request's test-change review decides). The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
+`testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the change goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code and brings you only the changes it cannot approve. Until test-change-review AC-11 passes it refers every change to you, with that evidence. The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
 
 ## Prompts rfr does not control
 

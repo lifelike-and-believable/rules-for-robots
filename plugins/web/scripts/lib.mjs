@@ -97,9 +97,9 @@ export const askReason = ({ source, action, why, instead }) => `${source}: ${act
 export const refuseReason = ({ source, action, next }) => `${source}: ${action}. ${next}.`;
 
 // Project settings for the guards, from .claude/rfr.json at the repository root (guard tiers AC-5).
-// testWeakening: 'ask' (a person decides now) or 'defer' (the agent stops and reports, and the pull
-// request's test-change review decides). The default switches to 'defer' in the change that records
-// test-change-review AC-11 as passed.
+// testWeakening: 'ask' (a person decides now) or 'defer' (the change goes ahead, the agent names it
+// in its report, and the pull request's test-change review decides). The default switches to 'defer'
+// in the change that records test-change-review AC-11 as passed.
 export const DEFAULT_TEST_WEAKENING = 'ask';
 
 export function guardSettings(cwd = process.cwd()) {
@@ -115,12 +115,21 @@ export function guardSettings(cwd = process.cwd()) {
   return settings;
 }
 
-// The refusal for a test change when the project defers test weakening to the pull request.
-export const deferredTestReason = action => refuseReason({
+// The context for a test change when the project defers test weakening to the pull request (guard
+// tiers AC-5, amended 2026-11-09): the change goes ahead, because git holds the old test and nothing
+// merges until the pull request's test change check passes.
+export const deferredTestContext = action => refuseReason({
   source: 'rfr-core (TEST-001)',
-  action: `${action}, and this project defers test weakening to the pull request (testWeakening: defer)`,
-  next: 'Do not make this change now. Say so in your report: which test, what you would change, and the approved behaviour change or spec criterion that calls for it; the pull request decides, with the test-change review',
+  action: `${action}, and this project defers test weakening to the pull request (testWeakening: defer), so the change goes ahead`,
+  next: 'Make it only if an approved behaviour change or spec criterion calls for it, never to get a failing test to pass (WA-002). Say so in your report: which test, what changed, and why; the pull request decides, with the test-change review, and its test change check stays red until then',
 });
+
+// A test change deferred to the pull request (tier 3): no permission decision, so nobody is asked
+// and Claude Code's own rules still apply; the agent gets the context, and the log records the deferral.
+export function defer(context) {
+  logDecision('defer', context);
+  inform(context);
+}
 
 // Whether a file existed where the current branch started: at the merge base of HEAD and the
 // default branch (origin/HEAD, origin/main, origin/master, main, master, in that order). A test
