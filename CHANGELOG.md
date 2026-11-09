@@ -4,6 +4,20 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.2.0] - 2026-11-09
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- WA-009, ask once for a batch of actions (#PR; SHOULD, review). Before a series of actions that will raise permission prompts, such as scaffolding a project, the agent lists what it will do and asks once for the change that covers it: auto-accept edits, `/add-dir` for a folder outside the session, or allow rules for the exact commands. WA-003's questions keep their own prompt. From an adopter's report of a prompt on every file while creating a new repository. The failure vocabulary gains `approval-fatigue`.
+- Default permission rules (#PR). The template repositories' `.claude/settings.json` allows read-only and local git commands (`status`, `diff`, `log`, `show`, `fetch`, `add`, `commit`, `switch`, for both the Bash and PowerShell tools) and `WebSearch`, and each profile adds its own verify commands by name (`build/profiles.json`). `git push`, `npm install <package>`, and MCP tools still prompt, and the guards still refuse or ask inside allowed commands. `practices/security-for-agentic-projects.md` lists the defaults and explains asking once for a batch.
+- `/rfr-core:install-rules` offers the same rules for an existing project's `.claude/settings.json`, from a new `permissions.json` in its payload, and adds only entries the project lacks.
+- `rfr-core` 5.2.0. Adopters: run `/rfr-core:install-rules` to get WA-009 and accept the permission rules it offers, or copy them from `template-repos/<profile>/.claude/settings.json`.
+- `rfr-process` 0.12.3: `/rfr-process:setup` lists the files it will write and asks once before writing them. Adopters: nothing to do.
+
 ## [5.1.4] - 2026-11-08
 
 Pull requests: #152.

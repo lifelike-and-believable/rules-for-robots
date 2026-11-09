@@ -39,6 +39,27 @@ rfr's guards are PreToolUse hooks. They run alongside Claude Code's permission s
 
 **Prompts rfr does not control.** Claude Code asks on its own about actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and the protected paths above. rfr's guards neither add nor remove those prompts. To stop the ones a project always approves, add allow rules: for example `Bash(git push origin *)` but not a force-push, which `guard-commands` still asks about, or the MCP tools that comment on pull requests. To keep the ones that matter, add ask or deny rules: `Bash(git push --force *)` as a deny rule blocks force-pushes even where no guard runs.
 
+**Default permission rules.** The template repositories, and `/rfr-core:install-rules` when the user agrees, set these rules in `.claude/settings.json`:
+
+| Rule | Entries | Why |
+|---|---|---|
+| Allow, every profile | `git status`, `diff`, `log`, `show`, `fetch`, `add`, `commit`, and `switch` (as `Bash(...)` and `PowerShell(...)`), and `WebSearch` | Read-only, or local and undoable. `guard-commands` still asks about `--no-verify` and snapshots before destructive commands. |
+| Allow, web profiles | `npm ci`, `npm test`, and the named scripts `test`, `test:e2e`, `typecheck` or `check`, `lint`, `build`, and `verify`, plus `npx playwright test` and `npx vitest` | The project's own verify loop (WA-001). Named scripts rather than `npm run *`, so a script added later is a decision the user sees. |
+| Allow, `unreal-plugin` | `./Scripts/Verify.ps1` | The project's verify loop. |
+| Deny, every profile | Reading `.env`, `.env.*`, and `*.pem` | Secrets stay out of the session (SEC-001). |
+
+Left to prompt on purpose: `git push`, which changes a remote; `npm install` with a package name, which adds a dependency (CODE-004); writes to protected paths; and every MCP tool. The Vercel MCP server's tool names depend on how it is connected, so the template cannot name its read tools; `rfr-web`'s guard asks about the write tools R43 lists whatever the server is called, and a project that wants Vercel reads without a prompt adds allow rules for its own tool names. Allow rules for Bash cover only the Bash tool; the PowerShell tool needs its own `PowerShell(...)` rules, which is why the table lists both.
+
+### Asking once for a batch
+
+A prompt on every file teaches people to approve without reading ("after the tenth approval you're clicking through rather than reviewing", Claude Code best practices). WA-009 asks the agent to name a batch of actions up front and ask once for the one change that covers it:
+
+- **Edits in the working folders:** approve the plan with auto-accept edits, or switch to `acceptEdits` (Shift+Tab). It covers file edits and `mkdir`, `touch`, `rm`, `rmdir`, `mv`, `cp`, and `sed` inside the working directory and `additionalDirectories`.
+- **A folder outside the session:** `/add-dir <path>`, or `permissions.additionalDirectories` in settings. A new repository created beside the current one is the common case: each file there prompts even in `acceptEdits`, because accept-edits covers only the working folders. Starting a session in the new folder works too.
+- **A set of commands:** allow rules for those exact commands in `.claude/settings.local.json`, which is not committed. Writing there is itself a protected-path prompt, so the user sees each rule once.
+
+None of these lift the guards. Inside an accepted batch, a guard still refuses or asks about an action that cannot be undone or reaches outside the project, and protected paths still prompt, so WA-003's questions keep their own prompt.
+
 **Sandboxing.** The Bash sandbox (`/sandbox`, or `"sandbox": { "enabled": true }` in settings; off by default; macOS, Linux, and WSL2) limits shell writes to the working folder, the temp folder, and added folders, and sends network traffic through a proxy that allows only listed domains. Reads still cover most of the machine, including `~/.ssh`. With the sandbox on, sandboxed commands run without a prompt by default (`autoAllowBashIfSandboxed`), a bare `Bash` ask rule is skipped, but ask rules for specific commands such as `Bash(git push *)` and deny rules still apply, and so do the guards. The sandbox covers only Bash: file tools, MCP servers, and hooks run outside it, so the guards on edits and on Vercel calls are still the only check there.
 
 **Headless runs.** In `claude -p`, a call that needs approval is denied unless an allow rule, a hook, or a permission-prompt tool approves it, so a guard's question ends that call. Refusals with a next step let a headless run carry on, which is why most guard decisions are refusals rather than questions.

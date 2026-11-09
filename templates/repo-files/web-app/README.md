@@ -30,7 +30,7 @@ Wiring for a Next.js 16 web app with a Node and Postgres backend on Vercel, gene
 | Path | Purpose |
 |---|---|
 | `AGENTS.md`, `CLAUDE.md`, `.claude/rules/` | Instructions and rules (core plus web-platform, typescript, react-nextjs, node-services) |
-| `.claude/settings.json` | Enables the `rfr-core` plugin (hooks, agents, skills) and denies reading `.env` files |
+| `.claude/settings.json` | Enables the `rfr-core` plugin (hooks, agents, skills), allows read-only and local git commands and the verify scripts without a prompt, and denies reading `.env` files |
 | `.github/workflows/ci.yml` | Verify command, bundle budgets, migration lint with squawk |
 | `.github/workflows/preview-checks.yml` | Playwright, axe, and Lighthouse CI against each Vercel preview |
 | `.github/workflows/guards.yml` | Secret scan and test change guard |
