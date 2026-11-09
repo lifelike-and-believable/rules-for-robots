@@ -136,7 +136,7 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
 
 ## Planned: architect and tech-lead round
 
-`software-architect` and `tech-lead` were added in 1.2.0 before any eval showed a benefit (R18), so this round decides whether they stay. Four cases, both main-session models, two arms (`rules`, `rules+agents`), 3 runs: 48 runs. Cost is not measured yet; estimate from the first cell before going on. The `claude` CLI must be signed in for headless runs.
+`software-architect` and `tech-lead` were added in 1.2.0 before any eval showed a benefit (R18), so this round decides whether they stay. It ran on 2026-10-12 and 2026-10-13 with the architect on Fable 5.1: results in `results/2026-10-12-10c-round-a/`, `results/2026-10-12-10c-ladder/`, and `results/2026-10-12-10c-greenfield-baseline/`, and the agent arms beside them. The architect has since moved to Fable 5.2 (#159); the steps below are how a rerun on it would go. Four cases, both main-session models, two arms (`rules`, `rules+agents`), 3 runs: 48 runs. Cost is not measured yet; estimate from the first cell before going on. The `claude` CLI must be signed in for headless runs.
 
 1. **One cell.** `arch-money-storage`, `rules+agents`, one model, one run. Confirms the architect's pinned model `claude-fable-5-2` is accepted (check `modelUsage` in the transcript), that the main session calls the agent, and what a run costs:
 

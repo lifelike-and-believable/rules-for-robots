@@ -12,7 +12,7 @@ Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
-- `software-architect` runs on `claude-fable-5-2` (was `claude-fable-5-1`; #159). Fable 5.2 was released on 2026-11-09 in the same tier at $8 / $40 per million tokens, against $10 / $50 for Fable 5.1. The architect is still experimental and has no eval results; the staged round in `evals/README.md` now checks for the new model.
+- `software-architect` runs on `claude-fable-5-2` (was `claude-fable-5-1`; #159). Fable 5.2 was released on 2026-11-09 in the same tier at $8 / $40 per million tokens, against $10 / $50 for Fable 5.1. The architect is still experimental. Its October eval round ran on Fable 5.1 (37 runs): every ADR weighed alternatives and three cases rose from 4/6 to 6/6, at five to seven times the time; it has not been run on Fable 5.2. `PLAN.md`, `evals/README.md`, the rfr-core README, and the agent's description now record that round, which they still described as not yet run.
 - The 5.3.0 entry no longer says TEST-001 was otherwise unchanged: the tightened body also dropped the sentence saying the guard refuses shell writes to tests, which still holds.
 - `rfr-core` 5.3.1. Adopters: nothing to do; the plugin update brings the new model.
 
