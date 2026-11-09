@@ -6,13 +6,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.3.0] - 2026-11-09
 
-Pull requests: #PR.
+Pull requests: #158.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
-- `testWeakening: defer` lets the change go ahead (#PR; guard tiers AC-5, amended). Before, `defer` refused a weakening test edit or a test removal and asked the agent to report it, which left a person deciding each change later. Now `guard-test-edits` and `guard-commands` allow it without asking, tell the agent to name it in its report (and to make it only for an approved behaviour change, never to get a failing test to pass), and log it as `defer`. The rest of a shell command is still checked, so a test removal joined to a force-push still asks. The pull request's test change check stays red until `tests-reviewed` is added, and `test-change-reviewer` brings the lead only the changes it cannot approve, with evidence. `checks/guard-report.mjs` counts deferred changes. The default stays `ask` until the test-change reviewer's eval passes. From the Kettlebird pilot, where the lead approved test-edit prompts as soon as they appeared.
+- `testWeakening: defer` lets the change go ahead (#158; guard tiers AC-5, amended). Before, `defer` refused a weakening test edit or a test removal and asked the agent to report it, which left a person deciding each change later. Now `guard-test-edits` and `guard-commands` allow it without asking, tell the agent to name it in its report (and to make it only for an approved behaviour change, never to get a failing test to pass), and log it as `defer`. The rest of a shell command is still checked, so a test removal joined to a force-push still asks. The pull request's test change check stays red until `tests-reviewed` is added, and `test-change-reviewer` brings the lead only the changes it cannot approve, with evidence. `checks/guard-report.mjs` counts deferred changes. The default stays `ask` until the test-change reviewer's eval passes. From the Kettlebird pilot, where the lead approved test-edit prompts as soon as they appeared.
 - `rfr-core` 5.3.0; `rfr-web` 1.0.3 and `rfr-unreal` 2.0.2 carry the updated hook library. Adopters: nothing to do unless you want the change; to stop test-edit prompts, add `{ "testWeakening": "defer" }` to `.claude/rfr.json` and run `/rfr-core:review-pr` before merging.
 
 ## [5.2.0] - 2026-11-09
