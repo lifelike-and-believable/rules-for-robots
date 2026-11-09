@@ -55,9 +55,9 @@ sources: ["docs/research/findings.md#agents-cheat-mainly-by-editing-tests"]
 
 ### Failure vocabulary
 
-`test-gaming`, `scope-creep`, `over-engineering`, `destructive-action`, `data-loss`, `invented-api`, `stale-knowledge`, `unverified-claim`, `security-regression`, `secret-exposure`, `accessibility-regression`, `performance-regression`, `convention-drift`, `project-decision`.
+`test-gaming`, `scope-creep`, `over-engineering`, `destructive-action`, `data-loss`, `invented-api`, `stale-knowledge`, `unverified-claim`, `security-regression`, `secret-exposure`, `accessibility-regression`, `performance-regression`, `convention-drift`, `project-decision`, `approval-fatigue`.
 
-Use `project-decision` for rules that record a choice the agent could not infer (a framework version, a budget, a naming scheme) rather than a failure mode.
+Use `project-decision` for rules that record a choice the agent could not infer (a framework version, a budget, a naming scheme) rather than a failure mode. Use `approval-fatigue` for rules about how often the agent makes a person approve things, since prompts that protect nothing train people to approve without reading.
 
 ### ID prefixes
 

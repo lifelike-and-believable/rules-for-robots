@@ -1,5 +1,5 @@
 {
-  "$comment": "Template repo profiles. Each renders core rules plus the listed packs into template-repos/<name>/, and enables the listed plugins in its .claude/settings.json.",
+  "$comment": "Template repo profiles. Each renders core rules plus the listed packs into template-repos/<name>/, enables the listed plugins in its .claude/settings.json, and adds its permissions.allow entries after the shared ones in templates/repo-files/common/.claude/settings.json.",
   "web-app": {
     "description": "Next.js web app with a Node/Postgres backend on Vercel",
     "packs": [
@@ -11,7 +11,31 @@
     "plugins": [
       "rfr-core",
       "rfr-web"
-    ]
+    ],
+    "permissions": {
+      "allow": [
+        "Bash(npm ci)",
+        "PowerShell(npm ci)",
+        "Bash(npm test *)",
+        "PowerShell(npm test *)",
+        "Bash(npm run test *)",
+        "PowerShell(npm run test *)",
+        "Bash(npm run test:e2e *)",
+        "PowerShell(npm run test:e2e *)",
+        "Bash(npm run typecheck *)",
+        "PowerShell(npm run typecheck *)",
+        "Bash(npm run lint *)",
+        "PowerShell(npm run lint *)",
+        "Bash(npm run build *)",
+        "PowerShell(npm run build *)",
+        "Bash(npm run verify *)",
+        "PowerShell(npm run verify *)",
+        "Bash(npx playwright test *)",
+        "PowerShell(npx playwright test *)",
+        "Bash(npx vitest *)",
+        "PowerShell(npx vitest *)"
+      ]
+    }
   },
   "static-site": {
     "description": "Astro content site",
@@ -23,7 +47,29 @@
     "plugins": [
       "rfr-core",
       "rfr-web"
-    ]
+    ],
+    "permissions": {
+      "allow": [
+        "Bash(npm ci)",
+        "PowerShell(npm ci)",
+        "Bash(npm test *)",
+        "PowerShell(npm test *)",
+        "Bash(npm run test *)",
+        "PowerShell(npm run test *)",
+        "Bash(npm run test:e2e *)",
+        "PowerShell(npm run test:e2e *)",
+        "Bash(npm run check *)",
+        "PowerShell(npm run check *)",
+        "Bash(npm run build *)",
+        "PowerShell(npm run build *)",
+        "Bash(npm run verify *)",
+        "PowerShell(npm run verify *)",
+        "Bash(npx playwright test *)",
+        "PowerShell(npx playwright test *)",
+        "Bash(npx vitest *)",
+        "PowerShell(npx vitest *)"
+      ]
+    }
   },
   "unreal-plugin": {
     "description": "Unreal Engine 5.6+ code plugin distributed on Fab",
@@ -33,6 +79,16 @@
     "plugins": [
       "rfr-core",
       "rfr-unreal"
-    ]
+    ],
+    "permissions": {
+      "allow": [
+        "Bash(./Scripts/Verify.ps1 *)",
+        "PowerShell(./Scripts/Verify.ps1 *)",
+        "Bash(pwsh ./Scripts/Verify.ps1 *)",
+        "PowerShell(pwsh ./Scripts/Verify.ps1 *)",
+        "Bash(pwsh -File ./Scripts/Verify.ps1 *)",
+        "PowerShell(pwsh -File ./Scripts/Verify.ps1 *)"
+      ]
+    }
   }
 }

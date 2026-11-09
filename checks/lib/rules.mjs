@@ -9,7 +9,7 @@ export const FAILURES = [
   'test-gaming', 'scope-creep', 'over-engineering', 'destructive-action', 'data-loss',
   'invented-api', 'stale-knowledge', 'unverified-claim', 'security-regression',
   'secret-exposure', 'accessibility-regression', 'performance-regression',
-  'convention-drift', 'project-decision',
+  'convention-drift', 'project-decision', 'approval-fatigue',
 ];
 
 // Prefix -> scope it may be used in. Keep in sync with the table in docs/rule-format.md.

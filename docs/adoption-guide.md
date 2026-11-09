@@ -4,15 +4,15 @@ How to use rules-for-robots as a solo developer, a team, or an organization. Req
 
 ## Solo developer, new project
 
-1. Create the project with its usual tool (`create-next-app`, `create astro`, or the Unreal plugin wizard).
+1. Create the project with its usual tool (`create-next-app`, `create astro`, or the Unreal plugin wizard). If Claude Code does the scaffolding, start the session in the new project's folder, or add it with `/add-dir <path>` first: Claude Code asks about every file written outside the session's folders, even in accept-edits mode ([asking once for a batch](../practices/security-for-agentic-projects.md#asking-once-for-a-batch)).
 2. Copy the matching folder from [`template-repos/`](../template-repos/) into it: `web-app`, `static-site`, or `unreal-plugin`. Each folder's README lists the remaining steps (scripts, secrets, labels, runner).
 3. Fill in `AGENTS.md` with the verify command and the decisions an agent cannot infer.
-4. Open Claude Code in the project and accept the plugins when prompted: `rfr-core` and the profile's domain plugin (`rfr-web` for `web-app` and `static-site`, `rfr-unreal` for `unreal-plugin`), which the template's `.claude/settings.json` enables.
+4. Open Claude Code in the project and accept the plugins when prompted: `rfr-core` and the profile's domain plugin (`rfr-web` for `web-app` and `static-site`, `rfr-unreal` for `unreal-plugin`), which the template's `.claude/settings.json` enables. The same file allows read-only and local git commands and the verify scripts without a prompt; adjust the script names there if your `package.json` uses others.
 
 ## Solo developer, existing project
 
 1. In Claude Code: `/plugin marketplace add lifelike-and-believable/rules-for-robots`, then `/plugin install rfr-core@rules-for-robots` and the domain plugin for your project: `/plugin install rfr-web@rules-for-robots` for a website or web app, or `/plugin install rfr-unreal@rules-for-robots` for an Unreal plugin.
-2. Run `/rfr-core:install-rules <profile>` and approve the writes to `.claude/rules/`.
+2. Run `/rfr-core:install-rules <profile>` and approve the writes to `.claude/rules/`. It also offers the default permission rules for `.claude/settings.json`.
 3. Add an `AGENTS.md` with a verify command (and a `CLAUDE.md` containing `@AGENTS.md`) if the project has neither.
 4. Copy the CI workflows you want from the matching template repo. At minimum, call the reusable guards:
 

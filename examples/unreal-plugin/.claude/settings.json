@@ -13,6 +13,31 @@
     "rfr-unreal@rules-for-robots": true
   },
   "permissions": {
+    "allow": [
+      "Bash(git status *)",
+      "PowerShell(git status *)",
+      "Bash(git diff *)",
+      "PowerShell(git diff *)",
+      "Bash(git log *)",
+      "PowerShell(git log *)",
+      "Bash(git show *)",
+      "PowerShell(git show *)",
+      "Bash(git fetch *)",
+      "PowerShell(git fetch *)",
+      "Bash(git add *)",
+      "PowerShell(git add *)",
+      "Bash(git commit *)",
+      "PowerShell(git commit *)",
+      "Bash(git switch *)",
+      "PowerShell(git switch *)",
+      "WebSearch",
+      "Bash(./Scripts/Verify.ps1 *)",
+      "PowerShell(./Scripts/Verify.ps1 *)",
+      "Bash(pwsh ./Scripts/Verify.ps1 *)",
+      "PowerShell(pwsh ./Scripts/Verify.ps1 *)",
+      "Bash(pwsh -File ./Scripts/Verify.ps1 *)",
+      "PowerShell(pwsh -File ./Scripts/Verify.ps1 *)"
+    ],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)",

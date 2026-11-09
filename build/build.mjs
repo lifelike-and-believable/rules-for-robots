@@ -38,6 +38,15 @@ export function alwaysOnLines(agentsMd, ruleFiles) {
   return lines;
 }
 
+// Each list (allow, ask, deny) keeps the shared entries first, then adds the profile's new ones.
+export function mergePermissions(shared = {}, extra = {}) {
+  const merged = { ...shared };
+  for (const [key, list] of Object.entries(extra)) {
+    merged[key] = [...new Set([...(shared[key] ?? []), ...list])];
+  }
+  return merged;
+}
+
 export function renderProfile(name, profile, { rulesRoot = RULES, root = ROOT, dest }) {
   const agentsMd = fs.readFileSync(path.join(root, 'templates', 'agents-md', `${name}.md`), 'utf8');
   const ruleFiles = selectRules(rulesRoot, profile.packs);
@@ -51,11 +60,14 @@ export function renderProfile(name, profile, { rulesRoot = RULES, root = ROOT, d
     if (fs.existsSync(dir)) fs.cpSync(dir, dest, { recursive: true });
   }
   // The profile's plugins (rfr-core plus its domain plugin) are what the template enables
-  // (docs/specs/plugin-split.md, AC-7).
+  // (docs/specs/plugin-split.md, AC-7), and its allow rules follow the shared ones (WA-009).
   const settings = path.join(dest, '.claude', 'settings.json');
-  if (profile.plugins && fs.existsSync(settings)) {
+  if ((profile.plugins || profile.permissions) && fs.existsSync(settings)) {
     const json = JSON.parse(fs.readFileSync(settings, 'utf8'));
-    json.enabledPlugins = Object.fromEntries(profile.plugins.map(name => [`${name}@rules-for-robots`, true]));
+    if (profile.plugins) {
+      json.enabledPlugins = Object.fromEntries(profile.plugins.map(name => [`${name}@rules-for-robots`, true]));
+    }
+    if (profile.permissions) json.permissions = mergePermissions(json.permissions, profile.permissions);
     fs.writeFileSync(settings, `${JSON.stringify(json, null, 2)}\n`);
   }
   fs.writeFileSync(path.join(dest, 'AGENTS.md'), agentsMd);
@@ -81,6 +93,12 @@ export function renderPayload({ rulesRoot = RULES, root = ROOT, dest }) {
   }
   fs.mkdirSync(dest, { recursive: true });
   fs.copyFileSync(path.join(root, 'build', 'profiles.json'), path.join(dest, 'profiles.json'));
+  // The shared permission rules, which install-rules merges with the profile's (WA-009).
+  const shared = path.join(root, 'templates', 'repo-files', 'common', '.claude', 'settings.json');
+  if (fs.existsSync(shared)) {
+    const { permissions } = JSON.parse(fs.readFileSync(shared, 'utf8'));
+    fs.writeFileSync(path.join(dest, 'permissions.json'), `${JSON.stringify(permissions ?? {}, null, 2)}\n`);
+  }
   return files.length;
 }
 
