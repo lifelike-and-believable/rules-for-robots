@@ -138,7 +138,7 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
 
 `software-architect` and `tech-lead` were added in 1.2.0 before any eval showed a benefit (R18), so this round decides whether they stay. Four cases, both main-session models, two arms (`rules`, `rules+agents`), 3 runs: 48 runs. Cost is not measured yet; estimate from the first cell before going on. The `claude` CLI must be signed in for headless runs.
 
-1. **One cell.** `arch-money-storage`, `rules+agents`, one model, one run. Confirms the architect's pinned model `claude-fable-5-1` is accepted (check `modelUsage` in the transcript), that the main session calls the agent, and what a run costs:
+1. **One cell.** `arch-money-storage`, `rules+agents`, one model, one run. Confirms the architect's pinned model `claude-fable-5-2` is accepted (check `modelUsage` in the transcript), that the main session calls the agent, and what a run costs:
 
    ```sh
    node evals/run.mjs --cases arch-money-storage --models claude-sonnet-5-5 --arms rules+agents --runs 1

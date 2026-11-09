@@ -17,7 +17,7 @@ Nothing in `rfr-core` needs either; agents and skills that mention them say what
 | `performance-reviewer` | Sonnet, medium | Read-only | Web budgets and queries; per-frame cost for Unreal |
 | `check-runner` | Haiku 5.5, medium | Read-only | Runs named scanners, audits, builds, and tests and returns exit codes and key output verbatim |
 | `citation-checker` | Haiku 5.5, medium | Read-only | Checks that each review finding's file, line, identifiers, and rule ID exist |
-| `software-architect` (experimental) | Fable 5.1, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
+| `software-architect` (experimental) | Fable 5.2, high | Read-only plus ADR files | Design choices before implementation; records significant decisions as ADRs |
 | `ux-reviewer` (experimental) | Opus, medium | Read-only | Usability and interface design for Unreal Editor tools, general software (desktop, command-line, developer tools), and web pages and apps |
 | `tech-lead` (experimental) | Opus, medium | Read-only | Sequenced slices with owners, acceptance criteria, and verification; checks delegated work against them |
 | `test-change-reviewer` (experimental) | Opus, high | Read-only plus throwaway worktrees | Whether a pull request's changes to existing tests are justified: findings, approved reasons, and evidence from running the tests on old and new code; approves or refers each, from `review-pr` |
