@@ -92,6 +92,14 @@ export function renderPayload({ rulesRoot = RULES, root = ROOT, dest }) {
     fs.copyFileSync(file, target);
   }
   fs.mkdirSync(dest, { recursive: true });
+  // Delegated mode (improvement plan 19b): whole-file replacements for working-agreement rules,
+  // kept in evals/candidates/ until their eval passes, and installed only when .claude/rfr.json
+  // says "mode": "delegated".
+  const candidates = path.join(root, 'evals', 'candidates');
+  for (const name of fs.existsSync(candidates) ? fs.readdirSync(candidates).filter(f => f.endsWith('-delegated.md')).sort() : []) {
+    fs.mkdirSync(path.join(dest, 'modes', 'delegated'), { recursive: true });
+    fs.copyFileSync(path.join(candidates, name), path.join(dest, 'modes', 'delegated', name));
+  }
   fs.copyFileSync(path.join(root, 'build', 'profiles.json'), path.join(dest, 'profiles.json'));
   // The shared permission rules, which install-rules merges with the profile's (WA-009).
   const shared = path.join(root, 'templates', 'repo-files', 'common', '.claude', 'settings.json');

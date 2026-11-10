@@ -90,8 +90,10 @@ Before a local command that would lose working-tree content, `guard-commands` co
 `.claude/rfr.json` at the repository root holds the guards' project settings:
 
 ```json
-{ "testWeakening": "ask" }
+{ "testWeakening": "ask", "mode": "supervised" }
 ```
+
+`mode` is the project's working mode. `supervised` (the default) installs the working agreement as it is: the agent stops and asks when the task or a test looks wrong, or when doing the task well would change its scope. `delegated` replaces WA-002, WA-003, and WA-004 with files that stop only before irreversible or outward actions, park a task or test that looks wrong without touching it, and record every other choice in the pull request's `## Decisions` section, so a long session continues while the person is away. `/rfr-core:install-rules` installs the files that match the mode. The delegated files are experimental until their eval (improvement plan 21a) passes; the guards behave the same in both modes.
 
 `testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the change goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code and brings you only the changes it cannot approve. Until test-change-review AC-11 passes it refers every change to you, with that evidence. The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
 

@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v5.3.1 (2026-11-09). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v5.4.0 (2026-11-10). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -408,10 +408,10 @@ Pull requests: #164 (18a).
 
 ### Phase 19: Delegated work (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Delegated mode is opt-in until its eval (21a) passes.
-Pull requests: #162 (19a).
+Pull requests: #162 (19a), #PR19B (19b).
 
 - **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#162). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
-- **19b:** the delegated working agreement (candidates in `evals/candidates/`), the decision log, and `"mode"` in `.claude/rfr.json`.
+- **19b:** the delegated working agreement (candidates in `evals/candidates/*-delegated.md`, installed by `install-rules` when `.claude/rfr.json` says `"mode": "delegated"`), and the `## Decisions` section in the pull request template. Done (#PR19B), opt-in until 21a passes.
 - **19c:** the decision queue.
 - **19h:** the preferences log.
 - **19d, 19e:** replaced by Phase 23. **19f, 19g:** wait for the maintainer's review.

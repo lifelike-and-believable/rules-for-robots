@@ -4,14 +4,21 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.4.0] - 2026-11-10
+
+Pull requests: #162, #163, #164, #165, #PR19B.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
 ### Added
 
+- Delegated working mode, opt-in and experimental (#PR19B; improvement plan 19b). With `"mode": "delegated"` in `.claude/rfr.json`, `/rfr-core:install-rules` replaces WA-002, WA-003, and WA-004 with files from `payload/modes/delegated/` (drafted in `evals/candidates/*-delegated.md`). The agent leaves a test or task that looks wrong untouched and parks it instead of stopping, asks only before irreversible or outward actions (the same list as WA-003, plus spending money and publishing), takes a better approach inside the approved scope and records it, and files an issue for anything outside it. Every such choice goes in a new `## Decisions` section of the pull request template, which `review-pr` reads. The guards behave the same in both modes. The files stay out of `rules/` until the 21a eval shows test gaming does not come back. The rule format gains a `replaces` field for these files. Adopters: nothing to do; to try delegated mode, add `"mode": "delegated"` to `.claude/rfr.json`, run `/rfr-core:install-rules`, and copy the template's `## Decisions` section into your pull request template.
 - `checks/attention-report.mjs` counts where sessions waited on a person, from Claude Code's own transcripts: permission prompts a person answered, `AskUserQuestion` calls, and replies after a turn ended, with the time each took and figures per merged pull request (#162; improvement plan 19a). The baseline for three projects is in `evals/results/2026-11-10-attention-baseline/`. No plugin changes.
 - `checks/process-gate-report.mjs` lists the merged pull requests that changed a gated `rfr-process` stage, with the wait from the request for approval to the merge and whether anything changed in between, and sums it up per stage (#163; process plan 23a). The baseline for Kettlebird, the XR pipeline, and the launcher is in `evals/results/2026-11-10-gate-baseline/`: 91 of Kettlebird's 96 gated pull requests merged unchanged. No plugin changes.
 
 ### Changed
 
-- `PLAN.md` and the README describe the current state (#164; improvement plan 18a): the status line names v5.3.1, Phases 12 and 16 are complete, Phases 10, 11, and 13 to 15 say what each still waits on, Phases 18 to 23 are added, and section 14 lists open items only. `checks/plan.mjs` now fails when the plan's status line names a version other than `rfr-core`'s, and when a phase marked planned has every slice done; the release steps in `docs/maintenance.md` say to update the line. No plugin changes.
+- `PLAN.md` and the README describe the current state (#164; improvement plan 18a): the status line names the current version, Phases 12 and 16 are complete, Phases 10, 11, and 13 to 15 say what each still waits on, Phases 18 to 23 are added, and section 14 lists open items only. `checks/plan.mjs` now fails when the plan's status line names a version other than `rfr-core`'s, and when a phase marked planned has every slice done; the release steps in `docs/maintenance.md` say to update the line. No plugin changes.
 - `npm run verify` gets further on Windows (#165; improvement plan 18b): `checks/ci/install-vale.mjs` pins the Windows archives of Vale 3.26.0 by SHA-256 and extracts them with Windows' own `tar`, and `checks/process-vale.mjs` prints the linted folders with forward slashes. Of the 28 tests that failed on the maintainer's machine, 15 needed `npm ci` and a Playwright browser, one Python, one the Vale archive, and one a test helper that compared paths with forward slashes (changed under an `unlocks` entry in the process spec). Ten guard and replay tests still fail on Windows; `docs/maintenance.md` lists them. No plugin changes.
 
 ## [5.3.1] - 2026-11-09
