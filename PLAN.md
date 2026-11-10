@@ -4,6 +4,15 @@ Status: v5.3.1 (2026-11-09). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 1
 
 ## 1. Goal
 
+The goal in the maintainer's words (2026-11-10): "The simplest possible process for producing the highest quality solutions."
+
+The maintainer confirmed two readings of it:
+
+1. Quality is the constraint, and simplicity is what gets minimised. When the two conflict, quality wins.
+2. "Simplest" means simplest for the person directing the work, measured in their attention, not in the number of parts. A mechanism that runs without them, such as a test guard or the staleness check, costs nothing; an extra approval gate does.
+
+It also works as a test: for any rule, gate, agent, or hook, ask whether removing it would lower the quality of the results, and if not, remove it.
+
 Produce a reusable set of **rules**, **best practices**, and **agent definitions** that steer AI coding agents (and the humans working with them) toward software, websites, web apps, and Unreal Engine plugins that are:
 
 | Quality attribute | What it means here | How we will know |
