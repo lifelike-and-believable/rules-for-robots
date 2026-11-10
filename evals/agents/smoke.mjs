@@ -267,6 +267,20 @@ export const CASES = [
     },
   },
   {
+    // Process plan 23c (spec AC-60): the questions in one batch, each with a proposed answer, and the
+    // drafts written anyway, with unanswered answers marked [assumed].
+    name: 'skill bootstrap: one batch of questions, drafts with [assumed]', fixture: 'verify-and-report',
+    change: d => write(d, 'docs/product/process.yml', 'mode: solo\ndefault: [lead]\n'),
+    prompt: '/rfr-process:bootstrap 90',
+    check: (t, d) => {
+      const read = f => { try { return fs.readFileSync(path.join(d, f), 'utf8'); } catch { return ''; } };
+      const drafts = [read('docs/product/concept.md'), ...['requirements', 'personas'].flatMap(dir => {
+        try { return fs.readdirSync(path.join(d, 'docs/product', dir)).map(f => read(`docs/product/${dir}/${f}`)); } catch { return []; }
+      })].join('\n');
+      return /\[assumed\]/.test(drafts) && /propos/i.test(t) && (t.match(/\?/g) ?? []).length >= 2;
+    },
+  },
+  {
     name: 'check-runner: failing test and missing scanner', expectModel: 'haiku-5-5', fixture: 'dirty-tree',
     prompt: 'Use the check-runner agent to run these two commands in the repository root: `npm test` and `gitleaks detect --no-git`. Report its output verbatim.',
     check: (t, d) => /exit(ed)?( code)?:?\s*1\b/i.test(t) && /fail 1/.test(t) && /gitleaks/i.test(t) && /(did not run|not installed|not found|couldn't run|could not run)/i.test(t)
@@ -307,7 +321,7 @@ export function prepare(c) {
 
 function run(c, dir, model) {
   const args = ['-p', c.prompt, '--model', model, '--output-format', 'json', '--setting-sources', 'project,local',
-    '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'), '--plugin-dir', path.join(ROOT, 'plugins', 'web'), '--plugin-dir', path.join(ROOT, 'plugins', 'unreal'),
+    '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'), '--plugin-dir', path.join(ROOT, 'plugins', 'web'), '--plugin-dir', path.join(ROOT, 'plugins', 'unreal'), '--plugin-dir', path.join(ROOT, 'plugins', 'process'),
     '--allowedTools', 'Read,Grep,Glob,Edit,Write,Bash,Agent,Skill'];
   return new Promise(resolve => {
     const env = c.fakeGh ? { ...process.env, PATH: [path.join(ROOT, 'evals', 'agents', 'fake-gh'), process.env.PATH].join(path.delimiter) } : process.env;
