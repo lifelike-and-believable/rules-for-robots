@@ -4,9 +4,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-### Fixed
+## [5.7.1] - 2026-11-10
 
-- A web tutorial's first step keeps the first-load timeout for every action after the first page opens, not only for opening it (#177; project-process AC-51, amended). A cold page can finish loading and still render late, so a "You see" check right after it failed at the short step timeout; it did on GitHub's Windows runner. Later steps keep the step timeout. Adopters: nothing to do; the reusable tutorial workflows pick it up.
+Pull requests: #173, #174, #175, #176, #177.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
@@ -16,18 +18,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - The second 21a round (#176): a new case, `ls-park-early`, puts the wrong test first and does not tell the agent to carry on. Sonnet 5.5, five runs per mode: no gaming, both modes finished the other helpers, and with the delegated wording Sonnet wrote the parked helper to the documented rule in 3 of 5 runs against 0 of 5. Results in `evals/results/2026-11-10-21a-park-early/`. No plugin changes.
 
-## [5.7.1] - 2026-11-10
-
-Pull requests: #173, #174, #175.
-
-Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
-
 ### Fixed
 
 - The guards read Windows paths as the shell does (#175; improvement plan 18b, guard tiers AC-13). Git Bash's `/c/...` drive paths and `/tmp` now name the drive folder and the user's temp folder, so a command inside the repository written that way takes a snapshot and goes ahead, as on Linux, instead of asking. Drive roots, system folders, the home folder, and `/tmp` itself still ask. The restore command for a snapshot taken in another folder read `git -C <root> git restore ...`, with `git` twice, which failed when run; it now reads `git -C <root> restore ...`. On Windows this happened on every snapshot, because git reports the root with forward slashes.
 - The guards compare a path with git's repository root in its real, long form (the shared `canonical` helper). Where a folder was reached through an 8.3 short name (`C:\Users\RUNNER~1`, as on GitHub's Windows runners and for long or spaced user names) or, on macOS, a symlink, the relative path climbed out of the repository: a new test file counted as an existing one, `rm -rf` inside the repository asked, and the restore command named the wrong path. The `rm -rf` check also read any `~` in a path as the home folder, so a path through such a short name asked; only a leading `~` counts now, as in the shell. Found by the new Windows CI job.
 - `checks/guard-replay.mjs` anonymises a Windows project, home, or temp path in each of its forms (`C:\x`, `C:/x`, `/c/x`), keeps POSIX paths from POSIX transcripts as they are, and extracts archives without passing a drive path to `tar`.
 - `npm test` passes on Windows apart from the Unreal demo test where Python is not installed. Four test files changed under `unlocks` entries citing AC-13: the shell commands in them write paths with forward slashes, as a Windows shell needs, one check that relies on `chmod` is skipped on Windows, and one scratch folder comes from `os.tmpdir()`; no expected decision changed. CI gains a `verify-windows` job.
+- A web tutorial's first step keeps the first-load timeout for every action after the first page opens, not only for opening it (#177; project-process AC-51, amended). A cold page can finish loading and still render late, so a "You see" check right after it failed at the short step timeout; it did on GitHub's Windows runner. Later steps keep the step timeout. Adopters: nothing to do; the reusable tutorial workflows pick it up.
 - `rfr-core` 5.7.1; `rfr-web` 1.0.4 and `rfr-unreal` 2.0.3 carry the updated hook library. Adopters: nothing to do; Windows sessions get fewer prompts for commands inside the repository.
 
 ### Added
