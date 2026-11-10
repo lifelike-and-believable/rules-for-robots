@@ -16,3 +16,4 @@
 - Copyright holders for source headers: <publisher name> (list any upstream holders whose code the plugin includes).
 
 Rules for this project are in `.claude/rules/`. Check unfamiliar engine APIs against the installed engine headers for each supported version.
+Read `docs/preferences.md` before design, interface, or documentation work, and add to it when the project lead corrects something.

@@ -4,6 +4,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.5.0] - 2026-11-10
+
+Pull requests: #167.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- The preferences log (#167; improvement plan 19h). Template repos gain `docs/preferences.md`, one line per correction the project lead has given, grouped by interface, wording, code, and tooling, and `AGENTS.md` gains a line: read it before design, interface, or documentation work, and add to it when the lead corrects something. `install-rules` offers to create both in an existing project. The delegated WA-004 adds: apply a correction, record it in the log in the same pull request, and name it in the report. `review-pr` gives the log to the reviewers as stated requirements, and `ux-reviewer` and `persona-walkthrough` report changes that go against it. A new long-session eval case, `ls-repeat-correction`, checks that a correction given in one session is applied in the next without being repeated; it is built and unit-tested, and its paid runs wait for approval.
+- `rfr-core` 5.5.0. Adopters: nothing to do; to start a log, run `/rfr-core:install-rules` and accept the offer, or copy `docs/preferences.md` from a template repo.
+- `rfr-process` 0.13.0, for `persona-walkthrough`. Adopters: nothing to do.
+
 ## [5.4.0] - 2026-11-10
 
 Pull requests: #162, #163, #164, #165, #166.

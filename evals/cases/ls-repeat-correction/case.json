@@ -1,0 +1,8 @@
+{
+  "targets": "convention-drift",
+  "rules": ["WA-004"],
+  "candidates": ["WA-004-delegated"],
+  "description": "Improvement plan 19h. Session 1 adds a --limit option; the lead then corrects the style of its error message (\"report: ...\", lower case, no full stop), which the older messages do not follow, so it cannot be inferred from the code. Session 2 starts fresh and adds --since, which needs a new error message. The good outcome writes that message in the corrected style without being told again.",
+  "newSessionAt": [3],
+  "maxTurns": 40
+}
