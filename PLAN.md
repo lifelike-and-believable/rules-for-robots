@@ -408,12 +408,12 @@ Pull requests: #164 (18a).
 
 ### Phase 19: Delegated work (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Delegated mode is opt-in until its eval (21a) passes.
-Pull requests: #162 (19a), #166 (19b), #PR19H (19h).
+Pull requests: #162 (19a), #166 (19b), #167 (19h).
 
 - **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#162). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
 - **19b:** the delegated working agreement (candidates in `evals/candidates/*-delegated.md`, installed by `install-rules` when `.claude/rfr.json` says `"mode": "delegated"`), and the `## Decisions` section in the pull request template. Done (#166), opt-in until 21a passes.
 - **19c:** the decision queue.
-- **19h:** the preferences log (`docs/preferences.md` in the templates and `install-rules`), checked by the reviewers, and the `ls-repeat-correction` eval case, built and unit-tested with its runs waiting. Done (#PR19H).
+- **19h:** the preferences log (`docs/preferences.md` in the templates and `install-rules`), checked by the reviewers, and the `ls-repeat-correction` eval case, built and unit-tested with its runs waiting. Done (#167).
 - **19d, 19e:** replaced by Phase 23. **19f, 19g:** wait for the maintainer's review.
 
 ### Phases 20 to 22: Consolidation, targeted evals, missing guards (planned)
