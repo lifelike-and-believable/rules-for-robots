@@ -11,7 +11,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- `PLAN.md` and the README describe the current state (#PR18A; improvement plan 18a): the status line names v5.3.1, Phases 12 and 16 are complete, Phases 10, 11, and 13 to 15 say what each still waits on, Phases 18 to 23 are added, and section 14 lists open items only. `checks/plan.mjs` now fails when the plan's status line names a version other than `rfr-core`'s, and when a phase marked planned has every slice done; the release steps in `docs/maintenance.md` say to update the line. No plugin changes.
+- `PLAN.md` and the README describe the current state (#164; improvement plan 18a): the status line names v5.3.1, Phases 12 and 16 are complete, Phases 10, 11, and 13 to 15 say what each still waits on, Phases 18 to 23 are added, and section 14 lists open items only. `checks/plan.mjs` now fails when the plan's status line names a version other than `rfr-core`'s, and when a phase marked planned has every slice done; the release steps in `docs/maintenance.md` say to update the line. No plugin changes.
 
 ## [5.3.1] - 2026-11-09
 
