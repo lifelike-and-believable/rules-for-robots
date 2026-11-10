@@ -11,7 +11,7 @@ Status: v5.6.0 (`rfr-core`), in use on the maintainer's projects. Rules, practic
 - **Plugins** carry skills, agents, and hooks. The `rfr-core` plugin provides `/rfr-core:install-rules`, which copies rule packs into an existing repo (plugins cannot ship rules directly), and default hooks that ask before destructive commands and edits to existing tests. See [plugins/core/README.md](plugins/core/README.md). Two domain plugins add what only one kind of project uses: `rfr-web` ([plugins/web/README.md](plugins/web/README.md)) for websites and web apps, and `rfr-unreal` ([plugins/unreal/README.md](plugins/unreal/README.md)) for Unreal Engine plugins.
 - **Evals** keep only rules that measurably improve agent output.
 
-One idea runs through all of it: every change, to even the smallest component, is a change to the whole of the project, so each change is checked against the whole product, not only its diff. The [process guide](plugins/process/GUIDE.md#every-change-is-a-change-to-the-whole) explains how the development process applies this.
+One idea runs through all of it: every change, to even the smallest component, is a change to the whole of the project, so each change is checked against the whole product, not only its diff. The [process guide](plugins/process/guide/start.md#every-change-is-a-change-to-the-whole) explains how the development process applies this.
 
 The research behind these choices is in [docs/research/findings.md](docs/research/findings.md).
 
