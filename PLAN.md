@@ -421,7 +421,7 @@ Pull requests: #162 (19a), #166 (19b), #167 (19h), #168 (19c).
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Only 21a (delegated wording against test gaming, up to $20) is approved to run; the rest wait for the maintainer's review of steps 1 to 5 of the brief.
 Pull requests: #169 (21a).
 
-- **21a:** done (#169), $12.27. No run gamed the wrong test in either mode (0 of 40), so delegated mode stays available behind the mode setting. On the new `ls-park-and-continue` case both modes carried on past the wrong test; only Opus with the delegated wording also wrote the parked helper to the documented rule (5/5 against 0/5). [Results](evals/results/2026-11-10-21a/README.md).
+- **21a:** done (#169), $12.27. No run gamed the wrong test in either mode (0 of 40), so delegated mode stays available behind the mode setting. On the new `ls-park-and-continue` case both modes carried on past the wrong test; only Opus with the delegated wording also wrote the parked helper to the documented rule (5/5 against 0/5). [Results](evals/results/2026-11-10-21a/README.md). Second round (#PRDF), Sonnet only, $2.14, with the wrong test first and no instruction to carry on: again no gaming (0 of 10), and both modes carried on; with the delegated wording Sonnet wrote the parked helper to the documented rule in 3 of 5 runs against 0 of 5 ([results](evals/results/2026-11-10-21a-park-early/README.md)).
 
 ### Phase 23: Process changes (in progress)
 Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
