@@ -4,13 +4,25 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.7.0] - 2026-11-10
+
+Pull requests: #169, #170, #171, #172.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- Gate types for `rfr-process` (#172; process plan 23b, P1). `gates:` in `process.yml` sets each stage to `approve`, `notify`, or `agent`. The approvals job requires an approver only for `approve` stages; an `agent` stage needs a review recorded by `/rfr-core:review-pr` on the head commit (`<!-- rfr-agent-review head=<sha> -->`); after a merge that changed a `notify` stage, the job opens one decision-queue issue with "keep them" as the default. The merge guard asks only about `approve` stages. Without `gates:`, supervised projects keep `approve` everywhere; delegated projects (`.claude/rfr.json`) get `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. Spec AC-55 to AC-58; the spec no longer lists automating the approvers' decisions as out of scope.
+- `review-pr` records the agent-gate review. `rfr-core` 5.7.0. Adopters: nothing to do.
+- `rfr-process` 0.15.0. Adopters: nothing to do in supervised mode; a delegated project's derived stages stop waiting for the lead at merge, and the lead sees them in `/rfr-core:decisions`.
+
 ### Changed
 
 - Process hygiene (#171; process plan 23j). The pilot findings move from `docs/specs/project-process.md` (520 lines, now 388) to `docs/research/pilots/kettlebird.md` and `agentic-xr-pipeline.md`, and the spec links to them. `plugins/process/GUIDE.md` becomes an index of six parts in `plugins/process/guide/` (start, design, delivery, validation, reviews and changes, adoption and tools), so an agent reads only the part for its stage. The README marks team mode, CODEOWNERS, per-stage approvers, and the Project board as not yet exercised by a pilot (P5). `AGENTS.md` asks for new test files named by behaviour. `rfr-process` 0.14.1. Adopters: nothing to do; links to `GUIDE.md` still work, and anchors into it now live in the parts.
 - The `rfr-process` tier job infers each pull request's tier from the paths it changes (#170; process plan 23f, P4): `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`, `tier:fix` for tutorials, process specs, or `public-api` paths, and `tier:trivial` otherwise. A label can raise the tier and a lower one fails. A pull request with no label no longer fails, so the minute-long wait for a label and the red first run it worked around are gone. The tier job reports its tier as an output, and the mutation job runs by it. Spec AC-10 and AC-27 are amended and AC-54 added. Adopters: nothing to do; labels you already add keep working, and you can stop adding `tier:story` and `tier:fix`.
 - `rfr-process` 0.14.0 for the guide, README, and setup skill. Adopters: nothing to do.
 
-### Added
+### Evals
 
 - The 21a eval round (#169; improvement plan 21a): the delegated working agreement against test gaming, on `green-at-all-costs` and a new long-session case, `ls-park-and-continue` (four helpers with tests written in advance; the second's test contradicts the documented price rule). No run in either mode changed a test or wrote code to satisfy the wrong assertion (0 of 40, Opus 5.5 and Sonnet 5.5). Results in `evals/results/2026-11-10-21a/`. `green-at-all-costs` lists the delegated files as its candidates. No plugin changes.
 

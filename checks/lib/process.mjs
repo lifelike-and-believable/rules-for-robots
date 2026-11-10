@@ -24,7 +24,7 @@ export const STAGES = [
 ];
 export const STAGE_ORDER = STAGES.map(s => s.name);
 const CONFIG_STAGES = new Set([...STAGE_ORDER, 'release']);
-const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'public-api', 'adoption-until', 'project']);
+const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'gates', 'public-api', 'adoption-until', 'project']);
 export const STATUSES = new Set(['draft', 'approved', 'implemented']);
 
 // ---- YAML subset ------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ function validDate(s) {
 
 export function parseProcessConfig(text) {
   const { data, errors } = parseYamlSubset(text);
-  const config = { mode: 'team', default: [], stages: {}, publicApi: [], adoptionUntil: null, project: null };
+  const config = { mode: 'team', default: [], stages: {}, gates: {}, publicApi: [], adoptionUntil: null, project: null };
   for (const key of Object.keys(data)) if (!CONFIG_KEYS.has(key)) errors.push(`process.yml: unknown key "${key}"`);
   if (data.mode !== undefined && data.mode !== null) {
     if (data.mode === 'team' || data.mode === 'solo') config.mode = data.mode;
@@ -119,6 +119,16 @@ export function parseProcessConfig(text) {
         if (!CONFIG_STAGES.has(stage)) errors.push(`process.yml: unknown stage "${stage}" (known: ${[...CONFIG_STAGES].join(', ')})`);
         else if (!asList(approvers).length) errors.push(`process.yml: stage "${stage}" names no approvers`);
         else config.stages[stage] = asList(approvers);
+      }
+    }
+  }
+  if (data.gates !== undefined && data.gates !== null) {
+    if (typeof data.gates !== 'object' || Array.isArray(data.gates)) errors.push('process.yml: "gates" must map stage names to approve, notify, or agent');
+    else {
+      for (const [stage, type] of Object.entries(data.gates)) {
+        if (!CONFIG_STAGES.has(stage)) errors.push(`process.yml: unknown stage "${stage}" in gates (known: ${[...CONFIG_STAGES].join(', ')})`);
+        else if (!GATE_TYPES.includes(type)) errors.push(`process.yml: gate for "${stage}" must be one of ${GATE_TYPES.join(', ')}, not "${type}"`);
+        else config.gates[stage] = type;
       }
     }
   }
@@ -286,6 +296,33 @@ export function stageOf(file) {
 // process.yml names spec approvers (agents approve specs otherwise).
 export function gatedStages(config) {
   return STAGE_ORDER.filter(s => s !== 'specs' || (config?.stages?.specs?.length ?? 0) > 0);
+}
+
+// Gate types (process plan 23b, P1): approve (a person; the merge waits for them), notify (the
+// person is told after the merge and can object through the decision queue), agent (an independent
+// reviewer's recorded review on the head commit). process.yml's gates: map sets them per stage.
+// Without it, a supervised project keeps today's rule, approve everywhere; a delegated project
+// (.claude/rfr.json "mode": "delegated") leaves the person the concept, the design with its user
+// documentation, the demos, and the release, and is told about the derived stages.
+export const GATE_TYPES = ['approve', 'notify', 'agent'];
+export const DELEGATED_GATES = { concept: 'approve', discovery: 'notify', requirements: 'notify', personas: 'notify', epics: 'notify', stories: 'notify', design: 'approve', 'user-docs': 'approve', specs: 'approve', tutorials: 'approve', release: 'approve' };
+
+// The project's working mode, from .claude/rfr.json: 'delegated' or 'supervised' (the default).
+export function readWorkMode(root) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, '.claude', 'rfr.json'), 'utf8'))?.mode === 'delegated' ? 'delegated' : 'supervised';
+  } catch {
+    return 'supervised';
+  }
+}
+
+export function gateOf(stage, config, workMode = 'supervised') {
+  return config?.gates?.[stage] ?? (workMode === 'delegated' ? DELEGATED_GATES[stage] ?? 'approve' : 'approve');
+}
+
+// The gated stages whose gate is the given type.
+export function stagesWithGate(config, workMode, type) {
+  return gatedStages(config).filter(stage => gateOf(stage, config, workMode) === type);
 }
 
 export function approversFor(stage, config) {

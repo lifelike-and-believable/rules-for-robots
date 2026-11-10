@@ -92,6 +92,10 @@ An agent writing the pull request may set `status: approved` in it; that is a pr
 
 In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. When the plugin is installed, its `guard-merge` hook asks the person to confirm each such merge; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent and the project's `AGENTS.md`. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
 
+### Gate types
+
+Each gated stage has a gate, set per stage with `gates:` in `process.yml`: `approve` (an approver decides, and the merge waits for them), `notify` (no approver; after the merge the approvals job opens a `needs-lead` issue in the decision queue, with "keep them" as the default, and an objection is an ordinary amendment), or `agent` (a comment `<!-- rfr-agent-review head=<sha> -->` from `/rfr-core:review-pr` on the head commit stands in for the approver). Without `gates:`, a supervised project uses `approve` everywhere, as before. A delegated project (`.claude/rfr.json` `"mode": "delegated"`) uses `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. The merge guard asks only about `approve` stages.
+
 ### Who approved, according to GitHub
 
 Who approved a change is read from GitHub, never from front matter.
