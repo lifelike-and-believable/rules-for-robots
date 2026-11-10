@@ -12,6 +12,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 ### Changed
 
 - `PLAN.md` and the README describe the current state (#164; improvement plan 18a): the status line names v5.3.1, Phases 12 and 16 are complete, Phases 10, 11, and 13 to 15 say what each still waits on, Phases 18 to 23 are added, and section 14 lists open items only. `checks/plan.mjs` now fails when the plan's status line names a version other than `rfr-core`'s, and when a phase marked planned has every slice done; the release steps in `docs/maintenance.md` say to update the line. No plugin changes.
+- `npm run verify` gets further on Windows (#PR18B; improvement plan 18b): `checks/ci/install-vale.mjs` pins the Windows archives of Vale 3.26.0 by SHA-256 and extracts them with Windows' own `tar`, and `checks/process-vale.mjs` prints the linted folders with forward slashes. Of the 28 tests that failed on the maintainer's machine, 15 needed `npm ci` and a Playwright browser, one Python, one the Vale archive, and one a test helper that compared paths with forward slashes (changed under an `unlocks` entry in the process spec). Ten guard and replay tests still fail on Windows; `docs/maintenance.md` lists them. No plugin changes.
 
 ## [5.3.1] - 2026-11-09
 

@@ -15,6 +15,12 @@ The rule set and the `rfr-core` plugin share one semantic version, set in `plugi
 
 Rule IDs are never reused. A removed rule's ID stays retired so waivers and eval records keep pointing at one meaning.
 
+## Running verify on Windows
+
+`npm run verify` installs Vale itself on Linux, macOS, and Windows (x64 and arm64). Before the first run on a new machine, run `npm ci` and `npx playwright install chromium`: the tutorial tests drive a real browser and the mutation test runs Stryker, and both fail with "not installed" otherwise. The Unreal demo test needs Python 3 on the PATH as `python`; the Microsoft Store alias does not count.
+
+Ten tests still fail on Windows as of 2026-11-10, all in the guards' shell-command handling and the guard replay: Windows paths with backslashes written into shell commands, the temp folder's drive-letter form, snapshots before discarding changes, and `tar` given a drive-letter path. They are parked under improvement plan 18b because the fixes change how the guards decide, which needs its own pull request. CI runs on Ubuntu only until they pass.
+
 ## Releasing
 
 A release is prepared in pull requests and published from a machine that can push tags.

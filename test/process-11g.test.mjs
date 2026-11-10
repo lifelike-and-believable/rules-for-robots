@@ -30,7 +30,7 @@ test('project-process#AC-23: the vocabulary has persona names and glossary terms
 function vale(root) {
   const out = tmp('rfr-vale-');
   const { config, paths } = prepareVale(root, out);
-  assert.deepEqual(paths.map(p => path.relative(root, p)).sort(), ['docs/tutorials', 'docs/user']);
+  assert.deepEqual(paths.map(p => path.relative(root, p).split(path.sep).join('/')).sort(), ['docs/tutorials', 'docs/user']);
   const r = spawnSync(valeBinary(), ['--config', config, '--output', 'JSON', '--no-exit', ...paths], { cwd: root, encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   const alerts = Object.entries(JSON.parse(r.stdout)).flatMap(([file, list]) => list.map(a => ({ file: path.basename(file), check: a.Check, match: a.Match })));

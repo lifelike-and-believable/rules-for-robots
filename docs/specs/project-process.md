@@ -8,6 +8,7 @@ unlocks:
   - test/process-tutorials.test.mjs: AC-32 (pilot round 2) makes the persona starters link to concept#audience, as the concept template's sections allow; the fixture's concept gains an Audience section, and nothing else changes
   - test/process-codeowners.test.mjs: AC-41 (Agentic XR Pipeline feedback, 2026-11-05) adds the optional discovery stage, which has its own CODEOWNERS entry; the expected block gains the line /docs/product/discovery/ between the concept and the requirements, and nothing else changes
   - test/process-tutorial-record.test.mjs: the "without record" test also counted every entry in the shared temp folder, which other test files running in parallel write to, so it failed at random in CI (seen on #108, reproduced locally by creating temp folders during the run); that count is removed, and the test still checks that a run without --record returns no artifacts
+  - test/process-11g.test.mjs: AC-23's Vale test compared the linted folders as path.relative output with forward slashes, so it failed on Windows (improvement plan 18b, 2026-11-10); the folders are compared with separators normalised, and the expected list and every alert check are unchanged
 ---
 
 # Project development process (`rfr-process` plugin)
