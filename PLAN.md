@@ -388,6 +388,12 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 - **17b:** the "New model" section in the maintenance guide, the `model-release` issue form, section 5 and decision 7 rewritten to name no single generation, and the "Evaluated on:" changelog line and its check (AC-7 to AC-10).
 - **17c:** the baseline run on Opus 5.5 and Sonnet 5.5 (AC-11), and the first decisions it supports.
 
+### Phase 23: Process changes (in progress)
+Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
+Pull requests: #PR23A (23a).
+
+- **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#PR23A). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |

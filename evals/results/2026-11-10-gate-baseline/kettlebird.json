@@ -1,0 +1,1399 @@
+{
+  "repository": "kettlebird",
+  "since": null,
+  "merged": 164,
+  "gated": 96,
+  "unchanged": 91,
+  "medianHours": 0.0030555555555555557,
+  "totalHours": 13.100833333333338,
+  "stages": {
+    "concept": {
+      "pulls": 3,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.0016666666666666668,
+      "totalHours": 0.005277777777777778
+    },
+    "personas": {
+      "pulls": 3,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.0016666666666666668,
+      "totalHours": 0.005277777777777778
+    },
+    "requirements": {
+      "pulls": 6,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.002361111111111111,
+      "totalHours": 0.2888888888888889
+    },
+    "epics": {
+      "pulls": 18,
+      "unchangedShare": 0.9444444444444444,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 1,
+      "withChangesRequested": 0,
+      "medianHours": 0.002361111111111111,
+      "totalHours": 0.8750000000000001
+    },
+    "stories": {
+      "pulls": 15,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.0030555555555555557,
+      "totalHours": 0.5366666666666667
+    },
+    "design": {
+      "pulls": 50,
+      "unchangedShare": 0.96,
+      "withCommitsAfterReady": 1,
+      "withApproverNotes": 1,
+      "withChangesRequested": 0,
+      "medianHours": 0.0025,
+      "totalHours": 10.201666666666668
+    },
+    "user-docs": {
+      "pulls": 35,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.004722222222222222,
+      "totalHours": 1.5324999999999998
+    },
+    "tutorials": {
+      "pulls": 32,
+      "unchangedShare": 0.90625,
+      "withCommitsAfterReady": 3,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.0043055555555555555,
+      "totalHours": 1.8449999999999995
+    }
+  },
+  "pulls": [
+    {
+      "number": 28,
+      "stages": [
+        "concept",
+        "personas",
+        "requirements"
+      ],
+      "readyAt": "2026-11-01T14:58:27.000Z",
+      "mergedAt": "2026-11-01T14:58:35Z",
+      "hours": 0.0022222222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 32,
+      "stages": [
+        "concept",
+        "personas",
+        "requirements"
+      ],
+      "readyAt": "2026-11-01T15:09:04.000Z",
+      "mergedAt": "2026-11-01T15:09:10Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 33,
+      "stages": [
+        "concept",
+        "epics",
+        "personas",
+        "requirements"
+      ],
+      "readyAt": "2026-11-01T15:24:54.000Z",
+      "mergedAt": "2026-11-01T15:24:59Z",
+      "hours": 0.001388888888888889,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 36,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-01T15:30:11.000Z",
+      "mergedAt": "2026-11-01T15:30:17Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 38,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-01T15:40:05.000Z",
+      "mergedAt": "2026-11-01T15:40:16Z",
+      "hours": 0.0030555555555555557,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 39,
+      "stages": [
+        "design",
+        "epics"
+      ],
+      "readyAt": "2026-11-01T15:56:16.000Z",
+      "mergedAt": "2026-11-01T15:56:19Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 1,
+      "changed": true
+    },
+    {
+      "number": 40,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-01T16:01:46.000Z",
+      "mergedAt": "2026-11-01T16:01:54Z",
+      "hours": 0.0022222222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 45,
+      "stages": [
+        "design",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-01T16:11:07.000Z",
+      "mergedAt": "2026-11-01T16:11:14Z",
+      "hours": 0.0019444444444444444,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 46,
+      "stages": [
+        "epics"
+      ],
+      "readyAt": "2026-11-01T16:11:09.000Z",
+      "mergedAt": "2026-11-01T16:11:18Z",
+      "hours": 0.0025,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 48,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-01T16:43:18.000Z",
+      "mergedAt": "2026-11-01T16:43:21Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 49,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-01T16:53:02.000Z",
+      "mergedAt": "2026-11-01T16:53:08Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 50,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-01T17:12:29.000Z",
+      "mergedAt": "2026-11-01T17:12:36Z",
+      "hours": 0.0019444444444444444,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 57,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-01T17:12:31.000Z",
+      "mergedAt": "2026-11-01T17:12:40Z",
+      "hours": 0.0025,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 59,
+      "stages": [
+        "design",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-01T17:26:09.000Z",
+      "mergedAt": "2026-11-01T17:26:28Z",
+      "hours": 0.005277777777777778,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 60,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T04:37:15.000Z",
+      "mergedAt": "2026-11-02T04:37:19Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 64,
+      "stages": [
+        "design",
+        "stories"
+      ],
+      "readyAt": "2026-11-01T21:04:45.000Z",
+      "mergedAt": "2026-11-01T21:04:48Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 67,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-01T21:04:50.000Z",
+      "mergedAt": "2026-11-01T21:04:53Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 68,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-01T21:15:41.000Z",
+      "mergedAt": "2026-11-01T21:15:44Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 69,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-01T21:39:05.000Z",
+      "mergedAt": "2026-11-01T21:39:08Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 70,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-01T22:06:49.000Z",
+      "mergedAt": "2026-11-01T22:06:52Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 73,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T05:58:12.000Z",
+      "mergedAt": "2026-11-02T06:00:18Z",
+      "hours": 0.035,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 75,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-02T06:00:24.000Z",
+      "mergedAt": "2026-11-02T06:04:03Z",
+      "hours": 0.060833333333333336,
+      "commitsAfter": 1,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": true
+    },
+    {
+      "number": 76,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T12:14:09.000Z",
+      "mergedAt": "2026-11-02T12:17:30Z",
+      "hours": 0.05583333333333333,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 77,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-02T12:17:35.000Z",
+      "mergedAt": "2026-11-02T12:21:08Z",
+      "hours": 0.059166666666666666,
+      "commitsAfter": 1,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": true
+    },
+    {
+      "number": 78,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T12:24:04.000Z",
+      "mergedAt": "2026-11-02T12:27:55Z",
+      "hours": 0.06416666666666666,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 80,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T13:50:29.000Z",
+      "mergedAt": "2026-11-02T13:50:34Z",
+      "hours": 0.001388888888888889,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 81,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-02T13:51:08.000Z",
+      "mergedAt": "2026-11-02T13:58:31Z",
+      "hours": 0.12305555555555556,
+      "commitsAfter": 1,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": true
+    },
+    {
+      "number": 82,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-02T14:19:37.000Z",
+      "mergedAt": "2026-11-02T14:22:49Z",
+      "hours": 0.05333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 83,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-02T14:34:34.000Z",
+      "mergedAt": "2026-11-02T14:34:37Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 84,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-02T14:53:09.000Z",
+      "mergedAt": "2026-11-02T14:59:15Z",
+      "hours": 0.10166666666666667,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 87,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T16:50:16.000Z",
+      "mergedAt": "2026-11-02T16:53:34Z",
+      "hours": 0.055,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 88,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-02T16:53:56.000Z",
+      "mergedAt": "2026-11-02T17:05:06Z",
+      "hours": 0.18611111111111112,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 89,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-02T16:50:18.000Z",
+      "mergedAt": "2026-11-02T16:54:10Z",
+      "hours": 0.06444444444444444,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 92,
+      "stages": [
+        "design",
+        "stories"
+      ],
+      "readyAt": "2026-11-02T17:14:23.000Z",
+      "mergedAt": "2026-11-02T17:19:08Z",
+      "hours": 0.07916666666666666,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 93,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T17:23:54.000Z",
+      "mergedAt": "2026-11-02T17:30:04Z",
+      "hours": 0.10277777777777777,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 94,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-02T18:06:50.000Z",
+      "mergedAt": "2026-11-02T18:06:53Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 95,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-02T23:01:55.000Z",
+      "mergedAt": "2026-11-02T23:04:17Z",
+      "hours": 0.03944444444444444,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 96,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T23:01:34.000Z",
+      "mergedAt": "2026-11-02T23:01:38Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 97,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T23:20:03.000Z",
+      "mergedAt": "2026-11-02T23:20:06Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 98,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-02T23:20:18.000Z",
+      "mergedAt": "2026-11-02T23:49:18Z",
+      "hours": 0.48333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 99,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-02T23:49:57.000Z",
+      "mergedAt": "2026-11-02T23:54:33Z",
+      "hours": 0.07666666666666666,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 100,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-03T00:09:19.000Z",
+      "mergedAt": "2026-11-03T00:09:22Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 101,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-03T01:50:24.000Z",
+      "mergedAt": "2026-11-03T01:50:29Z",
+      "hours": 0.001388888888888889,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 102,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-03T02:35:39.000Z",
+      "mergedAt": "2026-11-03T02:38:04Z",
+      "hours": 0.04027777777777778,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 104,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-03T04:27:17.000Z",
+      "mergedAt": "2026-11-03T04:29:53Z",
+      "hours": 0.043333333333333335,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 105,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-03T11:00:52.000Z",
+      "mergedAt": "2026-11-03T11:00:58Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 106,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-03T11:31:18.000Z",
+      "mergedAt": "2026-11-03T11:31:24Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 107,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-03T13:52:06.000Z",
+      "mergedAt": "2026-11-03T13:52:12Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 109,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-03T19:08:29.000Z",
+      "mergedAt": "2026-11-03T19:08:54Z",
+      "hours": 0.006944444444444444,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 110,
+      "stages": [
+        "epics",
+        "requirements"
+      ],
+      "readyAt": "2026-11-04T00:20:02.000Z",
+      "mergedAt": "2026-11-04T00:25:10Z",
+      "hours": 0.08555555555555555,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 112,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-04T11:38:19.000Z",
+      "mergedAt": "2026-11-04T11:40:36Z",
+      "hours": 0.03805555555555556,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 117,
+      "stages": [
+        "design",
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-04T21:08:39.000Z",
+      "mergedAt": "2026-11-04T21:11:39Z",
+      "hours": 0.05,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 118,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-04T21:28:51.000Z",
+      "mergedAt": "2026-11-04T21:34:41Z",
+      "hours": 0.09722222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 119,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-05T11:13:00.000Z",
+      "mergedAt": "2026-11-05T11:22:27Z",
+      "hours": 0.1575,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 121,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-05T13:37:37.000Z",
+      "mergedAt": "2026-11-05T13:50:12Z",
+      "hours": 0.20972222222222223,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 124,
+      "stages": [
+        "epics"
+      ],
+      "readyAt": "2026-11-05T17:21:10.000Z",
+      "mergedAt": "2026-11-05T17:21:13Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 125,
+      "stages": [
+        "stories"
+      ],
+      "readyAt": "2026-11-05T17:21:27.000Z",
+      "mergedAt": "2026-11-05T17:24:49Z",
+      "hours": 0.05611111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 131,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-05T17:48:54.000Z",
+      "mergedAt": "2026-11-05T17:48:57Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 132,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-05T18:31:46.000Z",
+      "mergedAt": "2026-11-05T18:32:55Z",
+      "hours": 0.019166666666666665,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 133,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-05T19:28:02.000Z",
+      "mergedAt": "2026-11-05T19:28:06Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 134,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-05T20:40:29.000Z",
+      "mergedAt": "2026-11-05T20:40:32Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 135,
+      "stages": [
+        "design",
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-05T20:35:07.000Z",
+      "mergedAt": "2026-11-05T20:35:10Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 137,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-05T20:56:12.000Z",
+      "mergedAt": "2026-11-05T20:56:16Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 138,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-05T20:59:46.000Z",
+      "mergedAt": "2026-11-05T20:59:49Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 140,
+      "stages": [
+        "design",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-05T21:29:36.000Z",
+      "mergedAt": "2026-11-05T21:29:53Z",
+      "hours": 0.004722222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 143,
+      "stages": [
+        "epics"
+      ],
+      "readyAt": "2026-11-05T21:40:25.000Z",
+      "mergedAt": "2026-11-05T21:51:52Z",
+      "hours": 0.19083333333333333,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 144,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-05T21:52:17.000Z",
+      "mergedAt": "2026-11-05T22:03:57Z",
+      "hours": 0.19444444444444445,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 146,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-05T22:07:46.000Z",
+      "mergedAt": "2026-11-05T22:20:19Z",
+      "hours": 0.20916666666666667,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 150,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-05T22:23:23.000Z",
+      "mergedAt": "2026-11-05T22:53:32Z",
+      "hours": 0.5025,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 155,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-06T12:57:25.000Z",
+      "mergedAt": "2026-11-06T12:57:28Z",
+      "hours": 0.0008333333333333334,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 156,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-06T13:17:56.000Z",
+      "mergedAt": "2026-11-06T13:18:00Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 157,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-06T14:44:05.000Z",
+      "mergedAt": "2026-11-06T14:44:09Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 158,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-06T15:00:34.000Z",
+      "mergedAt": "2026-11-06T15:00:38Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 160,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-06T15:42:49.000Z",
+      "mergedAt": "2026-11-06T15:42:53Z",
+      "hours": 0.0011111111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 161,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-06T17:07:52.000Z",
+      "mergedAt": "2026-11-06T17:25:21Z",
+      "hours": 0.29138888888888886,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 162,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-06T17:36:01.000Z",
+      "mergedAt": "2026-11-06T17:36:07Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 165,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-06T19:24:54.000Z",
+      "mergedAt": "2026-11-06T19:29:02Z",
+      "hours": 0.06888888888888889,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 168,
+      "stages": [
+        "user-docs"
+      ],
+      "readyAt": "2026-11-06T21:04:01.000Z",
+      "mergedAt": "2026-11-06T21:04:24Z",
+      "hours": 0.006388888888888889,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 171,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-07T01:12:47.000Z",
+      "mergedAt": "2026-11-07T01:12:53Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 173,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-07T01:54:27.000Z",
+      "mergedAt": "2026-11-07T01:55:05Z",
+      "hours": 0.010555555555555556,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 175,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-07T02:34:54.000Z",
+      "mergedAt": "2026-11-07T02:35:08Z",
+      "hours": 0.0038888888888888888,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 176,
+      "stages": [
+        "design",
+        "epics",
+        "stories",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-07T02:06:07.000Z",
+      "mergedAt": "2026-11-07T02:06:13Z",
+      "hours": 0.0016666666666666668,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 177,
+      "stages": [
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-07T03:04:18.000Z",
+      "mergedAt": "2026-11-07T03:06:06Z",
+      "hours": 0.03,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 183,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-07T04:31:03.000Z",
+      "mergedAt": "2026-11-07T11:21:42Z",
+      "hours": 6.844166666666666,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 184,
+      "stages": [
+        "design",
+        "requirements",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-07T11:44:25.000Z",
+      "mergedAt": "2026-11-07T11:44:34Z",
+      "hours": 0.0025,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 185,
+      "stages": [
+        "design",
+        "stories",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-07T12:30:18.000Z",
+      "mergedAt": "2026-11-07T12:30:29Z",
+      "hours": 0.0030555555555555557,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 187,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-07T23:12:00.000Z",
+      "mergedAt": "2026-11-07T23:12:08Z",
+      "hours": 0.0022222222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 189,
+      "stages": [
+        "epics",
+        "stories"
+      ],
+      "readyAt": "2026-11-08T14:57:35.000Z",
+      "mergedAt": "2026-11-08T14:57:43Z",
+      "hours": 0.0022222222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 194,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-08T15:19:25.000Z",
+      "mergedAt": "2026-11-08T15:27:55Z",
+      "hours": 0.14166666666666666,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 195,
+      "stages": [
+        "design",
+        "epics",
+        "requirements",
+        "tutorials",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-08T16:10:09.000Z",
+      "mergedAt": "2026-11-08T16:21:53Z",
+      "hours": 0.19555555555555557,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 196,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-08T16:05:49.000Z",
+      "mergedAt": "2026-11-08T17:16:49Z",
+      "hours": 1.1833333333333333,
+      "commitsAfter": 5,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": true
+    },
+    {
+      "number": 198,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-09T18:03:32.000Z",
+      "mergedAt": "2026-11-09T18:43:10Z",
+      "hours": 0.6605555555555556,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 199,
+      "stages": [
+        "design",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-09T19:56:29.000Z",
+      "mergedAt": "2026-11-09T19:56:48Z",
+      "hours": 0.005277777777777778,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 200,
+      "stages": [
+        "design"
+      ],
+      "readyAt": "2026-11-09T20:40:00.000Z",
+      "mergedAt": "2026-11-09T20:40:10Z",
+      "hours": 0.002777777777777778,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 201,
+      "stages": [
+        "design",
+        "user-docs"
+      ],
+      "readyAt": "2026-11-09T20:58:48.000Z",
+      "mergedAt": "2026-11-09T21:00:43Z",
+      "hours": 0.03194444444444444,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 202,
+      "stages": [
+        "tutorials"
+      ],
+      "readyAt": "2026-11-09T21:24:17.000Z",
+      "mergedAt": "2026-11-09T21:24:35Z",
+      "hours": 0.005,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    }
+  ]
+}
