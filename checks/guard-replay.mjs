@@ -39,17 +39,28 @@ const KEEP = {
 
 // --- extract ---------------------------------------------------------------------------------
 
-export function anonymiser(root, { home = os.homedir(), tmp = os.tmpdir() } = {}) {
+// The ways a session writes a folder. On Windows, a drive path appears as C:\x, C:/x, and Git
+// Bash's /c/x; a path that already starts with / (from a POSIX transcript) is kept as it is.
+export function pathForms(p, platform = process.platform) {
+  if (!p) return [];
+  if (platform !== 'win32') return [path.posix.resolve(p)];
+  if (/^[\\/]/.test(p) && !/^[\\/]{2}/.test(p)) return [p.replace(/\\/g, '/')];
+  const native = path.win32.resolve(p);
+  const forward = native.replace(/\\/g, '/');
+  return [native, forward, forward.replace(/^([A-Za-z]):/, (m, d) => `/${d.toLowerCase()}`)];
+}
+
+export function anonymiser(root, { home = os.homedir(), tmp = os.tmpdir(), platform = process.platform } = {}) {
   const swaps = [
-    [path.resolve(root), '$REPO'],
-    [path.resolve(tmp), '$TMP'],
+    ...pathForms(root, platform).map(p => [p, '$REPO']),
+    ...pathForms(tmp, platform).map(p => [p, '$TMP']),
     ['/tmp', '$TMP'],
-    [path.resolve(home), '$HOME'],
+    ...pathForms(home, platform).map(p => [p, '$HOME']),
   ].filter(([from]) => from && from !== '/');
   // Longest first, so the project path wins over the home folder that contains it.
   swaps.sort((a, b) => b[0].length - a[0].length);
   const escape = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(swaps.map(([from]) => `${escape(from)}(?=$|[/\\s'"\`;:,)\\]}])`).join('|'), 'g');
+  const pattern = new RegExp(swaps.map(([from]) => `${escape(from)}(?=$|[/\\\\\\s'"\`;:,)\\]}])`).join('|'), 'g');
   const to = new Map(swaps);
   const text = s => s
     .replace(pattern, m => to.get(m))
@@ -116,7 +127,8 @@ function pluginsAt(commit, repo, dest) {
   fs.mkdirSync(dest, { recursive: true });
   const archive = spawnSync('git', ['archive', '--format=tar', commit, 'plugins'], { cwd: repo, maxBuffer: 1 << 28 });
   if (archive.status !== 0) throw new Error(`git archive ${commit}: ${archive.stderr}`);
-  const untar = spawnSync('tar', ['-x', '-C', dest], { input: archive.stdout });
+  // tar runs in the destination: GNU tar reads a C: path given to -C as a remote host.
+  const untar = spawnSync('tar', ['-x'], { cwd: dest, input: archive.stdout });
   if (untar.status !== 0) throw new Error(`tar: ${untar.stderr}`);
   return fs.readdirSync(path.join(dest, 'plugins')).map(p => path.join(dest, 'plugins', p));
 }
@@ -136,7 +148,7 @@ export function fixture(repo, base, state, dir, { specs } = {}) {
     fs.rmSync(path.join(dir, 'docs', 'specs'), { recursive: true, force: true });
     const archive = spawnSync('git', ['archive', '--format=tar', specs, 'docs/specs'], { cwd: repo, maxBuffer: 1 << 26 });
     if (archive.status !== 0) throw new Error(`git archive ${specs}: ${archive.stderr}`);
-    spawnSync('tar', ['-x', '-C', dir], { input: archive.stdout });
+    spawnSync('tar', ['-x'], { cwd: dir, input: archive.stdout });
     git(dir, ['add', '--', 'docs/specs']);
     git(dir, ['-c', 'user.name=replay', '-c', 'user.email=replay@example.com', 'commit', '-q', '--allow-empty', '-m', 'replay: specs']);
     git(dir, ['update-ref', 'refs/remotes/origin/main', 'HEAD']);

@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { anonymiser, BASELINE, CODE, extractCalls, replay, sha256 } from '../checks/guard-replay.mjs';
 import { decideCommand, executedText } from '../plugins/core/scripts/guard-commands.mjs';
@@ -30,7 +31,7 @@ test('guard-tiers#AC-8: the committed transcripts are anonymised', () => {
 });
 
 test('guard-tiers#AC-8: the extractor keeps only the calls the guards see, with the fields they read', () => {
-  const dir = fs.mkdtempSync(path.join(process.env.TMPDIR ?? '/tmp', 'rfr-extract-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-extract-'));
   const file = path.join(dir, 'session.jsonl');
   const turn = (time, blocks) => JSON.stringify({ type: 'assistant', timestamp: time, cwd: '/work/proj', message: { content: blocks } });
   fs.writeFileSync(file, [

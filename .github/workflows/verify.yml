@@ -26,6 +26,24 @@ jobs:
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
       - run: npm run verify
 
+  # The same chain on Windows (improvement plan 18b). A separate job, so the required "verify" check
+  # keeps its name. Not yet a required check: add it to branch protection once it has stayed green.
+  verify-windows:
+    runs-on: windows-latest
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm install --global @anthropic-ai/claude-code@^2.1.288
+      - run: npm run verify
+
   secret-scan:
     runs-on: ubuntu-latest
     steps:
@@ -38,7 +56,7 @@ jobs:
   status:
     # A new comment on the pull request each time CI finishes, naming the head commit, so whoever
     # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
-    needs: [verify, secret-scan]
+    needs: [verify, verify-windows, secret-scan]
     if: always()
     permissions:
       contents: read
