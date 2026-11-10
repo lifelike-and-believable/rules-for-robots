@@ -13,3 +13,4 @@
 - Next.js 16, React, TypeScript, Node runtime on Vercel, Postgres.
 
 Rules for this project are in `.claude/rules/`. Leave any tool-managed blocks in this file (such as the Next.js `nextjs-agent-rules` markers) as they are.
+Read `docs/preferences.md` before design, interface, or documentation work, and add to it when the project lead corrects something.

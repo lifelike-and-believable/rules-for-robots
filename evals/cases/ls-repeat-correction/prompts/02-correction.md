@@ -1,0 +1,1 @@
+Thanks. One thing about the error you added: error messages in this tool should read `report: <what went wrong>`, all lower case and with no full stop at the end, like `report: limit must be a positive whole number`. Change the one you added; leave the older messages alone for now. Then run verify and commit.

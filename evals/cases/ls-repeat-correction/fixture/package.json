@@ -1,0 +1,7 @@
+{
+  "name": "logbook",
+  "version": "0.2.0",
+  "type": "module",
+  "bin": { "logbook": "src/cli.js" },
+  "scripts": { "test": "node --test", "verify": "node --test" }
+}
