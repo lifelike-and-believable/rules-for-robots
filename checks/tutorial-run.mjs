@@ -82,7 +82,8 @@ export function checkCoverage(root) {
   return { errors, tutorials };
 }
 
-// The first page can hit a cold deployment, so it waits longer than the steps after it (AC-51).
+// The first page can hit a cold deployment, so it, and the rest of the step that opens it, wait
+// longer than the steps after it (AC-51): a cold page can finish loading and still render late.
 const FIRST_LOAD_TIMEOUT = 30000;
 const PROTECTED = 'the deployment is protected; give the runner its bypass token (RFR_PREVIEW_BYPASS in the preview workflow, or RFR_TUTORIAL_HEADER="<header>: <token>" locally)';
 
@@ -171,13 +172,16 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
   }
   const page = await context.newPage();
   let opened = false;
+  let cold = false;
   let result;
   try {
     run: {
       for (const step of steps) {
         for (const action of step.actions) {
           try {
-            await perform(page, action, timeout, baseUrl, action.type === 'goto' && !opened);
+            const first = action.type === 'goto' && !opened;
+            if (first) cold = true;
+            await perform(page, action, cold ? Math.max(timeout, FIRST_LOAD_TIMEOUT) : timeout, baseUrl, first);
             if (action.type === 'goto') opened = true;
           } catch (e) {
             const why = (e.message ?? String(e)).split('\n')[0];
@@ -191,6 +195,7 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
             break run;
           }
         }
+        cold = false;
         if (out) {
           const shot = path.join(out, `step-${String(step.n).padStart(2, '0')}.png`);
           await page.screenshot({ path: shot, fullPage: true });
