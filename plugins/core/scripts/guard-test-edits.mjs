@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ask, askReason, deferredTestContext, defer, existedAtBase, guardSettings, readInput, textAtBase } from './lib.mjs';
+import { ask, askReason, canonical, deferredTestContext, defer, existedAtBase, guardSettings, readInput, textAtBase } from './lib.mjs';
 import { classifyTestChange } from './lib/test-diff.mjs';
 import { unlockedBy } from './spec-unlocks.mjs';
 
@@ -63,13 +63,13 @@ export function decideEdit(input) {
   if (!shouldAsk(file, cwd)) return null;
   const abs = path.resolve(cwd, file);
   // A file outside the project is not one of its tests.
-  const fromRoot = path.relative(path.resolve(root), abs);
+  const fromRoot = path.relative(canonical(root), canonical(abs));
   if (fromRoot.startsWith('..') || path.isAbsolute(fromRoot)) return null;
   // Paths and specs come from the checkout the file is in: for an agent's worktree under
   // .claude/worktrees/, that worktree and its branch, not the project's main checkout.
   const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: path.dirname(abs), encoding: 'utf8', timeout: 5000 });
   const repo = top.status === 0 && top.stdout.trim() ? top.stdout.trim() : root;
-  const rel = path.relative(repo, abs).split(path.sep).join('/');
+  const rel = path.relative(canonical(repo), canonical(abs)).split(path.sep).join('/');
   const settings = guardSettings(repo);
   const decide = action => settings.testWeakening === 'defer'
     ? { decision: 'defer', reason: deferredTestContext(action) }

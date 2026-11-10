@@ -140,6 +140,27 @@ function git(cwd, args) {
   return r.status === 0 ? r.stdout.trim() : null;
 }
 
+// A path in its real, long form, as git reports it: symlinks resolved (macOS's /tmp is /private/tmp)
+// and, on Windows, 8.3 short names expanded (C:\Users\RUNNER~1 is C:\Users\runneradmin). The part of
+// the path that does not exist yet is kept as written. Compare a path with git's toplevel only in
+// this form, or path.relative climbs out of the repository (guard tiers AC-13).
+export function canonical(p) {
+  const abs = nodePath.resolve(p);
+  const rest = [];
+  let head = abs;
+  while (!fs.existsSync(head)) {
+    const parent = nodePath.dirname(head);
+    if (parent === head) return abs;
+    rest.unshift(nodePath.basename(head));
+    head = parent;
+  }
+  try {
+    return nodePath.join(fs.realpathSync.native(head), ...rest);
+  } catch {
+    return abs;
+  }
+}
+
 const bases = new Map();
 
 // The repository a file is in, its merge base with the default branch, and its path there; null
@@ -161,7 +182,7 @@ function baseOf(file, cwd) {
   }
   const base = bases.get(top);
   if (!base) return null;
-  const rel = nodePath.relative(top, nodePath.resolve(cwd, file)).replace(/\\/g, '/');
+  const rel = nodePath.relative(canonical(top), canonical(nodePath.resolve(cwd, file))).replace(/\\/g, '/');
   if (!rel || rel.startsWith('../') || nodePath.isAbsolute(rel)) return null;
   return { top, base, rel };
 }

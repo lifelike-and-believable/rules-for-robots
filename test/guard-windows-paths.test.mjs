@@ -67,6 +67,31 @@ test('guard-tiers#AC-13: on Windows, drive roots, system folders, the home folde
   }
 });
 
+// The 8.3 short form of a folder (C:\Users\RUNNER~1\...), or null where the volume keeps none.
+function shortPath(dir) {
+  const r = spawnSync('cmd', ['/d', '/s', '/c', `"for %I in ("${dir}") do @echo %~sI"`], { encoding: 'utf8', windowsVerbatimArguments: true });
+  const p = (r.stdout ?? '').trim();
+  return r.status === 0 && p && p.toLowerCase() !== dir.toLowerCase() ? p : null;
+}
+
+test('guard-tiers#AC-13: on Windows, a repository reached through an 8.3 short path gets the same decisions', { skip: !WIN && 'Windows paths' }, (t) => {
+  const parent = path.join(os.tmpdir(), `rfr-ac13-long-folder-name-${process.pid}`);
+  fs.mkdirSync(parent, { recursive: true });
+  const short = shortPath(parent);
+  if (!short) return t.skip('this volume keeps no 8.3 names');
+  const dir = path.join(short, 'repo');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  const git = (...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'core.autocrlf=false', ...a], { cwd: dir, encoding: 'utf8' });
+  git('init', '-q', '-b', 'main');
+  fs.writeFileSync(path.join(dir, 'src', 'a.ts'), 'a\n');
+  git('add', '.'); git('commit', '-q', '-m', 'base');
+  fs.writeFileSync(path.join(dir, 'src', 'a.ts'), 'changed\n');
+  const discard = decideCommand('git checkout -- .', { cwd: path.join(dir, 'src') });
+  assert.equal(discard?.decision, 'inform');
+  assert.match(discard.reason, /--worktree -- src \(kept as /);
+  assert.equal(decideCommand('rm -rf src', { cwd: dir })?.decision, 'inform');
+});
+
 test('guard-tiers#AC-13: the replay anonymiser replaces each written form of a Windows path, and keeps POSIX paths', () => {
   assert.deepEqual(pathForms('C:\\Users\\me\\proj', 'win32'), ['C:\\Users\\me\\proj', 'C:/Users/me/proj', '/c/Users/me/proj']);
   assert.deepEqual(pathForms('/work/proj', 'win32'), ['/work/proj']);

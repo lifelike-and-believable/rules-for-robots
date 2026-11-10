@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { appendGuardLog, ask, askReason, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -167,7 +167,7 @@ export function resolveFromShell(base, p, platform = process.platform) {
 // disk (a glob is taken to match something), and not added on the current branch.
 export function existingProjectFile(file, cwd, root = process.env.CLAUDE_PROJECT_DIR ?? cwd) {
   const abs = resolveFromShell(cwd, file);
-  const rel = path.relative(path.resolve(root), abs);
+  const rel = path.relative(canonical(root), canonical(abs));
   if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return false;
   if (!/[*?[{]/.test(file) && !fs.existsSync(abs)) return false;
   return existedAtBase(file, cwd);
@@ -303,7 +303,7 @@ function tempRoots() {
   const roots = new Set([os.tmpdir(), process.env.TMPDIR, '/tmp'].filter(Boolean).map(p => path.resolve(p)));
   for (const r of [...roots]) {
     try {
-      roots.add(fs.realpathSync(r));
+      roots.add(fs.realpathSync.native(r));
     } catch {
       // A root that does not exist adds nothing.
     }
@@ -312,12 +312,7 @@ function tempRoots() {
 }
 
 function insideTemp(abs) {
-  let real = abs;
-  try {
-    real = path.join(fs.realpathSync(path.dirname(abs)), path.basename(abs));
-  } catch {
-    // The parent does not exist: judge the path as written.
-  }
+  const real = canonical(abs);
   return tempRoots().some(root => {
     const rel = path.relative(root, real);
     return rel && !rel.startsWith('..') && !path.isAbsolute(rel) && rel.split(path.sep).length >= 2;
@@ -378,7 +373,7 @@ function rmRisk(entries, hints = [], snaps = []) {
       const top = git(dir, ['rev-parse', '--show-toplevel']);
       if (top.status !== 0) return RM;
       const root = top.out.trim();
-      const rel = path.relative(root, abs);
+      const rel = path.relative(canonical(root), canonical(abs));
       if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return RM;
       const tracked = git(root, ['ls-files', '--', rel]);
       if (tracked.status !== 0) return RM;
@@ -474,7 +469,7 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
     const top = git(snap.dir, ['rev-parse', '--show-toplevel']);
     if (top.status !== 0) return { failed: snap.risk };
     const root = top.out.trim();
-    const rel = snap.kind === 'tree' ? path.relative(root, path.resolve(snap.dir, snap.path)).split(path.sep).join('/') || '.' : null;
+    const rel = snap.kind === 'tree' ? path.relative(canonical(root), canonical(path.resolve(snap.dir, snap.path))).split(path.sep).join('/') || '.' : null;
     try {
       if (snap.kind === 'stash') {
         for (const { ref, sha } of snapshotStashes(root, snap.shas, { now, deadline })) {
@@ -489,7 +484,7 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
         refs.push(taken.ref);
       }
       const { sha, ref } = trees.get(root);
-      const where = path.resolve(root) === path.resolve(snap.dir) || rel === '.' ? '' : `-C ${shellPath(root)} `;
+      const where = canonical(root) === canonical(snap.dir) || rel === '.' ? '' : `-C ${shellPath(root)} `;
       const restore = `git ${where}restore --source=${sha} --worktree -- ${rel === '.' ? ':/' : shellPath(rel)}`;
       lines.push(snap.moves ? `git ${where}reset --hard ${sha}~1 && ${restore} (kept as ${ref})` : `${restore} (kept as ${ref})`);
     } catch {
