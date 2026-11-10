@@ -6,13 +6,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.7.0] - 2026-11-10
 
-Pull requests: #169, #170, #171, #PR23B.
+Pull requests: #169, #170, #171, #172.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Added
 
-- Gate types for `rfr-process` (#PR23B; process plan 23b, P1). `gates:` in `process.yml` sets each stage to `approve`, `notify`, or `agent`. The approvals job requires an approver only for `approve` stages; an `agent` stage needs a review recorded by `/rfr-core:review-pr` on the head commit (`<!-- rfr-agent-review head=<sha> -->`); after a merge that changed a `notify` stage, the job opens one decision-queue issue with "keep them" as the default. The merge guard asks only about `approve` stages. Without `gates:`, supervised projects keep `approve` everywhere; delegated projects (`.claude/rfr.json`) get `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. Spec AC-55 to AC-58; the spec no longer lists automating the approvers' decisions as out of scope.
+- Gate types for `rfr-process` (#172; process plan 23b, P1). `gates:` in `process.yml` sets each stage to `approve`, `notify`, or `agent`. The approvals job requires an approver only for `approve` stages; an `agent` stage needs a review recorded by `/rfr-core:review-pr` on the head commit (`<!-- rfr-agent-review head=<sha> -->`); after a merge that changed a `notify` stage, the job opens one decision-queue issue with "keep them" as the default. The merge guard asks only about `approve` stages. Without `gates:`, supervised projects keep `approve` everywhere; delegated projects (`.claude/rfr.json`) get `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. Spec AC-55 to AC-58; the spec no longer lists automating the approvers' decisions as out of scope.
 - `review-pr` records the agent-gate review. `rfr-core` 5.7.0. Adopters: nothing to do.
 - `rfr-process` 0.15.0. Adopters: nothing to do in supervised mode; a delegated project's derived stages stop waiting for the lead at merge, and the lead sees them in `/rfr-core:decisions`.
 
