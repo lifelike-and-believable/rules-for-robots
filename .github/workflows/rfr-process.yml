@@ -10,7 +10,7 @@ name: rules-for-robots process check
 # involved. The other jobs:
 #   approvals   team mode: an approving review from each touched stage's approvers on the head;
 #               solo mode: after a merge, that the merge was by an approver (opens an issue if not).
-#   tier        pull requests carry one tier: label, and trivial or fix pull requests stay out of
+#   tier        infers the pull request's tier from its paths (a tier: label can raise it), and trivial or fix pull requests stay out of
 #               the folders their tier may not change. Creates the four labels if missing; the pull
 #               request that adds process.yml needs no tier.
 #   codeowners  the rfr-process block in .github/CODEOWNERS matches process.yml (team mode).
@@ -137,6 +137,8 @@ jobs:
   tier:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    outputs:
+      tier: ${{ steps.tier.outputs.tier }}
     permissions:
       contents: read
       pull-requests: read
@@ -162,11 +164,11 @@ jobs:
           gh label create tier:story --color 0E8A16 --description "A new story in an approved epic" 2>/dev/null || true
           gh label create tier:epic --color 5319E7 --description "A new area of capability" 2>/dev/null || true
       - name: Size tier
+        id: tier
         env:
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          EVENT_ACTION: ${{ github.event.action }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node .rfr/checks/ci/process-tier.mjs .
@@ -262,9 +264,11 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   mutation:
+    # The tier comes from the tier job, which infers it from the changed paths (AC-54).
+    needs: tier
     if: >-
       inputs.mutation && github.event_name == 'pull_request' &&
-      (contains(github.event.pull_request.labels.*.name, 'tier:story') || contains(github.event.pull_request.labels.*.name, 'tier:epic'))
+      (needs.tier.outputs.tier == 'story' || needs.tier.outputs.tier == 'epic')
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

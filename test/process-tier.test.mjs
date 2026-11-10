@@ -3,17 +3,38 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseProcessConfig } from '../checks/lib/process.mjs';
-import { checkTier, matchGlob } from '../checks/ci/process-tier.mjs';
+import { checkTier, inferTier, matchGlob } from '../checks/ci/process-tier.mjs';
 
 const config = parseProcessConfig('default: [lead]\npublic-api: [src/api/**, Source/*/Public/**]\n').config;
 const processSpecs = new Set(['docs/specs/retarget.md']);
 const check = (labels, files) => checkTier({ labels, files, config, processSpecs });
 
-test('project-process#AC-10: a pull request with no tier label, two tier labels, or an unknown tier fails', () => {
-  assert.match(check([], ['src/app.ts']).problems.join('\n'), /tier/);
-  assert.equal(check(['bug'], ['src/app.ts']).ok, false);
+test('project-process#AC-10: two tier labels or an unknown tier fails', () => {
   assert.equal(check(['tier:fix', 'tier:story'], ['src/app.ts']).ok, false);
   assert.match(check(['tier:huge'], ['src/app.ts']).problems.join('\n'), /tier:huge/);
+});
+
+test('project-process#AC-10: the tier is inferred from the changed paths', () => {
+  const infer = files => inferTier({ files, config, processSpecs });
+  assert.equal(infer(['src/app.ts', 'docs/specs/plain.md', 'README.md']), 'trivial');
+  assert.equal(infer(['src/api/v1/users.ts']), 'fix');
+  assert.equal(infer(['docs/tutorials/x.md', 'src/app.ts']), 'fix');
+  assert.equal(infer(['docs/specs/retarget.md']), 'fix');
+  for (const file of ['docs/product/stories/a/b.md', 'docs/design/x.md', 'docs/user/x.md', 'docs/product/concept.md']) assert.equal(infer([file, 'src/app.ts']), 'story', file);
+});
+
+test('project-process#AC-10: a pull request with no tier label passes at the inferred tier', () => {
+  for (const [files, tier] of [[['src/app.ts'], 'trivial'], [['src/api/v1/users.ts'], 'fix'], [['docs/user/x.md'], 'story']]) {
+    const r = check(['bug'], files);
+    assert.deepEqual([r.ok, r.tier, r.inferred], [true, tier, true], files.join(','));
+  }
+});
+
+test('project-process#AC-10: a label can raise the tier and cannot lower it', () => {
+  assert.deepEqual([check(['tier:epic'], ['src/app.ts']).ok, check(['tier:epic'], ['src/app.ts']).tier], [true, 'epic']);
+  const lower = check(['tier:fix'], ['docs/design/x.md']);
+  assert.equal(lower.ok, false);
+  assert.match(lower.problems.join('\n'), /docs\/design\/x\.md/);
 });
 
 test('project-process#AC-10: tier:trivial fails on any process folder', () => {

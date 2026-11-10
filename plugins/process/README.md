@@ -107,7 +107,7 @@ The plugin's `guard-merge` hook asks the person to confirm `gh pr merge` (with o
 
 ## Size tiers
 
-Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, or `tier:epic`. The tier job fails a `tier:trivial` pull request that changes a process artifact or a `public-api` path, and a `tier:fix` pull request that changes `docs/product/`, `docs/design/`, or `docs/user/`. A change to documented behaviour is at least a story. The pull request that adds `process.yml` needs no tier. On a newly opened pull request without a tier label, the job re-reads the labels for up to a minute before failing, so labelling a pull request right after opening it does not leave a red run.
+The tier job infers each pull request's tier from the paths it changes: `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`; `tier:fix` for another process artifact folder or a `public-api` path; `tier:trivial` otherwise. A label (`tier:trivial`, `tier:fix`, `tier:story`, `tier:epic`) can raise the tier, usually to `tier:epic`, and the job fails a label lower than the paths imply. The mutation job uses the tier the job settled on. The pull request that adds `process.yml` needs no tier.
 
 ## Issue sync
 
