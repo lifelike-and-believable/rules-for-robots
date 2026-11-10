@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Fixed
 
-- A web tutorial's first step keeps the first-load timeout for every action after the first page opens, not only for opening it (#PRFL; project-process AC-51, amended). A cold page can finish loading and still render late, so a "You see" check right after it failed at the short step timeout; it did on GitHub's Windows runner. Later steps keep the step timeout. Adopters: nothing to do; the reusable tutorial workflows pick it up.
+- A web tutorial's first step keeps the first-load timeout for every action after the first page opens, not only for opening it (#177; project-process AC-51, amended). A cold page can finish loading and still render late, so a "You see" check right after it failed at the short step timeout; it did on GitHub's Windows runner. Later steps keep the step timeout. Adopters: nothing to do; the reusable tutorial workflows pick it up.
 
 ### Changed
 
