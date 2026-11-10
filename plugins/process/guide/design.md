@@ -6,6 +6,17 @@ Part of the [rfr-process guide](../GUIDE.md).
 
 Each design artifact is approved by its stage's approver before anything downstream links to it. Write each one short enough to read in one sitting; a long artifact usually means two.
 
+### Batches: the interview, the product brief, and the feature packet
+
+The approver's attention is the scarce part, so ask for it in batches.
+
+- **The batched interview.** Before drafting the concept or requirements, ask every question they need in one message, each with the answer you propose (for example "Who is the first audience? Proposed: working comic artists, because the README addresses them"). Then draft. A question left unanswered becomes the proposed answer marked `[assumed]` in the artifact, so it shows in the review packet rather than blocking the draft.
+- **The product brief.** For a new product, draft the concept, discovery, requirements, personas, and epics together, in one pull request. Before the approver sees it, run the cross-area consistency pass (requirements read across areas and against the concept) and the persona walkthrough of each requirement against every persona, and fix what they find.
+- **The feature packet.** For a story, put the story, the design with its mock-ups, and the user documentation in one pull request. An epic gets an epic brief the same way: the epic, its stories, and a short design.
+- **The review packet.** At the top of a brief's or packet's pull request description, paste the output of `node .rfr/checks/process-packet.mjs . --base origin/main --walkthrough <report.md>` (save the persona walkthrough's report to a file first, and add a `- **Done:**` line under each finding you acted on). It lists every `[open]` choice first, then every `[assumed]` answer, the walkthrough's `blocks` and `misleads` findings with what was done about each, and the mock-ups and recordings. Run it again after changes and replace the old packet.
+
+In a delegated project, the stages a brief or packet bundles that are gated `notify` (requirements, personas, epics, stories by default) merge without waiting for the approver, and the approver reviews the concept, design, and user documentation in the same packet.
+
 ### Concept
 
 One page: the problem and who has it, the audience, what changes for them when this exists, and the non-goals. The non-goals matter most later, when they settle scope arguments.
