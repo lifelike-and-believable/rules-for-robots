@@ -394,6 +394,12 @@ Pull requests: #162 (19a).
 
 - **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#162). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
 
+### Phase 23: Process changes (in progress)
+Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
+Pull requests: #163 (23a).
+
+- **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#163). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
