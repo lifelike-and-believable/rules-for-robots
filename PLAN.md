@@ -387,6 +387,7 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 - **17a:** the `model-release` suite, `--suite` and `--max-cost` in the runner, the reported model ID in each run record, `evals/ledger.json` and `checks/model-ledger.mjs`, and the `evaluated-on` field (AC-1 to AC-6).
 - **17b:** the "New model" section in the maintenance guide, the `model-release` issue form, section 5 and decision 7 rewritten to name no single generation, and the "Evaluated on:" changelog line and its check (AC-7 to AC-10).
 - **17c:** the baseline run on Opus 5.5 and Sonnet 5.5 (AC-11), and the first decisions it supports.
+- **Fable 5.2** (2026-11-10, outside the spec): `software-architect` moved to Fable 5.2 (#159). Anthropic's guidance is to start with Opus 5.5 and move to Fable only when Opus at higher effort falls short, which the October round never compared, and Claude Code can now use Fable as an advisor. The runner gains `--advisor`, `--agent-model`, and `--agent-effort`, and records cost per model and advisor calls (#PR); the round in `evals/README.md` ("Planned: Fable 5.2 round") compares the architect on Opus 5.5 and Fable 5.2, and a Sonnet session with Fable as advisor. Its paid runs wait for approval.
 
 ## 11. Milestones
 

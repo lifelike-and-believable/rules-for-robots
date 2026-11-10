@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- Eval runner options for the Fable 5.2 round (#PR; `evals/README.md`, "Planned: Fable 5.2 round"). `--advisor <model>` gives every session that advisor through Claude Code's `advisorModel` setting; `--agent-model` and `--agent-effort` run a plugin agent on another model or effort through a temporary copy of rfr-core; each run record lists cost and output tokens per model (`usageByModel`) and the advisor calls. Repository tooling only; no plugin changes.
+
 ## [5.3.1] - 2026-11-09
 
 Pull requests: #159.
