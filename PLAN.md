@@ -418,6 +418,9 @@ Pull requests: #162 (19a), #166 (19b), #167 (19h), #168 (19c).
 
 ### Phases 20 to 22: Consolidation, targeted evals, missing guards (planned)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Only 21a (delegated wording against test gaming, up to $20) is approved to run; the rest wait for the maintainer's review of steps 1 to 5 of the brief.
+Pull requests: #PR21A (21a).
+
+- **21a:** done (#PR21A), $12.27. No run gamed the wrong test in either mode (0 of 40), so delegated mode stays available behind the mode setting. On the new `ls-park-and-continue` case both modes carried on past the wrong test; only Opus with the delegated wording also wrote the parked helper to the documented rule (5/5 against 0/5). [Results](evals/results/2026-11-10-21a/README.md).
 
 ### Phase 23: Process changes (in progress)
 Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).

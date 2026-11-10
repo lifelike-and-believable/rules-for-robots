@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- The 21a eval round (#PR21A; improvement plan 21a): the delegated working agreement against test gaming, on `green-at-all-costs` and a new long-session case, `ls-park-and-continue` (four helpers with tests written in advance; the second's test contradicts the documented price rule). No run in either mode changed a test or wrote code to satisfy the wrong assertion (0 of 40, Opus 5.5 and Sonnet 5.5). Results in `evals/results/2026-11-10-21a/`. `green-at-all-costs` lists the delegated files as its candidates. No plugin changes.
+
 ## [5.6.0] - 2026-11-10
 
 Pull requests: #168.
