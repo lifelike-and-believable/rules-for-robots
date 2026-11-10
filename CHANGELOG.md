@@ -6,13 +6,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.7.1] - 2026-11-10
 
-Pull requests: #173, #174, #PR18B2.
+Pull requests: #173, #174, #175.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Fixed
 
-- The guards read Windows paths as the shell does (#PR18B2; improvement plan 18b, guard tiers AC-13). Git Bash's `/c/...` drive paths and `/tmp` now name the drive folder and the user's temp folder, so a command inside the repository written that way takes a snapshot and goes ahead, as on Linux, instead of asking. Drive roots, system folders, the home folder, and `/tmp` itself still ask. The restore command for a snapshot taken in another folder read `git -C <root> git restore ...`, with `git` twice, which failed when run; it now reads `git -C <root> restore ...`. On Windows this happened on every snapshot, because git reports the root with forward slashes.
+- The guards read Windows paths as the shell does (#175; improvement plan 18b, guard tiers AC-13). Git Bash's `/c/...` drive paths and `/tmp` now name the drive folder and the user's temp folder, so a command inside the repository written that way takes a snapshot and goes ahead, as on Linux, instead of asking. Drive roots, system folders, the home folder, and `/tmp` itself still ask. The restore command for a snapshot taken in another folder read `git -C <root> git restore ...`, with `git` twice, which failed when run; it now reads `git -C <root> restore ...`. On Windows this happened on every snapshot, because git reports the root with forward slashes.
 - `checks/guard-replay.mjs` anonymises a Windows project, home, or temp path in each of its forms (`C:\x`, `C:/x`, `/c/x`), keeps POSIX paths from POSIX transcripts as they are, and extracts archives without passing a drive path to `tar`.
 - `npm test` passes on Windows apart from the Unreal demo test where Python is not installed. Four test files changed under `unlocks` entries citing AC-13: the shell commands in them write paths with forward slashes, as a Windows shell needs, one check that relies on `chmod` is skipped on Windows, and one scratch folder comes from `os.tmpdir()`; no expected decision changed. CI gains a `verify-windows` job.
 - `rfr-core` 5.7.1. Adopters: nothing to do; Windows sessions get fewer prompts for commands inside the repository.

@@ -399,10 +399,10 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 
 ### Phase 18: Housekeeping and triage (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md), carried out under [docs/improvement-brief.md](docs/improvement-brief.md). Decisions D1 to D8 and P1 to P7 take the recommended answers (confirmed 2026-11-10).
-Pull requests: #164 (18a), #165 and #PR18B2 (18b).
+Pull requests: #164 (18a), #165 and #175 (18b).
 
 - **18a:** status documents: this plan, the README, and two new checks in `checks/plan.mjs` (the status line names the `rfr-core` version; a phase marked planned cannot have every slice done). Done (#164).
-- **18b:** `npm run verify` passes on Windows, and CI runs it there too. Done (#165, #PR18B2): Vale pinned for Windows, and the guards read Git Bash paths as the shell does (guard tiers AC-13).
+- **18b:** `npm run verify` passes on Windows, and CI runs it there too. Done (#165, #175): Vale pinned for Windows, and the guards read Git Bash paths as the shell does (guard tiers AC-13).
 - **18c:** a `kind` for every rule (`behaviour`, `fact`, `invariant`). Waits for the maintainer's review of steps 1 to 5 of the brief.
 - **18d:** demote rules the models already follow. Waits on 18c.
 
