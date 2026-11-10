@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v5.7.0 (2026-11-10). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v5.7.1 (2026-11-10). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -399,10 +399,10 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 
 ### Phase 18: Housekeeping and triage (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md), carried out under [docs/improvement-brief.md](docs/improvement-brief.md). Decisions D1 to D8 and P1 to P7 take the recommended answers (confirmed 2026-11-10).
-Pull requests: #164 (18a).
+Pull requests: #164 (18a), #165 and #PR18B2 (18b).
 
 - **18a:** status documents: this plan, the README, and two new checks in `checks/plan.mjs` (the status line names the `rfr-core` version; a phase marked planned cannot have every slice done). Done (#164).
-- **18b:** `npm run verify` passes on Windows, and CI runs it there too.
+- **18b:** `npm run verify` passes on Windows, and CI runs it there too. Done (#165, #PR18B2): Vale pinned for Windows, and the guards read Git Bash paths as the shell does (guard tiers AC-13).
 - **18c:** a `kind` for every rule (`behaviour`, `fact`, `invariant`). Waits for the maintainer's review of steps 1 to 5 of the brief.
 - **18d:** demote rules the models already follow. Waits on 18c.
 

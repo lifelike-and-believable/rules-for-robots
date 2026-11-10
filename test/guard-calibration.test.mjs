@@ -10,7 +10,10 @@ import { decideCommand } from '../plugins/core/scripts/guard-commands.mjs';
 import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
 
 const REPO = path.resolve('.');
-const scratch = () => fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-calib-'));
+// The scratch folder as a shell command writes it: forward slashes, which bash on Windows keeps
+// (backslashes there are escapes). Unchanged on Linux and macOS.
+const scratch = () => fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-calib-')).split(path.sep).join('/');
+const sh = p => p.split(path.sep).join('/');
 
 test('rm -rf of a folder inside the temp directory does not ask, including through a variable set in the same command', () => {
   const dir = scratch();
@@ -37,12 +40,12 @@ test('rm -rf inside a git repository under the temp directory still gets the git
 test('rm -rf still asks for the temp directory itself, an escape from it, an unknown variable, or a path outside it', () => {
   const dir = scratch();
   for (const command of [
-    `rm -rf ${os.tmpdir()}`,
+    `rm -rf ${sh(os.tmpdir())}`,
     `rm -rf ${dir}/../..`,
-    `rm -rf ${path.join(os.tmpdir(), 'some-tool-workspace')}`,
+    `rm -rf ${sh(path.join(os.tmpdir(), 'some-tool-workspace'))}`,
     'rm -rf $SOMEWHERE/wt',
     `R=$(pwd); rm -rf $R/wt`,
-    `rm -rf ${os.homedir()}/project`,
+    `rm -rf ${sh(os.homedir())}/project`,
     'rm -rf /',
   ]) assert.match(decideCommand(command, { cwd: REPO })?.reason ?? '', /recursive forced delete/, command);
 });

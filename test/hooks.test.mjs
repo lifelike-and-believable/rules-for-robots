@@ -521,6 +521,10 @@ test('test guards leave alone test files added on the current branch, as the CI 
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+// A path as a shell command writes it: forward slashes, which bash on Windows keeps (backslashes
+// there are escapes). Unchanged on Linux and macOS (guard tiers AC-13).
+const sh = p => p.split(path.sep).join('/');
+
 test('guard-commands lets a shell command create a new file, or write outside the project (rfr-core 3.0.1)', () => {
   // Found when rfr-core 3.0.0 refused a heredoc that created a scratch test file outside the project.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-new-file-'));
@@ -529,7 +533,7 @@ test('guard-commands lets a shell command create a new file, or write outside th
   const outside = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-scratch-')), 'ctx.test.mjs');
   fs.writeFileSync(outside, 'x\n');
   assert.equal(decideCommand("cat > tests/new.test.ts <<'EOF'\nx\nEOF", { cwd: dir }), null, 'a new file is not an existing test');
-  assert.equal(decideCommand(`echo x > ${outside}`, { cwd: dir }), null, 'a file outside the project is not one of its tests');
+  assert.equal(decideCommand(`echo x > ${sh(outside)}`, { cwd: dir }), null, 'a file outside the project is not one of its tests');
   assert.equal(decideCommand('sed -i s/a/b/ tests/existing.test.ts', { cwd: dir }).decision, 'deny');
   assert.equal(decideCommand('rm tests/*.test.ts', { cwd: dir }).decision, 'ask', 'a glob can match existing tests');
   const write = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Write', tool_input: { file_path: outside, content: 'y' } });
@@ -572,8 +576,8 @@ test('discarding changes takes a snapshot only when there are changes to lose (r
   assert.equal(decideCommand('git clean -fd', { cwd: r.dir }).decision, 'inform', 'an untracked file would be deleted');
   // The folder the command runs in is the one after any cd.
   const other = gitRepo();
-  assert.equal(decideCommand(`cd ${other.dir} && git checkout -- .`, { cwd: r.dir }), null);
-  assert.equal(decideCommand(`cd ${other.dir} && cd ${r.dir} && git checkout -- .`, { cwd: other.dir }).decision, 'inform');
+  assert.equal(decideCommand(`cd ${sh(other.dir)} && git checkout -- .`, { cwd: r.dir }), null);
+  assert.equal(decideCommand(`cd ${sh(other.dir)} && cd ${sh(r.dir)} && git checkout -- .`, { cwd: other.dir }).decision, 'inform');
 });
 
 test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2)", () => {
@@ -582,7 +586,7 @@ test("discarding changes in an agent's own worktree does not ask (rfr-core 3.0.2
   r.git('worktree', 'add', '-q', '-b', 'agent-1', wt);
   fs.writeFileSync(path.join(wt, 'src/a.ts'), 'agent change\n');
   r.write({ 'src/a.ts': 'lead change\n' });
-  assert.equal(decideCommand(`cd ${wt} && git status --short && git checkout -- . && git status --short`, { cwd: r.dir }), null);
+  assert.equal(decideCommand(`cd ${sh(wt)} && git status --short && git checkout -- . && git status --short`, { cwd: r.dir }), null);
   assert.equal(decideCommand('git checkout -- .', { cwd: wt }), null);
   assert.equal(decideCommand('git checkout -- .', { cwd: r.dir }).decision, 'inform', 'the main checkout takes a snapshot first');
 });

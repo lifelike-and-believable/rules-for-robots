@@ -147,6 +147,18 @@ export function discardsWorkingTree(command) {
   return false;
 }
 
+// The folder a path written in a shell command names, resolved against base. On Windows, Git Bash
+// writes drive C: as /c/ and the user's temp folder as /tmp, which Node's path module would read as
+// folders on the current drive; they are mapped first. Native paths (C:\x, C:/x) need nothing.
+export function resolveFromShell(base, p, platform = process.platform) {
+  if (platform === 'win32') {
+    const drive = /^\/([a-zA-Z])(?=\/|$)/.exec(p);
+    if (drive) p = `${drive[1].toUpperCase()}:/${p.slice(3)}`;
+    else if (p === '/tmp' || p.startsWith('/tmp/')) p = os.tmpdir() + p.slice(4);
+  }
+  return path.resolve(base, p);
+}
+
 // The hook's decision: { decision: 'deny' | 'ask', reason } or null to let the command run.
 // A shell write to an existing test is refused with a pointer to the Edit tool, whose input shows
 // the change so guard-test-edits can check it (test-change-review AC-6); deleting or moving an
@@ -154,7 +166,7 @@ export function discardsWorkingTree(command) {
 // Whether a path the command names is an existing test of this project: inside the project, on
 // disk (a glob is taken to match something), and not added on the current branch.
 export function existingProjectFile(file, cwd, root = process.env.CLAUDE_PROJECT_DIR ?? cwd) {
-  const abs = path.resolve(cwd, file);
+  const abs = resolveFromShell(cwd, file);
   const rel = path.relative(path.resolve(root), abs);
   if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return false;
   if (!/[*?[{]/.test(file) && !fs.existsSync(abs)) return false;
@@ -217,7 +229,7 @@ export function commandsWithDirs(command, cwd) {
   if (!commands) return null;
   let dir = cwd;
   return commands.map(({ words }) => {
-    if ((words[0] === 'cd' || words[0] === 'pushd') && words[1] && !words[1].startsWith('-')) dir = path.resolve(dir, words[1].replace(/^~(?=\/|$)/, os.homedir()));
+    if ((words[0] === 'cd' || words[0] === 'pushd') && words[1] && !words[1].startsWith('-')) dir = resolveFromShell(dir, words[1].replace(/^~(?=\/|$)/, os.homedir()));
     return { words, dir };
   });
 }
@@ -240,7 +252,7 @@ function discardRisk(entries, snaps) {
     let k = g + 1;
     let where = dir;
     while (words[k]?.startsWith('-')) {
-      if (words[k] === '-C' && words[k + 1]) { where = path.resolve(where, words[k + 1]); k += 2; } else k += words[k] === '-c' ? 2 : 1;
+      if (words[k] === '-C' && words[k + 1]) { where = resolveFromShell(where, words[k + 1]); k += 2; } else k += words[k] === '-c' ? 2 : 1;
     }
     const sub = words[k];
     const rest = words.slice(k + 1);
@@ -357,7 +369,7 @@ function rmRisk(entries, hints = [], snaps = []) {
     for (const word of args.filter(w => !w.startsWith('-'))) {
       const target = word.includes('$') ? expand(word, vars) : word;
       if (target === null || /[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return RM;
-      const abs = path.resolve(dir, target);
+      const abs = resolveFromShell(dir, target);
       // A target in no git repository is throwaway only inside the temp directory; one in a
       // repository (even a repository under the temp directory) gets the git checks below.
       let near = path.dirname(abs);
@@ -477,9 +489,9 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
         refs.push(taken.ref);
       }
       const { sha, ref } = trees.get(root);
-      const where = root === path.resolve(snap.dir) || rel === '.' ? '' : `git -C ${shellPath(root)} `;
-      const restore = `${where}git restore --source=${sha} --worktree -- ${rel === '.' ? ':/' : shellPath(rel)}`;
-      lines.push(snap.moves ? `${where}git reset --hard ${sha}~1 && ${restore} (kept as ${ref})` : `${restore} (kept as ${ref})`);
+      const where = path.resolve(root) === path.resolve(snap.dir) || rel === '.' ? '' : `-C ${shellPath(root)} `;
+      const restore = `git ${where}restore --source=${sha} --worktree -- ${rel === '.' ? ':/' : shellPath(rel)}`;
+      lines.push(snap.moves ? `git ${where}reset --hard ${sha}~1 && ${restore} (kept as ${ref})` : `${restore} (kept as ${ref})`);
     } catch {
       return { failed: snap.risk };
     }

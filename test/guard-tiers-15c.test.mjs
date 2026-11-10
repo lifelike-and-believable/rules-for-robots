@@ -85,11 +85,12 @@ test('guard-tiers#AC-11: a failed snapshot asks, and a command that also changes
   const failed = decideCommand('git reset --hard', { cwd: dir, snapshot: snaps => ({ failed: snaps[0].risk }) });
   assert.equal(failed.decision, 'ask');
   assert.match(failed.reason, /could not take a snapshot first\. If not approved: /);
-  // A real failure: the objects folder cannot be written.
+  // A real failure: the objects folder cannot be written. Windows ignores chmod on folders, and root
+  // can write anyway, so neither can make the snapshot fail this way (guard tiers AC-13).
   const objects = path.join(dir, '.git', 'objects');
   fs.chmodSync(objects, 0o555);
   try {
-    if (process.getuid?.() !== 0) assert.equal(decideCommand('git reset --hard', { cwd: dir }).decision, 'ask');
+    if (process.platform !== 'win32' && process.getuid?.() !== 0) assert.equal(decideCommand('git reset --hard', { cwd: dir }).decision, 'ask');
   } finally {
     fs.chmodSync(objects, 0o755);
   }
