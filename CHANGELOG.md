@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Added
 
-- `checks/process-gate-report.mjs` lists the merged pull requests that changed a gated `rfr-process` stage, with the wait from the request for approval to the merge and whether anything changed in between, and sums it up per stage (#PR23A; process plan 23a). The baseline for Kettlebird, the XR pipeline, and the launcher is in `evals/results/2026-11-10-gate-baseline/`: 91 of Kettlebird's 96 gated pull requests merged unchanged. No plugin changes.
+- `checks/process-gate-report.mjs` lists the merged pull requests that changed a gated `rfr-process` stage, with the wait from the request for approval to the merge and whether anything changed in between, and sums it up per stage (#163; process plan 23a). The baseline for Kettlebird, the XR pipeline, and the launcher is in `evals/results/2026-11-10-gate-baseline/`: 91 of Kettlebird's 96 gated pull requests merged unchanged. No plugin changes.
 
 ## [5.3.1] - 2026-11-09
 

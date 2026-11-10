@@ -390,9 +390,9 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 
 ### Phase 23: Process changes (in progress)
 Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
-Pull requests: #PR23A (23a).
+Pull requests: #163 (23a).
 
-- **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#PR23A). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
+- **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#163). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
 
 ## 11. Milestones
 
