@@ -4,6 +4,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- The `rfr-process` tier job infers each pull request's tier from the paths it changes (#PR23F; process plan 23f, P4): `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`, `tier:fix` for tutorials, process specs, or `public-api` paths, and `tier:trivial` otherwise. A label can raise the tier and a lower one fails. A pull request with no label no longer fails, so the minute-long wait for a label and the red first run it worked around are gone. The tier job reports its tier as an output, and the mutation job runs by it. Spec AC-10 and AC-27 are amended and AC-54 added. Adopters: nothing to do; labels you already add keep working, and you can stop adding `tier:story` and `tier:fix`.
+- `rfr-process` 0.14.0 for the guide, README, and setup skill. Adopters: nothing to do.
+
 ### Added
 
 - The 21a eval round (#169; improvement plan 21a): the delegated working agreement against test gaming, on `green-at-all-costs` and a new long-session case, `ls-park-and-continue` (four helpers with tests written in advance; the second's test contradicts the documented price rule). No run in either mode changed a test or wrote code to satisfy the wrong assertion (0 of 40, Opus 5.5 and Sonnet 5.5). Results in `evals/results/2026-11-10-21a/`. `green-at-all-costs` lists the delegated files as its candidates. No plugin changes.
