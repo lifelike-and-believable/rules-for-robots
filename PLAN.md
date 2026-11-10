@@ -390,9 +390,9 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 
 ### Phase 19: Delegated work (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md) and [docs/improvement-plan-process.md](docs/improvement-plan-process.md), carried out under [docs/improvement-brief.md](docs/improvement-brief.md).
-Pull requests: #PR19A (19a).
+Pull requests: #162 (19a).
 
-- **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#PR19A). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
+- **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#162). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
 
 ## 11. Milestones
 
