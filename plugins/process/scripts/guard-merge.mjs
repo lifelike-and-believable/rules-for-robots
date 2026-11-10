@@ -6,13 +6,13 @@
 // green" into a recorded decision instead of something the agent does on its own. When the person's
 // latest typed message in the session already says to merge (AC-52), that is the confirmation, and
 // the hook does not ask again: "merge when green" is carried out when CI finishes. Projects without
-// docs/product/process.yml are not affected. If the pull request's files cannot be listed (no gh,
+// docs/product/process.yml are not affected, and neither are stages whose gate is notify or agent. If the pull request's files cannot be listed (no gh,
 // no network), it asks as well, and says why.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { gatedStages, hasId, readConfig, stageOf } from './lib/process.mjs';
+import { hasId, readConfig, readWorkMode, stagesWithGate, stageOf } from './lib/process.mjs';
 
 // Flags of `gh pr merge` that take a value, so their value is not the pull request argument.
 const VALUE_FLAGS = new Set(['-b', '--body', '-F', '--body-file', '-t', '--subject', '--match-head-commit', '-A', '--author-email', '-R', '--repo']);
@@ -194,7 +194,9 @@ export function decideMerge({ input, root, listFiles = listWithGh, describePr = 
   } catch (e) {
     return { ask: true, reason: `rfr-process: could not list the pull request's files (${e.message}), so it may touch gated process folders, where merging is the approver's decision. Confirm only if you are the approver and want it merged now.` };
   }
-  const gated = new Set(gatedStages(loaded.config));
+  // Only approve gates make the merge the approver's decision; notify and agent stages do not ask
+  // (process plan 23b).
+  const gated = new Set(stagesWithGate(loaded.config, readWorkMode(root), 'approve'));
   const touched = files.filter(file => {
     const stage = stageOf(file);
     if (!stage || !gated.has(stage)) return false;
