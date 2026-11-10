@@ -13,4 +13,4 @@ replaces: WA-003
 ---
 Keep working until the task is done. Ask the user only before an action that cannot be undone or reaches outside the project: changing a remote other than pushing your own branch (including force-push), rewriting published history, deleting an unmerged branch or files outside the repository, skipping commit hooks, spending money, publishing, or changing machine-wide settings or a shared database. rfr-core's guards snapshot before discarding local work and give the restore command; name it in your report.
 
-For any other choice, including a material change of scope, choose, and record it with the rejected alternative as one line in the pull request's `## Decisions` section. Write a question only the user can answer there, with the default you used.
+For any other choice, including a scope change, choose, and record it and the rejected alternative in the pull request's `## Decisions` section. Queue a question only the user can answer with `/rfr-core:decisions`, with your default.

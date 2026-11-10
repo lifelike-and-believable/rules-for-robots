@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Fake gh for the merge-when-green smoke tests. Reads the scenario from .git/fake-gh.json in
+// Fake gh for the merge-when-green and decisions smoke tests. Reads the scenario from .git/fake-gh.json in
 // the current repository, logs every call to .git/gh-calls.log, and answers the pull request
 // commands the skill uses: pr checks, pr view --json, pr merge, run view --log-failed, and run
-// list. Waiting commands (pr checks --watch, run watch) are logged and refused, as the skill
+// list, and for the decision queue issue list, issue comment, issue close, and label create. Waiting commands (pr checks --watch, run watch) are logged and refused, as the skill
 // must never call them.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -16,14 +16,14 @@ try { s = JSON.parse(fs.readFileSync(path.join(git, 'fake-gh.json'), 'utf8')); }
 
 // A scenario with pending shows its checks as still running.
 const pending = !!s.pending;
-const checks = s.checks.map(c => ({ name: c.name, state: pending ? 'PENDING' : c.conclusion, bucket: pending ? 'pending' : c.conclusion === 'SUCCESS' ? 'pass' : 'fail', link: `https://ci.example/run/${s.runId}` }));
-const rollup = s.checks.map(c => ({ __typename: 'CheckRun', name: c.name, status: pending ? 'IN_PROGRESS' : 'COMPLETED', conclusion: pending ? '' : c.conclusion, detailsUrl: `https://ci.example/run/${s.runId}` }));
+const checks = (s.checks ?? []).map(c => ({ name: c.name, state: pending ? 'PENDING' : c.conclusion, bucket: pending ? 'pending' : c.conclusion === 'SUCCESS' ? 'pass' : 'fail', link: `https://ci.example/run/${s.runId}` }));
+const rollup = (s.checks ?? []).map(c => ({ __typename: 'CheckRun', name: c.name, status: pending ? 'IN_PROGRESS' : 'COMPLETED', conclusion: pending ? '' : c.conclusion, detailsUrl: `https://ci.example/run/${s.runId}` }));
 const pr = {
   number: s.number, title: s.title, state: s.merged ? 'MERGED' : 'OPEN', headRefName: s.branch, baseRefName: 'main', headRefOid: s.head,
-  mergeStateStatus: pending ? 'BLOCKED' : s.checks.every(c => c.conclusion === 'SUCCESS') ? 'CLEAN' : 'UNSTABLE', reviewDecision: '', mergeable: 'MERGEABLE',
+  mergeStateStatus: pending ? 'BLOCKED' : (s.checks ?? []).every(c => c.conclusion === 'SUCCESS') ? 'CLEAN' : 'UNSTABLE', reviewDecision: '', mergeable: 'MERGEABLE',
   statusCheckRollup: rollup, url: `https://github.example/acme/app/pull/${s.number}`,
 };
-const failing = s.checks.some(c => c.conclusion !== 'SUCCESS');
+const failing = (s.checks ?? []).some(c => c.conclusion !== 'SUCCESS');
 const [cmd, sub] = args;
 const jsonIdx = args.indexOf('--json');
 const pick = fields => Object.fromEntries(fields.split(',').map(f => [f, pr[f]]));
@@ -52,6 +52,19 @@ if (args.includes('--watch') || (cmd === 'run' && sub === 'watch')) {
   s.merged = true;
   fs.writeFileSync(path.join(git, 'fake-gh.json'), JSON.stringify(s));
   console.log(`✓ Merged pull request #${s.number} (${s.title})`);
+} else if (cmd === 'label' && sub === 'create') {
+  console.log('label exists');
+} else if (cmd === 'issue' && sub === 'list') {
+  const open = (s.issues ?? []).filter(i => !i.closed).map(i => ({ number: i.number, title: i.title, body: i.body, comments: (i.comments ?? []).map(c => ({ body: c.body, author: { login: c.author ?? 'lead' } })) }));
+  console.log(JSON.stringify(open));
+} else if (cmd === 'issue' && (sub === 'comment' || sub === 'close')) {
+  const issue = (s.issues ?? []).find(i => String(i.number) === String(args[2]));
+  if (!issue) { console.error(`could not find issue ${args[2]}`); process.exit(1); }
+  const body = args[args.indexOf(sub === 'close' ? '--comment' : '--body') + 1];
+  if (body) (issue.comments ??= []).push({ body, author: 'agent' });
+  if (sub === 'close') issue.closed = true;
+  fs.writeFileSync(path.join(git, 'fake-gh.json'), JSON.stringify(s));
+  console.log(sub === 'close' ? `✓ Closed issue #${issue.number}` : 'commented');
 } else if (cmd === 'run' && sub === 'view') {
   console.log(args.includes('--log-failed') ? s.failedLog ?? 'no failed jobs' : `✓ ${s.title} · ${s.runId}`);
 } else if (cmd === 'run' && sub === 'list') {

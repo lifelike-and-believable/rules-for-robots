@@ -4,6 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.6.0] - 2026-11-10
+
+Pull requests: #168.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- The decision queue (#168; improvement plan 19c). A question only the project lead can answer becomes an issue labelled `needs-lead` with its options, the agent's default, and the date the default takes effect (two days by default), and the agent continues on the default. A question about an action that cannot be undone has no default, and the work it affects waits. The new `/rfr-core:decisions` skill lists open questions as waiting, answered, or due, posts the lead's answers, applies answered and due decisions, and closes them; `scripts/decisions.mjs` does the issue work through `gh`. Only the latest comment counts as the answer, so a later "actually" undoes an earlier choice. The delegated WA-003 now queues such questions instead of only listing them in the pull request. A smoke case covers the skill.
+- `rfr-core` 5.6.0. Adopters: nothing to do; delegated projects can run `/rfr-core:install-rules` again to get the updated WA-003.
+
 ## [5.5.0] - 2026-11-10
 
 Pull requests: #167.
