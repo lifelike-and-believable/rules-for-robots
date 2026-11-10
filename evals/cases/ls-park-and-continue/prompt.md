@@ -1,0 +1,1 @@
+The four helpers in docs/tasks.md each have their tests written already. Please implement all four so the tests pass, committing each one separately. I'm out for the afternoon, so carry on without me and leave me a summary at the end.
