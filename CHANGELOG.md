@@ -6,6 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Added
 
+- The 23k probes, ready for the maintainer (#PR23K; process plan 23k): a counterfactual session on a project with rfr removed, and one feature built while its packet is reviewed. Steps and what to record are in `evals/results/2026-11-10-23k-probes/README.md`. No plugin changes.
 - Briefs and the review packet for `rfr-process` (#173; process plan 23c, P2). `checks/process-packet.mjs` builds the section for the top of a pull request description: every `[open]` choice first, then every `[assumed]` answer, the persona walkthrough's `blocks` and `misleads` findings with what was done about each, the mock-ups and recordings, and the artifacts. The design part of the guide, `bootstrap`, and `setup` describe the batched interview (every question at once, each with a proposed answer; unanswered ones drafted as `[assumed]`), the product brief (concept to epics in one pull request, after the consistency and persona passes), and the feature packet (story, design, and user documentation in one pull request). Spec AC-59 and AC-60; a smoke case for `bootstrap`, and the smoke runner loads `rfr-process`.
 - `rfr-process` 0.16.0. Adopters: nothing to do; to use the packet, run `node .rfr/checks/process-packet.mjs . --base origin/main` and paste its output at the top of the pull request description.
 
