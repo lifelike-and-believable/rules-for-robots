@@ -20,11 +20,11 @@ Produce a reusable set of **rules**, **best practices**, and **agent definitions
 | High-quality | Correct, tested, reviewed, consistent | Tests on critical paths, zero lint/type/compiler warnings at the agreed level, review checklist passes |
 | User-centred | Solves a real user need; accessible; clear UX and content. For plugins, "users" includes the developers and designers who use the plugin in the editor | WCAG 2.2 AA for web; documented user stories and acceptance criteria; plugin settings, Blueprint API, and docs reviewed for usability |
 | Performant | Fast to load and respond; efficient on client, server, and game thread | Core Web Vitals budgets (LCP, INP, CLS) and bundle budgets for web; frame-time and memory budgets profiled with Unreal Insights for plugins |
-| Scalable | Handles growth in users, data, content, and team size | Stateless services and load-test baselines for web; plugins that behave well with large worlds, many actors, and network replication |
+| Scalable | Handles growth in users, data, content, and team size | Stateless services and load-test baselines for web; plugins that behave well with large worlds, many actors, and network replication. Not yet covered: no rule, practice guide, or check addresses scalability (decided 2026-11-10 to keep the goal and say so) |
 | Extensible | New features fit without rewrites | Clear module boundaries, stable public interfaces, extension points (e.g. subsystems, interfaces, delegates), ADRs for key decisions |
 | Maintainable | Easy for a new contributor (human or agent) to change safely | Docs, conventions, small modules, automated checks, low change failure rate |
 
-Security, privacy, and observability are treated as cross-cutting requirements underpinning all six attributes.
+Security, privacy, and observability are treated as cross-cutting requirements underpinning all six attributes. Security and privacy have rules, a guide, and checks; observability is not yet covered by any rule, guide, or check.
 
 ## 2. Decisions
 
@@ -405,6 +405,7 @@ Pull requests: #164 (18a), #165 and #175 (18b).
 - **18b:** `npm run verify` passes on Windows, and CI runs it there too. Done (#165, #175): Vale pinned for Windows, and the guards read Git Bash paths as the shell does (guard tiers AC-13).
 - **18c:** a `kind` for every rule (`behaviour`, `fact`, `invariant`). Waits for the maintainer's review of steps 1 to 5 of the brief.
 - **18d:** demote rules the models already follow. Waits on 18c.
+- **Decisions after steps 1 to 5** (maintainer, 2026-11-10): (1) sessions on this repository may merge their own green pull requests; the maintainer adds the permission rule, since a session may not edit its own permissions. (2) The 23k feature trial runs on the next feature built under the process. (3) The goal table keeps scalability and observability, marked as not yet covered. (4) The delegated agreement stays opt-in; a harder `ls-park-and-continue` variant (21a-2) tests the difference it is meant to make before any default changes.
 
 ### Phase 19: Delegated work (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Delegated mode is opt-in until its eval (21a) passes.
@@ -480,4 +481,5 @@ Open items only; finished work is recorded under its phase.
 6. An opt-in owned-paths hook and CI check (#47).
 7. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.
 8. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.
-9. The next model release: open a model-release issue when Claude Code offers a new model (Phase 17).
+9. Practice guides for scalability and observability, which the goal table names and nothing covers yet.
+10. The next model release: open a model-release issue when Claude Code offers a new model (Phase 17).
