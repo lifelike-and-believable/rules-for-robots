@@ -363,7 +363,9 @@ function rmRisk(entries, hints = [], snaps = []) {
     if (!recursive || !force) continue;
     for (const word of args.filter(w => !w.startsWith('-'))) {
       const target = word.includes('$') ? expand(word, vars) : word;
-      if (target === null || /[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return RM;
+      // A glob, an unexpanded variable, or a leading ~ (the shell's home folder) asks. A ~ inside a
+      // name, as in an 8.3 short name (C:/Users/RUNNER~1), is an ordinary character to the shell.
+      if (target === null || /[*?[{$]/.test(target) || target.startsWith('~') || ['.', './', '..', '/'].includes(target)) return RM;
       const abs = resolveFromShell(dir, target);
       // A target in no git repository is throwaway only inside the temp directory; one in a
       // repository (even a repository under the temp directory) gets the git checks below.

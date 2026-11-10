@@ -92,6 +92,13 @@ test('guard-tiers#AC-13: on Windows, a repository reached through an 8.3 short p
   assert.equal(decideCommand('rm -rf src', { cwd: dir })?.decision, 'inform');
 });
 
+test('guard-tiers#AC-13: a ~ inside a name is an ordinary character; a leading ~ is the home folder and asks', () => {
+  const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-ac13-tilde-')), 'RUNNER~1');
+  fs.mkdirSync(path.join(dir, 'wt'), { recursive: true });
+  assert.equal(decideCommand(`rm -rf ${sh(dir)}/wt`, { cwd: process.cwd() }), null);
+  for (const command of ['rm -rf ~', 'rm -rf ~/project', 'rm -rf ~other/x']) assert.equal(decideCommand(command, { cwd: process.cwd() })?.decision, 'ask', command);
+});
+
 test('guard-tiers#AC-13: the replay anonymiser replaces each written form of a Windows path, and keeps POSIX paths', () => {
   assert.deepEqual(pathForms('C:\\Users\\me\\proj', 'win32'), ['C:\\Users\\me\\proj', 'C:/Users/me/proj', '/c/Users/me/proj']);
   assert.deepEqual(pathForms('/work/proj', 'win32'), ['/work/proj']);
