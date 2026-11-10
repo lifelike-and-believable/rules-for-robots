@@ -10,11 +10,23 @@ import { fileURLToPath } from 'node:url';
 
 const PR_LINE = /^Pull requests:.*#\d+/m;
 
-export function checkPlan(text) {
+// The plan's first "Status:" line names the current version, which must be rfr-core's (improvement
+// plan 18a), so the plan cannot keep describing a release long past. A phase marked "(planned)" whose
+// slices ("- **10a:** ...") all say "Done" is out of date as well.
+export function checkPlan(text, { coreVersion = null } = {}) {
   const errors = [];
+  if (coreVersion) {
+    const status = /^Status: v(\d+\.\d+\.\d+)\b/m.exec(text);
+    if (!status) errors.push(`PLAN.md: the first line starting "Status:" must name the current version (v${coreVersion})`);
+    else if (status[1] !== coreVersion) errors.push(`PLAN.md: the status line says v${status[1]}, but rfr-core is ${coreVersion}`);
+  }
   const sections = text.split(/^(?=### )/m).filter(s => s.startsWith('### '));
   for (const section of sections) {
     const heading = section.split('\n', 1)[0].replace(/^###\s+/, '');
+    if (/\(planned\)/i.test(heading)) {
+      const slices = section.split(/^## /m)[0].split('\n').filter(l => /^- \*\*\d+[a-z]+:\*\*/.test(l));
+      if (slices.length && slices.every(l => /\bDone\b/.test(l))) errors.push(`PLAN.md: "${heading}" is marked planned, but every slice under it is done`);
+    }
     if (!/\((complete|[^)]*released)[^)]*\)/i.test(heading)) continue;
     const body = section.split(/^## /m)[0];
     if (!PR_LINE.test(body)) errors.push(`PLAN.md: "${heading}" is complete but has no "Pull requests: #n" line`);
@@ -34,7 +46,8 @@ export function checkPlan(text) {
 
 function main() {
   const file = process.argv[2] ?? 'PLAN.md';
-  const errors = checkPlan(fs.readFileSync(file, 'utf8'));
+  const coreVersion = JSON.parse(fs.readFileSync(new URL('../plugins/core/.claude-plugin/plugin.json', import.meta.url), 'utf8')).version;
+  const errors = checkPlan(fs.readFileSync(file, 'utf8'), { coreVersion });
   for (const e of errors) console.error(e);
   if (errors.length) process.exit(1);
   console.log(`${file}: completed work names its pull requests.`);

@@ -2,7 +2,7 @@
 
 Rules, best practices, and agent definitions for agentic software development with Claude Code, aimed at software, websites, web apps, and Unreal Engine plugins that are high-quality, user-centred, performant, scalable, extensible, and maintainable.
 
-Status: pre-1.0. Research, foundations, core rules, stack packs, practice guides, agents and skills, CI integration, and the reference web app are done; the Unreal Tier 2 run, the Phase 8 evals, and the 1.0 release are in progress. See [PLAN.md](PLAN.md) and [CHANGELOG.md](CHANGELOG.md).
+Status: v5.3.1 (`rfr-core`), in use on the maintainer's projects. Rules, practice guides, agents, skills, guards, CI workflows, template repos, and the `rfr-process`, `rfr-web`, `rfr-unreal`, and `rfr-feedback` plugins are released. Work in progress: the eval rounds for Phases 10 and 13 to 15, and a delegated working mode that asks the maintainer only for intent, taste, and irreversible actions ([improvement plan](docs/improvement-plan.md)). See [PLAN.md](PLAN.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## How it works
 
