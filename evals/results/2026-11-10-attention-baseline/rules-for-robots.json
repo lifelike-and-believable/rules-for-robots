@@ -1,0 +1,52 @@
+{
+  "sessions": 3,
+  "from": "2026-11-09T12:01:20.993Z",
+  "to": "2026-11-10T14:11:29.346Z",
+  "waits": 74,
+  "blockedMs": 102793445,
+  "words": 821,
+  "byKind": {
+    "prompt": {
+      "count": 35,
+      "waitMs": 12878993,
+      "medianMs": 5021,
+      "p90Ms": 82989
+    },
+    "question": {
+      "count": 0,
+      "waitMs": 0,
+      "medianMs": null,
+      "p90Ms": null
+    },
+    "reply": {
+      "count": 39,
+      "waitMs": 89914452,
+      "medianMs": 161672,
+      "p90Ms": 6433355
+    },
+    "intent": {
+      "count": 3,
+      "waitMs": 0,
+      "medianMs": 0,
+      "p90Ms": 0
+    },
+    "aside": {
+      "count": 1,
+      "waitMs": 0,
+      "medianMs": 0,
+      "p90Ms": 0
+    }
+  },
+  "promptTools": {
+    "Bash": 16,
+    "Write": 1,
+    "Edit": 18
+  },
+  "declined": 0,
+  "merged": 4,
+  "perMerged": {
+    "waits": 18.5,
+    "blockedHours": 7.138433680555556,
+    "words": 205.25
+  }
+}

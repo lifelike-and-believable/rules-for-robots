@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- `checks/attention-report.mjs` counts where sessions waited on a person, from Claude Code's own transcripts: permission prompts a person answered, `AskUserQuestion` calls, and replies after a turn ended, with the time each took and figures per merged pull request (#PR19A; improvement plan 19a). The baseline for three projects is in `evals/results/2026-11-10-attention-baseline/`. No plugin changes.
+
 ## [5.3.1] - 2026-11-09
 
 Pull requests: #159.
