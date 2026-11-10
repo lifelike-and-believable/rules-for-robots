@@ -1,0 +1,53 @@
+{
+  "sessions": 1,
+  "from": "2026-11-05T01:07:13.356Z",
+  "to": "2026-11-07T17:27:42.038Z",
+  "waits": 168,
+  "blockedMs": 224250403,
+  "words": 10355,
+  "byKind": {
+    "prompt": {
+      "count": 11,
+      "waitMs": 2059115,
+      "medianMs": 49292,
+      "p90Ms": 358231
+    },
+    "question": {
+      "count": 22,
+      "waitMs": 3253443,
+      "medianMs": 81511,
+      "p90Ms": 206222
+    },
+    "reply": {
+      "count": 135,
+      "waitMs": 218937845,
+      "medianMs": 65050,
+      "p90Ms": 892063
+    },
+    "intent": {
+      "count": 1,
+      "waitMs": 0,
+      "medianMs": 0,
+      "p90Ms": 0
+    },
+    "aside": {
+      "count": 5,
+      "waitMs": 0,
+      "medianMs": 0,
+      "p90Ms": 0
+    }
+  },
+  "promptTools": {
+    "mcp__ccd_directory__request_directory": 1,
+    "mcp__ccd_directory__propose_branch": 3,
+    "PowerShell": 1,
+    "merge": 6
+  },
+  "declined": 0,
+  "merged": 5,
+  "perMerged": {
+    "waits": 33.6,
+    "blockedHours": 12.458355722222223,
+    "words": 2071
+  }
+}

@@ -388,6 +388,12 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 - **17b:** the "New model" section in the maintenance guide, the `model-release` issue form, section 5 and decision 7 rewritten to name no single generation, and the "Evaluated on:" changelog line and its check (AC-7 to AC-10).
 - **17c:** the baseline run on Opus 5.5 and Sonnet 5.5 (AC-11), and the first decisions it supports.
 
+### Phase 19: Delegated work (in progress)
+Plan: [docs/improvement-plan.md](docs/improvement-plan.md) and [docs/improvement-plan-process.md](docs/improvement-plan-process.md), carried out under [docs/improvement-brief.md](docs/improvement-brief.md).
+Pull requests: #162 (19a).
+
+- **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#162). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
