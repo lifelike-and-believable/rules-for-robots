@@ -22,7 +22,7 @@ export const PREFIXES = {
 };
 
 export const REQUIRED = ['id', 'title', 'level', 'scope', 'verified-by', 'targets-failure', 'observed-on', 'rationale'];
-export const KNOWN_FIELDS = new Set([...REQUIRED, 'paths', 'check', 'sources', 'evaluated-on']);
+export const KNOWN_FIELDS = new Set([...REQUIRED, 'paths', 'check', 'sources', 'evaluated-on', 'replaces']);
 export const WAIVER_FIELDS = new Set(['id', 'waiver', 'reason', 'approved-by', 'date']);
 
 export const MAX_BODY_WORDS = 120;
