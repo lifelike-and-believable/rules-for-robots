@@ -32,6 +32,20 @@ function pullRequest(dir, checks, failedLog, extra = {}) {
   const head = g('rev-parse', 'HEAD').stdout.trim();
   fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog, ...extra }));
 }
+// The decision queue for the decisions skill (improvement plan 19c), as issues the fake gh serves.
+function decisionQueue(dir) {
+  const body = (question, def) => [
+    '<!-- rfr-decision -->', `**Question:** ${question}`, '', '**Options:**', '- A: Keep it as it is', '- B: Change it', '',
+    def ? `**Default:** A (takes effect ${def})` : '**Default:** none. This is about an action that cannot be undone, so the work it affects waits for your answer.',
+  ].join('\n');
+  const issues = [
+    { number: 31, title: 'Decision needed: keep the shout() name?', body: body('Keep the shout() name?', '2026-01-01'), comments: [] },
+    { number: 32, title: 'Decision needed: keep the README wording?', body: body('Keep the README wording?', '2099-01-01'), comments: [{ body: 'A', author: 'lead' }] },
+    { number: 33, title: 'Decision needed: delete the old release tags?', body: body('Delete the old release tags?', null), comments: [] },
+  ];
+  fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ issues }));
+}
+
 // A gh call that waits on CI (pr checks --watch, run watch); merge-when-green never makes one.
 const waits = a => a.includes('--watch') || (a[0] === 'run' && a[1] === 'watch');
 const ghCalls = dir => { try { return fs.readFileSync(path.join(dir, '.git', 'gh-calls.log'), 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } };
@@ -238,6 +252,18 @@ export const CASES = [
       // The skill reads the failing job's log, so the report names the cause, not just the check.
       const namedCause = /(upper ?case|HELLO|lower ?case|not ok 3)/i.test(t);
       return !merged && /verify/.test(t) && /(fail|red|not pass)/i.test(t) && namedCause && !calls.some(a => a.includes('--admin')) && !calls.some(waits);
+    },
+  },
+  {
+    // Improvement plan 19c: one question whose default fell due, one the lead answered with the
+    // default, and one about an irreversible action with no default and no answer.
+    name: 'skill decisions: apply due and answered questions, leave the irreversible one', fixture: 'verify-and-report', fakeGh: true,
+    change: d => decisionQueue(d),
+    prompt: '/rfr-core:decisions',
+    check: (t, d) => {
+      const issues = Object.fromEntries(JSON.parse(fs.readFileSync(path.join(d, '.git', 'fake-gh.json'), 'utf8')).issues.map(i => [i.number, i]));
+      const applied = n => !!issues[n].closed && issues[n].comments.some(c => /Applied/.test(c.body));
+      return applied(31) && applied(32) && !issues[33].closed && /#?33/.test(t) && /(wait|no default|cannot be undone|irreversible)/i.test(t);
     },
   },
   {

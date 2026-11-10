@@ -38,6 +38,7 @@ The three Haiku agents gather or run things and return text copied from tools. T
 | `/rfr-core:write-adr` | One-page architecture decision record | User or Claude |
 | `/rfr-core:release` | Version, changelog, verify, tag after confirmation | User only |
 | `/rfr-core:merge-when-green <pr>` | Wait for CI without polling, confirm checks on the head commit, merge with a head-SHA guard, continue | User only |
+| `/rfr-core:decisions [issue and answer]` | The decision queue: questions agents left for the project lead as `needs-lead` issues, each with options, a default, and the date it takes effect; apply answers and due defaults | User or Claude |
 
 ## Hooks
 
