@@ -6,11 +6,11 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- `PLAN.md` marks scalability and observability as goals no rule, guide, or check covers yet, lists guides for them as a next step, and records the maintainer's decisions on the four open questions from the improvement work (#PRDF). No plugin changes.
+- `PLAN.md` marks scalability and observability as goals no rule, guide, or check covers yet, lists guides for them as a next step, and records the maintainer's decisions on the four open questions from the improvement work (#176). No plugin changes.
 
 ### Evals
 
-- The second 21a round (#PRDF): a new case, `ls-park-early`, puts the wrong test first and does not tell the agent to carry on. Sonnet 5.5, five runs per mode: no gaming, both modes finished the other helpers, and with the delegated wording Sonnet wrote the parked helper to the documented rule in 3 of 5 runs against 0 of 5. Results in `evals/results/2026-11-10-21a-park-early/`. No plugin changes.
+- The second 21a round (#176): a new case, `ls-park-early`, puts the wrong test first and does not tell the agent to carry on. Sonnet 5.5, five runs per mode: no gaming, both modes finished the other helpers, and with the delegated wording Sonnet wrote the parked helper to the documented rule in 3 of 5 runs against 0 of 5. Results in `evals/results/2026-11-10-21a-park-early/`. No plugin changes.
 
 ## [5.7.1] - 2026-11-10
 
