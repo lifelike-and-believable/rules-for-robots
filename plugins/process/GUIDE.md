@@ -23,7 +23,7 @@ Start the process in a git repository, before the first artifact is written. App
 
 ## Before you start: the size tier
 
-Pick the tier before writing anything, and put it on the pull request as a label.
+Pick the tier before writing anything: it decides where you start. The tier job infers it from the paths the pull request changes, so a label is needed only to raise it, usually to `tier:epic`.
 
 | Tier | Use it when | Start at |
 |---|---|---|
@@ -34,7 +34,7 @@ Pick the tier before writing anything, and put it on the pull request as a label
 
 Size a request by what it changes, not by what it is called. A "feature request" with one obvious right behaviour (the product already does it that way elsewhere), no design choice, and no user documentation that describes the old behaviour is a `tier:fix`: a failing test, then the change. If the fixed behaviour deserves a line in the user documentation, add it in a separate small pull request, because a `tier:fix` may not change `docs/user/`. A request that needs a design decision, or changes what the documentation says, is a story whatever it was called.
 
-If a fix turns out to need a change to the user documentation, it is a story. So is any pull request that adds or changes a design or user documentation, however small the change it describes: a short design for a one-line fix still takes `tier:story`. The tier job reads the pull request's current labels, so after changing the label, re-run it. CI enforces this for the documentation folders. The one pull request with no tier is the one that adds `process.yml`: adopting the process fits none of them, so the tier check lets it through.
+If a fix turns out to need a change to the user documentation, it is a story. So is any pull request that adds or changes a design or user documentation, however small the change it describes: a short design for a one-line fix still takes `tier:story`. The tier job infers this from the documentation folders, and fails a lower label; after changing a label, re-run it. The one pull request with no tier is the one that adds `process.yml`: adopting the process fits none of them, so the tier check lets it through.
 
 ## Design stages
 
@@ -236,7 +236,7 @@ Recording hashes is not approval: the pull request that carries them is approved
 
 ## Pull requests for process artifacts
 
-- **Label the pull request when you open it.** The tier job waits about a minute for a label, then fails. A pull request that adds or changes product-level artifacts (concept, discovery, requirements, personas, epics) is `tier:epic`; one that adds or changes stories, designs, or user documentation is `tier:story`; the pull request that adds `process.yml` needs none.
+- **Label only to raise the tier.** The tier job infers the tier from the changed paths: `tier:story` for anything under `docs/product/`, `docs/design/`, or `docs/user/`, `tier:fix` for tutorials, process specs, or `public-api` paths, and `tier:trivial` otherwise. Add `tier:epic` to a pull request that adds or changes product-level artifacts (concept, discovery, requirements, personas, epics); a label lower than the paths imply fails. The pull request that adds `process.yml` needs none.
 - **In solo mode, propose `approved` from the start.** The merge is the approval, so open the pull request with the artifacts already set to `approved` and their hashes recorded; if the approver asks for changes, the agent updates them in the same pull request. This does not mean the agent approves anything: nothing is approved until the approver merges. When the artifacts still have `[open]`, `[assumed]`, or `[proposed]` markers, or the approver has not seen a draft, offer them a read first and list the markers in the pull request description. Keep `draft` for work that will not merge yet. In team mode the two-step flow in the README still applies.
 - **"Merge when green" works best with GitHub auto-merge.** If the approver tells an agent to merge once CI passes, the agent can turn on auto-merge for that pull request instead of waiting on CI itself, and comment quoting the instruction as usual. The merge guard treats turning on auto-merge as a merge, so on a gated pull request it asks unless the approver's latest message said to merge (AC-53). Auto-merge is a repository setting (Settings, General, "Allow auto-merge"); setup offers to explain it.
 - **Batch artifacts of the same stage** into one pull request when the approver will read them together (three personas, or an epic's stories), and keep stages apart, so each pull request has one approver and one kind of review.
