@@ -424,10 +424,10 @@ Pull requests: #169 (21a).
 
 ### Phase 23: Process changes (in progress)
 Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
-Pull requests: #163 (23a), #PR23F (23f).
+Pull requests: #163 (23a), #170 (23f).
 
 - **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#163). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
-- **23f:** the tier inferred from the changed paths; a label only raises it. Done (#PR23F).
+- **23f:** the tier inferred from the changed paths; a label only raises it. Done (#170).
 - **23j, 23b, 23c:** hygiene, gate types, and briefs with the review packet.
 - **23k:** the two probes, set up for the maintainer to judge. 23d and later wait for their results.
 

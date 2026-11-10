@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
-- The `rfr-process` tier job infers each pull request's tier from the paths it changes (#PR23F; process plan 23f, P4): `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`, `tier:fix` for tutorials, process specs, or `public-api` paths, and `tier:trivial` otherwise. A label can raise the tier and a lower one fails. A pull request with no label no longer fails, so the minute-long wait for a label and the red first run it worked around are gone. The tier job reports its tier as an output, and the mutation job runs by it. Spec AC-10 and AC-27 are amended and AC-54 added. Adopters: nothing to do; labels you already add keep working, and you can stop adding `tier:story` and `tier:fix`.
+- The `rfr-process` tier job infers each pull request's tier from the paths it changes (#170; process plan 23f, P4): `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`, `tier:fix` for tutorials, process specs, or `public-api` paths, and `tier:trivial` otherwise. A label can raise the tier and a lower one fails. A pull request with no label no longer fails, so the minute-long wait for a label and the red first run it worked around are gone. The tier job reports its tier as an output, and the mutation job runs by it. Spec AC-10 and AC-27 are amended and AC-54 added. Adopters: nothing to do; labels you already add keep working, and you can stop adding `tier:story` and `tier:fix`.
 - `rfr-process` 0.14.0 for the guide, README, and setup skill. Adopters: nothing to do.
 
 ### Added
