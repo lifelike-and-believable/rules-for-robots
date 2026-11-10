@@ -80,8 +80,8 @@ test('project-process#AC-24: the mutation job is advisory, runs on story and epi
   assert.ok(job, 'mutation job');
   assert.equal(job['continue-on-error'], true);
   assert.match(job.if, /inputs\.mutation/);
-  assert.match(job.if, /tier:story/);
-  assert.match(job.if, /tier:epic/);
+  assert.match(job.if, /tier == 'story'/);
+  assert.match(job.if, /tier == 'epic'/);
   const run = job.steps.map(s => s.run ?? '').join('\n');
   assert.match(run, /stryker run/);
   assert.match(run, /--incremental/);
