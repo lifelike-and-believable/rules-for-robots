@@ -76,6 +76,19 @@ export function ask(reason) {
   }));
 }
 
+// A command the person approved by asking for its task (docs/specs/task-approval.md, AC-4): allowed
+// without a prompt, with the reason quoting their words, and logged as approved-by-instruction.
+export function approve(reason) {
+  logDecision('approved-by-instruction', reason);
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'allow',
+      permissionDecisionReason: reason,
+    },
+  }));
+}
+
 // Context for the agent on a call the guard allows (tier 1 with a way back, such as the command that
 // restores what an rm -rf removes): no permission decision, so Claude Code's own rules still apply.
 export function inform(context) {
@@ -102,13 +115,15 @@ export const refuseReason = ({ source, action, next }) => `${source}: ${action}.
 // in the change that records test-change-review AC-11 as passed.
 export const DEFAULT_TEST_WEAKENING = 'ask';
 
+// taskApproval: 'on' (the default) or 'off' (task-approval AC-6).
 export function guardSettings(cwd = process.cwd()) {
-  const settings = { testWeakening: DEFAULT_TEST_WEAKENING };
+  const settings = { testWeakening: DEFAULT_TEST_WEAKENING, taskApproval: 'on' };
   const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', timeout: 5000 });
   const root = r.status === 0 ? r.stdout.trim() : (process.env.CLAUDE_PROJECT_DIR ?? cwd);
   try {
     const json = JSON.parse(fs.readFileSync(nodePath.join(root, '.claude', 'rfr.json'), 'utf8'));
     if (json?.testWeakening === 'ask' || json?.testWeakening === 'defer') settings.testWeakening = json.testWeakening;
+    if (json?.taskApproval === 'off') settings.taskApproval = 'off';
   } catch {
     // No settings file, or one that cannot be read: the defaults hold.
   }

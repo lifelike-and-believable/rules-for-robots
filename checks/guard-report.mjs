@@ -38,6 +38,7 @@ export function summarise(entries) {
   let refusals = 0;
   let snapshots = 0;
   let deferred = 0;
+  let byInstruction = 0;
   let first = null;
   let last = null;
   for (const e of entries) {
@@ -50,6 +51,8 @@ export function summarise(entries) {
     if (e.decision === 'snapshot') { snapshots++; continue; }
     // A test change deferred to the pull request (testWeakening: defer) asks no one either.
     if (e.decision === 'defer') { deferred++; continue; }
+    // A command the person approved by asking for its task (task-approval AC-4) asks no one either.
+    if (e.decision === 'approved-by-instruction') { byInstruction++; continue; }
     const key = `${e.hook}\u0000${reasonKey(e.reason)}`;
     if (!groups.has(key)) groups.set(key, { hook: e.hook ?? null, key: reasonKey(e.reason), asks: 0, approved: 0, refusals: 0 });
     const g = groups.get(key);
@@ -62,7 +65,7 @@ export function summarise(entries) {
     .map(g => ({ ...g, share: g.asks ? Math.min(1, g.approved / g.asks) : null }))
     .sort((a, b) => b.asks + b.refusals - (a.asks + a.refusals));
   const candidates = reasons.filter(g => g.asks >= CANDIDATE_MIN && g.share >= CANDIDATE_SHARE);
-  return { asks, approved, refusals, snapshots, deferred, hours, perHour: hours > 0 ? (asks + refusals) / hours : null, reasons, candidates };
+  return { asks, approved, refusals, snapshots, deferred, byInstruction, hours, perHour: hours > 0 ? (asks + refusals) / hours : null, reasons, candidates };
 }
 
 const pct = x => (x === null ? 'n/a' : `${Math.round(x * 100)}%`);
@@ -72,6 +75,7 @@ export function formatReport(r, unreadable = 0) {
   const out = [`${plural(r.asks, 'ask')}, ${r.approved} approved (${pct(r.asks ? r.approved / r.asks : null)}), ${plural(r.refusals, 'refusal')}, over ${r.hours.toFixed(1)} hours${r.perHour === null ? '' : ` (${r.perHour.toFixed(1)} an hour)`}.`];
   if (r.snapshots) out.push(`${plural(r.snapshots, 'snapshot')} taken before a destructive command, each allowed without asking.`);
   if (r.deferred) out.push(`${plural(r.deferred, 'test change')} deferred to the pull request's test-change review (testWeakening: defer), each allowed without asking.`);
+  if (r.byInstruction) out.push(`${plural(r.byInstruction, 'command')} approved by the person's instruction for its task (task approval), each without a prompt.`);
   if (unreadable) out.push(`${plural(unreadable, 'line')} could not be read.`);
   out.push('', 'By guard and reason (asks, approved, refusals):');
   for (const g of r.reasons) out.push(`  ${g.hook}: ${g.asks} asked, ${g.approved} approved (${pct(g.share)}), ${g.refusals} refused | ${g.key}`);

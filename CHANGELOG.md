@@ -8,6 +8,28 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [5.9.0] - 2026-11-11
+
+Pull requests: #191, #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- Task approval (#191 spec, #PR; `docs/specs/task-approval.md`): the person approves tasks, not commands. When the person's latest input asks for a task, the guards approve exactly the commands of that task and Claude Code does not prompt for each:
+  - **release** a version ("release 5.8.2"): `git tag -a`, `git push origin <tag>`, and `gh release create` for that tag;
+  - **push** a named branch: `git push [-u] origin <branch>`;
+  - **merge** a named pull request, or one already open ("merge when green"): `gh pr merge`, and in rfr-process projects the GitHub MCP merge tools;
+  - **deploy a preview**: `vercel` or `vercel deploy` without `--prod`, and a Vercel MCP deployment that does not target production.
+
+  The input is the person's latest typed message, or their answer to the agent's own question (`AskUserQuestion`) when that came later. Tool results, notifications, other sessions, and subagents never count. Never approved: pushes to the default branch, force-pushes, deletions, `--no-verify`, production deploys and promotions, `gh pr merge --admin` or `--delete-branch`, and chained, redirected, or substituted commands; a guard's own refusal or question, or a deny rule, always wins. Approvals are logged as `approved-by-instruction` and counted by `checks/guard-report.mjs`. On by default; `"taskApproval": "off"` in `.claude/rfr.json` turns it off. The shared recognizer is `plugins/core/scripts/task-approval.mjs`, which the build copies into rfr-web and rfr-process.
+
+### Changed
+
+- WA-009 starts with "ask for tasks, not commands": when a task needs the person's decision, ask once in chat naming what it covers, and do not ask again per command (#PR). It also asks for plain single commands so allow rules can match them.
+- rfr-process's merge guard uses the shared recognizer: a covered merge of gated files is now approved rather than only not asked about, and an answer to the agent's own question counts as an instruction (#PR).
+- `rfr-core` 5.9.0, `rfr-web` 1.1.0, `rfr-process` 0.18.0, `rfr-unreal` 2.0.4, `rfr-android` 0.1.1 (the last two carry the updated hook library). Adopters: nothing to do; to keep every prompt, add `"taskApproval": "off"` to `.claude/rfr.json`.
+
 ## [5.8.2] - 2026-11-11
 
 Pull requests: #186, #187.

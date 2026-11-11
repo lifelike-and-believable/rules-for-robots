@@ -8,7 +8,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { appendGuardLog, approve, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { approval, commandTask } from './task-approval.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -191,8 +192,9 @@ const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s
 // The decision for a shell command: null to allow, { decision: 'inform', reason } to allow with
 // context for the agent, { decision: 'defer', reason } to allow a test removal for the pull request
 // to judge, { decision: 'deny', reason } for the agent to act on, or
-// { decision: 'ask', reason } for a person (docs/specs/guard-tiers.md).
-export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots } = {}) {
+// { decision: 'ask', reason } for a person (docs/specs/guard-tiers.md), or { decision: 'allow', reason }
+// when the person's latest input asked for the task this command carries out (docs/specs/task-approval.md).
+export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots, transcriptPath = null, describePr } = {}) {
   if (typeof command !== 'string') return null;
   const existed = cwd ? file => existingProjectFile(file, cwd) : undefined;
   const change = testFileChange(command, existed);
@@ -230,6 +232,13 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   const noted = notes.length ? `rfr-core (WA-003): ${notes.join('. ')}.` : null;
   if (deferred) return { decision: 'defer', reason: noted ? `${deferred} ${noted}` : deferred, snapshots };
   if (noted) return { decision: 'inform', reason: noted, snapshots };
+  // Task approval comes last, so a refusal, a question, a deferral, or a snapshot above always wins
+  // over it (task-approval AC-3).
+  if (transcriptPath && (settings ?? guardSettings(cwd)).taskApproval !== 'off') {
+    const found = commandTask(command, { cwd: cwd ?? process.cwd() });
+    const approved = approval(found, { transcriptPath, cwd: cwd ?? process.cwd(), ...(describePr ? { describePr } : {}) });
+    if (approved) return { decision: 'allow', reason: approved.reason, task: found.task };
+  }
   return null;
 }
 
@@ -516,8 +525,9 @@ export function findRisk(command, options) {
 
 async function main() {
   const input = await readInput();
-  const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
+  const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd(), transcriptPath: input?.transcript_path ?? null });
   if (result?.decision === 'deny') deny(result.reason);
+  else if (result?.decision === 'allow') approve(result.reason);
   else if (result?.decision === 'inform' || result?.decision === 'defer') {
     // A snapshot goes in the decision log with its refs, so it can be found again (AC-11).
     if (result.snapshots?.length && guardLogEnabled()) {
