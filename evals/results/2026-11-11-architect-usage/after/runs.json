@@ -1,0 +1,252 @@
+[
+  {
+    "case": "arch-greenfield-uplugin",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+hooks",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.4129,
+        "outputTokens": 12624
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "contradictionFlagged": true,
+      "foundSix": true,
+      "coversRequirements": true,
+      "asksQuestions": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "editorModule",
+        "redirectors",
+        "undoAndSourceControl",
+        "fabRequirements",
+        "apiSurface",
+        "settingsClass",
+        "tests"
+      ],
+      "of": 9
+    },
+    "costUsd": 0.4129,
+    "turns": 17,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 111.539
+  },
+  {
+    "case": "arch-greenfield-uplugin",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+hooks",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.6928,
+        "outputTokens": 26262
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "contradictionFlagged": true,
+      "foundSix": true,
+      "coversRequirements": true,
+      "asksQuestions": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "editorModule",
+        "redirectors",
+        "assetRegistryScan",
+        "undoAndSourceControl",
+        "engineVersions",
+        "fabRequirements",
+        "apiSurface",
+        "settingsClass",
+        "tests"
+      ],
+      "of": 9
+    },
+    "costUsd": 0.6928,
+    "turns": 16,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 218.587
+  },
+  {
+    "case": "arch-greenfield-webapp",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+hooks",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2763,
+        "outputTokens": 7036
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "contradictionFlagged": true,
+      "foundFour": true,
+      "coversRequirements": true,
+      "asksQuestions": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "contradiction",
+        "anonymousCancel",
+        "realTimeAmbiguous",
+        "capacityRace",
+        "reminderScheduler",
+        "organizerAuth"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2763,
+    "turns": 8,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 61.263
+  },
+  {
+    "case": "arch-greenfield-webapp",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+hooks",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.3718,
+        "outputTokens": 10953
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "contradictionFlagged": true,
+      "foundFour": true,
+      "coversRequirements": true,
+      "asksQuestions": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "contradiction",
+        "anonymousCancel",
+        "realTimeAmbiguous",
+        "capacityRace",
+        "reminderScheduler",
+        "organizerAuth"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.3718,
+    "turns": 11,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 98.992
+  },
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+hooks",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.237,
+        "outputTokens": 4717
+      }
+    },
+    "advisorCalls": 0,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": false,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.237,
+    "turns": 7,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 43.139
+  },
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+hooks",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2352,
+        "outputTokens": 4652
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.2352,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 42.724
+  }
+]
