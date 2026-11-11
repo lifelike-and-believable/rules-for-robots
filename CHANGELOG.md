@@ -4,9 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.7.3] - 2026-11-11
+
+Pull requests: #181.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
 ### Added
 
-- `checks/process-rework-report.mjs` reports, from a repository's history and with no API calls, how often approved `rfr-process` artifacts were amended afterwards, per stage, and how many amendments came after an approved spec derived from the artifact (#181; process plan 23l; spec AC-62). The gate report says what an approval cost; this says whether approved intent held. The JSON holds pull request numbers, stages, dates, and counts only. One of two ideas taken from Anthropic's AI-native SDLC playbook. No plugin changes.
+- `checks/process-rework-report.mjs` reports, from a repository's history and with no API calls, how often approved `rfr-process` artifacts were amended afterwards, per stage, and how many amendments came after an approved spec derived from the artifact (#181; process plan 23l; spec AC-62). The gate report says what an approval cost; this says whether approved intent held. The JSON holds pull request numbers, stages, dates, and counts only. One of four ideas taken from Anthropic's AI-native SDLC playbook. No plugin changes.
 
 ### Changed
 
