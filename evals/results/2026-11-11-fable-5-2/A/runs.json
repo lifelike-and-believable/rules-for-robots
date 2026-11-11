@@ -1,0 +1,437 @@
+[
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1969,
+        "outputTokens": 2011
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.6219,
+        "outputTokens": 19979
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.8189,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 218.136
+  },
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1951,
+        "outputTokens": 1877
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.689,
+        "outputTokens": 22221
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.8841,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 235.521
+  },
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 3,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.195,
+        "outputTokens": 1823
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.5699,
+        "outputTokens": 18401
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.7649,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 204.693
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1973,
+        "outputTokens": 1970
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.6464,
+        "outputTokens": 20798
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.8437,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 212.837
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1957,
+        "outputTokens": 1991
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.601,
+        "outputTokens": 19534
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.7967,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 200.61
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 3,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1932,
+        "outputTokens": 1744
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.5942,
+        "outputTokens": 19878
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.7875,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 216.041
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2321,
+        "outputTokens": 3229
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.4086,
+        "outputTokens": 12885
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.6406,
+    "turns": 5,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 156.082
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1898,
+        "outputTokens": 1564
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.3963,
+        "outputTokens": 12202
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.5862,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 134.878
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 3,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {
+      "software-architect": {
+        "model": "claude-opus-5-5",
+        "effort": "high"
+      }
+    },
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.19,
+        "outputTokens": 1570
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.2917,
+        "outputTokens": 8536
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.4816,
+    "turns": 3,
+    "prompts": 2,
+    "isError": false,
+    "seconds": 103.544
+  }
+]

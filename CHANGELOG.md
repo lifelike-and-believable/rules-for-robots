@@ -4,6 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.8.1] - 2026-11-11
+
+Pull requests: #185.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- `software-architect` runs on `claude-opus-5-5` at `high` (was `claude-fable-5-2`; #185). In the Fable 5.2 round (`evals/results/2026-11-11-fable-5-2/report.md`, about $11) the architect on Opus passed 9 of 9 runs on the three cases where it helps, as Fable did, at about a third of the cost per run and half the time. Anthropic's guidance is to use Fable only where Opus at higher effort falls short; on these cases it does not. Sonnet alone passed 7 of 9, so the architect still earns its place. A Sonnet session with Fable as advisor never consulted it unprompted.
+- `rfr-core` 5.8.1. Adopters: nothing to do; the plugin update brings the new model, and architect runs cost less.
+
 ## [5.8.0] - 2026-11-11
 
 Pull requests: #160, #184.
