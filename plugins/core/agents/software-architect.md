@@ -1,6 +1,6 @@
 ---
 name: software-architect
-description: Experimental. Designs the structure of a change or system (module boundaries, data model, interfaces, build-versus-adopt, migration path) and records significant decisions as ADRs. Use before implementation when a change makes a hard-to-reverse technical choice, or to design a new project from its requirements; give it the goal, constraints, and the code areas involved.
+description: Designs the structure of a change or system (module boundaries, data model, interfaces, build-versus-adopt, migration path) and records significant decisions as ADRs. Use proactively, before any code is written, when starting a new project from its requirements, when a change spans several components or services, or when it makes a choice that is hard to reverse (data model, public API, file format, migration, Blueprint-facing signature). Give it the goal, the constraints, and the code areas or documents involved.
 model: claude-opus-5-5
 effort: high
 tools: Read, Grep, Glob, Bash, Edit, Write
