@@ -4,7 +4,7 @@ status: draft
 
 # Task approval
 
-The person approves tasks, not commands. When the latest message they typed in the session asks for a task (a release, a push to a named branch, a merge), the guards approve the commands that carry out that task, so Claude Code does not prompt for each one. Everything else still prompts or asks as before. Proposed 2026-11-11 by the maintainer, who found long sessions here prompting for routine commands after the task had been approved in chat.
+The person approves tasks, not commands. When the person's latest input in the session asks for a task (a release, a push to a named branch, a merge, a preview deploy), the guards approve the commands that carry out that task, so Claude Code does not prompt for each one. Everything else still prompts or asks as before. Proposed 2026-11-11 by the maintainer, who found long sessions here prompting for routine commands after the task had been approved in chat. The maintainer answered the open questions the same day (see "Decisions"); the `status` field stays `draft` until every `test:` criterion has a citing test.
 
 ## Problem
 
@@ -14,7 +14,7 @@ The person approves tasks, not commands. When the latest message they typed in t
 
 ## The idea
 
-One mechanism in rfr-core, reused by rfr-process: a guard that finds the person's latest typed message, recognizes a task instruction in it, and, for a command that belongs to that task and to nothing else, returns `allow`. The message has to be one the person typed (Claude Code marks it `origin.kind: "human"`); tool results, notifications, other sessions, subagents, and pasted content in a tool result never count, so text the agent reads cannot approve anything.
+One mechanism in rfr-core, reused by rfr-process and rfr-web: a guard that finds the person's latest input, recognizes a task instruction in it, and, for a command that belongs to that task and to nothing else, returns `allow`. The input is either a message the person typed (Claude Code marks it `origin.kind: "human"`) or the person's answer to the agent's own multiple-choice question (`AskUserQuestion`), which the person chose in Claude Code's interface. Other tool results, notifications, other sessions, subagents, and pasted content never count, so text the agent reads cannot approve anything.
 
 ## User stories
 
@@ -26,34 +26,37 @@ One mechanism in rfr-core, reused by rfr-process: a guard that finds the person'
 
 | # | Criterion | Verified by |
 |---|---|---|
-| AC-1 | A task instruction is recognized only in the person's latest typed message (as `latestHumanMessage` reads it today), and only when it is an instruction: not a question, not negated ("don't release yet"), and naming its target. Tasks in this version: **release** a version or tag (`release 5.8.2`, `publish rfr-v5.8.2`), **push** a named branch (`push phase-15/task-approval`), and **merge** a named or open pull request (project-process AC-52, unchanged). | test: recognized and rejected phrasings for each task; questions and negations rejected; text from tool results, notifications, and subagent entries ignored. |
-| AC-2 | A command is approved only when every part of it belongs to the instructed task and names its target: for a release, `git tag -a <tag>` on a commit, `git push origin <tag>`, and `gh release create <tag>` where `<tag>` matches the version named; for a push, `git push [-u] origin <branch>` for the branch named. A command chained with anything else (`&&`, `;`, `|`) is not approved. | test: each covered command; the same commands with another tag or branch, chained with another command, or with extra refs. |
-| AC-3 | Never approved, whatever the message says: a push to the default branch, a force-push or `--force-with-lease`, deleting a tag or branch (local or remote), `--no-verify`, and any command a deny rule or another guard refuses or asks about. A guard's refusal or question wins over an approval. | test: each excluded command with a matching instruction still asks or is refused. |
+| AC-1 | A task instruction is recognized only in the person's latest input: their latest typed message (as `latestHumanMessage` reads it today), or, when it came later, their answer to an `AskUserQuestion` call whose question and chosen option together name the task ("Release 5.8.2?" answered "Yes, release it"); a "no", "not yet", or "other" answer approves nothing. The instruction must not be a question or negated ("don't release yet"), and must name its target. Tasks in this version: **release** a version or tag (`release 5.8.2`, `publish rfr-v5.8.2`), **push** a named branch (`push phase-15/task-approval`), **merge** a named or open pull request (project-process AC-52, extended to answers), and **deploy a preview** (`deploy a preview`, `preview deploy`). | test: recognized and rejected phrasings for each task; questions and negations rejected; an answer that names the task, one that declines, and one to an unrelated question; text from other tool results, notifications, and subagent entries ignored. |
+| AC-2 | A command is approved only when every part of it belongs to the instructed task and names its target: for a release, `git tag -a <tag>` on a commit, `git push origin <tag>`, and `gh release create <tag>` where `<tag>` matches the version named; for a push, `git push [-u] origin <branch>` for the branch named; for a preview deploy, `vercel deploy` or `vercel` (directly or through `npx`) without `--prod`, and a Vercel MCP deployment call whose target is not production. A command chained with anything else (`&&`, `;`, or a pipe) is not approved. | test: each covered command and MCP call; the same commands with another tag or branch, chained with another command, or with extra refs. |
+| AC-3 | Never approved, whatever the input says: a push to the default branch, a force-push or `--force-with-lease`, deleting a tag or branch (local or remote), `--no-verify`, a production deploy (`--prod`, a production target, `vercel promote`, alias or domain changes), and any command a deny rule or another guard refuses or asks about. A guard's refusal or question wins over an approval. | test: each excluded command or call with a matching instruction still asks or is refused. |
 | AC-4 | An approved command gets `permissionDecision: "allow"` with a reason that quotes the instruction ("approved by your message: release 5.8.2"), and the decision log records it as `approved-by-instruction` with the task kind. `checks/guard-report.mjs` counts them. | test: hook output and log line; the report's count. |
-| AC-5 | The approval lasts while that message is the person's latest: a session that waits for CI and acts on a notification still acts on it; the next message the person types replaces it. Notifications, task results, and messages from other sessions do not replace or extend it. | test: an instruction followed by notifications still covers the command; a new typed message ends it. |
-| AC-6 | A project turns this off with `"taskApproval": "off"` in `.claude/rfr.json`; the guards then ask or defer to Claude Code as before. When the transcript cannot be read, nothing is approved. | test: the setting; an unreadable transcript. |
+| AC-5 | The approval lasts while that input is the person's latest: a session that waits for CI and acts on a notification still acts on it; the next message the person types, or their next answer, replaces it. Notifications, task results, and messages from other sessions do not replace or extend it. | test: an instruction followed by notifications still covers the command; a new typed message or answer ends it. |
+| AC-6 | It is on by default. A project turns it off with `"taskApproval": "off"` in `.claude/rfr.json`; the guards then ask or defer to Claude Code as before. When the transcript cannot be read, nothing is approved. | test: the default; the setting; an unreadable transcript. |
 | AC-7 | WA-009 says: when a task needs the person's decision, ask for the task once in chat and name what it covers (for example "release 5.8.2: tag 69d8243, push the tag, publish the release"); after the person approves it, carry it out without asking again command by command. | review: the rule. |
 | AC-8 | `practices/guards.md` and `practices/security-for-agentic-projects.md` describe the mechanism, what it never approves, and how it relates to allow rules (standing permission) and to task approval (one task, one message). | review: the guides. |
 
 ## Scope
 
-- In: the shared recognizer and its use in `guard-commands` (releases, pushes); the merge guard's move to `allow` for covered merges; the setting; the log and report; WA-009; the guides.
-- Out: eval runs and other spending (the agent asks, the person approves in chat, and the command still prompts until a later version decides how to bound spending); deploys and MCP tools; approvals given in answers to the agent's own questions (see open question 2).
+- In: the shared recognizer and its use in `guard-commands` (releases, pushes, preview deploys through the Vercel CLI) and rfr-web's `guard-mcp` (preview deploys through the Vercel MCP server); the merge guard's move to `allow` for covered merges; answers to `AskUserQuestion`; the setting; the log and report; WA-009; the guides.
+- Out: eval runs and other spending (the agent asks, the person approves in chat, and the command still prompts until a later version decides how to bound spending); production deploys; MCP tools other than Vercel deployments.
 
 ## APIs and assumptions
 
 - A PreToolUse hook that returns `permissionDecision: "allow"` skips Claude Code's permission prompt for that call; a matching deny rule still blocks it (Claude Code permissions documentation). To verify on the installed version before release.
 - The transcript entry for a typed message carries `origin.kind: "human"`, as the merge guard relies on today (project-process AC-52).
+- An `AskUserQuestion` answer reaches the transcript as the tool result for that call, holding the chosen option's label (or the person's own text for "other"); the guard pairs it with the call's question by `tool_use_id`. To check against a recorded transcript before building, since the merge guard has not relied on it.
 
 ## Non-functional requirements
 
 - Plain Node, no dependencies, within the hook's time limit. The log never records the command or message text beyond the first 200 characters of the reason, as today.
 
-## Open questions
+## Decisions (2026-11-11)
 
-1. Default: on for every project (adopters turn it off), or off until a project turns it on? The draft says on.
-2. Should an answer to the agent's own question (`AskUserQuestion`) count as an instruction? Its answer reaches the transcript as a tool result, which the person chose but did not type. The draft says no.
-3. Are release, push, and merge the right first tasks, or should one more be included (for example deploying a preview)?
+The maintainer answered the draft's three open questions:
+
+1. On by default; a project turns it off in `.claude/rfr.json` (AC-6).
+2. An answer to the agent's own `AskUserQuestion` counts as an instruction when the question and chosen option name the task, because the person chose it in Claude Code's interface (AC-1).
+3. Preview deploys join release, push, and merge as tasks; production deploys stay excluded (AC-1 to AC-3).
 
 ## Delivery
 
