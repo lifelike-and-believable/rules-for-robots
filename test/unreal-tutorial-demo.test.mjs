@@ -8,6 +8,17 @@ import { spawnSync } from 'node:child_process';
 import YAML from 'yaml';
 import { checkCoverage } from '../checks/tutorial-run.mjs';
 
+// The first Python 3 that runs: `python3` (Linux, macOS, CI), then `python` and `py -3` (a python.org
+// install on Windows has no python3.exe, and the name falls through to the Microsoft Store stub, which
+// fails --version). Null when none runs, so the test fails saying so rather than passing silently.
+function python() {
+  for (const [command, ...prefix] of [['python3'], ['python'], ['py', '-3']]) {
+    const r = spawnSync(command, [...prefix, '--version'], { encoding: 'utf8' });
+    if (r.status === 0 && /Python 3\./.test(`${r.stdout}${r.stderr}`)) return [command, prefix];
+  }
+  return null;
+}
+
 test('project-process#AC-25: the fixture tutorial is an Unreal tutorial that an automation spec cites', () => {
   const { errors, tutorials } = checkCoverage('examples/unreal');
   assert.deepEqual(errors, []);
@@ -41,6 +52,9 @@ test('project-process#AC-25: the demo scripts build what the job names and are v
   assert.match(make, /maximum_local_error", 0\.01\)/, 'a one-digit change (0.042 local) must fail the comparison');
   assert.match(make, /preview_score", SCORE/);
   assert.match(make, /RFR_DEMO_SCORE", "3"/);
-  const py = spawnSync('python3', ['-c', 'import ast,sys\nfor f in sys.argv[1:]: ast.parse(open(f).read(), f)', 'examples/unreal/ci/make_demo.py', 'examples/unreal/ci/render_demo.py'], { encoding: 'utf8' });
+  const found = python();
+  assert.ok(found, 'no Python 3 found as python3, python, or py -3');
+  const [command, prefix] = found;
+  const py = spawnSync(command, [...prefix, '-c', 'import ast,sys\nfor f in sys.argv[1:]: ast.parse(open(f).read(), f)', 'examples/unreal/ci/make_demo.py', 'examples/unreal/ci/render_demo.py'], { encoding: 'utf8' });
   assert.equal(py.status, 0, py.stderr);
 });
