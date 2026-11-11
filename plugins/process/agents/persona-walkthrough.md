@@ -18,7 +18,7 @@ Work as a reviewer looking for failure points, not as an actor playing the user.
 node .rfr/checks/tutorial-run.mjs . --base-url <url> --record <a temporary folder>
 ```
 
-Report each step that fails as a **mismatch**: the step, what the tutorial says, and what the product did, with the screenshot path. These are facts about the product, not predictions, and they come first in your report. If you cannot run it, say so and why.
+Report each step that fails as a **mismatch**, one line each: `- **Mismatch:** step <n>, <what the tutorial says>; <what the product did>. Screenshot: <path>`. The review packet reads that form. These are facts about the product, not predictions, and they come first in your report. If you cannot run it, say so and why.
 
 **2. Then the walkthrough, for each persona separately.** Go through the artifact step by step (for documentation, each instruction or section the reader acts on). At every step, answer these four questions for this persona, and record a finding for each "no":
 - Will they know what to do here, with their skills and vocabulary? (A term, menu, prerequisite, or concept the page assumes.)

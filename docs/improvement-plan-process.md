@@ -167,6 +167,15 @@ No branch of its own; results go under `evals/results/` with project details rem
 - **One feature in the lighter mode, by convention.** Before any tooling for 23d: one real story with a single feature packet, built on a branch while the maintainer reviews the packet, then the demo. CI's rule 3 failure on the branch is expected and the branch does not merge until the packet is approved. The maintainer judges three things: did the result match what they wanted, did anything break, and did seeing a build early help or anchor them.
 - Record both results in a short note, with the maintainer's judgement quoted, and update P3 and 23d from them.
 
+### 23l: Rework after approval, and the packet's minor findings
+
+Branch `claude/hopeful-keller-q7vrle` (named by the session that built it). Approved by the maintainer on 2026-11-11, from two ideas in Anthropic's AI-native SDLC playbook (spec section "Amendment: rework and the packet's minor findings").
+
+- `checks/process-rework-report.mjs`: from a repository's first-parent history, offline, the amendments to approved artifacts per stage, and which were late (after an approved spec derived from the artifact). 23a measures what a gate costs; this measures how often approved intent changed afterwards. 23g can use both: a stage with a high late share keeps its `approve` gate whatever its wait.
+- `checks/process-packet.mjs`: the walkthrough's mismatches with the product, listed first, and a count of the `slows` findings it leaves out.
+- Not done here: running the report on the pilots. That needs their clones, as 23a's baseline did.
+- Acceptance: spec AC-61 and AC-62.
+
 ## Order
 
 1. P1 to P7, and 23a, which needs no decision. The maintainer reading one project's history for where their corrections happened is an acceptable first pass of 23a.

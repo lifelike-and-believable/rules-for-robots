@@ -432,6 +432,7 @@ Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c).
 - **23j:** pilot findings moved to `docs/research/pilots/`, the guide split by stage, unexercised team features marked. Done (#171).
 - **23b:** gate types (`approve`, `notify`, `agent`) with defaults by working mode. Done (#172).
 - **23c:** the batched interview, product brief, feature packet, and the review packet script. Done (#173).
+- **23l:** `checks/process-rework-report.mjs` (amendments to approved artifacts, and which came after a spec built on them), and the review packet's mismatches and `slows` count, from Anthropic's AI-native SDLC playbook. Built; the pilot baseline waits for the pilots' clones.
 - **23k:** the two probes, written up for the maintainer to run and judge in [evals/results/2026-11-10-23k-probes/](evals/results/2026-11-10-23k-probes/README.md) (#174). Not yet run. 23d and later wait for their results.
 
 ## 11. Milestones

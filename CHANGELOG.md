@@ -4,6 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- `checks/process-rework-report.mjs` reports, from a repository's history and with no API calls, how often approved `rfr-process` artifacts were amended afterwards, per stage, and how many amendments came after an approved spec derived from the artifact (process plan 23l; spec AC-62). The gate report says what an approval cost; this says whether approved intent held. The JSON holds pull request numbers, stages, dates, and counts only. One of two ideas taken from Anthropic's AI-native SDLC playbook. No plugin changes.
+
+### Changed
+
+- The review packet lists the persona walkthrough's mismatches with the product first, and says how many `slows` findings it leaves out instead of dropping them without a word (process plan 23l; spec AC-61). `persona-walkthrough` now writes each mismatch as a `- **Mismatch:**` line so the packet can read it.
+- `rfr-process` 0.16.1. Adopters: nothing to do; to see how often approved intent changed, run `node .rfr/checks/process-rework-report.mjs .` in a clone with the default branch's full history.
+
 ## [5.7.2] - 2026-11-11
 
 Pull requests: #179, #180.

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Review packet (docs/specs/project-process.md AC-59, process plan 23c). The section at the top of a
 // product brief's or feature packet's pull request description, so the approver reads the decisions
-// first: every [open] choice, every [assumed] answer, the persona walkthrough's blocks and misleads
-// findings with what was done about each, and links to the mock-ups and recordings, for the process
+// first: every [open] choice, every [assumed] answer, the persona walkthrough's mismatches with the
+// product and its blocks and misleads findings with what was done about each, a count of the slows
+// findings it leaves out (AC-61), and links to the mock-ups and recordings, for the process
 // artifacts the pull request changes.
 //
 // Usage: node checks/process-packet.mjs [root] --base <ref> [--head <ref>] [--walkthrough <report.md>]... [--json]
@@ -25,16 +26,32 @@ export function walkthroughFindings(text) {
   const findings = [];
   let current = null;
   for (const line of String(text ?? '').split(/\r?\n/)) {
-    const field = /^\s*-\s+\*\*(Persona|Where|Failure|Expected|Severity|Points to|Done):\*\*\s*(.*)$/i.exec(line);
+    const field = /^\s*-\s+\*\*(Persona|Where|Failure|Expected|Severity|Points to|Done|Mismatch):\*\*\s*(.*)$/i.exec(line);
     if (!field) continue;
     const key = field[1].toLowerCase().replace(' ', '');
+    // A mismatch ends the finding before it, so its Done line is not taken for the finding's.
+    if (key === 'mismatch') { current = null; continue; }
     if (key === 'persona') { current = { persona: field[2].trim() }; findings.push(current); continue; }
     if (current) current[key] = field[2].trim().replace(/^`|`$/g, '');
   }
   return findings;
 }
 
-export function walkthroughMismatches() { return []; }
+// Mismatches between a web tutorial and the product: one per "- **Mismatch:**" line, with the
+// "- **Done:**" line under it, if any. Facts from the tutorial run, not predictions.
+export function walkthroughMismatches(text) {
+  const mismatches = [];
+  let current = null;
+  for (const line of String(text ?? '').split(/\r?\n/)) {
+    const field = /^\s*-\s+\*\*(Mismatch|Done|Persona):\*\*\s*(.*)$/i.exec(line);
+    if (!field) continue;
+    const key = field[1].toLowerCase();
+    if (key === 'mismatch') { current = { text: field[2].trim() }; mismatches.push(current); }
+    else if (key === 'persona') current = null;
+    else if (current) current.done = field[2].trim();
+  }
+  return mismatches;
+}
 
 export function buildPacket({ artifacts, walkthroughs = [] }) {
   const items = { open: [], assumed: [], proposed: [] };
@@ -49,8 +66,11 @@ export function buildPacket({ artifacts, walkthroughs = [] }) {
       if (!media.some(x => x.target === target)) media.push({ file: a.file, label: m[1] || path.posix.basename(target), target });
     }
   }
-  const serious = walkthroughs.flatMap(walkthroughFindings).filter(f => /^(blocks|misleads)$/i.test(f.severity ?? ''));
-  return { artifacts: artifacts.map(a => ({ file: a.file, id: a.id, stage: a.stage, status: a.status })), choices: items.open, assumptions: items.assumed, proposals: items.proposed, findings: serious, media };
+  const findings = walkthroughs.flatMap(walkthroughFindings);
+  const serious = findings.filter(f => /^(blocks|misleads)$/i.test(f.severity ?? ''));
+  const slows = findings.filter(f => /^slows$/i.test(f.severity ?? '')).length;
+  const mismatches = walkthroughs.flatMap(walkthroughMismatches);
+  return { artifacts: artifacts.map(a => ({ file: a.file, id: a.id, stage: a.stage, status: a.status })), choices: items.open, assumptions: items.assumed, proposals: items.proposed, mismatches, findings: serious, slows, media };
 }
 
 const cite = i => `\`${i.file}:${i.line}\` ${i.text.replace(/^[-*]\s+/, '')}`;
@@ -62,10 +82,16 @@ export function formatPacket(p) {
   out.push(`### Assumptions to confirm (${p.assumptions.length})`, '');
   out.push(...(p.assumptions.length ? p.assumptions.map(c => `- ${cite(c)}`) : ['None marked `[assumed]`.']), '');
   if (p.proposals.length) out.push(`### Proposals (${p.proposals.length})`, '', ...p.proposals.map(c => `- ${cite(c)}`), '');
+  const done = d => `Done: ${(d ?? 'not yet addressed').replace(/\.$/, '')}.`;
+  if (p.mismatches?.length) {
+    out.push(`### Walkthrough: mismatches with the product (${p.mismatches.length})`, '');
+    out.push(...p.mismatches.map(m => `- ${m.text.replace(/\.?$/, '.')} ${done(m.done)}`.replace(/\s+/g, ' ')), '');
+  }
   out.push(`### Walkthrough: blocks and misleads (${p.findings.length})`, '');
   out.push(...(p.findings.length
-    ? p.findings.map(f => `- **${f.severity}**, ${f.persona}: ${f.where ?? 'unknown place'}. ${f.failure ?? ''} Done: ${(f.done ?? 'not yet addressed').replace(/\.$/, '')}.`.replace(/\s+/g, ' '))
+    ? p.findings.map(f => `- **${f.severity}**, ${f.persona}: ${f.where ?? 'unknown place'}. ${f.failure ?? ''} ${done(f.done)}`.replace(/\s+/g, ' '))
     : ['None reported, or no walkthrough was given.']), '');
+  if (p.slows) out.push(`${p.slows} \`slows\` finding${p.slows === 1 ? ' is' : 's are'} not listed here (they finish the task, with effort); read them in the walkthrough report.`, '');
   out.push(`### Mock-ups and recordings (${p.media.length})`, '');
   out.push(...(p.media.length ? p.media.map(m => `- [${m.label}](${m.target}) (in \`${m.file}\`)`) : ['None linked.']), '');
   out.push(`### Artifacts (${p.artifacts.length})`, '', ...p.artifacts.map(a => `- \`${a.file}\`: ${a.stage}${a.id ? `, ${a.id}` : ''}, ${a.status ?? 'no status'}`), END);
