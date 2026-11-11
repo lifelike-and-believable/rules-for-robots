@@ -6,7 +6,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.7.2] - 2026-11-11
 
-Pull requests: #179.
+Pull requests: #179, #180.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
@@ -14,6 +14,10 @@ Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 - A PowerShell cmdlet named in a quoted string or a heredoc body no longer makes a command that names a test file ask (#179; guard tiers AC-2). A commit message saying "Copy-Item refused to copy the file onto itself", in a command that also ran `git add` on a new test file, asked whether a test was being changed outside the Edit tool (seen in the TV Launcher session on 2026-11-11). The guard now looks for write cmdlets and their aliases only in the text the shell runs; a command that starts `pwsh` or `powershell` still counts whatever its quoting. Three guard corpus cases cover it.
 - `rfr-core` 5.7.2. Adopters: nothing to do; restart sessions to load the new guard.
+
+### Changed
+
+- The Ubuntu CI job installs Chromium without its system packages when Ubuntu's package mirror cannot be reached, instead of failing before any test runs (#180). On 2026-11-11 the mirror failed to resolve twice in a row on GitHub's runners. The runner image already has the libraries Chromium needs, and the tests still fail if it cannot start. No plugin changes.
 
 ## [5.7.1] - 2026-11-10
 
