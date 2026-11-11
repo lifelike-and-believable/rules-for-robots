@@ -34,6 +34,8 @@ export function walkthroughFindings(text) {
   return findings;
 }
 
+export function walkthroughMismatches() { return []; }
+
 export function buildPacket({ artifacts, walkthroughs = [] }) {
   const items = { open: [], assumed: [], proposed: [] };
   const media = [];
