@@ -4,7 +4,7 @@ status: draft
 
 # Android plugin and a core-only profile
 
-A domain plugin, `rfr-android`, for Android, Android TV, and Google TV apps, and two template profiles: `android-app`, and `general` for projects that are neither web, Unreal, nor Android. Drafted 2026-11-11 from what the quiet-launcher project needed; waiting for the lead's approval.
+A domain plugin, `rfr-android`, for Android, Android TV, and Google TV apps, and two template profiles: `android-app`, and `general` for projects that are neither web, Unreal, nor Android. Drafted 2026-11-11 from what the quiet-launcher project needed; its decisions were settled the same day, and the `uiautomator` assumption checked on the reference TV.
 
 ## Problem
 
@@ -16,7 +16,9 @@ The quiet-launcher project (an Android TV home screen, Kotlin with Gradle, Power
 
 Separately, the improvement plan lists "a core-only profile for projects that are neither web nor Unreal" as needed before the framework goes public. The launcher is the first such project, and an MCP server or a command-line tool would be the next.
 
-## Decisions (proposed; the lead decides)
+## Decisions (lead, 2026-11-11)
+
+The lead took the recommendation on each.
 
 1. One plugin for the Android family (phone, tablet, TV), named `rfr-android`. Nothing so far is specific to TV beyond the key names in the runner's vocabulary.
 2. The plugin starts with a guard and a tutorial runner. No `android-engineer` agent and no Kotlin or Gradle rule packs until a project shows a failure they would prevent: the evals found most behavioural rules unneeded on current models (improvement plan 18c and 18d), and `rfr-core`'s agents and reviewers already apply.
@@ -40,7 +42,7 @@ The ask names the device, the change, and what the agent can do instead ("If not
 
 ## The on-device tutorial runner
 
-`runner: adb` joins `web`, `unreal`, and `manual`. `node checks/tutorial-run.mjs` runs an `adb` tutorial against the device named by `--serial` or `ANDROID_SERIAL`, using only tier-1 commands, so the guard never asks for it. Step grammar, alongside the web one in `checks/lib/tutorial.mjs`:
+`runner: adb` joins `web`, `unreal`, and `manual`. `node checks/tutorial-run.mjs` runs an `adb` tutorial against the device named by `--serial` or `ANDROID_SERIAL`, using only tier-1 commands, so the guard never asks for it. Before the first step it wakes the device (`input keyevent KEYCODE_WAKEUP`), because a sleeping screen has no layout to read, and a step whose dump still has no root node fails with "the screen is off or locked" rather than "not found". Step grammar, alongside the web one in `checks/lib/tutorial.mjs`:
 
 | Sentence | Action |
 |---|---|
@@ -49,7 +51,9 @@ The ask names the device, the change, and what the agent can do instead ("If not
 | Press **Select** on **Text**. | move focus with the arrow keys until a node showing **Text** is focused, then **Select**; fails if focus cannot reach it in 30 moves |
 | Type `text`. | `input text` |
 | ... you see **Text**. **Text** appears. | `uiautomator dump`, a node whose text or content description contains **Text**, retried until the step timeout |
-| **Text** is focused. | as above, on the focused node |
+| **Text** is focused. | the focused node, or a node inside it, has **Text** in its text or content description (on the reference TV the focused node is often a layout that carries only a description) |
+
+A dump takes about five seconds on the reference TV, so an `adb` tutorial's step timeout defaults to 20 seconds, and a focus search that needs all 30 moves can take a few minutes.
 
 With `--record <dir>`, the runner keeps a screenshot after each step and a `failure.png`, as the web runner does, so a passing run is also the demo. A step ending "(manual)" is skipped, as in web tutorials.
 
@@ -72,8 +76,8 @@ With `--record <dir>`, the runner keeps a screenshot after each step and a `fail
 | AC-1 | `plugins/android/` is the `rfr-android` plugin, listed in the marketplace, with the `guard-adb` hook for Bash and PowerShell and its own `guard-outcome` hook. | test: the plugin validates; its hooks file registers both. |
 | AC-2 | `guard-adb` decides each row of the device guard table: tier 1 for reads, connection commands, and user-interface input; an ask for each change, unknown `adb shell` command, unreadable command, and listed device script on a shared device; nothing on a disposable device. The ask names the device and the change and says what to do if not approved. | test: one guard corpus case per row on a shared and on a disposable device; the reason's wording. |
 | AC-3 | The target device is the one `-s` names, else `ANDROID_SERIAL` set in the same command, else the environment's; `emulator-NNNN` serials and serials listed under `android.disposable` are disposable; with no device named and more than one possible, a change asks. | test: each source of the serial, and the ambiguous case. |
-| AC-4 | `checks/tutorial-run.mjs` accepts `runner: adb`, checks the step grammar in its coverage mode, and runs an `adb` tutorial through the commands in the runner table only, recording a screenshot per step with `--record`. | test: the grammar; a run against a fake `adb` that serves `uiautomator` dumps, passing and failing at the right step; every command it sent is tier 1 in `guard-adb`. |
-| AC-5 | "Press **Select** on **Text**" moves focus with the arrow keys until a node showing the text is focused, and fails after 30 moves. | test: against the fake `adb`, a reachable and an unreachable target. |
+| AC-4 | `checks/tutorial-run.mjs` accepts `runner: adb`, checks the step grammar in its coverage mode, wakes the device before the first step, and runs an `adb` tutorial through the commands in the runner table only, recording a screenshot per step with `--record`. It reads the dump with the trailing "UI hierchary dumped to" line removed, and reports an empty dump as the screen being off or locked. | test: the grammar; a run against a fake `adb` that serves `uiautomator` dumps, passing and failing at the right step; the wake key first; the trailing line; an empty dump; every command it sent is tier 1 in `guard-adb`. |
+| AC-5 | "Press **Select** on **Text**" moves focus with the arrow keys until a node showing the text is focused, and fails after 30 moves. "**Text** is focused" matches the focused node or a node inside it, by text or content description. | test: against the fake `adb`, a reachable and an unreachable target; a focused layout whose description, or whose child's text, holds the text. |
 | AC-6 | `build/profiles.json` has `android-app` (packs none, plugins `rfr-core` and `rfr-android`, the Gradle allow rules) and `general` (packs none, plugin `rfr-core`); the build renders `template-repos/android-app/` and `template-repos/general/`. | test: the build and the rendered settings and `AGENTS.md`. |
 | AC-7 | `plugins/process/templates/profiles/android-app/` and `general/` hold the persona starters, a user document, and a tutorial template whose runner is `adb` and `manual`. | test: the files exist and pass the process check as drafts. |
 | AC-8 | `install-rules` and the process `setup` skill infer `android-app` from an `AndroidManifest.xml` or the `com.android.application` plugin, and offer `general` when no profile matches. | test: the skill text names both signals and the fallback; a smoke case for `setup` on an Android fixture. |
@@ -86,13 +90,13 @@ With `--record <dir>`, the runner keeps a screenshot after each step and a `fail
 
 ## APIs and assumptions
 
-- `adb shell uiautomator dump /dev/tty` (or `exec-out uiautomator dump /dev/tty`) prints the view hierarchy as XML with `text`, `content-desc`, `focused`, and `bounds` on each node. To confirm on the quiet-launcher reference device before slice 24c, since some TV builds restrict it.
-- Key codes come from `android.view.KeyEvent` (`KEYCODE_HOME` 3, `KEYCODE_BACK` 4, `KEYCODE_DPAD_UP` 19 to `KEYCODE_DPAD_RIGHT` 22, `KEYCODE_DPAD_CENTER` 23, `KEYCODE_MENU` 82, `KEYCODE_SEARCH` 84, `KEYCODE_MEDIA_PLAY` 126, `KEYCODE_MEDIA_PAUSE` 127).
+- `adb exec-out uiautomator dump /dev/tty` prints the view hierarchy as XML without writing a file on the device. Checked on the quiet-launcher reference device (Chromecast with Google TV, Android 14, API 34) on 2026-11-11, with the lead's agreement: while the screen was asleep it printed "null root node returned by UiTestAutomationBridge" and no XML; after `input keyevent KEYCODE_WAKEUP` it returned 75 nodes in about five seconds, each with `text`, `content-desc`, `resource-id`, `class`, `package`, `focusable`, `focused`, `selected`, and `bounds`, with exactly one focused node (a layout with a content description and no text), followed by the line "UI hierchary dumped to: /dev/tty". The dump itself was deleted after the check.
+- Key codes come from `android.view.KeyEvent` (`KEYCODE_WAKEUP` 224, `KEYCODE_HOME` 3, `KEYCODE_BACK` 4, `KEYCODE_DPAD_UP` 19 to `KEYCODE_DPAD_RIGHT` 22, `KEYCODE_DPAD_CENTER` 23, `KEYCODE_MENU` 82, `KEYCODE_SEARCH` 84, `KEYCODE_MEDIA_PLAY` 126, `KEYCODE_MEDIA_PAUSE` 127).
 - A plugin's hooks cannot import from another plugin, so `rfr-android` gets build copies of `lib.mjs` and `guard-outcome.mjs`, as `rfr-web` and `rfr-unreal` do.
 
 ## Delivery
 
 - Plan or roadmap item: `PLAN.md`, Phase 24 (added with this spec).
-- Slices: 24a the `general` profile (AC-6 and AC-7 for `general`, AC-8's fallback), which needs nothing else; 24b the plugin and the device guard (AC-1 to AC-3); 24c the `adb` runner (AC-4, AC-5), after the `uiautomator` assumption is checked on the reference device; 24d the `android-app` profile and inference (the rest of AC-6 to AC-8), and AC-9.
+- Slices: 24a the `general` profile (AC-6 and AC-7 for `general`, AC-8's fallback), which needs nothing else; 24b the plugin and the device guard (AC-1 to AC-3); 24c the `adb` runner (AC-4, AC-5); 24d the `android-app` profile and inference (the rest of AC-6 to AC-8), and AC-9.
 - Evidence: the guard follows the tier rule and the guard corpus, as the other guards do. The runner is a check, not a rule, so it needs tests, not an eval. Whether `runner: adb` saves the lead's time is measured with the attention report (19a) on the launcher before and after.
 - Pull requests: #183 (spec).
