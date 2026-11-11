@@ -151,7 +151,11 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
 3. **With the agents.** The same command with `--arms rules+agents`.
 4. **Decide.** Keep an agent if it raises the pass rate on at least one of its two cases, lowers it on neither, and costs no more than twice the baseline's mean. Otherwise rework its prompt or remove it. A case the baseline passes 6 of 6 shows nothing about the agent; replace it with a harder one.
 
-## Planned: Fable 5.2 round
+## Fable 5.2 round (ran 2026-11-11)
+
+Cells E and A ran, with one-run checks of B and D; B and C were dropped once E showed the cases could not separate the models. The architect matched on Opus and moved to Opus 5.5 at `high` (#PR). Report: `results/2026-11-11-fable-5-2/report.md`.
+
+### Plan as written
 
 Two questions, from Anthropic's guidance to start with Opus 5.5 and move to Fable 5.2 only when Opus at higher effort falls short:
 
