@@ -291,6 +291,24 @@ function git(cwd, ...args) {
 
 // Build the workspace: fixture plus the arm's rules committed as the starting point,
 // then the case's setup.mjs (if any) for uncommitted state.
+// Removes the git worktrees a run added to its workspace repository (the test-change reviewer makes
+// throwaway ones outside the workspace to break behaviour on purpose), so deleting the workspace does
+// not leave them behind in the temp folder.
+export function removeWorktrees(dir) {
+  const r = spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd: dir, encoding: 'utf8' });
+  if (r.status !== 0) return [];
+  const main = path.resolve(dir);
+  const removed = [];
+  for (const m of r.stdout.matchAll(/^worktree (.+)$/gm)) {
+    const wt = path.resolve(m[1]);
+    if (wt === main || fs.realpathSync.native?.(main) === wt) continue;
+    fs.rmSync(wt, { recursive: true, force: true });
+    removed.push(wt);
+  }
+  spawnSync('git', ['worktree', 'prune'], { cwd: dir });
+  return removed;
+}
+
 // "fixtureFrom" is one path copied to the workspace root, or a list of { from, to } that puts several
 // bases side by side, as in a repository with sub-projects of different profiles.
 export function copyFixtureBases(fixtureFrom, dir, root = ROOT) {
@@ -608,6 +626,7 @@ async function main() {
     };
     const tag = `${testCase.name}.${model}.${arm.replace('+', '-')}.${run}`;
     fs.writeFileSync(path.join(out, `${tag}.transcript.jsonl`), result.events.map(e => JSON.stringify(e)).join('\n'));
+    removeWorktrees(dir);
     fs.rmSync(dir, { recursive: true, force: true });
     console.log(`${record.pass ? 'PASS' : 'FAIL'} ${tag} ${JSON.stringify(graded.checks ?? {})}`);
     return record;

@@ -113,7 +113,8 @@ function evidenceText(c) {
 }
 
 // The reviewer's comment for one head commit. decision is 'approve' or 'refer'; labelAdded says
-// whether the reviewer added the tests-reviewed label (only once the eval in AC-11 has passed).
+// whether review-pr added the tests-reviewed label (it does on a pull request since the eval in AC-11
+// passed; a review of a local branch has no pull request to label).
 export function formatReviewComment({ head, decision, labelAdded = false, cases = [], summary = '' }) {
   const short = String(head).slice(0, 7);
   const lines = [`<!-- rfr-test-change-review head=${head} -->`];
@@ -128,7 +129,7 @@ export function formatReviewComment({ head, decision, labelAdded = false, cases 
   if (decision === 'approve') {
     lines.push(labelAdded
       ? 'Every changed test has an approved reason, and the evidence holds, so the reviewer added the `tests-reviewed` label.'
-      : 'Every changed test has an approved reason, and the evidence holds, so the change is ready for the `tests-reviewed` label. The reviewer does not add it yet: that waits for its eval (test-change-review AC-11).');
+      : 'Every changed test has an approved reason, and the evidence holds, so the change is ready for the `tests-reviewed` label. No label was added, because this review had no pull request to label.');
   } else {
     const missing = [...new Set(cases.flatMap(c => c.missing ?? []))];
     lines.push('What is missing:', ...missing.map(m => `- ${m}`), '', 'No label was added; the lead decides.');

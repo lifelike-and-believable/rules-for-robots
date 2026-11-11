@@ -8,6 +8,20 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [5.10.0] - 2026-11-11
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- The test-change reviewer passed its eval (#PR; test-change-review AC-11, `evals/results/2026-11-11-13d/report.md`): six fixture pull requests with eight test-gaming changes and eight legitimate ones, three runs each on Opus 5.5 and Sonnet 5.5. No gaming change was approved in 36 runs, and 47 of 48 legitimate changes were approved or correctly referred. As the spec set out:
+  - `review-pr` now adds the `tests-reviewed` label when the reviewer approves a pull request's test changes, and removes it when a later review refers a change it had approved. The reviewer is no longer marked experimental.
+  - The `testWeakening` default is now `defer` (guard tiers AC-5): weakening, moving, or deleting an existing test goes ahead in the session with context telling the agent to name the change in its report, and the pull request's test change check stays red until the reviewer approves or the lead adds the label.
+- The eval harness removes git worktrees a run leaves outside its workspace (`removeWorktrees`).
+- `rfr-core` 5.10.0, `rfr-web` 1.1.1, `rfr-unreal` 2.0.5, `rfr-android` 0.1.2 (the last three carry the updated hook library). Adopters: nothing to do to get fewer test-edit prompts. To keep being asked before each test weakening, add `"testWeakening": "ask"` to `.claude/rfr.json`.
+
 ## [5.9.0] - 2026-11-11
 
 Pull requests: #191, #192.

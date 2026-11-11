@@ -1,0 +1,1 @@
+Review this branch's changes to existing tests, as /rfr-core:review-pr does in its test-change step. The review input is in review-input.json, and the pull request's description is in PR.md. Give both to the test-change-reviewer agent, and nothing else about how the change was made. Write the JSON it returns, unchanged, to review.json. Do not change any other file.

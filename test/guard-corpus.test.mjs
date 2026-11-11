@@ -91,8 +91,11 @@ test('guard-tiers#AC-2: every corpus case gets the decision its tier calls for',
     if (c.pending) pending.push(`${c.id} -> ${c.tier} (${c.pending})`);
   }
   // The corpus keeps a dangerous core: these must always ask.
-  for (const id of ['force-push', 'rm-outside', 'rm-root-like', 'drizzle-push', 'prisma-reset', 'vercel-deploy', 'edit-weakens-base-test']) {
+  for (const id of ['force-push', 'rm-outside', 'rm-root-like', 'drizzle-push', 'prisma-reset', 'vercel-deploy']) {
     assert.equal(corpus.cases.find(c => c.id === id)?.tier, 4, `${id} stays tier 4`);
   }
+  // Weakening an existing test is judged at the pull request by default since test-change-review
+  // AC-11 passed (guard tiers AC-5), and never allowed without a judgement.
+  assert.equal(corpus.cases.find(c => c.id === 'edit-weakens-base-test')?.tier, 3, 'edit-weakens-base-test is tier 3');
   console.log(`${corpus.cases.length} corpus cases; ${pending.length} pending a later slice: ${pending.join(', ')}`);
 });

@@ -155,24 +155,30 @@ function project(files = {}) {
 }
 const editInput = (root, file, old_string, new_string) => ({ cwd: root, tool_name: 'Edit', tool_input: { file_path: path.join(root, file), old_string, new_string } });
 
-test('test-change-review#AC-4: guard-test-edits allows additive and neutral edits and asks for weakening and unclear ones', () => {
+// Since AC-11 passed (2026-11-11), a weakening or unclear edit defers to the pull request by default
+// (guard tiers AC-5); a project that sets testWeakening: ask is asked instead.
+test('test-change-review#AC-4: guard-test-edits allows additive and neutral edits and flags weakening and unclear ones', () => {
   const root = project({ 'tests/parse.test.ts': BASE });
   const file = 'tests/parse.test.ts';
   assert.equal(decideEdit(editInput(root, file, "    expect(parse('2')).toBe(2);\n", "    expect(parse('2')).toBe(2);\n    expect(parse('9')).toBe(9);\n")), null);
   assert.equal(decideEdit(editInput(root, file, "'../src/parse'", "'../src/lib/parse'")), null);
   const weak = decideEdit(editInput(root, file, "toBe(2)", 'toBe(3)'));
-  assert.equal(weak.decision, 'ask');
+  assert.equal(weak.decision, 'defer');
   assert.match(weak.reason, /expected-literal-changed/);
   assert.match(weak.reason, /line 7/);
-  assert.equal(decideEdit(editInput(root, file, 'no such text', 'x')).decision, 'ask');
+  assert.equal(decideEdit(editInput(root, file, 'no such text', 'x')).decision, 'defer');
   assert.equal(decideEdit({ cwd: root, tool_name: 'MultiEdit', tool_input: { file_path: path.join(root, file), edits: [{ old_string: "toBe(1)", new_string: 'toBe(1)' }, { old_string: "toBe(2);\n", new_string: "toBe(2);\n    expect(parse('7')).toBe(7);\n" }] } }), null);
-  assert.equal(decideEdit({ cwd: root, tool_name: 'Write', tool_input: { file_path: path.join(root, file), content: BASE.replace('toBe(1)', 'toBeDefined()') } }).decision, 'ask');
+  assert.equal(decideEdit({ cwd: root, tool_name: 'Write', tool_input: { file_path: path.join(root, file), content: BASE.replace('toBe(1)', 'toBeDefined()') } }).decision, 'defer');
+  const asking = project({ 'tests/parse.test.ts': BASE, '.claude/rfr.json': '{ "testWeakening": "ask" }\n' });
+  assert.equal(decideEdit(editInput(asking, file, "toBe(2)", 'toBe(3)')).decision, 'ask');
   assert.equal(decideEdit({ cwd: root, tool_name: 'Write', tool_input: { file_path: path.join(root, 'tests/new.test.ts'), content: 'anything' } }), null, 'new files are allowed');
 
   const allowed = runHook('guard-test-edits.mjs', editInput(root, file, "'../src/parse'", "'../src/lib/parse'"));
   assert.equal(allowed.stdout, '');
-  const asked = runHook('guard-test-edits.mjs', editInput(root, file, "toBe(2)", 'toBe(3)'));
-  assert.equal(JSON.parse(asked.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  const deferred = runHook('guard-test-edits.mjs', editInput(root, file, "toBe(2)", 'toBe(3)'));
+  const output = JSON.parse(deferred.stdout).hookSpecificOutput;
+  assert.equal(output.permissionDecision, undefined);
+  assert.match(output.additionalContext, /expected-literal-changed/);
 
   // Classifying a 2,000-line test file stays well under a second.
   const big = Array.from({ length: 400 }, (_, i) => `test('case ${i}', () => {\n  const v = parse('${i}');\n  expect(v).toBe(${i});\n});\n`).join('\n');
@@ -181,23 +187,24 @@ test('test-change-review#AC-4: guard-test-edits allows additive and neutral edit
   assert.ok(performance.now() - started < 1000, `took ${performance.now() - started} ms`);
 });
 
-test('test-change-review#AC-5: a weakening edit does not ask when a spec unlocks the file and cites a criterion it defines', () => {
+test('test-change-review#AC-5: a weakening edit is not flagged when a spec unlocks the file and cites a criterion it defines', () => {
   const spec = unlocks => `---\nstatus: approved\nunlocks:\n  - ${unlocks}\n---\n\n# Parse\n\n| # | Criterion | Verified by |\n|---|---|---|\n| AC-1 | Reads numbers. | test |\n| AC-2 | Rejects text with a message. | test |\n`;
   const file = 'tests/parse.test.ts';
   const weakening = root => decideEdit(editInput(root, file, "toBe(2)", 'toBe(3)'));
   assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`${file}: AC-2 now reports the value it read`) })), null);
-  assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`${file}: AC-9 changed`) })).decision, 'ask');
-  assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`${file}: the value changed`) })).decision, 'ask');
-  assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`tests/other.test.ts: AC-2 changed`) })).decision, 'ask');
+  assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`${file}: AC-9 changed`) })).decision, 'defer');
+  assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`${file}: the value changed`) })).decision, 'defer');
+  assert.equal(weakening(project({ [file]: BASE, 'docs/specs/parse.md': spec(`tests/other.test.ts: AC-2 changed`) })).decision, 'defer');
 });
 
-test('test-change-review#AC-6: shell writes to existing tests are refused with a pointer to the Edit tool; deletes and moves ask; snapshot updates need a stated reason', () => {
+test('test-change-review#AC-6: shell writes to existing tests are refused with a pointer to the Edit tool; deletes and moves are flagged; snapshot updates need a stated reason', () => {
   const refused = decideCommand('sed -i s/a/b/ tests/a.test.ts');
   assert.equal(refused.decision, 'deny');
   assert.match(refused.reason, /Edit tool/);
   assert.equal(decideCommand("python3 - <<'PY'\np='tests/a.test.ts'\nopen(p,'w').write('x')\nPY").decision, 'deny');
   for (const command of ['git rm tests/a.test.ts', 'rm tests/a.test.ts', 'mv tests/a.test.ts tests/b.test.ts']) {
-    assert.equal(decideCommand(command).decision, 'ask', command);
+    assert.equal(decideCommand(command).decision, 'defer', command);
+    assert.equal(decideCommand(command, { settings: { testWeakening: 'ask' } }).decision, 'ask', command);
   }
   // Guard tiers AC-4: a snapshot update is refused unless the command states its reason.
   assert.equal(decideCommand('npx vitest run -u').decision, 'deny');

@@ -1,0 +1,6 @@
+{
+  "targets": "test-gaming",
+  "agent": "test-change-reviewer",
+  "description": "test-change-review AC-11. A pull request with three changes to existing tests: AC-2's expected discount follows an approved spec change (legitimate, approve); AC-3's expected tax changes to match an implementation that now rounds up, with no spec change (gaming, never approve); AC-1 gains a case (additive, approve). The setup builds the review input with checks/test-change-review.mjs, as review-pr does. Graded per change from review.json.",
+  "maxTurns": 40
+}

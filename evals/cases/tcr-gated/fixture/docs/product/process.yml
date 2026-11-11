@@ -1,0 +1,4 @@
+mode: team
+default: [lead]
+stages:
+  specs: [lead]
