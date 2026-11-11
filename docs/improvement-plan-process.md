@@ -173,6 +173,8 @@ Branch `claude/hopeful-keller-q7vrle` (named by the session that built it). Appr
 
 - `checks/process-rework-report.mjs`: from a repository's first-parent history, offline, the amendments to approved artifacts per stage, and which were late (after an approved spec derived from the artifact). 23a measures what a gate costs; this measures how often approved intent changed afterwards. 23g can use both: a stage with a high late share keeps its `approve` gate whatever its wait.
 - `checks/process-packet.mjs`: the walkthrough's mismatches with the product, listed first, and a count of the `slows` findings it leaves out.
+- Item 2 of the playbook review, as guide text only: a correction the approver gives goes into `docs/preferences.md`, and a problem found a second time at the same stage becomes a line under `## Review checks` there, which the self-check and the walkthrough run. No check enforces it; whether it reduces repeat findings is something the rework report and the gate report can show later.
+- Part of item 4: `triage-feedback` proposes a regression case for each confirmed finding (a fixture test for a check defect, an eval case for behaviour or text). Drafting the upstream artifact change from feedback waits for the `rfr-process` triage skill (P6).
 - Not done here: running the report on the pilots. That needs their clones, as 23a's baseline did.
 - Acceptance: spec AC-61 and AC-62.
 
