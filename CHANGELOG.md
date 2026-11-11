@@ -4,10 +4,23 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [5.8.2] - 2026-11-11
+
+Pull requests: #186, #187.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
 ### Added
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 - Eval case `arch-greenfield-pipeline` (#186): a new multi-component pipeline, a fictional touring museum exhibit with an Unreal show runtime, capture, live and AI guide characters, headsets, a livestream, show control, a back end, a dashboard, and a production assistant. Its brief is spread over ten documents with 14 planted problems that each need two documents read together, two decoys, and a second prompt that forces a revision. It is scored by count (problems found in the first turn, decoys declined, the revision), so setups that pass the smaller cases can be told apart. `fixtureFrom` in `case.json` can now list several bases side by side. The round to run on it is in `evals/README.md`. Repository tooling only; no paid runs yet, and no plugin changes.
+
+### Changed
+
+- `software-architect` is no longer experimental (#187). Two eval rounds showed its benefit: design records written with it weighed alternatives and named what is hard to reverse more reliably than the main session alone (October: 18 of 18 against 12 of 18 weighing alternatives; the Fable 5.2 round: 9 of 9 against 7 of 9). `tech-lead` and `ux-reviewer` stay experimental.
+- The architect's description now says when to use it, and to use it proactively: before any code, when starting a new project from its requirements, when a change spans several components or services, or when it makes a choice that is hard to reverse. Until now nothing but the description asked for it, and every eval named it in the prompt, so how often sessions call it unprompted is not yet measured.
+- `/rfr-core:plan-feature` has a design step: for a new project, a change across components or services, or a hard-to-reverse choice, it asks `software-architect` for a design before planning slices, and keeps the ADRs as drafts for the user to approve with the spec.
+- `rfr-core` 5.8.2. Adopters: nothing to do; the plugin update brings the new description and step.
 
 ## [5.8.1] - 2026-11-11
 
