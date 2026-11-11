@@ -1,0 +1,356 @@
+[
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2016,
+        "outputTokens": 2966
+      }
+    },
+    "advisorCalls": 0,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": false,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.2016,
+    "turns": 4,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 29.54
+  },
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2294,
+        "outputTokens": 4192
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.2294,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 38.628
+  },
+  {
+    "case": "arch-money-storage",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 3,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2307,
+        "outputTokens": 3737
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "minorUnits": true,
+      "floatProblem": true,
+      "currencyCode": true,
+      "zeroDecimal": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "options": true,
+      "agentInvoked": true,
+      "refundModel": true
+    },
+    "costUsd": 0.2307,
+    "turns": 6,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 34.321
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2259,
+        "outputTokens": 4793
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2259,
+    "turns": 3,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 40.529
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2261,
+        "outputTokens": 4203
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": true,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2261,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 38.253
+  },
+  {
+    "case": "arch-multi-tenancy",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 3,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2264,
+        "outputTokens": 4376
+      }
+    },
+    "advisorCalls": 0,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundFour": true,
+      "bothIsolationOptions": true,
+      "migrationPlan": true,
+      "reversibility": false,
+      "agentInvoked": true,
+      "found": [
+        "uniqueEmail",
+        "cacheKeys",
+        "reports",
+        "nightlyJob",
+        "invoiceNumbers",
+        "session"
+      ],
+      "of": 6
+    },
+    "costUsd": 0.2264,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 37.923
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2005,
+        "outputTokens": 2943
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.2005,
+    "turns": 4,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 28.336
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 2,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.1925,
+        "outputTokens": 2439
+      }
+    },
+    "advisorCalls": 0,
+    "pass": false,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": false,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.1925,
+    "turns": 3,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 22.405
+  },
+  {
+    "case": "arch-soft-delete",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules",
+    "run": 3,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.21,
+        "outputTokens": 2627
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "noCode": true,
+      "adrWritten": true,
+      "foundThree": true,
+      "retention": true,
+      "options": true,
+      "agentInvoked": true,
+      "found": [
+        "reports",
+        "nightlyJob",
+        "cache",
+        "invoiceNumbers"
+      ],
+      "of": 4
+    },
+    "costUsd": 0.21,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 29.032
+  }
+]

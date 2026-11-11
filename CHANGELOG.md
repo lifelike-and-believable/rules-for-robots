@@ -7,6 +7,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 ### Added
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#PR24B; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
+- Eval case `arch-greenfield-pipeline` (#186): a new multi-component pipeline, a fictional touring museum exhibit with an Unreal show runtime, capture, live and AI guide characters, headsets, a livestream, show control, a back end, a dashboard, and a production assistant. Its brief is spread over ten documents with 14 planted problems that each need two documents read together, two decoys, and a second prompt that forces a revision. It is scored by count (problems found in the first turn, decoys declined, the revision), so setups that pass the smaller cases can be told apart. `fixtureFrom` in `case.json` can now list several bases side by side. The round to run on it is in `evals/README.md`. Repository tooling only; no paid runs yet, and no plugin changes.
+
+## [5.8.1] - 2026-11-11
+
+Pull requests: #185.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- `software-architect` runs on `claude-opus-5-5` at `high` (was `claude-fable-5-2`; #185). In the Fable 5.2 round (`evals/results/2026-11-11-fable-5-2/report.md`, about $11) the architect on Opus passed 9 of 9 runs on the three cases where it helps, as Fable did, at about a third of the cost per run and half the time. Anthropic's guidance is to use Fable only where Opus at higher effort falls short; on these cases it does not. Sonnet alone passed 7 of 9, so the architect still earns its place. A Sonnet session with Fable as advisor never consulted it unprompted.
+- `rfr-core` 5.8.1. Adopters: nothing to do; the plugin update brings the new model, and architect runs cost less.
 
 ## [5.8.0] - 2026-11-11
 

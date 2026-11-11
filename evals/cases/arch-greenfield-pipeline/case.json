@@ -1,0 +1,11 @@
+{
+  "targets": "greenfield-design",
+  "agent": "software-architect",
+  "fixtureFrom": [
+    { "from": "template-repos/unreal-plugin", "to": "show" },
+    { "from": "template-repos/web-app", "to": "web" }
+  ],
+  "description": "Greenfield multi-component pipeline: a fictional touring museum exhibit (Unreal show runtime, capture, AI-driven and live-performed guide characters, standalone headsets, livestream, show control, a shared back end, web dashboard, and a production chat assistant) with six roles. The brief is spread across seven documents under docs/brief/. Fourteen problems are planted, each visible only when two documents are read together (for example, galleries must work offline while the show loads its cue list from the cloud back end, and a producer's hard spending stop against a show that must never stop), plus two decoys (a lighting console built into the dashboard, and a service per content generator). The second prompt answers the headset question with the model whose SDK supports only Unreal Engine 5.7, which a good design revises for and records as superseding the earlier decision. Scored by count: problems found in the first turn, decoys declined, and the revision after the second turn. Models a real multi-domain project without copying it.",
+  "maxTurns": 80,
+  "timeoutSeconds": 2400
+}
