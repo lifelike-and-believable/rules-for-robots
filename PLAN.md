@@ -396,6 +396,7 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 - **17a:** the `model-release` suite, `--suite` and `--max-cost` in the runner, the reported model ID in each run record, `evals/ledger.json` and `checks/model-ledger.mjs`, and the `evaluated-on` field (AC-1 to AC-6).
 - **17b:** the "New model" section in the maintenance guide, the `model-release` issue form, section 5 and decision 7 rewritten to name no single generation, and the "Evaluated on:" changelog line and its check (AC-7 to AC-10).
 - **17c:** the baseline run on Opus 5.5 and Sonnet 5.5 (AC-11), and the first decisions it supports.
+- **Fable 5.2** (2026-11-10, outside the spec): `software-architect` moved to Fable 5.2 (#159). Anthropic's guidance is to start with Opus 5.5 and move to Fable only when Opus at higher effort falls short, which the October round never compared, and Claude Code can now use Fable as an advisor. The runner gains `--advisor`, `--agent-model`, and `--agent-effort`, and records cost per model and advisor calls (#160); the round in `evals/README.md` ("Planned: Fable 5.2 round") compares the architect on Opus 5.5 and Fable 5.2, and a Sonnet session with Fable as advisor. Its paid runs wait for approval.
 
 ### Phase 18: Housekeeping and triage (in progress)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md), carried out under [docs/improvement-brief.md](docs/improvement-brief.md). Decisions D1 to D8 and P1 to P7 take the recommended answers (confirmed 2026-11-10).
@@ -436,7 +437,7 @@ Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 
 - **23k:** the two probes, written up for the maintainer to run and judge in [evals/results/2026-11-10-23k-probes/](evals/results/2026-11-10-23k-probes/README.md) (#174). Not yet run. 23d and later wait for their results.
 
 ### Phase 24: Android plugin and a core-only profile (planned)
-Spec: [docs/specs/android-plugin.md](docs/specs/android-plugin.md) (decisions settled 2026-11-11; `uiautomator dump` confirmed on the reference TV).
+Spec: [docs/specs/android-plugin.md](docs/specs/android-plugin.md) (approved 2026-11-11; `uiautomator dump` confirmed on the reference TV).
 Pull requests: #183 (spec), #184 (24a).
 
 From the quiet-launcher project, which fits no profile: an `rfr-android` plugin with a device guard that asks only before an `adb` command changes a shared device, an on-device tutorial runner (`runner: adb`), an `android-app` profile, and a `general` profile for projects that are neither web, Unreal, nor Android.

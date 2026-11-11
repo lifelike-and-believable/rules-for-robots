@@ -4,7 +4,7 @@ status: draft
 
 # Android plugin and a core-only profile
 
-A domain plugin, `rfr-android`, for Android, Android TV, and Google TV apps, and two template profiles: `android-app`, and `general` for projects that are neither web, Unreal, nor Android. Drafted 2026-11-11 from what the quiet-launcher project needed; its decisions were settled the same day, and the `uiautomator` assumption checked on the reference TV.
+A domain plugin, `rfr-android`, for Android, Android TV, and Google TV apps, and two template profiles: `android-app`, and `general` for projects that are neither web, Unreal, nor Android. Drafted 2026-11-11 from what the quiet-launcher project needed; its decisions were settled the same day, the `uiautomator` assumption checked on the reference TV, and the spec approved by the lead (2026-11-11). The `status` field stays `draft` until every `test:` criterion has a citing test, at the end of slice 24d.
 
 ## Problem
 
