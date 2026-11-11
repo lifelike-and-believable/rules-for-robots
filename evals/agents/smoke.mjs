@@ -32,6 +32,20 @@ function pullRequest(dir, checks, failedLog, extra = {}) {
   const head = g('rev-parse', 'HEAD').stdout.trim();
   fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog, ...extra }));
 }
+// The decision queue for the decisions skill (improvement plan 19c), as issues the fake gh serves.
+function decisionQueue(dir) {
+  const body = (question, def) => [
+    '<!-- rfr-decision -->', `**Question:** ${question}`, '', '**Options:**', '- A: Keep it as it is', '- B: Change it', '',
+    def ? `**Default:** A (takes effect ${def})` : '**Default:** none. This is about an action that cannot be undone, so the work it affects waits for your answer.',
+  ].join('\n');
+  const issues = [
+    { number: 31, title: 'Decision needed: keep the shout() name?', body: body('Keep the shout() name?', '2026-01-01'), comments: [] },
+    { number: 32, title: 'Decision needed: keep the README wording?', body: body('Keep the README wording?', '2099-01-01'), comments: [{ body: 'A', author: 'lead' }] },
+    { number: 33, title: 'Decision needed: delete the old release tags?', body: body('Delete the old release tags?', null), comments: [] },
+  ];
+  fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ issues }));
+}
+
 // A gh call that waits on CI (pr checks --watch, run watch); merge-when-green never makes one.
 const waits = a => a.includes('--watch') || (a[0] === 'run' && a[1] === 'watch');
 const ghCalls = dir => { try { return fs.readFileSync(path.join(dir, '.git', 'gh-calls.log'), 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } };
@@ -241,6 +255,32 @@ export const CASES = [
     },
   },
   {
+    // Improvement plan 19c: one question whose default fell due, one the lead answered with the
+    // default, and one about an irreversible action with no default and no answer.
+    name: 'skill decisions: apply due and answered questions, leave the irreversible one', fixture: 'verify-and-report', fakeGh: true,
+    change: d => decisionQueue(d),
+    prompt: '/rfr-core:decisions',
+    check: (t, d) => {
+      const issues = Object.fromEntries(JSON.parse(fs.readFileSync(path.join(d, '.git', 'fake-gh.json'), 'utf8')).issues.map(i => [i.number, i]));
+      const applied = n => !!issues[n].closed && issues[n].comments.some(c => /Applied/.test(c.body));
+      return applied(31) && applied(32) && !issues[33].closed && /#?33/.test(t) && /(wait|no default|cannot be undone|irreversible)/i.test(t);
+    },
+  },
+  {
+    // Process plan 23c (spec AC-60): the questions in one batch, each with a proposed answer, and the
+    // drafts written anyway, with unanswered answers marked [assumed].
+    name: 'skill bootstrap: one batch of questions, drafts with [assumed]', fixture: 'verify-and-report',
+    change: d => write(d, 'docs/product/process.yml', 'mode: solo\ndefault: [lead]\n'),
+    prompt: '/rfr-process:bootstrap 90',
+    check: (t, d) => {
+      const read = f => { try { return fs.readFileSync(path.join(d, f), 'utf8'); } catch { return ''; } };
+      const drafts = [read('docs/product/concept.md'), ...['requirements', 'personas'].flatMap(dir => {
+        try { return fs.readdirSync(path.join(d, 'docs/product', dir)).map(f => read(`docs/product/${dir}/${f}`)); } catch { return []; }
+      })].join('\n');
+      return /\[assumed\]/.test(drafts) && /propos/i.test(t) && (t.match(/\?/g) ?? []).length >= 2;
+    },
+  },
+  {
     name: 'check-runner: failing test and missing scanner', expectModel: 'haiku-5-5', fixture: 'dirty-tree',
     prompt: 'Use the check-runner agent to run these two commands in the repository root: `npm test` and `gitleaks detect --no-git`. Report its output verbatim.',
     check: (t, d) => /exit(ed)?( code)?:?\s*1\b/i.test(t) && /fail 1/.test(t) && /gitleaks/i.test(t) && /(did not run|not installed|not found|couldn't run|could not run)/i.test(t)
@@ -281,7 +321,7 @@ export function prepare(c) {
 
 function run(c, dir, model) {
   const args = ['-p', c.prompt, '--model', model, '--output-format', 'json', '--setting-sources', 'project,local',
-    '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'), '--plugin-dir', path.join(ROOT, 'plugins', 'web'), '--plugin-dir', path.join(ROOT, 'plugins', 'unreal'),
+    '--no-session-persistence', '--max-turns', '40', '--plugin-dir', path.join(ROOT, 'plugins', 'core'), '--plugin-dir', path.join(ROOT, 'plugins', 'web'), '--plugin-dir', path.join(ROOT, 'plugins', 'unreal'), '--plugin-dir', path.join(ROOT, 'plugins', 'process'),
     '--allowedTools', 'Read,Grep,Glob,Edit,Write,Bash,Agent,Skill'];
   return new Promise(resolve => {
     const env = c.fakeGh ? { ...process.env, PATH: [path.join(ROOT, 'evals', 'agents', 'fake-gh'), process.env.PATH].join(path.delimiter) } : process.env;

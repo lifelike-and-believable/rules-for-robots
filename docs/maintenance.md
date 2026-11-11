@@ -15,11 +15,17 @@ The rule set and the `rfr-core` plugin share one semantic version, set in `plugi
 
 Rule IDs are never reused. A removed rule's ID stays retired so waivers and eval records keep pointing at one meaning.
 
+## Running verify on Windows
+
+`npm run verify` installs Vale itself on Linux, macOS, and Windows (x64 and arm64). Before the first run on a new machine, run `npm ci` and `npx playwright install chromium`: the tutorial tests drive a real browser and the mutation test runs Stryker, and both fail with "not installed" otherwise. The Unreal demo test needs Python 3 on the PATH as `python`; the Microsoft Store alias does not count.
+
+CI runs the same chain on Windows in the `verify-windows` job. Tests that put a path into a shell command write it with forward slashes, as a shell on Windows needs (`p.split(path.sep).join('/')`): bash reads backslashes as escapes, so a command written with them names a different folder than the test means (guard tiers AC-13).
+
 ## Releasing
 
 A release is prepared in pull requests and published from a machine that can push tags.
 
-1. In the pull request that changes a plugin, move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, name the pull request, and set the same version in `plugins/core/.claude-plugin/plugin.json`. Add an `Evaluated on:` line naming the models of the newest model-release run in `evals/ledger.json` (for example `Evaluated on: claude-opus-5-5, claude-sonnet-5-5.`). `npm run verify` fails if the changelog and plugin version disagree, or if a release after 5.1.3 has no `Evaluated on:` line.
+1. In the pull request that changes a plugin, move the `[Unreleased]` entries in `CHANGELOG.md` under a new version heading with today's date, name the pull request, and set the same version in `plugins/core/.claude-plugin/plugin.json`. Add an `Evaluated on:` line naming the models of the newest model-release run in `evals/ledger.json` (for example `Evaluated on: claude-opus-5-5, claude-sonnet-5-5.`). Set the same version in the first `Status:` line of `PLAN.md`. `npm run verify` fails if the changelog, the plan, and the plugin version disagree, or if a release after 5.1.3 has no `Evaluated on:` line.
 2. Merge. Several merged versions can go out as one release: its notes cover every version since the last tag.
 3. On a machine with git and `gh` signed in (Windows, macOS, or Linux; a cloud agent session cannot push tags), fetch and prepare:
 

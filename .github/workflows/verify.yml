@@ -20,9 +20,30 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # The tutorial runner tests drive a real browser.
-      - run: npx playwright install --with-deps chromium
+      # The tutorial runner tests drive a real browser. --with-deps installs its system libraries from
+      # Ubuntu's package mirror; when the mirror cannot be reached (seen 2026-11-11), the runner
+      # image's own libraries are enough for Chromium, so install the browser alone instead of
+      # failing before any test runs. The tests still fail if the browser cannot start.
+      - run: timeout 300 npx playwright install --with-deps chromium || { echo "::warning::Ubuntu's package mirror failed; installing Chromium without --with-deps"; npx playwright install chromium; }
       # Plugin validation needs the Claude Code CLI; no API key is used.
+      - run: npm install --global @anthropic-ai/claude-code@^2.1.288
+      - run: npm run verify
+
+  # The same chain on Windows (improvement plan 18b). A separate job, so the required "verify" check
+  # keeps its name. Not yet a required check: add it to branch protection once it has stayed green.
+  verify-windows:
+    runs-on: windows-latest
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
       - run: npm run verify
 
@@ -38,7 +59,7 @@ jobs:
   status:
     # A new comment on the pull request each time CI finishes, naming the head commit, so whoever
     # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
-    needs: [verify, secret-scan]
+    needs: [verify, verify-windows, secret-scan]
     if: always()
     permissions:
       contents: read

@@ -90,8 +90,10 @@ Before a local command that would lose working-tree content, `guard-commands` co
 `.claude/rfr.json` at the repository root holds the guards' project settings:
 
 ```json
-{ "testWeakening": "ask" }
+{ "testWeakening": "ask", "mode": "supervised" }
 ```
+
+`mode` is the project's working mode. `supervised` (the default) installs the working agreement as it is: the agent stops and asks when the task or a test looks wrong, or when doing the task well would change its scope. `delegated` replaces WA-002, WA-003, and WA-004 with files that stop only before irreversible or outward actions, park a task or test that looks wrong without touching it, and record every other choice in the pull request's `## Decisions` section, so a long session continues while the person is away. `/rfr-core:install-rules` installs the files that match the mode. The delegated files are experimental until their eval (improvement plan 21a) passes; the guards behave the same in both modes.
 
 `testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the change goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code and brings you only the changes it cannot approve. Until test-change-review AC-11 passes it refers every change to you, with that evidence. The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
 
@@ -102,6 +104,8 @@ Claude Code raises its own prompts for actions its permission settings do not al
 ## Measuring
 
 Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it, and an asked call that then runs adds an `approved` line. `node checks/guard-report.mjs <log>...` summarises one or more logs: asks per hour by guard and reason, and the share of asks that were approved. A reason approved in at least 95% of 20 or more asks is a candidate to move down a tier. Claude Code reports no hook event when a person declines a prompt, so an ask with no `approved` line was declined, or the session ended first.
+
+The guard log sees only the guards' own asks. `node checks/attention-report.mjs <transcripts folder> --repo <owner/name>` reads a project's Claude Code transcripts (under `~/.claude/projects/`) and counts every wait on a person: permission prompts from any source, questions, and replies after the agent ended its turn, with their durations and the figures per merged pull request. It prints counts and durations only.
 
 ## Replay
 

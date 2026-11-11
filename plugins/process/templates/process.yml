@@ -8,6 +8,9 @@ default: [your-login]      # required; used for every stage without its own entr
 #   user-docs: [docs-lead, your-login]
 #   specs: [your-login]    # optional: adds a human gate to technical specifications
 #   release: [product-owner]
+# gates:                  # approve (a person; the merge waits), notify (the person is told after the merge), agent (a recorded independent review)
+#   requirements: notify   # without gates:, a supervised project uses approve everywhere; a delegated one (.claude/rfr.json "mode": "delegated")
+#   stories: agent         # uses approve for concept, design, user-docs, specs, tutorials, and release, and notify for the rest
 # public-api: [src/api/**]          # paths a tier:trivial pull request may not change
 # adoption-until: 2027-03-31        # existing projects: unlinked artifacts only warn until this date
 # project: https://github.com/orgs/<org>/projects/<number>   # board to place personas, epics, and stories on; needs the RFR_PROJECT_TOKEN secret

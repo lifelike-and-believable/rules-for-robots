@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { appendGuardLog, ask, askReason, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -81,6 +81,17 @@ const PS_ALIASES = /(^|[;&|(]|\n)\s*(sc|ac|mi|move|cpi|copy|ri|del|erase|rni|ren
 const PS_NEW_ITEM_FORCE = /\bNew-Item\b[^;&|\n]*\s-fo(r(c(e)?)?)?\b/i;
 const psWrites = command => PS_CMDLETS.test(command) || PS_ALIASES.test(command) || PS_NEW_ITEM_FORCE.test(command);
 
+// The command's text without quoted strings and heredoc bodies, where a cmdlet's name is only text:
+// a commit message that says "Copy-Item refused to copy the file" runs no Copy-Item.
+const unquotedText = command => command
+  .replace(/<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\s*\2[ \t]*(?=\n|$)/g, ' ')
+  .replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, ' ');
+
+// Whether a PowerShell cmdlet that writes would run. A command that starts PowerShell
+// (pwsh or powershell, whose -Command is usually quoted) counts whatever its quoting.
+const psWritesRun = command => psWrites(command)
+  && (/\b(pwsh|powershell)(\.exe)?\b/i.test(command) || psWrites(unquotedText(command)));
+
 // Redirects that only join or discard streams (2>&1, >/dev/null, &>/dev/null) write no file.
 const STREAM_REDIRECTS = /\d*>&\d+|&>>?\s*\/dev\/null|\d*>>?\s*\/dev\/null/g;
 
@@ -104,7 +115,7 @@ const isTestTarget = target => {
 // a test file added on the branch is new, as the CI test guard counts it. Without it, every test
 // path counts as existing.
 export function testFileChange(command, existed = () => true) {
-  if (psWrites(command) && broadWritesTestFile(command)) return 'broad';
+  if (psWritesRun(command) && broadWritesTestFile(command)) return 'broad';
   // Windows paths (Source\\X\\Tests\\Y.cpp) are not shell words: use the broad check.
   if ([...command.matchAll(/[\w.:-]+(?:\\[\w.-]+)+/g)].some(m => TEST_PATH.test(` ${m[0].replace(/\\/g, '/')}`))) return broadWritesTestFile(command) ? 'broad' : null;
   const entries = writeTargetEntries(command);
@@ -147,6 +158,18 @@ export function discardsWorkingTree(command) {
   return false;
 }
 
+// The folder a path written in a shell command names, resolved against base. On Windows, Git Bash
+// writes drive C: as /c/ and the user's temp folder as /tmp, which Node's path module would read as
+// folders on the current drive; they are mapped first. Native paths (C:\x, C:/x) need nothing.
+export function resolveFromShell(base, p, platform = process.platform) {
+  if (platform === 'win32') {
+    const drive = /^\/([a-zA-Z])(?=\/|$)/.exec(p);
+    if (drive) p = `${drive[1].toUpperCase()}:/${p.slice(3)}`;
+    else if (p === '/tmp' || p.startsWith('/tmp/')) p = os.tmpdir() + p.slice(4);
+  }
+  return path.resolve(base, p);
+}
+
 // The hook's decision: { decision: 'deny' | 'ask', reason } or null to let the command run.
 // A shell write to an existing test is refused with a pointer to the Edit tool, whose input shows
 // the change so guard-test-edits can check it (test-change-review AC-6); deleting or moving an
@@ -154,8 +177,8 @@ export function discardsWorkingTree(command) {
 // Whether a path the command names is an existing test of this project: inside the project, on
 // disk (a glob is taken to match something), and not added on the current branch.
 export function existingProjectFile(file, cwd, root = process.env.CLAUDE_PROJECT_DIR ?? cwd) {
-  const abs = path.resolve(cwd, file);
-  const rel = path.relative(path.resolve(root), abs);
+  const abs = resolveFromShell(cwd, file);
+  const rel = path.relative(canonical(root), canonical(abs));
   if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return false;
   if (!/[*?[{]/.test(file) && !fs.existsSync(abs)) return false;
   return existedAtBase(file, cwd);
@@ -217,7 +240,7 @@ export function commandsWithDirs(command, cwd) {
   if (!commands) return null;
   let dir = cwd;
   return commands.map(({ words }) => {
-    if ((words[0] === 'cd' || words[0] === 'pushd') && words[1] && !words[1].startsWith('-')) dir = path.resolve(dir, words[1].replace(/^~(?=\/|$)/, os.homedir()));
+    if ((words[0] === 'cd' || words[0] === 'pushd') && words[1] && !words[1].startsWith('-')) dir = resolveFromShell(dir, words[1].replace(/^~(?=\/|$)/, os.homedir()));
     return { words, dir };
   });
 }
@@ -240,7 +263,7 @@ function discardRisk(entries, snaps) {
     let k = g + 1;
     let where = dir;
     while (words[k]?.startsWith('-')) {
-      if (words[k] === '-C' && words[k + 1]) { where = path.resolve(where, words[k + 1]); k += 2; } else k += words[k] === '-c' ? 2 : 1;
+      if (words[k] === '-C' && words[k + 1]) { where = resolveFromShell(where, words[k + 1]); k += 2; } else k += words[k] === '-c' ? 2 : 1;
     }
     const sub = words[k];
     const rest = words.slice(k + 1);
@@ -291,7 +314,7 @@ function tempRoots() {
   const roots = new Set([os.tmpdir(), process.env.TMPDIR, '/tmp'].filter(Boolean).map(p => path.resolve(p)));
   for (const r of [...roots]) {
     try {
-      roots.add(fs.realpathSync(r));
+      roots.add(fs.realpathSync.native(r));
     } catch {
       // A root that does not exist adds nothing.
     }
@@ -300,12 +323,7 @@ function tempRoots() {
 }
 
 function insideTemp(abs) {
-  let real = abs;
-  try {
-    real = path.join(fs.realpathSync(path.dirname(abs)), path.basename(abs));
-  } catch {
-    // The parent does not exist: judge the path as written.
-  }
+  const real = canonical(abs);
   return tempRoots().some(root => {
     const rel = path.relative(root, real);
     return rel && !rel.startsWith('..') && !path.isAbsolute(rel) && rel.split(path.sep).length >= 2;
@@ -356,8 +374,10 @@ function rmRisk(entries, hints = [], snaps = []) {
     if (!recursive || !force) continue;
     for (const word of args.filter(w => !w.startsWith('-'))) {
       const target = word.includes('$') ? expand(word, vars) : word;
-      if (target === null || /[*?[{$~]/.test(target) || ['.', './', '..', '/'].includes(target)) return RM;
-      const abs = path.resolve(dir, target);
+      // A glob, an unexpanded variable, or a leading ~ (the shell's home folder) asks. A ~ inside a
+      // name, as in an 8.3 short name (C:/Users/RUNNER~1), is an ordinary character to the shell.
+      if (target === null || /[*?[{$]/.test(target) || target.startsWith('~') || ['.', './', '..', '/'].includes(target)) return RM;
+      const abs = resolveFromShell(dir, target);
       // A target in no git repository is throwaway only inside the temp directory; one in a
       // repository (even a repository under the temp directory) gets the git checks below.
       let near = path.dirname(abs);
@@ -366,7 +386,7 @@ function rmRisk(entries, hints = [], snaps = []) {
       const top = git(dir, ['rev-parse', '--show-toplevel']);
       if (top.status !== 0) return RM;
       const root = top.out.trim();
-      const rel = path.relative(root, abs);
+      const rel = path.relative(canonical(root), canonical(abs));
       if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return RM;
       const tracked = git(root, ['ls-files', '--', rel]);
       if (tracked.status !== 0) return RM;
@@ -462,7 +482,7 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
     const top = git(snap.dir, ['rev-parse', '--show-toplevel']);
     if (top.status !== 0) return { failed: snap.risk };
     const root = top.out.trim();
-    const rel = snap.kind === 'tree' ? path.relative(root, path.resolve(snap.dir, snap.path)).split(path.sep).join('/') || '.' : null;
+    const rel = snap.kind === 'tree' ? path.relative(canonical(root), canonical(path.resolve(snap.dir, snap.path))).split(path.sep).join('/') || '.' : null;
     try {
       if (snap.kind === 'stash') {
         for (const { ref, sha } of snapshotStashes(root, snap.shas, { now, deadline })) {
@@ -477,9 +497,9 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
         refs.push(taken.ref);
       }
       const { sha, ref } = trees.get(root);
-      const where = root === path.resolve(snap.dir) || rel === '.' ? '' : `git -C ${shellPath(root)} `;
-      const restore = `${where}git restore --source=${sha} --worktree -- ${rel === '.' ? ':/' : shellPath(rel)}`;
-      lines.push(snap.moves ? `${where}git reset --hard ${sha}~1 && ${restore} (kept as ${ref})` : `${restore} (kept as ${ref})`);
+      const where = canonical(root) === canonical(snap.dir) || rel === '.' ? '' : `-C ${shellPath(root)} `;
+      const restore = `git ${where}restore --source=${sha} --worktree -- ${rel === '.' ? ':/' : shellPath(rel)}`;
+      lines.push(snap.moves ? `git ${where}reset --hard ${sha}~1 && ${restore} (kept as ${ref})` : `${restore} (kept as ${ref})`);
     } catch {
       return { failed: snap.risk };
     }

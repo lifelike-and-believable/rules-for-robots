@@ -8,7 +8,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parse } from 'yaml';
 import { parseProcessConfig } from '../checks/lib/process.mjs';
-import { checkTier, waitForTierLabel } from '../checks/ci/process-tier.mjs';
+import { checkTier } from '../checks/ci/process-tier.mjs';
 import { runProcessTrace } from '../checks/process-trace.mjs';
 
 const config = parseProcessConfig('default: [lead]\n').config;
@@ -19,32 +19,10 @@ test('project-process#AC-27: the pull request that adds process.yml passes witho
   assert.equal(adoption.ok, true, adoption.problems.join('\n'));
   assert.equal(adoption.tier, 'adoption');
   const later = checkTier({ labels: [], files: ['docs/product/process.yml'], config, addedFiles: new Set() });
-  assert.equal(later.ok, false, 'changing process.yml later still needs a tier');
+  assert.deepEqual([later.ok, later.tier], [true, 'story'], 'a later change to process.yml, under docs/product/, passes at the inferred tier');
 });
 
-test('project-process#AC-27: on a new pull request, a tier label added shortly after is found by polling', async () => {
-  let polls = 0;
-  const waits = [];
-  const fetch = async () => {
-    polls++;
-    const labels = polls >= 2 ? [{ name: 'bug' }, { name: 'tier:fix' }] : [];
-    return { ok: true, status: 200, json: async () => labels };
-  };
-  const labels = await waitForTierLabel({ fetch, api: 'https://api.github.test', token: 't', repo: 'acme/app', pr: 7, sleep: async ms => { waits.push(ms); }, attempts: 6, intervalMs: 10_000 });
-  assert.deepEqual(labels, ['bug', 'tier:fix']);
-  assert.equal(polls, 2);
-  assert.deepEqual(waits, [10_000, 10_000]);
-});
-
-test('project-process#AC-27: the label wait gives up after its limit and returns what it last saw', async () => {
-  let polls = 0;
-  const fetch = async () => { polls++; return { ok: true, status: 200, json: async () => [{ name: 'bug' }] }; };
-  const labels = await waitForTierLabel({ fetch, api: 'https://api.github.test', token: 't', repo: 'acme/app', pr: 7, sleep: async () => {}, attempts: 6, intervalMs: 10_000 });
-  assert.deepEqual(labels, ['bug']);
-  assert.equal(polls, 6);
-});
-
-test('project-process#AC-27: the tier job creates the four tier labels and knows the event action', () => {
+test('project-process#AC-27: the tier job creates the four tier labels', () => {
   const wf = parse(fs.readFileSync('.github/workflows/rfr-process.yml', 'utf8'));
   const job = wf.jobs.tier;
   assert.equal(job.permissions?.issues, 'write');
@@ -52,7 +30,6 @@ test('project-process#AC-27: the tier job creates the four tier labels and knows
   const run = steps.map(s => s.run ?? '').join('\n');
   for (const tier of ['trivial', 'fix', 'story', 'epic']) assert.match(run, new RegExp(`gh label create tier:${tier}\\b`));
   const tierStep = steps.find(s => /process-tier\.mjs/.test(s.run ?? ''));
-  assert.match(String(tierStep.env?.EVENT_ACTION), /github\.event\.action/);
   assert.match(String(tierStep.env?.PR_NUMBER), /pull_request\.number/);
   assert.match(String(tierStep.env?.GITHUB_TOKEN), /github\.token/);
 });

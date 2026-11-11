@@ -13,3 +13,4 @@
 - Astro 7, TypeScript, static output.
 
 Rules for this project are in `.claude/rules/`.
+Read `docs/preferences.md` before design, interface, or documentation work, and add to it when the project lead corrects something.

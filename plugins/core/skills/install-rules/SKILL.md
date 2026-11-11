@@ -13,6 +13,7 @@ Payload: `${CLAUDE_SKILL_DIR}/payload/`
 - `rules/core/` holds rules every project gets.
 - `rules/packs/<pack>/` holds stack packs.
 - `profiles.json` maps profile names (`web-app`, `static-site`, `unreal-plugin`) to packs, and lists each profile's `plugins`: `rfr-core` plus `rfr-web` for the web profiles or `rfr-unreal` for `unreal-plugin`. Its `permissions.allow` lists the profile's own commands to allow.
+- `modes/delegated/` holds the working-agreement files for delegated mode. Each replaces the core rule named in its `replaces:` field.
 - `permissions.json` holds the permission rules every profile shares: allow rules for read-only and local git commands, and deny rules for reading `.env` and key files.
 
 ## Steps
@@ -36,7 +37,11 @@ Payload: `${CLAUDE_SKILL_DIR}/payload/`
 
    Claude Code treats `.claude/` as a sensitive path, so the user is asked to approve these writes. Tell the user which files you are about to write before the first prompt. If a write is refused, stop and give the user the exact copy commands instead of trying another route.
 
+   **Working mode.** Read `"mode"` from `.claude/rfr.json` at the repository root: `supervised` (the default, also when the file or field is missing) or `delegated`. In delegated mode the agent asks the user only before irreversible or outward actions, and records other decisions in the pull request's `## Decisions` section. For `delegated`, after copying, replace each core rule named in a `payload/modes/delegated/*.md` file's `replaces:` field with that file: delete `.claude/rules/core/working-agreement/<ID>-*.md` and copy the delegated file into the same folder. Tell the user these files are experimental until their eval passes (improvement plan 21a). For `supervised`, remove any `*-delegated.md` file left in `.claude/rules/core/working-agreement/` and make sure the core files it replaced are back. Waivers are kept as in the rest of this step.
+
 4. **Point the project at the rules.** If the repository has neither `AGENTS.md` nor `CLAUDE.md`, tell the user and offer to create `AGENTS.md` with the project's verification command and a thin `CLAUDE.md` containing `@AGENTS.md`. Do not edit tool-managed blocks in an existing `AGENTS.md`, such as the Next.js `nextjs-agent-rules` markers.
+
+   If the repository has no `docs/preferences.md`, offer to create it from `payload/preferences.md` and to add this line to `AGENTS.md`: "Read `docs/preferences.md` before design, interface, or documentation work, and add to it when the project lead corrects something." The file keeps the lead's corrections so each is given once.
 
 5. **Report.** List the files added, updated, skipped, and kept as waivers, and the packs installed. Remind the user to commit `.claude/rules/` so the rules apply to everyone working in the repository. Name the plugins the profile lists under `plugins` that the project does not enable yet, usually `rfr-web` or `rfr-unreal`, and how to enable them (`/plugin install rfr-web@rules-for-robots`, or `enabledPlugins` in `.claude/settings.json`); offer to add them to the settings file, and write it only if the user agrees.
 

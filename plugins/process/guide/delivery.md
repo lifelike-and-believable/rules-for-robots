@@ -1,0 +1,27 @@
+# Delivery stages
+
+Part of the [rfr-process guide](../GUIDE.md).
+
+## Delivery stages
+
+These follow `rfr-core` and Phase 10: a spec whose criteria cite the stories and documentation sections they come from, tests written first and locked, implementation that makes them pass, and regression tests promoted from the stories and documentation. See [working with agents](../../../practices/working-with-agents.md) and [testing and code quality](../../../practices/testing-and-code-quality.md).
+
+Acceptance and end-to-end tests can be drafted as soon as the user documentation is approved. Write them against the documented behaviour, not the planned implementation.
+
+Before implementing, read the spec against the approved user documentation, promise by promise. A behaviour the documentation describes and no criterion covers is a gap in the spec. If the tests are already committed, add it as a new criterion with its own failing test in a second commit, and append that commit to `tests-commit`; the earlier tests stay locked. When a locked test compares whole objects, make the new field optional, or record an `unlocks:` entry with the reason.
+
+**When a spec depends on platform behaviour you have not verified** (a hosting adapter keeping a configuration file, a framework calling a hook, a provider's header handling), check it before writing the acceptance criteria: a throwaway build in a git worktree, or one request against the real service, usually takes minutes. Record what you found under the spec's assumptions, with how you checked it. In the pilot, research said a hosting configuration file "should" still apply after a change of build adapter; a ten-minute trial build showed it did not, and the site would have lost its security headers and a rewrite.
+
+An expected value that depends on outside facts (a time zone's daylight-saving dates, a calendar, an external format) is worked out by hand from a source, with the reasoning in a comment beside it: against stubs every test fails anyway, so a wrong expectation only shows once the real code runs. Redoing an unpushed tests-first commit to correct one is fine; once pushed, use `unlocks:`.
+
+**In a repository with a nested package** (an editor or studio with its own `package.json`), put code both packages use in the package with fewer dependencies, and have the other import or re-export it. Importing across the boundary from the side with more dependencies can pull in that side's configuration (its `tsconfig`, its framework), which works locally, where both are installed, and fails in a CI job that installs only one package. Before pushing such a change, reproduce that job: a fresh clone with only that package installed, then its build and tests.
+
+Run the project's type check whenever you run the tests, on the tests-first commit and on every fix (`astro check`, `tsc --noEmit`): against stubs every test fails anyway, and a test runner such as Vitest runs code whose types are wrong, so a type error in a test (an unneeded `@ts-expect-error`, `undefined` where the type wants `null`) shows only in the type check. Make it part of the same command, or set `typecheck:` in the process workflow caller so CI runs it on every pull request; the pilot pushed the same kind of type error three times before CI caught it.
+
+For a static site whose fixture build holds one set of content, test each page state through components: split the page into components that take their data as props, and render each state in a unit test (Astro's container API does this in Vitest). The end-to-end suite keeps the fixture build; the unit tests cover open and closed, filled and empty.
+
+The first run of the end-to-end tests against the real build often corrects a few expectations: a rule that fails on something outside the feature, a measurement read before the page finished, a margin the design did not fix. Record each under `unlocks:` with its reason first, then correct the test: the test-edit guard checks for the entry when the edit happens, so an entry added afterwards does not stop the prompt. That is what the list is for, and it does not mean the tests should have come later. A test file added after `tests-commit` needs no unlock entry; if you list one anyway, mark it `(new)` (`- tests/e2e/flip.spec.ts (new): covers AC-4 at phone size`) and the lock will not warn about it. Write `tests-commit` as a single commit, an inline list, or a block list of `- <commit>` lines; the lock fails if it cannot read any commit, so a spec is never left unlocked by its formatting.
+
+When tests are committed red against stubs, make each stub return a wrong value that is not empty or false: a stub returning `[]` or `false` passes every test that expects nothing to be found or something to be refused, and those tests then prove nothing until they are changed.
+
+**Check the pull request's own deployment before merging a change to the build or deployment** (build scripts, adapters, hosting configuration, environment variables, headers, redirects). CI builds in its own environment, so it cannot see what only the host sets: in the pilot, the host's preview environment set a variable that chose a different build adapter, and the first deployment failed while every CI job was green. Before asking for the merge, open the preview deployment and check what the change was for (response headers, rewrites, the routes it touches), and say in the pull request what you checked. Make it an acceptance criterion when the spec is about deployment.

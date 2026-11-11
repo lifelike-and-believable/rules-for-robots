@@ -77,7 +77,8 @@ function main(argv) {
   const root = path.resolve(args[0] ?? '.');
   const { config, paths } = prepareVale(root, out);
   console.log(config);
-  for (const p of paths) console.log(path.relative(root, p) || '.');
+  // Forward slashes on every platform, so the workflow and the tests read the same paths.
+  for (const p of paths) console.log(path.relative(root, p).split(path.sep).join('/') || '.');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2));

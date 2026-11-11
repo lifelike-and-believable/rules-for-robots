@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Installs a pinned Vale release for the docs-lint job (docs/specs/project-process.md, AC-23) and for
-// this repository's tests. Downloads the Linux or macOS archive from the Vale releases page, checks
+// this repository's tests. Downloads the Linux, macOS, or Windows archive from the Vale releases page, checks
 // its SHA-256 against the values below, and extracts it to .cache/vale/<version>/. A Vale already on
 // PATH at the same version is used instead. Prints the binary's path.
 // Usage: node checks/ci/install-vale.mjs
@@ -18,10 +18,13 @@ const ARCHIVES = {
   'linux-arm64': { name: `vale_${VALE_VERSION}_Linux_arm64.tar.gz`, sha256: '3154179f4611140c9af54a8b3bc6a90bc02b73fe6c1f635369604dde0490406d' },
   'darwin-x64': { name: `vale_${VALE_VERSION}_macOS_64-bit.tar.gz`, sha256: 'df42b317be6ece6a6a70d06b952deec581d047046eb93ea4632f58da56a86ff9' },
   'darwin-arm64': { name: `vale_${VALE_VERSION}_macOS_arm64.tar.gz`, sha256: 'a6c3370f53bad93086c6b85f3163676e44e08049d69743afdcc13f3aab5b7482' },
+  'win32-x64': { name: `vale_${VALE_VERSION}_Windows_64-bit.zip`, sha256: 'c42f4b413aa29b6b36fa4e3ac0c18322588a54ac860db4c84b8255997f7d1ec2' },
+  'win32-arm64': { name: `vale_${VALE_VERSION}_Windows_arm64.zip`, sha256: '673b27eea6e70ad25f99c5687b63c987a72a5ceadc6c9e730da50df6ba1fb022' },
 };
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cacheDir = path.join(repoRoot, '.cache', 'vale', VALE_VERSION);
+const exe = process.platform === 'win32' ? 'vale.exe' : 'vale';
 
 function onPath() {
   const r = spawnSync('vale', ['--version'], { encoding: 'utf8' });
@@ -31,7 +34,7 @@ function onPath() {
 // The Vale binary to run: the cached one, or one on PATH at the pinned version. Throws when neither
 // exists, naming the command that installs it.
 export function valeBinary() {
-  const cached = path.join(cacheDir, 'vale');
+  const cached = path.join(cacheDir, exe);
   if (fs.existsSync(cached)) return cached;
   const found = onPath();
   if (found) return found;
@@ -51,7 +54,10 @@ export async function installVale() {
   fs.mkdirSync(cacheDir, { recursive: true });
   const file = path.join(cacheDir, archive.name);
   fs.writeFileSync(file, bytes);
-  const r = spawnSync('tar', ['-xzf', file, '-C', cacheDir, 'vale'], { encoding: 'utf8' });
+  // Windows' own tar (bsdtar, in System32) reads the zip archive too; a GNU tar earlier on PATH, such
+  // as Git Bash's, reads neither the zip nor a C: path.
+  const tar = process.platform === 'win32' ? path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+  const r = spawnSync(tar, [archive.name.endsWith('.zip') ? '-xf' : '-xzf', file, '-C', cacheDir, exe], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`extracting ${archive.name}: ${r.stderr}`);
   fs.rmSync(file);
   return valeBinary();

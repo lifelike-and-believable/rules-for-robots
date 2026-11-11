@@ -4,7 +4,9 @@ A staged project development process for products built with agents, from [rules
 
 Install it from this marketplace with `/plugin install rfr-process@rules-for-robots`. It declares `rfr-core` as a dependency, so Claude Code installs that too.
 
-Slices 11a to 11c, 11e, and 11g are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable and recorded tutorials, a merge guard hook, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, advisory docs-lint (Vale) and mutation (Stryker) jobs, a workflow that runs tutorials against preview deployments, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
+Slices 11a to 11c, 11e, and 11g are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable and recorded tutorials, a merge guard hook, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, advisory docs-lint (Vale) and mutation (Stryker) jobs, a workflow that runs tutorials against preview deployments, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md), split by stage so an agent reads only the part for its work.
+
+Team mode, CODEOWNERS, per-stage approvers, and the Project board are built and tested, and no pilot has used them yet; they are marked below. Work on them waits until a team adopts the process (process plan P5). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
 
 ## The process
 
@@ -29,7 +31,7 @@ Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and
 
 1. Copy `templates/process.yml` to `docs/product/process.yml` and name the approvers.
 2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch. It follows rules-for-robots `main`, so fixes arrive at once, and so do changes that could turn your CI red. For stable CI, pin both the `uses:` line (`...rfr-process.yml@<tag or commit>`) and the `rules-ref` input to the same release tag or commit, and update them on purpose.
-3. In team mode, run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
+3. In team mode (not yet exercised by a pilot), run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
 4. Nothing to do for labels: the tier job creates `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic` on its first run.
 5. Start each artifact from `templates/artifacts/` (including `decision.md` for a choice that spans epics, and `discovery.md` when requirements need use cases and decisions written down first), and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site>/`. A repository with several kinds of sub-project keeps one set of artifacts and one `process.yml`, and each sub-project uses its own profile's templates; `/rfr-process:setup mixed` records which folder uses which profile in `AGENTS.md`. A static site has a visitor-facing page (`user-doc.md`) and an editor guide for content in files (`user-doc-editor.md`) or in a CMS (`user-doc-editor-cms.md`). The templates link to sections (`concept#audience`, `epic-<name>#outcome`), so an edit elsewhere in an upstream artifact does not make everything below it stale.
 
@@ -90,11 +92,15 @@ An agent writing the pull request may set `status: approved` in it; that is a pr
 
 In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. When the plugin is installed, its `guard-merge` hook asks the person to confirm each such merge; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent and the project's `AGENTS.md`. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
 
+### Gate types
+
+Each gated stage has a gate, set per stage with `gates:` in `process.yml`: `approve` (an approver decides, and the merge waits for them), `notify` (no approver; after the merge the approvals job opens a `needs-lead` issue in the decision queue, with "keep them" as the default, and an objection is an ordinary amendment), or `agent` (a comment `<!-- rfr-agent-review head=<sha> -->` from `/rfr-core:review-pr` on the head commit stands in for the approver). Without `gates:`, a supervised project uses `approve` everywhere, as before. A delegated project (`.claude/rfr.json` `"mode": "delegated"`) uses `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. The merge guard asks only about `approve` stages.
+
 ### Who approved, according to GitHub
 
 Who approved a change is read from GitHub, never from front matter.
 
-- **Team mode** (`mode: team`): each gated stage a pull request changes needs an approving review, on the current head commit, from one of that stage's approvers. A member of a listed team counts if the workflow's token can read team membership. A reviewer's latest review is the one that counts.
+- **Team mode** (`mode: team`) (Not yet exercised by a pilot: every pilot so far has used solo mode. Built and tested, with no further work until a team adopts the process.): each gated stage a pull request changes needs an approving review, on the current head commit, from one of that stage's approvers. A member of a listed team counts if the workflow's token can read team membership. A reviewer's latest review is the one that counts.
 - **Solo mode** (`mode: solo`): GitHub does not let you approve your own pull request, so the approval is you merging it. After each merge, the job checks that an approver merged it and opens a `process-approval` issue if not, or if a gated change was pushed without a pull request.
 
 Gated stages are concept to user documentation (including discovery), and tutorials. Specs are gated only when `process.yml` lists spec approvers.
@@ -107,7 +113,7 @@ The plugin's `guard-merge` hook asks the person to confirm `gh pr merge` (with o
 
 ## Size tiers
 
-Each pull request carries one label: `tier:trivial`, `tier:fix`, `tier:story`, or `tier:epic`. The tier job fails a `tier:trivial` pull request that changes a process artifact or a `public-api` path, and a `tier:fix` pull request that changes `docs/product/`, `docs/design/`, or `docs/user/`. A change to documented behaviour is at least a story. The pull request that adds `process.yml` needs no tier. On a newly opened pull request without a tier label, the job re-reads the labels for up to a minute before failing, so labelling a pull request right after opening it does not leave a red run.
+The tier job infers each pull request's tier from the paths it changes: `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`; `tier:fix` for another process artifact folder or a `public-api` path; `tier:trivial` otherwise. A label (`tier:trivial`, `tier:fix`, `tier:story`, `tier:epic`) can raise the tier, usually to `tier:epic`, and the job fails a label lower than the paths imply. The mutation job uses the tier the job settled on. The pull request that adds `process.yml` needs no tier.
 
 ## Issue sync
 
@@ -141,6 +147,8 @@ These report in the job summary and never fail the build.
 The experimental `persona-walkthrough` agent does a cognitive walkthrough of user documentation, a design note, or a tutorial, once for each persona the stories name: at every step it asks where that persona would fail and why. For a web tutorial with a URL, it runs the tutorial first and reports mismatches with the product as facts. Findings are ordered by severity, each citing the story or persona section behind the expectation and the artifact that most likely needs to change. Run it before the approver reviews stages 6, 7, and 12. It has not been through an eval round yet.
 
 ### Project board
+
+(Not yet exercised by a pilot: every pilot so far has used solo mode. Built and tested, with no further work until a team adopts the process.)
 
 To place the issues on a GitHub Project as well:
 

@@ -1,0 +1,142 @@
+{
+  "repository": "xr-pipeline",
+  "since": null,
+  "merged": 6,
+  "gated": 6,
+  "unchanged": 5,
+  "medianHours": 0.2440277777777778,
+  "totalHours": 1.7325,
+  "stages": {
+    "concept": {
+      "pulls": 1,
+      "unchangedShare": 0,
+      "withCommitsAfterReady": 1,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.5208333333333334,
+      "totalHours": 0.5208333333333334
+    },
+    "discovery": {
+      "pulls": 3,
+      "unchangedShare": 0.6666666666666666,
+      "withCommitsAfterReady": 1,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.155,
+      "totalHours": 0.8194444444444445
+    },
+    "requirements": {
+      "pulls": 3,
+      "unchangedShare": 0.6666666666666666,
+      "withCommitsAfterReady": 1,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.155,
+      "totalHours": 0.8194444444444445
+    },
+    "personas": {
+      "pulls": 3,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.1502777777777778,
+      "totalHours": 0.7236111111111112
+    },
+    "epics": {
+      "pulls": 2,
+      "unchangedShare": 1,
+      "withCommitsAfterReady": 0,
+      "withApproverNotes": 0,
+      "withChangesRequested": 0,
+      "medianHours": 0.23833333333333334,
+      "totalHours": 0.4766666666666667
+    }
+  },
+  "pulls": [
+    {
+      "number": 1,
+      "stages": [
+        "concept",
+        "discovery",
+        "requirements"
+      ],
+      "readyAt": "2026-11-05T13:42:37.000Z",
+      "mergedAt": "2026-11-05T14:13:52Z",
+      "hours": 0.5208333333333334,
+      "commitsAfter": 1,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": true
+    },
+    {
+      "number": 2,
+      "stages": [
+        "personas"
+      ],
+      "readyAt": "2026-11-05T15:42:57.000Z",
+      "mergedAt": "2026-11-05T16:08:44Z",
+      "hours": 0.4297222222222222,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 14,
+      "stages": [
+        "discovery",
+        "requirements"
+      ],
+      "readyAt": "2026-11-06T20:54:38.000Z",
+      "mergedAt": "2026-11-06T21:03:56Z",
+      "hours": 0.155,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 15,
+      "stages": [
+        "personas"
+      ],
+      "readyAt": "2026-11-06T20:54:59.000Z",
+      "mergedAt": "2026-11-06T21:04:00Z",
+      "hours": 0.1502777777777778,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 16,
+      "stages": [
+        "discovery",
+        "epics",
+        "personas",
+        "requirements"
+      ],
+      "readyAt": "2026-11-06T20:55:28.000Z",
+      "mergedAt": "2026-11-06T21:04:05Z",
+      "hours": 0.1436111111111111,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    },
+    {
+      "number": 29,
+      "stages": [
+        "epics"
+      ],
+      "readyAt": "2026-11-06T21:25:43.000Z",
+      "mergedAt": "2026-11-06T21:45:42Z",
+      "hours": 0.33305555555555555,
+      "commitsAfter": 0,
+      "reviewsChanges": 0,
+      "approverNotes": 0,
+      "changed": false
+    }
+  ]
+}

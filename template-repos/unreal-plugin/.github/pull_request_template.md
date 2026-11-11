@@ -2,6 +2,10 @@
 
 <!-- One logical change (GIT-001). What changed and why. -->
 
+## Decisions
+
+<!-- One line each: a choice made without asking and the alternative rejected, an assumption, a parked item (a task or test that looked wrong, left untouched, and why), or a question for the maintainer with the default you proceeded on. Write "None" if there were none. -->
+
 ## Verification
 
 <!-- Paste the verify command's output, or say what you could not run (WA-001, WA-005). -->

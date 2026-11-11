@@ -1,8 +1,17 @@
 # Project Plan: rules-for-robots
 
-Status: v1.0.2 (2026-10-05). Phases 0 to 7 and 9 complete. Phase 8 has two eval rounds done; long-session cases, ablations, and the wording experiments continue after 1.0. All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v5.7.3 (2026-11-11). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
+
+The goal in the maintainer's words (2026-11-10): "The simplest possible process for producing the highest quality solutions."
+
+The maintainer confirmed two readings of it:
+
+1. Quality is the constraint, and simplicity is what gets minimised. When the two conflict, quality wins.
+2. "Simplest" means simplest for the person directing the work, measured in their attention, not in the number of parts. A mechanism that runs without them, such as a test guard or the staleness check, costs nothing; an extra approval gate does.
+
+It also works as a test: for any rule, gate, agent, or hook, ask whether removing it would lower the quality of the results, and if not, remove it.
 
 Produce a reusable set of **rules**, **best practices**, and **agent definitions** that steer AI coding agents (and the humans working with them) toward software, websites, web apps, and Unreal Engine plugins that are:
 
@@ -11,11 +20,11 @@ Produce a reusable set of **rules**, **best practices**, and **agent definitions
 | High-quality | Correct, tested, reviewed, consistent | Tests on critical paths, zero lint/type/compiler warnings at the agreed level, review checklist passes |
 | User-centred | Solves a real user need; accessible; clear UX and content. For plugins, "users" includes the developers and designers who use the plugin in the editor | WCAG 2.2 AA for web; documented user stories and acceptance criteria; plugin settings, Blueprint API, and docs reviewed for usability |
 | Performant | Fast to load and respond; efficient on client, server, and game thread | Core Web Vitals budgets (LCP, INP, CLS) and bundle budgets for web; frame-time and memory budgets profiled with Unreal Insights for plugins |
-| Scalable | Handles growth in users, data, content, and team size | Stateless services and load-test baselines for web; plugins that behave well with large worlds, many actors, and network replication |
+| Scalable | Handles growth in users, data, content, and team size | Stateless services and load-test baselines for web; plugins that behave well with large worlds, many actors, and network replication. Not yet covered: no rule, practice guide, or check addresses scalability (decided 2026-11-10 to keep the goal and say so) |
 | Extensible | New features fit without rewrites | Clear module boundaries, stable public interfaces, extension points (e.g. subsystems, interfaces, delegates), ADRs for key decisions |
 | Maintainable | Easy for a new contributor (human or agent) to change safely | Docs, conventions, small modules, automated checks, low change failure rate |
 
-Security, privacy, and observability are treated as cross-cutting requirements underpinning all six attributes.
+Security, privacy, and observability are treated as cross-cutting requirements underpinning all six attributes. Security and privacy have rules, a guide, and checks; observability is not yet covered by any rule, guide, or check.
 
 ## 2. Decisions
 
@@ -309,7 +318,7 @@ Pull requests: #19 (changelog and release check), #39 to #43 and #45 (first adop
 - Quarterly review of standards and engine/framework versions; re-run Phase 0 research lightly and the eval suite on each new model generation; adjust the Unreal version set when Epic's default three-version build set moves.
 - **Exit criteria:** v1.0 tagged; plugins installable from the marketplace; template repos published.
 
-### Phase 10: Spec-to-test traceability (planned)
+### Phase 10: Spec-to-test traceability (in progress: 10c eval round not run)
 Spec: [docs/specs/spec-test-traceability.md](docs/specs/spec-test-traceability.md) (approved).
 Pull requests: #84 (spec), #85 (10a), #86 (cluster amendment), #87 (10b).
 
@@ -320,22 +329,22 @@ A document-driven and test-driven hybrid. Acceptance criteria get IDs, a check s
 - **10c:** the paid eval round (including one-test-at-a-time against clusters), the decision to keep or drop the rules, and the review of whether a separate `test-author` agent is needed (the spec lists the signals). Prepared without paid runs on 2026-11-03: a harder cadence case (`tdd-cluster`), the Stryker comparison on `spec-vacuous-tests` (it finds one of the two vacuous tests), and a run plan of 55 runs estimated at $20 to $30 (`evals/README.md`, #121).
 - **Exit criteria:** the check runs in `npm run verify`; the candidate has an eval result; the rule is promoted or dropped on that result.
 
-### Phase 11: Project development process (planned)
+### Phase 11: Project development process (in progress: 11d not started)
 Spec: [docs/specs/project-process.md](docs/specs/project-process.md) (approved 2026-10-31; its `status` field changes once every `test:` criterion has a citing test, at the end of 11d).
 Pull requests: #102 (spec), #103 (11a), #104 (11b), #105 (11c), #106 (research amendment), #107 (11e), #108 (11f), #109 (pilot fixes, round 1), #110 (merge guard asks), #111 (pilot fixes, round 2), #112 (pilot fixes, round 3), #113 (11g), #114 (pilot fixes, round 4), #116 (11h), #117 (pilot fixes, round 5), #118 (pilot fixes, round 6), #119 (pilot fixes, round 7), #120 (pilot fixes, round 8), #122 (Agentic XR Pipeline feedback, round 1), #123 (setup for mixed repositories), #124 (pilot fixes, round 9), #125 (Agentic XR Pipeline feedback, round 3), #128 (pilot fixes, round 10), #136 (merge guard takes a typed instruction), #137 (guard calibration).
 
 A staged, iterative process from concept to demos, delivered as a second plugin, `rfr-process`, that depends on `rfr-core`. Per-stage approvers approve the design phase (concept, requirements, personas, epics, stories, design and UX, user documentation); agents run the delivery phase (technical specification, unit tests, implementation, regression tests), and approvers review again at demos and tutorials and at release. Approval is read from GitHub reviews or, in solo mode, from who merged. Artifacts link to sections of their upstream artifacts, and a stale link fails CI. Design-stage guidance ships as a practice guide until evals justify skills. Slices 11a to 11d are listed in the spec.
 
-### Phase 12: Feedback intake (planned)
+### Phase 12: Feedback intake (complete)
 Spec: [docs/specs/feedback.md](docs/specs/feedback.md) (approved 2026-11-06).
 Pull requests: #129 (12a), #134 (Area field fix), #135 (feedback round 1).
 
 Feedback from projects that use rules-for-robots arrives as issues on this repository instead of messages between sessions, so no session has to stay open to receive it. An optional `rfr-feedback` plugin drafts the issue, removes project details, scans for private ones, and files it only when the user confirms; an intake job labels it and points out duplicates; a scheduled session triages new feedback daily and proposes changes, and builds only what the maintainer approves.
 
 - **12a:** the plugin and its `report-feedback` skill, the feedback issue form, the intake job, and the `triage-feedback` skill.
-- **12b:** the daily scheduled triage task, created after 12a merges, and a first triage of the pilots' open findings.
+- **12b:** the daily scheduled triage task, created after 12a merges, and a first triage of the pilots' open findings. Done: the task was created on 2026-11-06 and runs daily; the first round of findings is #135.
 
-### Phase 13: Test change review (planned)
+### Phase 13: Test change review (in progress: 13d eval not run)
 Spec: [docs/specs/test-change-review.md](docs/specs/test-change-review.md) (approved 2026-11-07).
 Pull requests: #138 (spec), #139 (13a), #140 (13b), #142 (13c).
 
@@ -346,7 +355,7 @@ Most changes to existing tests can be judged on written criteria: whether the ch
 - **13c:** the reviewer agent and its `review-pr` step (AC-8 to AC-10).
 - **13d:** the eval (AC-11); the reviewer adds the label only after it passes.
 
-### Phase 14: Grounded evidence (planned)
+### Phase 14: Grounded evidence (in progress: 14b eval not run)
 Spec: [docs/specs/grounded-evidence.md](docs/specs/grounded-evidence.md) (approved 2026-11-08).
 Pull requests: #143 (spec and 14a).
 
@@ -355,21 +364,21 @@ Two ideas taken from an evaluation of Context7 and Graphify (2026-11-08), withou
 - **14a:** `checks/api-lookup.mjs` and the `lookup-api` skill; the `Basis:` line in the five reviewer agents, `checks/review-findings.mjs`, and the `review-pr` and `citation-checker` changes; the candidate WA-006 text (AC-1 to AC-9).
 - **14b:** the eval (AC-10); WA-006 and UE-001 name the lookup only if it passes.
 
-### Phase 15: Guard tiers (planned)
+### Phase 15: Guard tiers (in progress: 15e eval not run)
 Spec: [docs/specs/guard-tiers.md](docs/specs/guard-tiers.md) (approved 2026-11-08).
-Pull requests: #145 (spec), #146 (15a), #151 (15b), #153 (15c), #155 (15d).
+Pull requests: #145 (spec), #146 (15a), #151 (15b), #153 (15c), #155 (15d), #157 (ask once), #158 (`defer`).
 
 The guards ask whenever an action matches a dangerous pattern, and most prompts in the pilots protected nothing. Under the tier rule, a guard asks only when an action cannot be undone or reaches outside the project and a person must decide; everything else is allowed, refused with a reason the agent acts on, or judged at the pull request. The guard decision log from #144 measures the result.
 
 - **15a:** the tier guide, the guard corpus, outcome logging, and the report script (AC-1, AC-2, AC-6, AC-7).
 - **15b:** the tier changes to the guards and the `testWeakening` setting (AC-3 to AC-5, AC-12). Done (#151).
 - **15c:** snapshots before destructive local commands, which are then allowed (AC-11). Done (#153).
-- **15d:** the replay and the practice guide (AC-8, AC-9). In review (#155); the Kettlebird pilot's sessions are still to replay.
+- **15d:** the replay and the practice guide (AC-8, AC-9). Done (#155); the Kettlebird pilot's sessions are still to replay.
 - **15e:** the eval (AC-10).
-- **`defer` goes ahead** (AC-5 amended, 2026-11-09): under `testWeakening: defer` a weakening test change is allowed with context and logged, instead of refused, so the pull request's test change check and `test-change-reviewer` are the gate. From the Kettlebird pilot, where the lead approved test-edit prompts as soon as they appeared. In review (#158).
-- **Ask once and default permissions** (outside the spec, from an adopter report on 2026-11-09): the guards decide when to ask, but nothing said what is allowed, so a new repository prompted on every file. WA-009 (SHOULD) has the agent ask once for a batch of actions; the templates and `install-rules` set default allow rules for read-only and local git commands and each profile's verify commands, leaving pushes, new dependencies, and MCP tools to prompt. Decision: allow named scripts rather than `npm run *`, so a new script is a change the user sees; leave `git push` to prompt. An eval case that scaffolds a project and counts prompts would move WA-009 from review to measured. In review (#157).
+- **`defer` goes ahead** (AC-5 amended, 2026-11-09): under `testWeakening: defer` a weakening test change is allowed with context and logged, instead of refused, so the pull request's test change check and `test-change-reviewer` are the gate. From the Kettlebird pilot, where the lead approved test-edit prompts as soon as they appeared. Done (#158).
+- **Ask once and default permissions** (outside the spec, from an adopter report on 2026-11-09): the guards decide when to ask, but nothing said what is allowed, so a new repository prompted on every file. WA-009 (SHOULD) has the agent ask once for a batch of actions; the templates and `install-rules` set default allow rules for read-only and local git commands and each profile's verify commands, leaving pushes, new dependencies, and MCP tools to prompt. Decision: allow named scripts rather than `npm run *`, so a new script is a change the user sees; leave `git push` to prompt. An eval case that scaffolds a project and counts prompts would move WA-009 from review to measured. Done (#157).
 
-### Phase 16: Domain plugins (planned)
+### Phase 16: Domain plugins (complete)
 Spec: [docs/specs/plugin-split.md](docs/specs/plugin-split.md) (approved 2026-11-08).
 Pull requests: #147 (spec), #148 (16a), #150 (16b and the release).
 
@@ -388,6 +397,44 @@ New models will keep arriving, and the rule set is tuned to the 5.5 generation. 
 - **17b:** the "New model" section in the maintenance guide, the `model-release` issue form, section 5 and decision 7 rewritten to name no single generation, and the "Evaluated on:" changelog line and its check (AC-7 to AC-10).
 - **17c:** the baseline run on Opus 5.5 and Sonnet 5.5 (AC-11), and the first decisions it supports.
 - **Fable 5.2** (2026-11-10, outside the spec): `software-architect` moved to Fable 5.2 (#159). Anthropic's guidance is to start with Opus 5.5 and move to Fable only when Opus at higher effort falls short, which the October round never compared, and Claude Code can now use Fable as an advisor. The runner gains `--advisor`, `--agent-model`, and `--agent-effort`, and records cost per model and advisor calls (#160); the round in `evals/README.md` ("Planned: Fable 5.2 round") compares the architect on Opus 5.5 and Fable 5.2, and a Sonnet session with Fable as advisor. Its paid runs wait for approval.
+
+### Phase 18: Housekeeping and triage (in progress)
+Plan: [docs/improvement-plan.md](docs/improvement-plan.md), carried out under [docs/improvement-brief.md](docs/improvement-brief.md). Decisions D1 to D8 and P1 to P7 take the recommended answers (confirmed 2026-11-10).
+Pull requests: #164 (18a), #165 and #175 (18b).
+
+- **18a:** status documents: this plan, the README, and two new checks in `checks/plan.mjs` (the status line names the `rfr-core` version; a phase marked planned cannot have every slice done). Done (#164).
+- **18b:** `npm run verify` passes on Windows, and CI runs it there too. Done (#165, #175): Vale pinned for Windows, and the guards read Git Bash paths as the shell does (guard tiers AC-13).
+- **18c:** a `kind` for every rule (`behaviour`, `fact`, `invariant`). Waits for the maintainer's review of steps 1 to 5 of the brief.
+- **18d:** demote rules the models already follow. Waits on 18c.
+- **Decisions after steps 1 to 5** (maintainer, 2026-11-10): (1) sessions on this repository may merge their own green pull requests; the maintainer adds the permission rule, since a session may not edit its own permissions. (2) The 23k feature trial runs on the next feature built under the process. (3) The goal table keeps scalability and observability, marked as not yet covered. (4) The delegated agreement stays opt-in; a harder `ls-park-and-continue` variant (21a-2) tests the difference it is meant to make before any default changes.
+
+### Phase 19: Delegated work (in progress)
+Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Delegated mode is opt-in until its eval (21a) passes.
+Pull requests: #162 (19a), #166 (19b), #167 (19h), #168 (19c).
+
+- **19a:** `checks/attention-report.mjs` and the baseline in `evals/results/2026-11-10-attention-baseline/`. Done (#162). The Kettlebird pilot's transcripts are on another machine and are not in the baseline.
+- **19b:** the delegated working agreement (candidates in `evals/candidates/*-delegated.md`, installed by `install-rules` when `.claude/rfr.json` says `"mode": "delegated"`), and the `## Decisions` section in the pull request template. Done (#166), opt-in until 21a passes.
+- **19c:** the decision queue: `needs-lead` issues with options, a default, and its date, and the `/rfr-core:decisions` skill. Done (#168).
+- **19h:** the preferences log (`docs/preferences.md` in the templates and `install-rules`), checked by the reviewers, and the `ls-repeat-correction` eval case, built and unit-tested with its runs waiting. Done (#167).
+- **19d, 19e:** replaced by Phase 23. **19f, 19g:** wait for the maintainer's review.
+
+### Phases 20 to 22: Consolidation, targeted evals, missing guards (planned)
+Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Only 21a (delegated wording against test gaming, up to $20) is approved to run; the rest wait for the maintainer's review of steps 1 to 5 of the brief.
+Pull requests: #169 (21a).
+
+- **21a:** done (#169), $12.27. No run gamed the wrong test in either mode (0 of 40), so delegated mode stays available behind the mode setting. On the new `ls-park-and-continue` case both modes carried on past the wrong test; only Opus with the delegated wording also wrote the parked helper to the documented rule (5/5 against 0/5). [Results](evals/results/2026-11-10-21a/README.md). Second round (#176), Sonnet only, $2.14, with the wrong test first and no instruction to carry on: again no gaming (0 of 10), and both modes carried on; with the delegated wording Sonnet wrote the parked helper to the documented rule in 3 of 5 runs against 0 of 5 ([results](evals/results/2026-11-10-21a-park-early/README.md)).
+
+### Phase 23: Process changes (in progress)
+Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
+Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 (23l).
+
+- **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#163). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
+- **23f:** the tier inferred from the changed paths; a label only raises it. Done (#170).
+- **23j:** pilot findings moved to `docs/research/pilots/`, the guide split by stage, unexercised team features marked. Done (#171).
+- **23b:** gate types (`approve`, `notify`, `agent`) with defaults by working mode. Done (#172).
+- **23c:** the batched interview, product brief, feature packet, and the review packet script. Done (#173).
+- **23l:** `checks/process-rework-report.mjs` (amendments to approved artifacts, and which came after a spec built on them), the review packet's mismatches and `slows` count, guide text for turning a repeated correction into a review check, and regression cases from feedback triage, from Anthropic's AI-native SDLC playbook. Built (#181); the pilot baseline waits for the pilots' clones.
+- **23k:** the two probes, written up for the maintainer to run and judge in [evals/results/2026-11-10-23k-probes/](evals/results/2026-11-10-23k-probes/README.md) (#174). Not yet run. 23d and later wait for their results.
 
 ## 11. Milestones
 
@@ -426,16 +473,15 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 ## 14. Immediate next steps
 
-1. The long-session eval round (#69): seven multi-prompt cases for the candidate rules from #28 to #35, #52, and #57. Cases and graders are built and unit-tested first; the paid runs are staged, baseline first.
-2. Hook cost: format edited files once per turn instead of after every edit, then measure the change against the Phase 8 numbers.
-3. An opt-in owned-paths hook and CI check (#47).
-4. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.
-5. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.
+Open items only; finished work is recorded under its phase.
 
-6. Phase 10: approve the spec-to-test traceability slice, then build 10a.
-7. Phase 11: 11a to 11c done (#103, #104, #105). Research amendment approved (#106). 11e done (#107); a pilot on the Kettlebird website is running. 11f done (#108). Pilot fixes rounds 1 to 7 done (#109, #111, #112, #114, #117, #118, #119); the pilot continues. 11g done (#113): advisory Vale and Stryker jobs, and tutorials against preview deployments. 11h done (#116): the Unreal fixture tutorial, screenshot test, and demo render on the Tier 2 GPU runner. 11d waits for Phase 10's eval round (10c), which the amendment proposes should also compare Stryker with the sabotage step.
-8. Phase 14: 14a done (#143); build the 14b eval cases.
-9. Choose slices from the ranked list in [docs/research/notes/third_party_tools_for_core.md](docs/research/notes/third_party_tools_for_core.md) (2026-11-08). Its first item, the `guard-mcp` decrypt gap, is fixed in #143. Most of the rest are evals: a compaction handoff hook, a confirm pass that tries to disprove findings, review grading with golden findings, guarding checker configs, and a capped Stop nudge.
-10. Phase 15: 15a to 15c done (#146, #151, #153); 15d in review (#155). Replay the Kettlebird pilot's sessions when their transcripts can be extracted there. Then 15e (the eval).
-11. Phase 16: done (#148, #150); `rfr-v4.0.0` is published.
-12. Phase 17: done (#149, #152). The next step is the procedure itself: open a model-release issue when Claude Code offers a new model.
+1. The improvement plans, in the brief's order: measure (19a, 23a), housekeeping (18a, 18b), delegated mode (19b, 19h, 19c, then the 21a eval), process (23f, 23j, 23b, 23c), and the probes (23k). The rest of both plans waits for the maintainer's review of what those produce.
+2. Eval rounds that have machinery and no result: 10c (55 runs, $20 to $30), 13d, 14b, 15e. Phase 21 orders them under the D8 cap of $150.
+3. 11d: the release readiness check and the stage 8 template (process plan 23i); release notes and the triage skill stay deferred (P6).
+4. The long-session eval round (#69): seven multi-prompt cases for the candidate rules from #28 to #35, #52, and #57; cases and graders are built, the paid runs are staged.
+5. Replay the Kettlebird pilot's sessions (guard tiers AC-8) and add them to the attention baseline (19a); both need commands run on the pilot's machine.
+6. An opt-in owned-paths hook and CI check (#47).
+7. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.
+8. The first real Fab submission, which answers #36. An editor MCP limit hook (#55) needs a machine with UE 5.8 to confirm the tool names.
+9. Practice guides for scalability and observability, which the goal table names and nothing covers yet.
+10. The next model release: open a model-release issue when Claude Code offers a new model (Phase 17).

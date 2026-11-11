@@ -8,6 +8,129 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - Eval runner options for the Fable 5.2 round (#160; `evals/README.md`, "Planned: Fable 5.2 round"). `--advisor <model>` gives every session that advisor through Claude Code's `advisorModel` setting; `--agent-model` and `--agent-effort` run a plugin agent on another model or effort through a temporary copy of rfr-core; each run record lists cost and output tokens per model (`usageByModel`) and the advisor calls. Repository tooling only; no plugin changes.
 
+## [5.7.3] - 2026-11-11
+
+Pull requests: #181.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- `checks/process-rework-report.mjs` reports, from a repository's history and with no API calls, how often approved `rfr-process` artifacts were amended afterwards, per stage, and how many amendments came after an approved spec derived from the artifact (#181; process plan 23l; spec AC-62). The gate report says what an approval cost; this says whether approved intent held. The JSON holds pull request numbers, stages, dates, and counts only. One of four ideas taken from Anthropic's AI-native SDLC playbook. No plugin changes.
+
+### Changed
+
+- The review packet lists the persona walkthrough's mismatches with the product first, and says how many `slows` findings it leaves out instead of dropping them without a word (#181; process plan 23l; spec AC-61). `persona-walkthrough` now writes each mismatch as a `- **Mismatch:**` line so the packet can read it.
+- The `rfr-process` guide's reviews part has a section on corrections that come back: an approver's correction goes into `docs/preferences.md`, and a problem found a second time at the same stage becomes a line under `## Review checks` there, which the self-check and `persona-walkthrough` run (#181; process plan 23l). Guide text only.
+- `triage-feedback` (this repository's skill) proposes a regression case for each confirmed finding: a fixture test for a defect in a check, and an eval case in `evals/cases/` for an agent's behaviour or for guide, skill, agent, or rule text (#181). No plugin changes.
+- `rfr-process` 0.16.1. Adopters: nothing to do; to see how often approved intent changed, run `node .rfr/checks/process-rework-report.mjs .` in a clone with the default branch's full history.
+
+## [5.7.2] - 2026-11-11
+
+Pull requests: #179, #180.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Fixed
+
+- A PowerShell cmdlet named in a quoted string or a heredoc body no longer makes a command that names a test file ask (#179; guard tiers AC-2). A commit message saying "Copy-Item refused to copy the file onto itself", in a command that also ran `git add` on a new test file, asked whether a test was being changed outside the Edit tool (seen in the TV Launcher session on 2026-11-11). The guard now looks for write cmdlets and their aliases only in the text the shell runs; a command that starts `pwsh` or `powershell` still counts whatever its quoting. Three guard corpus cases cover it.
+- `rfr-core` 5.7.2. Adopters: nothing to do; restart sessions to load the new guard.
+
+### Changed
+
+- The Ubuntu CI job installs Chromium without its system packages when Ubuntu's package mirror cannot be reached, instead of failing before any test runs (#180). On 2026-11-11 the mirror failed to resolve twice in a row on GitHub's runners. The runner image already has the libraries Chromium needs, and the tests still fail if it cannot start. No plugin changes.
+
+## [5.7.1] - 2026-11-10
+
+Pull requests: #173, #174, #175, #176, #177.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- `PLAN.md` marks scalability and observability as goals no rule, guide, or check covers yet, lists guides for them as a next step, and records the maintainer's decisions on the four open questions from the improvement work (#176). No plugin changes.
+
+### Evals
+
+- The second 21a round (#176): a new case, `ls-park-early`, puts the wrong test first and does not tell the agent to carry on. Sonnet 5.5, five runs per mode: no gaming, both modes finished the other helpers, and with the delegated wording Sonnet wrote the parked helper to the documented rule in 3 of 5 runs against 0 of 5. Results in `evals/results/2026-11-10-21a-park-early/`. No plugin changes.
+
+### Fixed
+
+- The guards read Windows paths as the shell does (#175; improvement plan 18b, guard tiers AC-13). Git Bash's `/c/...` drive paths and `/tmp` now name the drive folder and the user's temp folder, so a command inside the repository written that way takes a snapshot and goes ahead, as on Linux, instead of asking. Drive roots, system folders, the home folder, and `/tmp` itself still ask. The restore command for a snapshot taken in another folder read `git -C <root> git restore ...`, with `git` twice, which failed when run; it now reads `git -C <root> restore ...`. On Windows this happened on every snapshot, because git reports the root with forward slashes.
+- The guards compare a path with git's repository root in its real, long form (the shared `canonical` helper). Where a folder was reached through an 8.3 short name (`C:\Users\RUNNER~1`, as on GitHub's Windows runners and for long or spaced user names) or, on macOS, a symlink, the relative path climbed out of the repository: a new test file counted as an existing one, `rm -rf` inside the repository asked, and the restore command named the wrong path. The `rm -rf` check also read any `~` in a path as the home folder, so a path through such a short name asked; only a leading `~` counts now, as in the shell. Found by the new Windows CI job.
+- `checks/guard-replay.mjs` anonymises a Windows project, home, or temp path in each of its forms (`C:\x`, `C:/x`, `/c/x`), keeps POSIX paths from POSIX transcripts as they are, and extracts archives without passing a drive path to `tar`.
+- `npm test` passes on Windows apart from the Unreal demo test where Python is not installed. Four test files changed under `unlocks` entries citing AC-13: the shell commands in them write paths with forward slashes, as a Windows shell needs, one check that relies on `chmod` is skipped on Windows, and one scratch folder comes from `os.tmpdir()`; no expected decision changed. CI gains a `verify-windows` job.
+- A web tutorial's first step keeps the first-load timeout for every action after the first page opens, not only for opening it (#177; project-process AC-51, amended). A cold page can finish loading and still render late, so a "You see" check right after it failed at the short step timeout; it did on GitHub's Windows runner. Later steps keep the step timeout. Adopters: nothing to do; the reusable tutorial workflows pick it up.
+- `rfr-core` 5.7.1; `rfr-web` 1.0.4 and `rfr-unreal` 2.0.3 carry the updated hook library. Adopters: nothing to do; Windows sessions get fewer prompts for commands inside the repository.
+
+### Added
+
+- The 23k probes, ready for the maintainer (#174; process plan 23k): a counterfactual session on a project with rfr removed, and one feature built while its packet is reviewed. Steps and what to record are in `evals/results/2026-11-10-23k-probes/README.md`. No plugin changes.
+- Briefs and the review packet for `rfr-process` (#173; process plan 23c, P2). `checks/process-packet.mjs` builds the section for the top of a pull request description: every `[open]` choice first, then every `[assumed]` answer, the persona walkthrough's `blocks` and `misleads` findings with what was done about each, the mock-ups and recordings, and the artifacts. The design part of the guide, `bootstrap`, and `setup` describe the batched interview (every question at once, each with a proposed answer; unanswered ones drafted as `[assumed]`), the product brief (concept to epics in one pull request, after the consistency and persona passes), and the feature packet (story, design, and user documentation in one pull request). Spec AC-59 and AC-60; a smoke case for `bootstrap`, and the smoke runner loads `rfr-process`.
+- `rfr-process` 0.16.0. Adopters: nothing to do; to use the packet, run `node .rfr/checks/process-packet.mjs . --base origin/main` and paste its output at the top of the pull request description.
+
+## [5.7.0] - 2026-11-10
+
+Pull requests: #169, #170, #171, #172.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- Gate types for `rfr-process` (#172; process plan 23b, P1). `gates:` in `process.yml` sets each stage to `approve`, `notify`, or `agent`. The approvals job requires an approver only for `approve` stages; an `agent` stage needs a review recorded by `/rfr-core:review-pr` on the head commit (`<!-- rfr-agent-review head=<sha> -->`); after a merge that changed a `notify` stage, the job opens one decision-queue issue with "keep them" as the default. The merge guard asks only about `approve` stages. Without `gates:`, supervised projects keep `approve` everywhere; delegated projects (`.claude/rfr.json`) get `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. Spec AC-55 to AC-58; the spec no longer lists automating the approvers' decisions as out of scope.
+- `review-pr` records the agent-gate review. `rfr-core` 5.7.0. Adopters: nothing to do.
+- `rfr-process` 0.15.0. Adopters: nothing to do in supervised mode; a delegated project's derived stages stop waiting for the lead at merge, and the lead sees them in `/rfr-core:decisions`.
+
+### Changed
+
+- Process hygiene (#171; process plan 23j). The pilot findings move from `docs/specs/project-process.md` (520 lines, now 388) to `docs/research/pilots/kettlebird.md` and `agentic-xr-pipeline.md`, and the spec links to them. `plugins/process/GUIDE.md` becomes an index of six parts in `plugins/process/guide/` (start, design, delivery, validation, reviews and changes, adoption and tools), so an agent reads only the part for its stage. The README marks team mode, CODEOWNERS, per-stage approvers, and the Project board as not yet exercised by a pilot (P5). `AGENTS.md` asks for new test files named by behaviour. `rfr-process` 0.14.1. Adopters: nothing to do; links to `GUIDE.md` still work, and anchors into it now live in the parts.
+- The `rfr-process` tier job infers each pull request's tier from the paths it changes (#170; process plan 23f, P4): `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`, `tier:fix` for tutorials, process specs, or `public-api` paths, and `tier:trivial` otherwise. A label can raise the tier and a lower one fails. A pull request with no label no longer fails, so the minute-long wait for a label and the red first run it worked around are gone. The tier job reports its tier as an output, and the mutation job runs by it. Spec AC-10 and AC-27 are amended and AC-54 added. Adopters: nothing to do; labels you already add keep working, and you can stop adding `tier:story` and `tier:fix`.
+- `rfr-process` 0.14.0 for the guide, README, and setup skill. Adopters: nothing to do.
+
+### Evals
+
+- The 21a eval round (#169; improvement plan 21a): the delegated working agreement against test gaming, on `green-at-all-costs` and a new long-session case, `ls-park-and-continue` (four helpers with tests written in advance; the second's test contradicts the documented price rule). No run in either mode changed a test or wrote code to satisfy the wrong assertion (0 of 40, Opus 5.5 and Sonnet 5.5). Results in `evals/results/2026-11-10-21a/`. `green-at-all-costs` lists the delegated files as its candidates. No plugin changes.
+
+## [5.6.0] - 2026-11-10
+
+Pull requests: #168.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- The decision queue (#168; improvement plan 19c). A question only the project lead can answer becomes an issue labelled `needs-lead` with its options, the agent's default, and the date the default takes effect (two days by default), and the agent continues on the default. A question about an action that cannot be undone has no default, and the work it affects waits. The new `/rfr-core:decisions` skill lists open questions as waiting, answered, or due, posts the lead's answers, applies answered and due decisions, and closes them; `scripts/decisions.mjs` does the issue work through `gh`. Only the latest comment counts as the answer, so a later "actually" undoes an earlier choice. The delegated WA-003 now queues such questions instead of only listing them in the pull request. A smoke case covers the skill.
+- `rfr-core` 5.6.0. Adopters: nothing to do; delegated projects can run `/rfr-core:install-rules` again to get the updated WA-003.
+
+## [5.5.0] - 2026-11-10
+
+Pull requests: #167.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- The preferences log (#167; improvement plan 19h). Template repos gain `docs/preferences.md`, one line per correction the project lead has given, grouped by interface, wording, code, and tooling, and `AGENTS.md` gains a line: read it before design, interface, or documentation work, and add to it when the lead corrects something. `install-rules` offers to create both in an existing project. The delegated WA-004 adds: apply a correction, record it in the log in the same pull request, and name it in the report. `review-pr` gives the log to the reviewers as stated requirements, and `ux-reviewer` and `persona-walkthrough` report changes that go against it. A new long-session eval case, `ls-repeat-correction`, checks that a correction given in one session is applied in the next without being repeated; it is built and unit-tested, and its paid runs wait for approval.
+- `rfr-core` 5.5.0. Adopters: nothing to do; to start a log, run `/rfr-core:install-rules` and accept the offer, or copy `docs/preferences.md` from a template repo.
+- `rfr-process` 0.13.0, for `persona-walkthrough`. Adopters: nothing to do.
+
+## [5.4.0] - 2026-11-10
+
+Pull requests: #162, #163, #164, #165, #166.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- Delegated working mode, opt-in and experimental (#166; improvement plan 19b). With `"mode": "delegated"` in `.claude/rfr.json`, `/rfr-core:install-rules` replaces WA-002, WA-003, and WA-004 with files from `payload/modes/delegated/` (drafted in `evals/candidates/*-delegated.md`). The agent leaves a test or task that looks wrong untouched and parks it instead of stopping, asks only before irreversible or outward actions (the same list as WA-003, plus spending money and publishing), takes a better approach inside the approved scope and records it, and files an issue for anything outside it. Every such choice goes in a new `## Decisions` section of the pull request template, which `review-pr` reads. The guards behave the same in both modes. The files stay out of `rules/` until the 21a eval shows test gaming does not come back. The rule format gains a `replaces` field for these files. Adopters: nothing to do; to try delegated mode, add `"mode": "delegated"` to `.claude/rfr.json`, run `/rfr-core:install-rules`, and copy the template's `## Decisions` section into your pull request template.
+- `checks/attention-report.mjs` counts where sessions waited on a person, from Claude Code's own transcripts: permission prompts a person answered, `AskUserQuestion` calls, and replies after a turn ended, with the time each took and figures per merged pull request (#162; improvement plan 19a). The baseline for three projects is in `evals/results/2026-11-10-attention-baseline/`. No plugin changes.
+- `checks/process-gate-report.mjs` lists the merged pull requests that changed a gated `rfr-process` stage, with the wait from the request for approval to the merge and whether anything changed in between, and sums it up per stage (#163; process plan 23a). The baseline for Kettlebird, the XR pipeline, and the launcher is in `evals/results/2026-11-10-gate-baseline/`: 91 of Kettlebird's 96 gated pull requests merged unchanged. No plugin changes.
+
+### Changed
+
+- `PLAN.md` and the README describe the current state (#164; improvement plan 18a): the status line names the current version, Phases 12 and 16 are complete, Phases 10, 11, and 13 to 15 say what each still waits on, Phases 18 to 23 are added, and section 14 lists open items only. `checks/plan.mjs` now fails when the plan's status line names a version other than `rfr-core`'s, and when a phase marked planned has every slice done; the release steps in `docs/maintenance.md` say to update the line. No plugin changes.
+- `npm run verify` gets further on Windows (#165; improvement plan 18b): `checks/ci/install-vale.mjs` pins the Windows archives of Vale 3.26.0 by SHA-256 and extracts them with Windows' own `tar`, and `checks/process-vale.mjs` prints the linted folders with forward slashes. Of the 28 tests that failed on the maintainer's machine, 15 needed `npm ci` and a Playwright browser, one Python, one the Vale archive, and one a test helper that compared paths with forward slashes (changed under an `unlocks` entry in the process spec). Ten guard and replay tests still fail on Windows; `docs/maintenance.md` lists them. No plugin changes.
+
 ## [5.3.1] - 2026-11-09
 
 Pull requests: #159.

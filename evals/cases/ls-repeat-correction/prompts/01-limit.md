@@ -1,0 +1,1 @@
+Can you add a `--limit <n>` option to `report` that prints only the first n sessions (the total stays the total of what is printed)? It should reject a limit that isn't a positive whole number. Add a test.
