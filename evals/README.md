@@ -153,7 +153,7 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
 
 ## Fable 5.2 round (ran 2026-11-11)
 
-Cells E and A ran, with one-run checks of B and D; B and C were dropped once E showed the cases could not separate the models. The architect matched on Opus and moved to Opus 5.5 at `high` (#PR). Report: `results/2026-11-11-fable-5-2/report.md`.
+Cells E and A ran, with one-run checks of B and D; B and C were dropped once E showed the cases could not separate the models. The architect matched on Opus and moved to Opus 5.5 at `high` (#185). Report: `results/2026-11-11-fable-5-2/report.md`.
 
 ### Plan as written
 
