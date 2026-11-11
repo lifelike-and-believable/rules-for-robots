@@ -11,6 +11,7 @@ import { decideCommand } from '../plugins/core/scripts/guard-commands.mjs';
 import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
 import { vercelToolNeedsApproval } from '../plugins/web/scripts/guard-mcp.mjs';
 import { decideUnreal } from '../plugins/unreal/scripts/guard-unreal.mjs';
+import { decideAdb } from '../plugins/android/scripts/guard-adb.mjs';
 
 const corpus = JSON.parse(fs.readFileSync('test/fixtures/guard-corpus.json', 'utf8'));
 
@@ -61,6 +62,8 @@ function decide(c) {
   }
   if (c.guard === 'mcp') return vercelToolNeedsApproval(c.tool_name, c.tool_input) ? { decision: 'ask' } : null;
   if (c.guard === 'unreal') return decideUnreal(c.command);
+  // android-plugin AC-2: the devices adb would see, and the project's disposable devices and scripts.
+  if (c.guard === 'android') return decideAdb(c.command, { env: {}, settings: { disposable: c.disposable ?? [], deviceScripts: c.deviceScripts ?? [] }, listDevices: () => c.devices ?? [] });
   if (c.guard === 'test-edits') {
     const dir = fixtureRepo('clean');
     const file = path.join(dir, 'tests', 'a.test.ts');

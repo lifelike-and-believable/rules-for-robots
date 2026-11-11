@@ -4,7 +4,7 @@
     "name": "Lifelike & Believable Animation Design"
   },
   "metadata": {
-    "description": "Rules, skills, agents, and hooks for agentic development of web apps, static sites, and Unreal Engine plugins with Claude Code."
+    "description": "Rules, skills, agents, and hooks for agentic development of web apps, static sites, Unreal Engine plugins, and Android apps with Claude Code."
   },
   "plugins": [
     {
@@ -21,6 +21,11 @@
       "name": "rfr-unreal",
       "source": "./plugins/unreal",
       "description": "For Unreal Engine plugins: the unreal-engineer agent, Fab packaging, Unreal Insights profiling, and an editor -ExecCmds check. Requires rfr-core."
+    },
+    {
+      "name": "rfr-android",
+      "source": "./plugins/android",
+      "description": "For Android, Android TV, and Google TV apps: a device guard that asks only before an adb command changes a shared device. Requires rfr-core."
     },
     {
       "name": "rfr-process",
