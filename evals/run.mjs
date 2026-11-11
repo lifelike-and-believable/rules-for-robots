@@ -291,12 +291,24 @@ function git(cwd, ...args) {
 
 // Build the workspace: fixture plus the arm's rules committed as the starting point,
 // then the case's setup.mjs (if any) for uncommitted state.
+// "fixtureFrom" is one path copied to the workspace root, or a list of { from, to } that puts several
+// bases side by side, as in a repository with sub-projects of different profiles.
+export function copyFixtureBases(fixtureFrom, dir, root = ROOT) {
+  if (!fixtureFrom) return;
+  const bases = Array.isArray(fixtureFrom) ? fixtureFrom : [{ from: fixtureFrom, to: '.' }];
+  for (const { from, to = '.' } of bases) {
+    const dest = path.resolve(dir, to);
+    if (dest !== path.resolve(dir) && !dest.startsWith(path.resolve(dir) + path.sep)) throw new Error(`fixtureFrom target ${to} is outside the workspace`);
+    fs.cpSync(path.join(root, from), dest, { recursive: true });
+  }
+}
+
 export async function prepareWorkspace(testCase, arm) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `rfr-eval-${testCase.name}-`));
   // A case can start from a shared base kept elsewhere ("fixtureFrom" in case.json, a path from the
   // repository root, such as a profile's template repo). The case's own fixture/ folder, if it has one,
   // is laid over the base.
-  if (testCase.meta.fixtureFrom) fs.cpSync(path.join(ROOT, testCase.meta.fixtureFrom), dir, { recursive: true });
+  copyFixtureBases(testCase.meta.fixtureFrom, dir);
   const own = path.join(testCase.dir, 'fixture');
   if (fs.existsSync(own)) fs.cpSync(own, dir, { recursive: true });
   // Rules are part of the committed starting state, so graders that inspect

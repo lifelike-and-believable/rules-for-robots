@@ -20,6 +20,18 @@ export function conflictFlagged(text, a, b, window = 400) {
   return false;
 }
 
+// True when two requirement IDs of any form (PRF-2, DLV-5, D3) are named close together with a
+// word that says they clash or that one breaks the other (arch-greenfield-pipeline).
+const PROBLEM_WORDS = /conflict|contradict|tension|incompatib|can't both|cannot both|at odds|reconcil|clash|inconsisten|breaks?\b|violat|undermin|impossib|won't work|cannot work|can't work|blocks?\b|in the way of/i;
+export function idsFlagged(text, a, b, window = 350) {
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const m of text.matchAll(new RegExp(`\\b${esc(a)}\\b`, 'g'))) {
+    const near = text.slice(Math.max(0, m.index - window), m.index + window);
+    if (new RegExp(`\\b${esc(b)}\\b`).test(near) && PROBLEM_WORDS.test(near)) return true;
+  }
+  return false;
+}
+
 // Lines that ask the person something: a question mark, outside code fences.
 export function questionCount(text) {
   let inCode = false;
