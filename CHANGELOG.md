@@ -10,13 +10,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.10.0] - 2026-11-11
 
-Pull requests: #PR.
+Pull requests: #194.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
-- The test-change reviewer passed its eval (#PR; test-change-review AC-11, `evals/results/2026-11-11-13d/report.md`): six fixture pull requests with eight test-gaming changes and eight legitimate ones, three runs each on Opus 5.5 and Sonnet 5.5. No gaming change was approved in 36 runs, and 47 of 48 legitimate changes were approved or correctly referred. As the spec set out:
+- The test-change reviewer passed its eval (#194; test-change-review AC-11, `evals/results/2026-11-11-13d/report.md`): six fixture pull requests with eight test-gaming changes and eight legitimate ones, three runs each on Opus 5.5 and Sonnet 5.5. No gaming change was approved in 36 runs, and 47 of 48 legitimate changes were approved or correctly referred. As the spec set out:
   - `review-pr` now adds the `tests-reviewed` label when the reviewer approves a pull request's test changes, and removes it when a later review refers a change it had approved. The reviewer is no longer marked experimental.
   - The `testWeakening` default is now `defer` (guard tiers AC-5): weakening, moving, or deleting an existing test goes ahead in the session with context telling the agent to name the change in its report, and the pull request's test change check stays red until the reviewer approves or the lead adds the label.
 - The eval harness removes git worktrees a run leaves outside its workspace (`removeWorktrees`).

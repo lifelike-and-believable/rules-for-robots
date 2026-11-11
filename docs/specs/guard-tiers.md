@@ -96,7 +96,7 @@ The lead answered the draft's three open questions:
 
 1. `rm -rf` of tracked files with no uncommitted changes does not ask (AC-12). Git holds them, so `git checkout` restores them. The risk the draft named, that `build/` holds source in some repositories, is covered by git for the same reason.
 2. The guards take a snapshot before a destructive local command and then allow it (AC-11). This moves discards, `reset --hard`, `git clean -f`, and deletes of changed repository content from tier 4 to tier 1, with a recorded way back. Commands that change a remote, or delete outside the repository, still ask, because a local snapshot cannot undo them.
-3. The `testWeakening` default switches to `defer` in the change that records test-change-review AC-11 as passed, with no separate decision (AC-5). Done in #PR (2026-11-11).
+3. The `testWeakening` default switches to `defer` in the change that records test-change-review AC-11 as passed, with no separate decision (AC-5). Done in #194 (2026-11-11).
 4. (2026-11-09) Under `defer`, a weakening test change goes ahead rather than being refused (AC-5, amended). In the Kettlebird pilot the lead approved test-edit prompts as soon as they appeared; a refusal would only have moved each decision later. With the change allowed, the pull request's test change check is the gate, and `test-change-reviewer` brings the lead only the changes it cannot approve, with evidence.
 
 ## Delivery
