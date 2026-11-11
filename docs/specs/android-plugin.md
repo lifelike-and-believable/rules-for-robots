@@ -95,4 +95,4 @@ With `--record <dir>`, the runner keeps a screenshot after each step and a `fail
 - Plan or roadmap item: `PLAN.md`, Phase 24 (added with this spec).
 - Slices: 24a the `general` profile (AC-6 and AC-7 for `general`, AC-8's fallback), which needs nothing else; 24b the plugin and the device guard (AC-1 to AC-3); 24c the `adb` runner (AC-4, AC-5), after the `uiautomator` assumption is checked on the reference device; 24d the `android-app` profile and inference (the rest of AC-6 to AC-8), and AC-9.
 - Evidence: the guard follows the tier rule and the guard corpus, as the other guards do. The runner is a check, not a rule, so it needs tests, not an eval. Whether `runner: adb` saves the lead's time is measured with the attention report (19a) on the launcher before and after.
-- Pull requests: this spec.
+- Pull requests: #183 (spec).
