@@ -20,8 +20,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # The tutorial runner tests drive a real browser.
-      - run: npx playwright install --with-deps chromium
+      # The tutorial runner tests drive a real browser. --with-deps installs its system libraries from
+      # Ubuntu's package mirror; when the mirror cannot be reached (seen 2026-11-11), the runner
+      # image's own libraries are enough for Chromium, so install the browser alone instead of
+      # failing before any test runs. The tests still fail if the browser cannot start.
+      - run: timeout 300 npx playwright install --with-deps chromium || { echo "::warning::Ubuntu's package mirror failed; installing Chromium without --with-deps"; npx playwright install chromium; }
       # Plugin validation needs the Claude Code CLI; no API key is used.
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
       - run: npm run verify

@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- The Ubuntu CI job installs Chromium without its system packages when Ubuntu's package mirror cannot be reached, instead of failing before any test runs (#PRCI). On 2026-11-11 the mirror failed to resolve twice in a row on GitHub's runners. The runner image already has the libraries Chromium needs, and the tests still fail if it cannot start. No plugin changes.
+
 ## [5.7.1] - 2026-11-10
 
 Pull requests: #173, #174, #175, #176, #177.
