@@ -24,6 +24,7 @@ Payload: `${CLAUDE_SKILL_DIR}/payload/`
    - `next` in `package.json` dependencies: `web-app`
    - `astro` in `package.json` dependencies: `static-site`
    - a `*.uplugin` file: `unreal-plugin`
+   - none of these (a command-line tool, an MCP server, a desktop, mobile, or TV app): `general`, which installs the core rules only. Do not borrow another profile's packs for a project they do not describe.
 
    A pack can be listed in `profiles.json` before it has any rules. Skip packs with no folder in the payload and mention them in the report; this is expected while the rule set is being built.
 

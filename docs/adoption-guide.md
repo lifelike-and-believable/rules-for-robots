@@ -5,9 +5,9 @@ How to use rules-for-robots as a solo developer, a team, or an organization. Req
 ## Solo developer, new project
 
 1. Create the project with its usual tool (`create-next-app`, `create astro`, or the Unreal plugin wizard). If Claude Code does the scaffolding, start the session in the new project's folder, or add it with `/add-dir <path>` first: Claude Code asks about every file written outside the session's folders, even in accept-edits mode ([asking once for a batch](../practices/security-for-agentic-projects.md#asking-once-for-a-batch)).
-2. Copy the matching folder from [`template-repos/`](../template-repos/) into it: `web-app`, `static-site`, or `unreal-plugin`. Each folder's README lists the remaining steps (scripts, secrets, labels, runner).
+2. Copy the matching folder from [`template-repos/`](../template-repos/) into it: `web-app`, `static-site`, `unreal-plugin`, or `general` (for anything else: a command-line tool, a service, or a desktop, mobile, or TV app). Each folder's README lists the remaining steps (scripts, secrets, labels, runner).
 3. Fill in `AGENTS.md` with the verify command and the decisions an agent cannot infer.
-4. Open Claude Code in the project and accept the plugins when prompted: `rfr-core` and the profile's domain plugin (`rfr-web` for `web-app` and `static-site`, `rfr-unreal` for `unreal-plugin`), which the template's `.claude/settings.json` enables. The same file allows read-only and local git commands and the verify scripts without a prompt; adjust the script names there if your `package.json` uses others.
+4. Open Claude Code in the project and accept the plugins when prompted: `rfr-core` and the profile's domain plugin (`rfr-web` for `web-app` and `static-site`, `rfr-unreal` for `unreal-plugin`, none for `general`), which the template's `.claude/settings.json` enables. The same file allows read-only and local git commands and the verify scripts without a prompt; adjust the script names there if your `package.json` uses others.
 
 ## Solo developer, existing project
 

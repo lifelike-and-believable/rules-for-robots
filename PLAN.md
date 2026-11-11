@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v5.7.3 (2026-11-11). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v5.8.0 (2026-11-11). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -437,11 +437,11 @@ Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 
 
 ### Phase 24: Android plugin and a core-only profile (planned)
 Spec: [docs/specs/android-plugin.md](docs/specs/android-plugin.md) (draft, waiting for approval).
-Pull requests: #183 (spec).
+Pull requests: #183 (spec), #PR24A (24a).
 
 From the quiet-launcher project, which fits no profile: an `rfr-android` plugin with a device guard that asks only before an `adb` command changes a shared device, an on-device tutorial runner (`runner: adb`), an `android-app` profile, and a `general` profile for projects that are neither web, Unreal, nor Android.
 
-- **24a:** the `general` profile and its process templates.
+- **24a:** the `general` profile and its process templates. Done (#PR24A).
 - **24b:** the plugin and `guard-adb`.
 - **24c:** the `adb` tutorial runner, after `uiautomator dump` is confirmed on the reference device.
 - **24d:** the `android-app` profile, profile inference, and documentation.
