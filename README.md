@@ -2,7 +2,7 @@
 
 Rules, best practices, and agent definitions for agentic software development with Claude Code, aimed at software, websites, web apps, and Unreal Engine plugins that are high-quality, user-centred, performant, scalable, extensible, and maintainable.
 
-Status: v5.7.2 (`rfr-core`), in use on the maintainer's projects. Rules, practice guides, agents, skills, guards, CI workflows, template repos, and the `rfr-process`, `rfr-web`, `rfr-unreal`, and `rfr-feedback` plugins are released. Work in progress: the eval rounds for Phases 10 and 13 to 15, and a delegated working mode that asks the maintainer only for intent, taste, and irreversible actions ([improvement plan](docs/improvement-plan.md)). See [PLAN.md](PLAN.md) and [CHANGELOG.md](CHANGELOG.md).
+Status: v5.8.0 (`rfr-core`), in use on the maintainer's projects. Rules, practice guides, agents, skills, guards, CI workflows, template repos, and the `rfr-process`, `rfr-web`, `rfr-unreal`, and `rfr-feedback` plugins are released. Work in progress: the eval rounds for Phases 10 and 13 to 15, and a delegated working mode that asks the maintainer only for intent, taste, and irreversible actions ([improvement plan](docs/improvement-plan.md)). See [PLAN.md](PLAN.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## How it works
 
@@ -26,7 +26,7 @@ In an existing repository, from Claude Code:
 /rfr-core:install-rules web-app
 ```
 
-Profiles: `web-app` and `static-site` (with `rfr-web`), and `unreal-plugin` (with `rfr-unreal` in place of `rfr-web`). For a new project, copy the matching folder from `template-repos/`.
+Profiles: `web-app` and `static-site` (with `rfr-web`), `unreal-plugin` (with `rfr-unreal` in place of `rfr-web`), and `general` (`rfr-core` only) for anything else, such as a command-line tool, a service, or a desktop, mobile, or TV app. For a new project, copy the matching folder from `template-repos/`.
 
 To report what your project learns back to this repository, install the optional `rfr-feedback` plugin (`/plugin install rfr-feedback@rules-for-robots`) and ask the agent to report feedback; it drafts an issue, checks it for private details, and files it only when you confirm. See [plugins/feedback/README.md](plugins/feedback/README.md).
 

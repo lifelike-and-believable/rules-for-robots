@@ -90,5 +90,12 @@
         "PowerShell(pwsh -File ./Scripts/Verify.ps1 *)"
       ]
     }
+  },
+  "general": {
+    "description": "Any other project (a command-line tool, an MCP server, a desktop or mobile app): rfr-core only, with no stack packs",
+    "packs": [],
+    "plugins": [
+      "rfr-core"
+    ]
   }
 }

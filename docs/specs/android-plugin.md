@@ -82,6 +82,7 @@ With `--record <dir>`, the runner keeps a screenshot after each step and a `fail
 | AC-7 | `plugins/process/templates/profiles/android-app/` and `general/` hold the persona starters, a user document, and a tutorial template whose runner is `adb` and `manual`. | test: the files exist and pass the process check as drafts. |
 | AC-8 | `install-rules` and the process `setup` skill infer `android-app` from an `AndroidManifest.xml` or the `com.android.application` plugin, and offer `general` when no profile matches. | test: the skill text names both signals and the fallback; a smoke case for `setup` on an Android fixture. |
 | AC-9 | Documentation: the plugin's README, `practices/guards.md` rows for `guard-adb`, the process guide's validation part on `runner: adb`, and the root README's plugin table. | verified by review. |
+| AC-10 | When `install-rules` or `setup` falls back to `general` because no profile fits, and the project would gain from a profile of its own, the agent offers to suggest one through `/rfr-feedback:report-feedback`, area `profiles`, saying what kind of project it is and how to recognise one, what it had to borrow or do without, and why a profile would help. The feedback form and skill list the `profiles` area, the `general` template's README says the same, and `triage-feedback` groups suggestions by kind of project and proposes a profile only for what `general` cannot give. (Added 2026-11-11 at the lead's request.) | test: each of those texts names the area and the three parts of a suggestion. |
 
 ## Scope
 

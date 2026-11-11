@@ -24,6 +24,9 @@ Payload: `${CLAUDE_SKILL_DIR}/payload/`
    - `next` in `package.json` dependencies: `web-app`
    - `astro` in `package.json` dependencies: `static-site`
    - a `*.uplugin` file: `unreal-plugin`
+   - none of these (a command-line tool, an MCP server, a desktop, mobile, or TV app): `general`, which installs the core rules only. Do not borrow another profile's packs for a project they do not describe.
+
+   When you choose `general` because nothing fits, and the project would gain from a profile of its own, tell the user and offer to suggest one to rules-for-robots with `/rfr-feedback:report-feedback` (area `profiles`): what kind of project it is and the files that identify it (an `AndroidManifest.xml`, a `pyproject.toml` with a CLI entry point); what it had to borrow or do without (another profile's templates, a manual tutorial pass, a guard that asks too often or not at all, missing allow rules); and why a profile would help, with the concrete cost seen so far. If `rfr-feedback` is not installed, give the user that text to file at the rules-for-robots feedback form. Suggest nothing for a one-off project that `general` serves well.
 
    A pack can be listed in `profiles.json` before it has any rules. Skip packs with no folder in the payload and mention them in the report; this is expected while the rule set is being built.
 
