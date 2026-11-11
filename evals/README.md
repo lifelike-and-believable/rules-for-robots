@@ -151,6 +151,31 @@ Needs a signed-in `claude` CLI. Cases and graders are unit-tested; the paid runs
 3. **With the agents.** The same command with `--arms rules+agents`.
 4. **Decide.** Keep an agent if it raises the pass rate on at least one of its two cases, lowers it on neither, and costs no more than twice the baseline's mean. Otherwise rework its prompt or remove it. A case the baseline passes 6 of 6 shows nothing about the agent; replace it with a harder one.
 
+## Planned: Fable 5.2 round
+
+Two questions, from Anthropic's guidance to start with Opus 5.5 and move to Fable 5.2 only when Opus at higher effort falls short:
+
+1. Does `software-architect` need Fable 5.2, or does Opus 5.5 at `high` do as well at half the price, and does Fable at `medium` hold up against `high`?
+2. Does a Sonnet 5.5 session with Fable 5.2 as its advisor (Claude Code's `advisorModel`) get the architect's benefit without the architect?
+
+Cases: the three on which the architect raised the pass rate in October (`arch-money-storage`, `arch-soft-delete`, `arch-multi-tenancy`). Main session Sonnet 5.5, 3 runs per cell, 45 runs, about $37 at API prices, capped at $50. Set `R=evals/results/<date>-fable-5-2` and `C=arch-money-storage,arch-soft-delete,arch-multi-tenancy`.
+
+| Cell | What runs | Command |
+|---|---|---|
+| E | Rules only (fresh baseline) | `node evals/run.mjs --cases $C --models claude-sonnet-5-5 --arms rules --out $R/E` |
+| A | Architect on Opus 5.5 at `high` | `... --arms rules+agents --agent-model software-architect=claude-opus-5-5 --agent-effort software-architect=high --out $R/A` |
+| B | Architect on Fable 5.2 at `high` (as shipped) | `... --arms rules+agents --out $R/B` |
+| C | Architect on Fable 5.2 at `medium` | `... --arms rules+agents --agent-effort software-architect=medium --out $R/C` |
+| D | Rules only, Fable 5.2 as advisor | `... --arms rules --advisor fable --out $R/D` |
+
+`...` is `node evals/run.mjs --cases $C --models claude-sonnet-5-5`. Add `--max-cost` to each so the round stays under $50 in total.
+
+1. **Check (2 runs, about $3).** Cells B and D on `arch-money-storage` with `--runs 1`. In each `runs.json`, `usageByModel` must show `claude-fable-5-2`; B's transcript must show the main session calling the architect; D's `advisorCalls` must be above zero (if it is zero, read the transcript for how the advisor appears in the stream before going on). Report the cost and stop for approval.
+2. **Run the rest**, then grade with `node evals/regrade.mjs <dir>` and read two transcripts per cell: the graders check the ADR's form (alternatives, what is hard to reverse), not whether the design is good.
+3. **Decide.** Opus matching Fable (pass rate and alternatives weighed, within one run) moves the architect to Opus 5.5 at `high`. Otherwise `medium` matching `high` sets the architect to `medium`. The advisor matching cell B at half its cost or less goes in the adoption guide as an option, not in the templates (it is experimental and API-only); the advisor matching cell E means it adds nothing on these cases.
+
+Limits: three runs per cell, so a one-run difference is no difference; the cases are small repositories, so they test weighing a design, not finding constraints.
+
 ## Planned: ux-reviewer round
 
 `ux-reviewer` was added in 1.3.0 before any eval showed a benefit (R18). Five cases, one per area (web app, web page, general software, Unreal Editor) and a clean control, both main-session models, arms `rules` and `rules+agents`, 3 runs: 60 runs. Run it after the architect and tech-lead round has shown what a run costs. In the planted cases the grader counts how many of five defects a review mentions (patterns in `evals/cases/ux-*/grade.mjs`), so read one transcript per case and arm before scoring, and check that a pattern did not match for the wrong reason. The control guards against invented findings.

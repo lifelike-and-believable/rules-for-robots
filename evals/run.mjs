@@ -32,6 +32,12 @@
 //                      [--arms none,rules,rules+hooks] [--runs 3] [--concurrency 4]
 //                      [--effort medium] [--out evals/results/<stamp>]
 //                      [--suite model-release] [--max-cost 40]
+//                      [--advisor fable] [--agent-model software-architect=claude-opus-5-5]
+//                      [--agent-effort software-architect=medium]
+//
+// --advisor gives every session that advisor model (Claude Code's advisorModel setting). --agent-model
+// and --agent-effort run a plugin agent on another model or effort, through a temporary copy
+// of rfr-core. Each run record lists the cost and output tokens per model, and the advisor calls.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -46,10 +52,21 @@ const ALL_ARMS = ['none', 'rules', 'rules+hooks'];
 export const KNOWN_ARMS = [...ALL_ARMS, 'rules+agents', 'rules+candidate'];
 
 export function parseArgs(argv) {
-  const opts = { runs: 3, runsGiven: false, concurrency: 4, models: ['claude-sonnet-5-5', 'claude-opus-5-5'], arms: ALL_ARMS, effort: null, cases: null, suite: null, maxCost: null };
+  const opts = { runs: 3, runsGiven: false, concurrency: 4, models: ['claude-sonnet-5-5', 'claude-opus-5-5'], arms: ALL_ARMS, effort: null, cases: null, suite: null, maxCost: null, advisor: null, agentOverrides: {} };
+  // --agent-model and --agent-effort take <agent>=<value>, comma-separated for several agents.
+  const override = (value, field) => {
+    for (const pair of value.split(',')) {
+      const [agent, setting] = pair.split('=');
+      if (!agent || !setting) throw new Error(`expected <agent>=<${field}>, got "${pair}"`);
+      (opts.agentOverrides[agent] ??= {})[field] = setting;
+    }
+  };
   for (let i = 0; i < argv.length; i++) {
     const [key, value] = [argv[i], argv[i + 1]];
     if (key === '--runs') opts.runs = Number(value), opts.runsGiven = true, i++;
+    else if (key === '--advisor') opts.advisor = value, i++;
+    else if (key === '--agent-model') override(value, 'model'), i++;
+    else if (key === '--agent-effort') override(value, 'effort'), i++;
     else if (key === '--suite') opts.suite = value, i++;
     else if (key === '--max-cost') opts.maxCost = Number(value), i++;
     else if (key === '--concurrency') opts.concurrency = Number(value), i++;
@@ -92,6 +109,41 @@ export function splitSessions(prompts, newSessionAt = []) {
     groups.at(-1).push(i);
   });
   return groups;
+}
+
+// Usage per model, from each session's last result (modelUsage is cumulative within a session,
+// like the cost): which models ran, including subagents and an advisor, and what each cost.
+export function usageByModel(events) {
+  const total = {};
+  let last = null;
+  const add = () => {
+    for (const [model, u] of Object.entries(last ?? {})) {
+      const t = (total[model] ??= { costUsd: 0, outputTokens: 0 });
+      t.costUsd = +(t.costUsd + (u?.costUSD ?? 0)).toFixed(4);
+      t.outputTokens += u?.outputTokens ?? 0;
+    }
+    last = null;
+  };
+  for (const e of events) {
+    if (e.type === 'result' && e.modelUsage) last = e.modelUsage;
+    if (e.type === 'rfr_session_break') add();
+  }
+  add();
+  return total;
+}
+
+// How many times the session consulted its advisor: tool calls named "advisor" in the
+// assistant's messages. The advisor is a server tool on the API; the first run of the Fable
+// 5.2 round checks that Claude Code's stream shows it this way (evals/README.md, "Fable 5.2 round").
+export function advisorCalls(events) {
+  let n = 0;
+  for (const e of events) {
+    if (e.type !== 'assistant') continue;
+    for (const block of e.message?.content ?? []) {
+      if ((block.type === 'tool_use' || block.type === 'server_tool_use') && block.name === 'advisor') n++;
+    }
+  }
+  return n;
 }
 
 // Cost is cumulative within a session, so add the last result of each session.
@@ -312,12 +364,42 @@ export function pluginArgs(meta, env = process.env) {
   });
 }
 
+// A copy of a plugin folder with some agents' `model` or `effort` frontmatter replaced, to run an
+// agent on another model or effort without editing the plugin (--agent-model, --agent-effort).
+// Returns the copy's path. Fails if an agent or the field to replace is missing, so a typo
+// never runs the agent unchanged.
+export function overridePlugin(srcDir, overrides, tmpRoot = os.tmpdir()) {
+  const dest = fs.mkdtempSync(path.join(tmpRoot, 'rfr-plugin-'));
+  fs.cpSync(srcDir, dest, { recursive: true });
+  for (const [agent, fields] of Object.entries(overrides)) {
+    const file = path.join(dest, 'agents', `${agent}.md`);
+    if (!fs.existsSync(file)) throw new Error(`no agent ${agent} in ${srcDir}`);
+    let text = fs.readFileSync(file, 'utf8');
+    const end = text.indexOf('\n---', 3);
+    for (const [field, value] of Object.entries(fields)) {
+      const re = new RegExp(`^${field}:.*$`, 'm');
+      const front = text.slice(0, end);
+      if (!re.test(front)) throw new Error(`agent ${agent} has no ${field} field to replace`);
+      text = front.replace(re, `${field}: ${value}`) + text.slice(end);
+    }
+    fs.writeFileSync(file, text);
+  }
+  return dest;
+}
+
+// Flags every session in a run gets beyond the fixed ones: effort and the advisor model. The
+// advisor goes in as the advisorModel setting through --settings, because Claude Code 2.1.321
+// lists no --advisor flag in its help; --settings applies whatever --setting-sources says.
+export function sessionFlags({ effort = null, advisor = null } = {}) {
+  return [...(effort ? ['--effort', effort] : []), ...(advisor ? ['--settings', JSON.stringify({ advisorModel: advisor })] : [])];
+}
+
 export function claudeEnv(testCase, base = process.env, hasBin = fs.existsSync(path.join(testCase.dir, 'bin'))) {
   if (!hasBin) return { ...base };
   return { ...base, PATH: [path.join(testCase.dir, 'bin'), base.PATH].filter(Boolean).join(path.delimiter) };
 }
 
-function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCase }) {
+function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, advisor, testCase }) {
   const prompts = armPrompts(arm, meta, casePrompts);
   const multi = prompts.length > 1;
   const args = [
@@ -329,7 +411,7 @@ function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, testCa
     '--max-turns', String(meta.maxTurns ?? 40),
     '--allowedTools', [...(meta.allowedTools ?? ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep']), ...(arm === 'rules+agents' ? ['Agent', 'Task'] : [])].join(','),
   ];
-  if (effort) args.push('--effort', effort);
+  args.push(...sessionFlags({ effort, advisor }));
   if (arm === 'rules+hooks' || arm === 'rules+agents') args.push(...pluginArgs(meta));
   if (multi) {
     return (async () => {
@@ -468,7 +550,7 @@ export function markdown(rows, opts, { mismatches = [], skipped = 0, spent = nul
   const lines = [
     `# Eval results`,
     '',
-    `${opts.suite ? `Suite: ${opts.suite}. ` : ''}Runs per cell: ${opts.runs}. Models: ${opts.models.join(', ')}. Effort: ${opts.effort ?? 'default'}. Claude Code: ${claudeCode ?? 'unknown'}.`,
+    `${opts.suite ? `Suite: ${opts.suite}. ` : ''}Runs per cell: ${opts.runs}. Models: ${opts.models.join(', ')}. Effort: ${opts.effort ?? 'default'}.${opts.advisor ? ` Advisor: ${opts.advisor}.` : ''}${Object.entries(opts.agentOverrides ?? {}).map(([a, f]) => ` ${a}: ${Object.entries(f).map(([k, v]) => `${k} ${v}`).join(', ')}.`).join('')} Claude Code: ${claudeCode ?? 'unknown'}.`,
     '',
     ...mismatches.map(m => `Requested ${m.requested}, but the session reported ${m.reported} in ${m.runs} run(s); the table groups by the requested model.`),
     ...(skipped ? [`Skipped ${skipped} run(s): the cost cap of $${maxCost} was reached ($${spent} spent).`] : []),
@@ -494,14 +576,24 @@ async function main() {
   const out = path.resolve(opts.out ?? path.join(ROOT, 'evals', 'results', stamp));
   fs.mkdirSync(out, { recursive: true });
 
+  // Agent overrides run every plugin arm against a temporary copy of rfr-core (or of
+  // RFR_PLUGIN_DIR, when that already points somewhere else).
+  if (Object.keys(opts.agentOverrides).length) {
+    process.env.RFR_PLUGIN_DIR = overridePlugin(process.env.RFR_PLUGIN_DIR ?? path.join(ROOT, 'plugins', 'core'), opts.agentOverrides);
+  }
+
   const jobs = planJobs(cases, opts, suite);
   console.log(`${jobs.length} run(s) across ${cases.length} case(s)${opts.maxCost !== null ? `, capped at $${opts.maxCost}` : ''}; results in ${path.relative(ROOT, out)}`);
 
   const { records, skipped, spent } = await runJobs(jobs, { concurrency: opts.concurrency, maxCost: opts.maxCost, worker: async ({ testCase, model, arm, run }) => {
     const dir = await prepareWorkspace(testCase, arm);
-    const result = await runClaude({ dir, prompts: testCase.prompts, model, arm, meta: testCase.meta, effort: opts.effort, testCase });
+    const result = await runClaude({ dir, prompts: testCase.prompts, model, arm, meta: testCase.meta, effort: opts.effort, advisor: opts.advisor, testCase });
     const graded = await gradeRun(testCase, dir, result, arm);
-    const record = { case: testCase.name, model, ...reportedRun(result.events), arm, run, effort: opts.effort ?? 'default', ...graded };
+    const record = {
+      case: testCase.name, model, ...reportedRun(result.events), arm, run, effort: opts.effort ?? 'default',
+      advisor: opts.advisor, agentOverrides: opts.agentOverrides, usageByModel: usageByModel(result.events), advisorCalls: advisorCalls(result.events),
+      ...graded,
+    };
     const tag = `${testCase.name}.${model}.${arm.replace('+', '-')}.${run}`;
     fs.writeFileSync(path.join(out, `${tag}.transcript.jsonl`), result.events.map(e => JSON.stringify(e)).join('\n'));
     fs.rmSync(dir, { recursive: true, force: true });
