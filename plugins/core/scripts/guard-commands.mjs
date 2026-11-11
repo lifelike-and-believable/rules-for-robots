@@ -81,6 +81,17 @@ const PS_ALIASES = /(^|[;&|(]|\n)\s*(sc|ac|mi|move|cpi|copy|ri|del|erase|rni|ren
 const PS_NEW_ITEM_FORCE = /\bNew-Item\b[^;&|\n]*\s-fo(r(c(e)?)?)?\b/i;
 const psWrites = command => PS_CMDLETS.test(command) || PS_ALIASES.test(command) || PS_NEW_ITEM_FORCE.test(command);
 
+// The command's text without quoted strings and heredoc bodies, where a cmdlet's name is only text:
+// a commit message that says "Copy-Item refused to copy the file" runs no Copy-Item.
+const unquotedText = command => command
+  .replace(/<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\s*\2[ \t]*(?=\n|$)/g, ' ')
+  .replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, ' ');
+
+// Whether a PowerShell cmdlet that writes would run. A command that starts PowerShell
+// (pwsh or powershell, whose -Command is usually quoted) counts whatever its quoting.
+const psWritesRun = command => psWrites(command)
+  && (/\b(pwsh|powershell)(\.exe)?\b/i.test(command) || psWrites(unquotedText(command)));
+
 // Redirects that only join or discard streams (2>&1, >/dev/null, &>/dev/null) write no file.
 const STREAM_REDIRECTS = /\d*>&\d+|&>>?\s*\/dev\/null|\d*>>?\s*\/dev\/null/g;
 
@@ -104,7 +115,7 @@ const isTestTarget = target => {
 // a test file added on the branch is new, as the CI test guard counts it. Without it, every test
 // path counts as existing.
 export function testFileChange(command, existed = () => true) {
-  if (psWrites(command) && broadWritesTestFile(command)) return 'broad';
+  if (psWritesRun(command) && broadWritesTestFile(command)) return 'broad';
   // Windows paths (Source\\X\\Tests\\Y.cpp) are not shell words: use the broad check.
   if ([...command.matchAll(/[\w.:-]+(?:\\[\w.-]+)+/g)].some(m => TEST_PATH.test(` ${m[0].replace(/\\/g, '/')}`))) return broadWritesTestFile(command) ? 'broad' : null;
   const entries = writeTargetEntries(command);
