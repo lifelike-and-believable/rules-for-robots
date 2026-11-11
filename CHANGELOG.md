@@ -13,7 +13,8 @@ Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 ### Added
 
 - A `general` profile for projects that are neither a website nor an Unreal plugin, such as a command-line tool, a service, or a desktop, mobile, or TV app (#184; android-plugin spec, slice 24a). It installs the core rules only and enables `rfr-core` alone; `template-repos/general/` has an `AGENTS.md` template and a README of the remaining steps. `rfr-process` gains its templates: two neutral persona starters (`primary-user`, `maintainer`), a user document, and a tutorial with `runner: manual`. `install-rules` and `/rfr-process:setup` offer `general` when no other profile fits, instead of borrowing another profile's packs and templates. From the quiet-launcher project, which used the `web-app` templates for want of one.
-- `rfr-core` 5.8.0 and `rfr-process` 0.17.0. Adopters: nothing to do; a project that borrowed another profile can run `/rfr-core:install-rules general` and take the `general` process templates.
+- When no profile fits and `install-rules` or `/rfr-process:setup` falls back to `general`, the agent offers to suggest a profile for that kind of project through `/rfr-feedback:report-feedback`, under a new `profiles` area: what kind of project it is and how to recognise one, what it had to borrow or do without, and why a profile would help (#184; android-plugin AC-10, at the maintainer's request). The feedback form and skill list the area, the `general` template's README says the same, and `triage-feedback` groups suggestions by kind of project and proposes a profile once two projects ask for the same kind, or one names a cost a profile would remove.
+- `rfr-core` 5.8.0, `rfr-process` 0.17.0, and `rfr-feedback` 0.2.0. Adopters: nothing to do; a project that borrowed another profile can run `/rfr-core:install-rules general` and take the `general` process templates, and suggest a profile of its own if it needs one.
 
 ## [5.7.3] - 2026-11-11
 

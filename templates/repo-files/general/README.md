@@ -9,4 +9,6 @@ Started from the rules-for-robots `general` template, for a project that is neit
 3. Add a CI workflow that runs the verify command on every pull request. `.github/workflows/guards.yml` already runs the test change guard.
 4. To use the development process, run `/rfr-process:setup general` after installing `rfr-process`. Its tutorials are `runner: manual` until a runner exists for your kind of product.
 
+5. If this kind of project would gain from a profile of its own (its own templates, a tutorial runner, a guard for something it touches outside the repository), suggest one with `/rfr-feedback:report-feedback`, area `profiles`: what the project is, what it had to borrow or do without, and why a profile would help.
+
 Replace this file with the project's own README.

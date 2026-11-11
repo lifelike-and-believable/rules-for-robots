@@ -42,3 +42,17 @@ test('android-plugin#AC-8: install-rules and setup offer general when no other p
   assert.match(read('plugins/core/skills/install-rules/SKILL.md'), /none of these[^\n]*`general`/);
   assert.match(read('plugins/process/skills/setup/SKILL.md'), /anything else[^\n]*`general`/);
 });
+
+test('android-plugin#AC-10: when nothing fits, the agent offers to suggest a profile, saying what and why', () => {
+  for (const f of ['plugins/core/skills/install-rules/SKILL.md', 'plugins/process/skills/setup/SKILL.md']) {
+    const text = read(f);
+    assert.match(text, /\/rfr-feedback:report-feedback` \(area `profiles`\)/, f);
+    assert.match(text, /what kind of project it is/, f);
+    assert.match(text, /borrow or do without/, f);
+    assert.match(text, /why a profile would help/, f);
+  }
+  assert.match(read('templates/repo-files/general/README.md'), /area `profiles`: what the project is, what it had to borrow or do without, and why/);
+  assert.match(read('plugins/feedback/skills/report-feedback/SKILL.md'), /`profiles` is for a suggested new profile or domain plugin/);
+  assert.match(read('.github/ISSUE_TEMPLATE/feedback.yml'), /profiles: a suggested new profile or domain plugin/);
+  assert.match(read('.claude/skills/triage-feedback/SKILL.md'), /\*\*Profile suggestions\*\* \(area `profiles`\)/);
+});

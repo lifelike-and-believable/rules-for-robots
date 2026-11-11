@@ -1,6 +1,6 @@
 {
   "name": "rfr-feedback",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Optional: report what your project learns from rules-for-robots as a feedback issue on the rules-for-robots repository, drafted by the agent, checked for private details, and filed only when you confirm.",
   "author": {
     "name": "Lifelike & Believable Animation Design"
