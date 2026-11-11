@@ -1,1 +1,73 @@
-{ "permissions": { "allow": ["Bash(gh pr merge:*)"] } }
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(gh pr merge:*)",
+
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git fetch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git merge *)",
+      "Bash(git worktree *)",
+      "Bash(git rev-parse *)",
+      "Bash(git rev-list *)",
+      "Bash(git ls-tree *)",
+      "Bash(git branch --show-current)",
+      "Bash(git pull --ff-only *)",
+      "Bash(git push -u origin phase-*)",
+      "Bash(git push origin phase-*)",
+      "Bash(git push -u origin claude/*)",
+      "Bash(git push origin claude/*)",
+      "Bash(git push -u origin repo/*)",
+      "Bash(git push origin repo/*)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git log *)",
+      "PowerShell(git show *)",
+      "PowerShell(git fetch *)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git switch *)",
+
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr ready *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+
+      "Bash(npm test *)",
+      "Bash(npm run verify *)",
+      "Bash(npm run build *)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test *)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run setup:*)",
+      "Bash(npm run validate:*)",
+      "Bash(node --test *)",
+      "Bash(node checks/*)",
+      "Bash(node build/build.mjs *)",
+      "Bash(node evals/regrade.mjs *)",
+      "Bash(claude plugin validate *)",
+      "Bash(claude --version)",
+      "PowerShell(npm run verify *)",
+      "PowerShell(npm test *)",
+      "PowerShell(node --test *)",
+
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)"
+    ]
+  }
+}
