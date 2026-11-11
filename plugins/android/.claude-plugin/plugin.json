@@ -1,0 +1,16 @@
+{
+  "name": "rfr-android",
+  "version": "0.1.0",
+  "description": "Android, Android TV, and Google TV hooks from rules-for-robots: a device guard that asks only before an adb command changes a shared device. Requires rfr-core.",
+  "author": {
+    "name": "Lifelike & Believable Animation Design"
+  },
+  "homepage": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "repository": "https://github.com/lifelike-and-believable/rules-for-robots",
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "android-tv",
+    "adb"
+  ]
+}
