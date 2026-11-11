@@ -127,7 +127,9 @@ export const LIB_COPIES = [
   { src: path.join(ROOT, 'checks', 'review-findings.mjs'), dest: path.join(ROOT, 'plugins', 'core', 'scripts', 'review-findings.mjs'), label: 'core plugin review findings check' },
   // Domain plugins (docs/specs/plugin-split.md, AC-5): a plugin's hooks cannot import from another
   // plugin's folder, so each gets copies of the rfr-core hook helpers its guards use.
-  ...['web', 'unreal'].flatMap(plugin => ['lib.mjs', 'guard-outcome.mjs'].map(file => ({
+  // rfr-android's guard also reads command lines with rfr-core's shell parser (android-plugin AC-1).
+  { src: path.join(ROOT, 'plugins', 'core', 'scripts', 'shell-writes.mjs'), dest: path.join(ROOT, 'plugins', 'android', 'scripts', 'shell-writes.mjs'), label: 'android plugin shell-writes.mjs' },
+  ...['web', 'unreal', 'android'].flatMap(plugin => ['lib.mjs', 'guard-outcome.mjs'].map(file => ({
     src: path.join(ROOT, 'plugins', 'core', 'scripts', file),
     dest: path.join(ROOT, 'plugins', plugin, 'scripts', file),
     label: `${plugin} plugin ${file}`,

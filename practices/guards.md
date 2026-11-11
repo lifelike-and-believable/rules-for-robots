@@ -56,6 +56,20 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 |---|---|---|---|---|---|
 | Unreal `-ExecCmds` without a final `Quit` | UE practice | An editor left running in CI | 2 | 2 | The agent can add `;Quit`; nothing is lost either way |
 
+## `guard-adb` (rfr-android; shell commands)
+
+A device is shared unless the project marks it disposable: emulators (`emulator-NNNN`, or `adb -e`) always are, and a physical device is when `.claude/rfr.json` lists its serial under `android.disposable`. The device is the one `-s` names, else `ANDROID_SERIAL` set in the same command line, else the environment's, else the one device `adb devices` shows; with none or several and none named, it counts as shared. Scripts that change a device, whose `adb` commands the guard cannot see, can be listed under `android.deviceScripts` ([spec](../docs/specs/android-plugin.md)).
+
+| Decision | Rule | Failure it prevents | Now | Target | Why |
+|---|---|---|---|---|---|
+| `adb devices`, `connect`, `disconnect`, `mdns`, `wait-for-*`, `get-state` | Device guard | none | 1 | 1 | Nothing on the device changes |
+| Reads: `logcat`, `pull`, `exec-out screencap`, `adb shell getprop`, `dumpsys`, `pm list`/`path`, `settings get`, `uiautomator dump`, `wm size` with no argument | Device guard | none | 1 | 1 | Nothing on the device changes |
+| Remote-control input: `adb shell input`, `am start`, `am broadcast`, `am force-stop`, `monkey -p <package> 1` | Device guard | none | 1 | 1 | What a person with the remote does; nothing persists |
+| A change on a shared device: `install`, `uninstall`, `reboot`, `root`, `remount`, `push`, `sideload`, `tcpip`; `adb shell pm` or `cmd package` changes (`uninstall`, `disable-user`, `clear`, `grant`, `set-home-activity`, and the like), `settings put`/`delete`, `appops set`, `wm size <value>`, `svc`, `setprop` | Device guard | Changing a household or shared device without the person who owns it | 4 | 4 | The device is outside the project and no snapshot can undo the change |
+| An unknown `adb shell` command, an interactive `adb shell`, or a line the guard cannot read that runs `adb`, on a shared device | Device guard | The same, for a change the guard cannot recognise | 4 | 4 | Unknown is treated as a change |
+| A script listed under `android.deviceScripts`, run against a shared device | Device guard | The same, through a script | 4 | 4 | The guard cannot see the `adb` commands inside it |
+| Any of the above on a disposable device | Device guard | none | 1 | 1 | The project said the device may be changed freely |
+
 ## `guard-mcp` (rfr-web; Vercel MCP)
 
 | Decision | Rule | Failure it prevents | Now | Target | Why |
