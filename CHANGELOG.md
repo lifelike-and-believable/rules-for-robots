@@ -6,9 +6,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.8.2] - 2026-11-11
 
-Pull requests: #187.
+Pull requests: #186, #187.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- Eval case `arch-greenfield-pipeline` (#186): a new multi-component pipeline, a fictional touring museum exhibit with an Unreal show runtime, capture, live and AI guide characters, headsets, a livestream, show control, a back end, a dashboard, and a production assistant. Its brief is spread over ten documents with 14 planted problems that each need two documents read together, two decoys, and a second prompt that forces a revision. It is scored by count (problems found in the first turn, decoys declined, the revision), so setups that pass the smaller cases can be told apart. `fixtureFrom` in `case.json` can now list several bases side by side. The round to run on it is in `evals/README.md`. Repository tooling only; no paid runs yet, and no plugin changes.
 
 ### Changed
 

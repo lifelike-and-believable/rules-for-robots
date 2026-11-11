@@ -84,6 +84,7 @@ Cases with an `agent` in `case.json` test whether an agent adds anything beyond 
 |---|---|---|---|
 | `arch-money-storage` | `software-architect` | Float `total` column in production; refunds and JPY (no minor unit) are coming | ADR chooses integer minor units with a currency code and a per-currency exponent, plans the move off the float column, names the steps that are hard to reverse, weighs two options; no code written |
 | `arch-reuse-event-bus` | `software-architect` | An in-process event bus already exists and a broker is tempting for email and SMS | ADR builds on `order.shipped` and the bus, proposes no broker or queue infrastructure, adds no dependency; no code written |
+| `arch-greenfield-pipeline` | `software-architect` | A new multi-component pipeline (a fictional touring museum exhibit: Unreal show runtime, capture, live and AI guides, headsets, livestream, show control, a back end, a dashboard, a production assistant) whose brief is spread over ten documents; 14 problems each need two documents read together, plus two decoys; the second prompt picks a headset whose SDK supports only Unreal 5.7 | Counted, not just passed: problems the first turn names (pass needs 9 of 14), decoys declined, and an ADR revised or superseded after the second prompt; no code written. Starts from the `unreal-plugin` and `web-app` templates side by side (`fixtureFrom` as a list) |
 | `lead-plan-order` | `tech-lead` | Tagging feature with a dependency chain and two "not required" extras | Three to six ordered slices owned by `web-engineer`, real verification commands, a reviewer named, extras left out of the slices; no code written |
 | `ux-signup-flow` | `ux-reviewer` | Web app with five planted usability defects: the form resets on error, a bare "Error 422", a double submit, Delete account next to Save with no confirmation, an empty list that shows nothing | At least four found; no file changed |
 | `ux-landing-page` | `ux-reviewer` | Web page with five planted design defects: a call to action that looks like body text, 12px light-grey text, a fixed 1200px layout, lorem ipsum under "Welcome", one action with three labels | At least four found; no file changed |
@@ -179,6 +180,18 @@ Cases: the three on which the architect raised the pass rate in October (`arch-m
 3. **Decide.** Opus matching Fable (pass rate and alternatives weighed, within one run) moves the architect to Opus 5.5 at `high`. Otherwise `medium` matching `high` sets the architect to `medium`. The advisor matching cell B at half its cost or less goes in the adoption guide as an option, not in the templates (it is experimental and API-only); the advisor matching cell E means it adds nothing on these cases.
 
 Limits: three runs per cell, so a one-run difference is no difference; the cases are small repositories, so they test weighing a design, not finding constraints.
+
+## Planned: pipeline round
+
+Whether Fable 5.2 designs a large, many-source system better than Opus 5.5 (the Fable 5.2 round's cases were too small to tell), and how much the architect adds over the main session there. `arch-greenfield-pipeline`, main session Sonnet 5.5, 3 runs per cell, two prompts per run:
+
+| Cell | Command |
+|---|---|
+| Sonnet alone | `node evals/run.mjs --cases arch-greenfield-pipeline --models claude-sonnet-5-5 --arms rules --out $R/sonnet` |
+| Architect on Opus 5.5 (as shipped) | `... --arms rules+agents --out $R/opus` |
+| Architect on Fable 5.2 | `... --arms rules+agents --agent-model software-architect=claude-fable-5-2 --out $R/fable` |
+
+Run one cell of the Fable arm first (`--runs 1`) to measure cost and check the grader against the transcript, then the rest with a `--max-cost` cap. Compare the problem counts (`checks.found`), not only the pass rate. If Fable finds clearly more problems than Opus, add a model override for the architect on designs like this one, with the triggers the results support; if not, the architect stays on Opus.
 
 ## Planned: ux-reviewer round
 
