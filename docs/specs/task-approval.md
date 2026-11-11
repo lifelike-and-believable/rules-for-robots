@@ -4,7 +4,7 @@ status: implemented
 
 # Task approval
 
-The person approves tasks, not commands. When the person's latest input in the session asks for a task (a release, a push to a named branch, a merge, a preview deploy), the guards approve the commands that carry out that task, so Claude Code does not prompt for each one. Everything else still prompts or asks as before. Proposed 2026-11-11 by the maintainer, who found long sessions here prompting for routine commands after the task had been approved in chat. The maintainer answered the open questions the same day (see "Decisions"), and the slice that implements it followed (#PR).
+The person approves tasks, not commands. When the person's latest input in the session asks for a task (a release, a push to a named branch, a merge, a preview deploy), the guards approve the commands that carry out that task, so Claude Code does not prompt for each one. Everything else still prompts or asks as before. Proposed 2026-11-11 by the maintainer, who found long sessions here prompting for routine commands after the task had been approved in chat. The maintainer answered the open questions the same day (see "Decisions"), and the slice that implements it followed (#192).
 
 ## Problem
 
@@ -61,5 +61,5 @@ The maintainer answered the draft's three open questions:
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 15.
-- Slices: one, after this spec is approved: recognizer, guard changes, setting, log, WA-009, guides, and tests. Done (#PR).
-- Pull requests: #191 (spec), #PR (implementation).
+- Slices: one, after this spec is approved: recognizer, guard changes, setting, log, WA-009, guides, and tests. Done (#192).
+- Pull requests: #191 (spec), #192 (implementation).

@@ -10,13 +10,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.9.0] - 2026-11-11
 
-Pull requests: #191, #PR.
+Pull requests: #191, #192.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Added
 
-- Task approval (#191 spec, #PR; `docs/specs/task-approval.md`): the person approves tasks, not commands. When the person's latest input asks for a task, the guards approve exactly the commands of that task and Claude Code does not prompt for each:
+- Task approval (#191 spec, #192; `docs/specs/task-approval.md`): the person approves tasks, not commands. When the person's latest input asks for a task, the guards approve exactly the commands of that task and Claude Code does not prompt for each:
   - **release** a version ("release 5.8.2"): `git tag -a`, `git push origin <tag>`, and `gh release create` for that tag;
   - **push** a named branch: `git push [-u] origin <branch>`;
   - **merge** a named pull request, or one already open ("merge when green"): `gh pr merge`, and in rfr-process projects the GitHub MCP merge tools;
@@ -26,8 +26,8 @@ Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
-- WA-009 starts with "ask for tasks, not commands": when a task needs the person's decision, ask once in chat naming what it covers, and do not ask again per command (#PR). It also asks for plain single commands so allow rules can match them.
-- rfr-process's merge guard uses the shared recognizer: a covered merge of gated files is now approved rather than only not asked about, and an answer to the agent's own question counts as an instruction (#PR).
+- WA-009 starts with "ask for tasks, not commands": when a task needs the person's decision, ask once in chat naming what it covers, and do not ask again per command (#192). It also asks for plain single commands so allow rules can match them.
+- rfr-process's merge guard uses the shared recognizer: a covered merge of gated files is now approved rather than only not asked about, and an answer to the agent's own question counts as an instruction (#192).
 - `rfr-core` 5.9.0, `rfr-web` 1.1.0, `rfr-process` 0.18.0, `rfr-unreal` 2.0.4, `rfr-android` 0.1.1 (the last two carry the updated hook library). Adopters: nothing to do; to keep every prompt, add `"taskApproval": "off"` to `.claude/rfr.json`.
 
 ## [5.8.2] - 2026-11-11
