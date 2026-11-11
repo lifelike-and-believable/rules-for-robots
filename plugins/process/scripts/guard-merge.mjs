@@ -13,6 +13,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { hasId, readConfig, readWorkMode, stagesWithGate, stageOf } from './lib/process.mjs';
+import { approvedTasks, latestInput, mergeInstruction } from './lib/task-approval.mjs';
 
 // Flags of `gh pr merge` that take a value, so their value is not the pull request argument.
 const VALUE_FLAGS = new Set(['-b', '--body', '-F', '--body-file', '-t', '--subject', '--match-head-commit', '-A', '--author-email', '-R', '--repo']);
@@ -122,35 +123,10 @@ export function latestHumanMessage(transcriptPath) {
   return null;
 }
 
-const NEGATED = /\b(don'?t|do\s+not|never|not|no|without|hold\s+off|stop|wait\s+(before|to))\b[^.!?\n]{0,30}\bmerg/i;
-const SKILL = /(?:^|<command-name>)\s*\/(?:[\w-]+:)?merge-when-green\b/i;
-// "merge" (or "squash merge", "go ahead and merge it") as the whole message, possibly naming
-// pull requests and a condition such as "when green"; or "merge" with a CI condition anywhere.
-const WHOLE = /^(?:(?:yes|ok(?:ay)?|sure|great|thanks)[,.!]?\s+)?(?:please\s+)?(?:go\s+ahead\s+(?:and\s+)?)?(?:squash[- ]|rebase[- ])?merge\b(?:\s+(?:it|this|that|them|the\s+pr|pr|pull\s+request))?(?:\s*(?:#?\d+|pr\s*#?\d+|https:\/\/\S+\/pull\/\d+)(?:\s*(?:,|and)\s*#?\d+)*)?(?:\s+(?:now|when|once|after|if)\b[^.!?\n]{0,40})?(?:,?\s+(?:please|thanks))?[.!]*$/i;
-const CONDITIONAL = /\bmerge\b[^.!?\n]{0,40}\b(?:when|once|after|if)\b[^.!?\n]{0,30}\b(?:green|pass(?:es|ing)?|ci|checks?)\b/i;
-
-// What a typed message says about merging: { numbers } for an instruction to merge, naming the
-// pull requests it covers (none named means any pull request already open), or null.
-export function mergeInstruction(text) {
-  if (typeof text !== 'string' || !text.trim()) return null;
-  const t = text.trim();
-  if (SKILL.test(t)) {
-    const args = /<command-args>([\s\S]*?)<\/command-args>/i.exec(t)?.[1] ?? t.replace(SKILL, '');
-    return { numbers: numbersIn(args) };
-  }
-  // A question ("should we merge when green?") or a negation is not an instruction.
-  if (NEGATED.test(t) || /\?\s*$/.test(t)) return null;
-  if (WHOLE.test(t) || CONDITIONAL.test(t)) return { numbers: numbersIn(t) };
-  return null;
-}
-
-function numbersIn(text) {
-  const found = new Set();
-  for (const m of text.matchAll(/(?:#|\/pull\/|\bpr\s*#?|\bpull\s+request\s*#?)(\d+)/gi)) found.add(Number(m[1]));
-  for (const m of text.matchAll(/\bmerge\b((?:\s*(?:,|and)?\s*#?\d+\b)+)/gi)) for (const n of m[1].matchAll(/\d+/g)) found.add(Number(n[0]));
-  for (const m of text.matchAll(/^\s*(\d+)\b/g)) found.add(Number(m[1]));
-  return [...found];
-}
+// What a typed message says about merging: { numbers } for an instruction to merge, naming the pull
+// requests it covers (none named means any pull request already open), or null. The recognizer is
+// rfr-core's (docs/specs/task-approval.md), copied in by the build.
+export { mergeInstruction };
 
 function targetNumber(target) {
   if (target.kind === 'api') return Number.isFinite(target.number) ? target.number : null;
@@ -158,12 +134,14 @@ function targetNumber(target) {
   return m ? Number(m[1]) : null;
 }
 
-// Whether the person's latest typed message is an instruction that covers this merge. Returns
-// { covered: true } or { covered: false, why } where why explains a near miss, or is empty.
+// Whether the person's latest input is an instruction that covers this merge: their latest typed
+// message, or their answer to the agent's own question when that came later (task-approval AC-1).
+// Returns { covered: true, quote } or { covered: false, why } where why explains a near miss, or is empty.
 export function instructionCovers({ transcriptPath, target, describePr = describeWithGh }) {
-  const message = latestHumanMessage(transcriptPath);
-  const instruction = message && mergeInstruction(message.text);
+  const tasks = approvedTasks(latestInput(transcriptPath));
+  const instruction = tasks?.merge;
   if (!instruction) return { covered: false, why: '' };
+  const message = { timestamp: tasks.timestamp };
   let number = targetNumber(target);
   let createdAt = null;
   if (number === null || !instruction.numbers.length) {
@@ -173,14 +151,25 @@ export function instructionCovers({ transcriptPath, target, describePr = describ
       return { covered: false, why: '' };
     }
   }
+  const quote = tasks.quote.replace(/\s+/g, ' ').trim().slice(0, 90);
   if (instruction.numbers.length) {
-    return instruction.numbers.includes(number) ? { covered: true } : { covered: false, why: ` Your latest instruction names #${instruction.numbers.join(', #')}, not #${number}.` };
+    return instruction.numbers.includes(number) ? { covered: true, quote } : { covered: false, why: ` Your latest instruction names #${instruction.numbers.join(', #')}, not #${number}.` };
   }
   const opened = Date.parse(createdAt);
   const said = Date.parse(message.timestamp);
   if (Number.isNaN(opened) || Number.isNaN(said)) return { covered: false, why: '' };
   if (opened > said) return { covered: false, why: ` This pull request was opened after your instruction to merge, which named no pull request, so it does not cover this one.` };
-  return { covered: true };
+  return { covered: true, quote };
+}
+
+// Whether the project turned task approval off (task-approval AC-6): then a covered merge is not
+// asked about, as before, but is not approved either, so Claude Code's own rules decide.
+function taskApprovalOff(root) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, '.claude', 'rfr.json'), 'utf8'))?.taskApproval === 'off';
+  } catch {
+    return false;
+  }
 }
 
 export function decideMerge({ input, root, listFiles = listWithGh, describePr = describeWithGh }) {
@@ -205,8 +194,11 @@ export function decideMerge({ input, root, listFiles = listWithGh, describePr = 
     return !fs.existsSync(local) || hasId(fs.readFileSync(local, 'utf8'));
   });
   if (!touched.length) return { ask: false, reason: '' };
-  const { covered, why } = instructionCovers({ transcriptPath: input.transcript_path, target, describePr });
-  if (covered) return { ask: false, reason: '' };
+  const { covered, why, quote } = instructionCovers({ transcriptPath: input.transcript_path, target, describePr });
+  if (covered) {
+    if (taskApprovalOff(root)) return { ask: false, reason: '' };
+    return { ask: false, allow: true, reason: `rfr-process (task approval): approved by your message "${quote}"` };
+  }
   return {
     ask: true,
     reason: `rfr-process: this pull request touches gated process files (${touched.slice(0, 5).join(', ')}${touched.length > 5 ? ', ...' : ''}). Merging it approves them.${why} Confirm only if you are the approver and want it merged now; the agent should then comment on the pull request with your instruction.`,
@@ -217,14 +209,19 @@ export function askOutput(reason) {
   return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: reason } });
 }
 
+export function allowOutput(reason) {
+  return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow', permissionDecisionReason: reason } });
+}
+
 async function main() {
   let raw = '';
   for await (const chunk of process.stdin) raw += chunk;
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* not JSON: nothing to check */ }
   const root = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const { ask, reason } = decideMerge({ input, root });
+  const { ask, allow, reason } = decideMerge({ input, root });
   if (ask) process.stdout.write(askOutput(reason));
+  else if (allow) process.stdout.write(allowOutput(reason));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();

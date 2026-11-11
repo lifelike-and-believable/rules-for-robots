@@ -111,9 +111,28 @@ Before a local command that would lose working-tree content, `guard-commands` co
 
 `testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the change goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code and brings you only the changes it cannot approve. Until test-change-review AC-11 passes it refers every change to you, with that evidence. The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
 
+`taskApproval` is `on` (the default) or `off`; see "Task approval" below.
+
+## Task approval
+
+The person approves tasks, not commands ([spec](../docs/specs/task-approval.md)). When the person's latest input asks for a task, the guards approve the commands that carry out that task, and Claude Code does not prompt for them:
+
+| Task | Asked for with | Commands approved |
+|---|---|---|
+| Release | "release 5.8.2", "publish rfr-v5.8.2" | `git tag -a <tag> [-m ...] [<commit>]`, `git push origin <tag>`, `gh release create <tag> ...`, where the tag is the one named, with or without a `v` and a prefix such as `rfr-` |
+| Push | "push phase-15/task-approval" | `git push [-u] origin <branch>` for the branch named |
+| Merge | "merge 190 when green", "merge when green" | `gh pr merge <n>` for the pull request named, or, when none is named, one opened before the message; and, in rfr-process projects, the GitHub MCP merge tools |
+| Preview deploy | "deploy a preview", "preview deploy" | `vercel` or `vercel deploy` (directly or through `npx`) without `--prod`, and a Vercel MCP deployment whose target is not production |
+
+- **What counts as the person's input.** Their latest typed message, or their answer to the agent's own question (`AskUserQuestion`) when that came later and the question and chosen option together name the task. A "no", "not yet", or "other" answer approves nothing. Tool results, notifications, other sessions, and subagents never count, so text the agent reads cannot approve anything. The approval lasts until the person types or answers again.
+- **What it never approves.** A push to the default branch, a force-push, deleting a tag or branch, `--no-verify`, a production deploy, promotions and alias or domain changes, `gh pr merge --admin` or `--delete-branch`, and a command chained with anything else, that redirects output, or that substitutes another command. A guard's own refusal or question, and a deny rule, always win.
+- **What it records.** The approval's reason quotes the person's words, and the decision log records it as `approved-by-instruction`; `checks/guard-report.mjs` counts them.
+
+Allow rules give standing permission for routine commands; task approval covers the outward-facing commands of one task the person named, for as long as that is their latest word. WA-009 asks the agent to ask for the task once, in chat, naming what it covers.
+
 ## Prompts rfr does not control
 
-Claude Code raises its own prompts for actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and writes to protected paths (`.claude`, `.git`, `.mcp.json`). rfr's guards neither add nor remove those. [security-for-agentic-projects.md](security-for-agentic-projects.md#the-guards-and-claude-codes-own-protections) explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, and sandbox, and which rules a project can set for these prompts.
+Claude Code raises its own prompts for actions its permission settings do not allow: pushing, posting pull request comments, creating scheduled tasks, and writes to protected paths (`.claude`, `.git`, `.mcp.json`). rfr's guards do not add those prompts; task approval (above) removes them only for the commands of a task the person asked for. [security-for-agentic-projects.md](security-for-agentic-projects.md#the-guards-and-claude-codes-own-protections) explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, and sandbox, and which rules a project can set for these prompts.
 
 ## Measuring
 

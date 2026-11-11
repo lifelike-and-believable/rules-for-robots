@@ -4,7 +4,8 @@
 // pass through, except those that return credentials or decrypted environment variables,
 // and filter_project_envs when it is asked to decrypt.
 import { fileURLToPath } from 'node:url';
-import { ask, askReason, readInput } from './lib.mjs';
+import { approve, ask, askReason, guardSettings, readInput } from './lib.mjs';
+import { approval, mcpTask } from './task-approval.mjs';
 
 const READ_PREFIXES = ['get_', 'list_', 'search_', 'read_', 'count_', 'aggregate_', 'filter_', 'status', 'web_fetch', 'artifact_query'];
 // get_project_env and get_shared_env_var return decrypted values (Vercel's tool schemas:
@@ -47,10 +48,24 @@ export function vercelAskReason(toolName, toolInput) {
   return null;
 }
 
+// The decision for a Vercel MCP call: { decision: 'ask', reason }, { decision: 'allow', reason } for a
+// preview deployment the person's latest input asked for (docs/specs/task-approval.md), or null.
+export function decideVercel(input, { settings, describePr } = {}) {
+  const reason = vercelAskReason(input?.tool_name, input?.tool_input);
+  if (!reason) return null;
+  const cwd = input?.cwd ?? process.cwd();
+  if (input?.transcript_path && (settings ?? guardSettings(cwd)).taskApproval !== 'off') {
+    const approved = approval(mcpTask(input.tool_name, input.tool_input), { transcriptPath: input.transcript_path, cwd, ...(describePr ? { describePr } : {}) });
+    if (approved) return { decision: 'allow', reason: approved.reason.replace('rfr-core', 'rfr-web') };
+  }
+  return { decision: 'ask', reason };
+}
+
 async function main() {
   const input = await readInput();
-  const reason = vercelAskReason(input?.tool_name, input?.tool_input);
-  if (reason) ask(reason);
+  const result = decideVercel(input);
+  if (result?.decision === 'allow') approve(result.reason);
+  else if (result) ask(result.reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

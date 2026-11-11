@@ -53,6 +53,8 @@ A guard asks only about actions that cannot be undone or reach outside the proje
 
 A project sets `testWeakening` in `.claude/rfr.json` to `ask` (the default) or `defer`; see [practices/guards.md](../../practices/guards.md#project-settings).
 
+`guard-commands` also approves the commands of a task the person asked for in their latest input (a release, a push to a named branch, a merge, a preview deploy), so Claude Code does not prompt for each, and never approves a push to the default branch, a force-push, a deletion, or a production deploy. A project turns this off with `"taskApproval": "off"`; see [practices/guards.md](../../practices/guards.md#task-approval).
+
 Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it (`CLAUDE_PLUGIN_DATA`, or `rfr-core/` in the temp directory): the time, session, hook, tool, decision, and the first 200 characters of the reason, never the command or file contents. When an asked call then runs, `guard-outcome` (PostToolUse and PostToolUseFailure) adds an `approved` line; Claude Code reports nothing when a prompt is declined, so an ask without one was declined or never reached. `node checks/guard-report.mjs <log>...` in a rules-for-robots checkout summarises one or more logs (one per plugin). Set `RFR_GUARD_LOG=0` to turn it off.
 
 Every guard decision, its tier, and why it sits there are listed in [practices/guards.md](../../practices/guards.md).
