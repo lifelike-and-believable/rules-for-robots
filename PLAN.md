@@ -425,13 +425,14 @@ Pull requests: #169 (21a).
 
 ### Phase 23: Process changes (in progress)
 Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
-Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c).
+Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 (23l).
 
 - **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#163). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
 - **23f:** the tier inferred from the changed paths; a label only raises it. Done (#170).
 - **23j:** pilot findings moved to `docs/research/pilots/`, the guide split by stage, unexercised team features marked. Done (#171).
 - **23b:** gate types (`approve`, `notify`, `agent`) with defaults by working mode. Done (#172).
 - **23c:** the batched interview, product brief, feature packet, and the review packet script. Done (#173).
+- **23l:** `checks/process-rework-report.mjs` (amendments to approved artifacts, and which came after a spec built on them), the review packet's mismatches and `slows` count, guide text for turning a repeated correction into a review check, and regression cases from feedback triage, from Anthropic's AI-native SDLC playbook. Built (#181); the pilot baseline waits for the pilots' clones.
 - **23k:** the two probes, written up for the maintainer to run and judge in [evals/results/2026-11-10-23k-probes/](evals/results/2026-11-10-23k-probes/README.md) (#174). Not yet run. 23d and later wait for their results.
 
 ## 11. Milestones

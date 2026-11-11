@@ -18,7 +18,7 @@ Work as a reviewer looking for failure points, not as an actor playing the user.
 node .rfr/checks/tutorial-run.mjs . --base-url <url> --record <a temporary folder>
 ```
 
-Report each step that fails as a **mismatch**: the step, what the tutorial says, and what the product did, with the screenshot path. These are facts about the product, not predictions, and they come first in your report. If you cannot run it, say so and why.
+Report each step that fails as a **mismatch**, one line each: `- **Mismatch:** step <n>, <what the tutorial says>; <what the product did>. Screenshot: <path>`. The review packet reads that form. These are facts about the product, not predictions, and they come first in your report. If you cannot run it, say so and why.
 
 **2. Then the walkthrough, for each persona separately.** Go through the artifact step by step (for documentation, each instruction or section the reader acts on). At every step, answer these four questions for this persona, and record a finding for each "no":
 - Will they know what to do here, with their skills and vocabulary? (A term, menu, prerequisite, or concept the page assumes.)
@@ -28,7 +28,7 @@ Report each step that fails as a **mismatch**: the step, what the tutorial says,
 
 Also note where the page would trigger one of the persona's listed frustrations, and anything a story promised that the page does not cover. Check each key term a story's criteria rely on against anything in the product that looks similar ("no placeholder text" next to an honest "coming soon" empty state), and report a term the artifact does not define precisely enough to tell them apart.
 
-**Check the lead's preferences.** If the project has `docs/preferences.md`, read it, and report anything in the artifact that goes against a recorded preference, citing the line, alongside the persona findings.
+**Check the lead's preferences.** If the project has `docs/preferences.md`, read it, and report anything in the artifact that goes against a recorded preference, citing the line, alongside the persona findings. Run each question under its `## Review checks` heading that names this artifact's stage, and report each one the artifact fails the same way.
 
 **Read the product, not only the artifact.** For a design that changes screens that already exist, read the code that renders each one before walking it: a mock-up the code cannot produce (an inline view where the code only has an overlay) is a finding, and the code often matters more than the persona file. Check each piece of help text and each promise against what the site actually does, field by field (a field the help says appears on the home page, a price shown without its currency). For a design that changes content editors manage, also walk it as the personas who read the pages that content appears on: a setting an editor changes can leave a visitor a way in that the design meant to close. Note the branch's base: if related designs are still in review, say which ones you could not see, rather than reporting them as missing.
 
