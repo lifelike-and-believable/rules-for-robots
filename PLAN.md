@@ -436,7 +436,7 @@ Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 
 - **23k:** the two probes, written up for the maintainer to run and judge in [evals/results/2026-11-10-23k-probes/](evals/results/2026-11-10-23k-probes/README.md) (#174). Not yet run. 23d and later wait for their results.
 
 ### Phase 24: Android plugin and a core-only profile (planned)
-Spec: [docs/specs/android-plugin.md](docs/specs/android-plugin.md) (decisions settled 2026-11-11; `uiautomator dump` confirmed on the reference TV).
+Spec: [docs/specs/android-plugin.md](docs/specs/android-plugin.md) (approved 2026-11-11; `uiautomator dump` confirmed on the reference TV).
 Pull requests: #183 (spec).
 
 From the quiet-launcher project, which fits no profile: an `rfr-android` plugin with a device guard that asks only before an `adb` command changes a shared device, an on-device tutorial runner (`runner: adb`), an `android-app` profile, and a `general` profile for projects that are neither web, Unreal, nor Android.
