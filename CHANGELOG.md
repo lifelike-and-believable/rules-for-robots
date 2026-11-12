@@ -10,7 +10,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [6.1.0] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #202.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
@@ -18,8 +18,8 @@ This release includes 6.0.1, which was not published on its own.
 
 ### Changed
 
-- **No guard ever raises a permission prompt** (#PR; default-allow AC-10, decision 6). A person cannot judge a command's text, so a prompt protects nothing. Every decision that was a prompt is now a refusal that tells the agent to ask you in chat, in plain words, what it wants to do and why. This covers force-pushes, pushes to the default branch, remote deletions, releases, production deploys, secret reads, deletes outside the project, MCP tools that change something in another service, and merges that are your review. When you say yes, the same call goes ahead once. A no, a question, or a different call approves nothing. The shared logic is `chat-approval.mjs`, which the build copies into every plugin.
-- **Deletes in a temp folder are scratch** (#PR). `rm -rf` of anything in `/tmp`, `/var/tmp`, or the system temp folder goes ahead, including a copy or clone of the project there. The exception is the session's own project, if it happens to live in one. A cloud session got two prompts for a scratch Postgres folder under `/tmp` under 6.0.0.
+- **No guard ever raises a permission prompt** (#202; default-allow AC-10, decision 6). A person cannot judge a command's text, so a prompt protects nothing. Every decision that was a prompt is now a refusal that tells the agent to ask you in chat, in plain words, what it wants to do and why. This covers force-pushes, pushes to the default branch, remote deletions, releases, production deploys, secret reads, deletes outside the project, MCP tools that change something in another service, and merges that are your review. When you say yes, the same call goes ahead once. A no, a question, or a different call approves nothing. The shared logic is `chat-approval.mjs`, which the build copies into every plugin.
+- **Deletes in a temp folder are scratch** (#202). `rm -rf` of anything in `/tmp`, `/var/tmp`, or the system temp folder goes ahead, including a copy or clone of the project there. The exception is the session's own project, if it happens to live in one. A cloud session got two prompts for a scratch Postgres folder under `/tmp` under 6.0.0.
 - MCP tools that only read (`get_`, `list_`, `search_`, and so on) are allowed for every server, not only GitHub. The replay check counts a chat refusal as a decision for the person, as it counted a prompt.
 - `RFR_PERMISSIONS=ask` brings prompts back for one session, as `"permissions": "ask"` does for a project.
 - `rfr-core` 6.1.0, `rfr-web` 1.3.0, `rfr-process` 0.21.0, `rfr-unreal` 2.1.0, `rfr-android` 0.2.0. Adopters: nothing to do. Claude Code's own prompts for protected paths (`.claude`, `.git`, `.mcp.json`) are outside rfr's control and remain.
