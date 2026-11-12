@@ -1,6 +1,6 @@
 # Handoff
 
-The state of rules-for-robots for a session that has none of the conversation behind it. Read this first, then `PLAN.md` section 14. Updated 2026-11-12, after 7.1.0.
+The state of rules-for-robots for a session that has none of the conversation behind it. Read this first, then `PLAN.md` section 14. Updated 2026-11-12, after 7.2.0 and the rewrite plan.
 
 ## What the maintainer wants, in their words
 
@@ -20,6 +20,8 @@ The state of rules-for-robots for a session that has none of the conversation be
 
 ## What is open
 
+- **The rewrite plan is approved (2026-11-12, all eight decisions as recommended) and not started**: [rewrite-plan.md](rewrite-plan.md) (Phase 25), written 2026-11-12 after a whole-system review. Its findings: the merge doubling as the approval is why merge instructions keep being misread; stage order is enforced on documents and not on code (a code-only pull request is inferred `trivial`); most waits are the agent ending its turn, not prompts. It moves approval and merging to GitHub, with the agent only pushing branches. Nothing in it is built. Start with the trials in 25a and change no guard outside the plan. Trial 1 needs the maintainer to create a GitHub App in the organisation.
+
 - **XR Studio In A Box** is the main real user. It has been told about 7.1.0. Its spec(s) derived straight from stories now fail the process check, and it should write and get approval for the Layer 1 design and user docs before more code.
   - Its repository has no `.claude/settings.json`, so a fresh cloud session may load no rfr plugins until `/rfr-core:install-rules` commits one.
   - Its feedback arrives as issues labelled `feedback`; triage them with the `triage-feedback` skill.
@@ -29,6 +31,9 @@ The state of rules-for-robots for a session that has none of the conversation be
 - **Process enforcement covers documents, not code.** A pull request that adds code with no approved spec at all is caught only by the spec and tests rules, not by `guard-stages`.
 
 ## Facts the code does not show
+
+- Cloud sessions and the local CLI both act as the maintainer on GitHub: pull requests opened from a cloud session in `xr-studio-in-a-box` are authored by the maintainer's account, so the maintainer cannot give them an approving review. `xr-studio-in-a-box` has no branch protection on `main` (checked 2026-11-12).
+- Claude Code facts checked in its documentation on 2026-11-12: a project's settings cannot set `auto` or `bypassPermissions` mode or the auto-mode classifier's settings; cloud sessions have no bypass mode; auto mode blocks merging a pull request no person approved; an `ask` rule prompts even in auto mode.
 
 - The maintainer cannot judge command text. A permission prompt is never acceptable, and neither is a question in chat during a run.
 - Replaying real sessions is the way to check that guards do not misfire: `evals/session-replay/replay-commands.mjs` (with `--map` for cloud paths, and `MSYS_NO_PATHCONV=1` in Git Bash). Run it on new session logs before releasing guard changes.
