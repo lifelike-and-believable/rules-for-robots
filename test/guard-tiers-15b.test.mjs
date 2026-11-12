@@ -95,15 +95,17 @@ test('guard-tiers#AC-4: tier-2 corpus cases are refused with a next step, and ne
   assert.doesNotMatch(owned, /Approve/);
 });
 
-test('guard-tiers#AC-5: testWeakening chooses between asking and deferring to the pull request, and defaults to ask', () => {
+test('guard-tiers#AC-5: testWeakening chooses between asking and deferring to the pull request, and defaults to defer', () => {
   const tierOf = d => (d.decision === 'ask' ? 4 : d.decision === 'defer' ? 3 : 2);
 
+  // The default switched to defer when test-change-review AC-11 passed (2026-11-11).
   const plain = repo();
-  assert.equal(tierOf(weaken(plain.dir)), 4, 'no setting: ask');
-  assert.equal(decideCommand('git rm tests/a.test.ts', { cwd: plain.dir }).decision, 'ask');
+  assert.equal(tierOf(weaken(plain.dir)), 3, 'no setting: defer');
+  assert.equal(decideCommand('git rm tests/a.test.ts', { cwd: plain.dir }).decision, 'defer');
 
   const asking = repo({ '.claude/rfr.json': '{ "testWeakening": "ask" }\n' });
   assert.equal(tierOf(weaken(asking.dir)), 4, 'ask: ask');
+  assert.equal(decideCommand('git rm tests/a.test.ts', { cwd: asking.dir }).decision, 'ask');
 
   const deferring = repo({ '.claude/rfr.json': '{ "testWeakening": "defer" }\n' });
   const deferred = weaken(deferring.dir);
@@ -125,7 +127,7 @@ test('guard-tiers#AC-5: testWeakening chooses between asking and deferring to th
 
   // An unknown value keeps the default.
   const odd = repo({ '.claude/rfr.json': '{ "testWeakening": "never" }\n' });
-  assert.equal(tierOf(weaken(odd.dir)), 4);
+  assert.equal(tierOf(weaken(odd.dir)), 3);
 });
 
 test('guard-tiers#AC-5: a deferred test change reaches the agent as context with no permission decision, is logged as defer, and the report counts it', () => {

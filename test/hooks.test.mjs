@@ -68,8 +68,12 @@ test('asks only before editing existing test files', () => {
   assert.equal(shouldAsk('src/b.test.ts', dir), false, 'new test files are allowed');
   assert.equal(shouldAsk('src/a.ts', dir), false);
 
+  // Since test-change-review AC-11 passed, the default defers the change to the pull request (tier 3):
+  // no permission decision, and context that names the deferral.
   const result = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Edit', tool_input: { file_path: path.join(dir, 'src/a.test.ts') } });
-  assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  const output = JSON.parse(result.stdout).hookSpecificOutput;
+  assert.equal(output.permissionDecision, undefined);
+  assert.match(output.additionalContext, /testWeakening: defer/);
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -535,7 +539,8 @@ test('guard-commands lets a shell command create a new file, or write outside th
   assert.equal(decideCommand("cat > tests/new.test.ts <<'EOF'\nx\nEOF", { cwd: dir }), null, 'a new file is not an existing test');
   assert.equal(decideCommand(`echo x > ${sh(outside)}`, { cwd: dir }), null, 'a file outside the project is not one of its tests');
   assert.equal(decideCommand('sed -i s/a/b/ tests/existing.test.ts', { cwd: dir }).decision, 'deny');
-  assert.equal(decideCommand('rm tests/*.test.ts', { cwd: dir }).decision, 'ask', 'a glob can match existing tests');
+  assert.equal(decideCommand('rm tests/*.test.ts', { cwd: dir }).decision, 'defer', 'a glob can match existing tests');
+  assert.equal(decideCommand('rm tests/*.test.ts', { cwd: dir, settings: { testWeakening: 'ask' } }).decision, 'ask', 'a project that wants to be asked is');
   const write = runHook('guard-test-edits.mjs', { cwd: dir, tool_name: 'Write', tool_input: { file_path: outside, content: 'y' } });
   assert.equal(write.stdout, '', 'guard-test-edits leaves files outside the project alone');
   fs.rmSync(dir, { recursive: true, force: true });
@@ -616,7 +621,7 @@ test('guard-test-edits reads the specs and paths of the worktree an agent edits 
     const weaken = file => decideEdit({ cwd: wt, tool_name: 'Edit', tool_input: { file_path: path.join(wt, file), old_string: 'toBe(45)', new_string: 'toBe(50)' } });
     assert.equal(weaken('tests/unit/a.test.ts'), null, 'the unlocks entry is found in the worktree');
     const asked = weaken('tests/unit/b.test.ts');
-    assert.equal(asked.decision, 'ask');
+    assert.equal(asked.decision, 'defer');
     assert.match(asked.reason, /^rfr-core \(TEST-001\): tests\/unit\/b\.test\.ts is an existing test/);
   } finally {
     if (before === undefined) delete process.env.CLAUDE_PROJECT_DIR; else process.env.CLAUDE_PROJECT_DIR = before;

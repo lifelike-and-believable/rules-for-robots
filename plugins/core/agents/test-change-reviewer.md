@@ -1,6 +1,6 @@
 ---
 name: test-change-reviewer
-description: Experimental, not yet evaluated. Decides whether a pull request's changes to existing tests are justified, from the test diff, the classifier's findings, the specs, and evidence from running the changed tests on the old and new code; approves or refers each change to the lead, without editing code. Use from review-pr when a pull request modifies existing test files; give it only the review input JSON and the pull request's description, never the implementing session's reasoning.
+description: Decides whether a pull request's changes to existing tests are justified, from the test diff, the classifier's findings, the specs, and evidence from running the changed tests on the old and new code; approves or refers each change to the lead, without editing code. Use from review-pr when a pull request modifies existing test files; give it only the review input JSON and the pull request's description, never the implementing session's reasoning.
 model: opus
 effort: high
 tools: Read, Grep, Glob, Bash
@@ -46,4 +46,4 @@ Return JSON for `test-change-review.mjs comment`, and nothing else:
 }
 ```
 
-Leave `labelAdded` false: whoever started you adds the label, and only once the eval in AC-11 has passed.
+Leave `labelAdded` false: you cannot change the pull request, so whoever started you adds the `tests-reviewed` label when you approve, and records that it did.

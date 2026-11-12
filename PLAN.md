@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v5.9.0 (2026-11-11). Phases 0 to 7, 9, 12, 16, and 17 complete. Phases 10, 11, and 13 to 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v5.10.0 (2026-11-11). Phases 0 to 7, 9, 12, 13, 16, and 17 complete. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -206,7 +206,7 @@ Start small and add agents only when evals show benefit (R18).
 | `software-architect` | Module boundaries, data model, interfaces, build-versus-adopt; ADRs for hard-to-reverse choices | Read-only plus ADR files | Recommended design, rejected options, ADRs |
 | `ux-reviewer` (experimental) | Usability and interface design in three areas: Unreal Editor tools and Blueprint-facing APIs, general software (desktop, command-line, developer tools), and web pages and apps; leaves WCAG conformance to `accessibility-reviewer` | Read-only | Findings in the common format |
 | `tech-lead` (experimental) | Slices a goal into sequenced, verifiable steps with an owner each; checks delegated work against acceptance criteria | Read-only | Plan or per-criterion check result |
-| `test-change-reviewer` (experimental, Phase 13) | Judges changes to existing tests in a pull request: weakening findings, approved reasons, and evidence from running the changed tests on base and head and with the behaviour broken | Read-only plus throwaway worktrees | One approve-or-refer decision with a verdict per test |
+| `test-change-reviewer` (Phase 13; evaluated in 13d) | Judges changes to existing tests in a pull request: weakening findings, approved reasons, and evidence from running the changed tests on base and head and with the behaviour broken | Read-only plus throwaway worktrees | One approve-or-refer decision with a verdict per test |
 
 Reviewers are invoked explicitly or by path, receive the diff and criteria without the author's reasoning, and leave filtering to a separate confirm-or-refute pass (R19). Each agent sets `model` and `effort` (R21). Agent-specific enforcement goes in the plugin's `hooks/hooks.json`, because plugin agents ignore their own `hooks` and `permissionMode` fields (R22). The three Haiku agents (1.1.0) pass the R18 test on smoke evidence: they gather or run things, return text copied from tools, and leave every judgment to the caller ([note](docs/research/notes/haiku_5_5_delegation.md)). `software-architect` and `tech-lead` were added in 1.2.0 and `ux-reviewer` in 1.3.0, all as experimental, ahead of the evals R18 asks for. The Phase 8 third round (October 2026) found the architect makes ADRs weigh alternatives reliably at five to seven times the time, and `tech-lead` no different from the main session on its cases; `tech-lead` stays experimental. The architect is no longer experimental (decided 2026-11-11, #187): the Fable 5.2 round repeated its benefit (9 of 9 against 7 of 9 without it), and `plan-feature` now asks for a design before slicing a new project, a change across components, or a hard-to-reverse choice. Candidates to add later if evals justify them: `product-analyst`, `test-engineer`, `docs-writer`, `release-engineer`.
 
@@ -344,16 +344,16 @@ Feedback from projects that use rules-for-robots arrives as issues on this repos
 - **12a:** the plugin and its `report-feedback` skill, the feedback issue form, the intake job, and the `triage-feedback` skill.
 - **12b:** the daily scheduled triage task, created after 12a merges, and a first triage of the pilots' open findings. Done: the task was created on 2026-11-06 and runs daily; the first round of findings is #135.
 
-### Phase 13: Test change review (in progress: 13d eval not run)
+### Phase 13: Test change review (done)
 Spec: [docs/specs/test-change-review.md](docs/specs/test-change-review.md) (approved 2026-11-07).
-Pull requests: #138 (spec), #139 (13a), #140 (13b), #142 (13c).
+Pull requests: #138 (spec), #139 (13a), #140 (13b), #142 (13c), #194 (13d).
 
 Most changes to existing tests can be judged on written criteria: whether the change weakens the test, and, if it does, whether an approved change in behaviour explains it and the changed test catches that behaviour when run. The session hooks let additive and neutral test changes through without asking, using a deterministic classifier; at the pull request, a `test-change-reviewer` agent checks the reasons and runs the changed tests against the old and new code before it adds `tests-reviewed`, and refers everything else to the lead.
 
 - **13a:** the test-diff classifier and the session hooks (AC-1 to AC-6).
 - **13b:** the evidence script (AC-7).
 - **13c:** the reviewer agent and its `review-pr` step (AC-8 to AC-10).
-- **13d:** the eval (AC-11); the reviewer adds the label only after it passes.
+- **13d:** the eval (AC-11); the reviewer adds the label only after it passes. Done 2026-11-11: no gaming change approved in 36 runs on Opus 5.5 and Sonnet 5.5, and 47 of 48 legitimate changes handled correctly, for $11.13 (`evals/results/2026-11-11-13d/report.md`). `review-pr` now adds `tests-reviewed` on approval, and the `testWeakening` default is `defer` (guard tiers decision 3).
 
 ### Phase 14: Grounded evidence (in progress: 14b eval not run)
 Spec: [docs/specs/grounded-evidence.md](docs/specs/grounded-evidence.md) (approved 2026-11-08).
@@ -488,7 +488,7 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 Open items only; finished work is recorded under its phase.
 
 1. The improvement plans, in the brief's order: measure (19a, 23a), housekeeping (18a, 18b), delegated mode (19b, 19h, 19c, then the 21a eval), process (23f, 23j, 23b, 23c), and the probes (23k). The rest of both plans waits for the maintainer's review of what those produce.
-2. Eval rounds that have machinery and no result: 10c (55 runs, $20 to $30), 13d, 14b, 15e. Phase 21 orders them under the D8 cap of $150.
+2. Eval rounds that have machinery and no result: 10c (55 runs, $20 to $30), 14b, 15e. Phase 21 orders them under the D8 cap of $150.
 3. 11d: the release readiness check and the stage 8 template (process plan 23i); release notes and the triage skill stay deferred (P6).
 4. The long-session eval round (#69): seven multi-prompt cases for the candidate rules from #28 to #35, #52, and #57; cases and graders are built, the paid runs are staged.
 5. Replay the Kettlebird pilot's sessions (guard tiers AC-8) and add them to the attention baseline (19a); both need commands run on the pilot's machine.

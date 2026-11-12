@@ -16,7 +16,7 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | Decision | Rule | Failure it prevents | Now | Target | Why |
 |---|---|---|---|---|---|
 | A shell command writes to an existing test file | TEST-001 | Editing tests through the shell, where the change cannot be checked | 2 | 2 | The agent can make the same change with the Edit tool, which `guard-test-edits` checks |
-| A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 4, or 3 with `testWeakening: defer` | 4, then 3 | Removing a test is the strongest weakening; the `testWeakening` setting moves it to the pull request (AC-5) |
+| A shell command moves or deletes an existing test file (`rm`, `mv`, `git rm`, `git mv`) | TEST-001 | Removing a test to get green | 3, or 4 with `testWeakening: ask` | 3 | Removing a test is the strongest weakening; the pull request's test-change review judges it, and `testWeakening: ask` asks now instead (AC-5) |
 | A command only runs, reads, or mentions a test file | TEST-001 | none | 1 | 1 | Nothing changes |
 | A script only mentions a dangerous command (a heredoc for Python, `cat`, and others, but not one a shell reads) | WA-003, PG-001 | none | 1 | 1 | Nothing runs it; the patterns match only what runs (15d) |
 | Snapshot update (`vitest -u`, `jest -u`, `playwright --update-snapshots`) | TEST-001 | Rewriting expected values without a reason | 2 | 2 | The agent states the reason in the command (`RFR_SNAPSHOT_REASON="..."`) and in its report, and the update goes through (AC-4) |
@@ -42,7 +42,7 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 | A new test file, a test file added on this branch, or a test line added on this branch | TEST-001 | none | 1 | 1 | Not an existing test; the pull request check sees it as new |
 | An additive or neutral edit to an existing test | TEST-001 | none | 1 | 1 | Nothing weakens |
 | A weakening edit to an existing test, with a spec `unlocks` entry citing a criterion | TEST-001 | none | 1 | 1 | The spec records the reason; the pull request review checks it |
-| A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 4, or 3 with `testWeakening: defer` | 4, then 3 | The default moves to the pull request when the test-change reviewer's eval passes (AC-5) |
+| A weakening edit to an existing test, with no `unlocks` entry, or one the classifier cannot read | TEST-001 | Editing a test to make it pass | 3, or 4 with `testWeakening: ask` | 3 | The default moved to the pull request when the test-change reviewer's eval passed (test-change-review AC-11, 2026-11-11; guard tiers AC-5) |
 
 ## `guard-owned-paths` (rfr-core; Edit, Write; opt-in)
 
@@ -104,12 +104,12 @@ Before a local command that would lose working-tree content, `guard-commands` co
 `.claude/rfr.json` at the repository root holds the guards' project settings:
 
 ```json
-{ "testWeakening": "ask", "mode": "supervised" }
+{ "testWeakening": "defer", "mode": "supervised" }
 ```
 
 `mode` is the project's working mode. `supervised` (the default) installs the working agreement as it is: the agent stops and asks when the task or a test looks wrong, or when doing the task well would change its scope. `delegated` replaces WA-002, WA-003, and WA-004 with files that stop only before irreversible or outward actions, park a task or test that looks wrong without touching it, and record every other choice in the pull request's `## Decisions` section, so a long session continues while the person is away. `/rfr-core:install-rules` installs the files that match the mode. The delegated files are experimental until their eval (improvement plan 21a) passes; the guards behave the same in both modes.
 
-`testWeakening` is `ask` (the default: weakening, moving, or deleting an existing test asks a person now) or `defer` (the change goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code and brings you only the changes it cannot approve. Until test-change-review AC-11 passes it refers every change to you, with that evidence. The default becomes `defer` in the release that records the test-change reviewer's eval (test-change-review AC-11) as passed; a project that wants to keep being asked sets `ask`.
+`testWeakening` is `defer` (the default: weakening, moving, or deleting an existing test goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides) or `ask` (each such change asks a person now). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and a push after the label makes it red again until the label is re-added for the new commits; `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code, adds `tests-reviewed` when it can approve every change, and brings you only the changes it cannot approve, with that evidence. The default became `defer` when the reviewer's eval passed (test-change-review AC-11, 2026-11-11: no gaming change approved in 36 runs); a project that wants to keep being asked sets `ask`.
 
 `taskApproval` is `on` (the default) or `off`; see "Task approval" below.
 

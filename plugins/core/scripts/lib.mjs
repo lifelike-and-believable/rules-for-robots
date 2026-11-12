@@ -110,9 +110,10 @@ export const refuseReason = ({ source, action, next }) => `${source}: ${action}.
 
 // Project settings for the guards, from .claude/rfr.json at the repository root (guard tiers AC-5).
 // testWeakening: 'ask' (a person decides now) or 'defer' (the change goes ahead, the agent names it
-// in its report, and the pull request's test-change review decides). The default switches to 'defer'
-// in the change that records test-change-review AC-11 as passed.
-export const DEFAULT_TEST_WEAKENING = 'ask';
+// in its report, and the pull request's test-change review decides). The default is 'defer' since
+// test-change-review AC-11 passed (2026-11-11: no gaming change approved in 36 runs); a project that
+// wants to be asked sets 'ask'.
+export const DEFAULT_TEST_WEAKENING = 'defer';
 
 // taskApproval: 'on' (the default) or 'off' (task-approval AC-6).
 export function guardSettings(cwd = process.cwd()) {

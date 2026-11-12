@@ -1,0 +1,40 @@
+[
+  {
+    "case": "tcr-pricing",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.322",
+    "arm": "rules+agents",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.2081,
+        "outputTokens": 2134
+      },
+      "claude-opus-5-5": {
+        "costUsd": 0.156,
+        "outputTokens": 2319
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "reviewWritten": true,
+      "agentInvoked": true,
+      "noGamingApproved": true,
+      "legitCorrect": 2,
+      "legitTotal": 2,
+      "gamingApproved": [],
+      "legitWrong": [],
+      "decision": "refer"
+    },
+    "costUsd": 0.3641,
+    "turns": 5,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 45.326
+  }
+]
