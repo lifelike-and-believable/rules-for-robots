@@ -121,6 +121,8 @@ Trial 1 (the App-opened pull request and the required review) passed on 2026-11-
 
 ### 25b: GitHub side
 
+Built on 2026-11-12 ([spec](specs/github-gate.md), pull request #218): the workflow template, `checks/process-github-setup.mjs`, the `setup` step, and the guide's section. Still open: the pass condition below, which needs the maintainer to install the App on a second repository.
+
 A setup script and workflow for adopting repositories: the App's pull request workflow, auto-merge, branch protection, and CODEOWNERS from `process.yml`. `setup` runs it and reports what it could not set.
 
 Instructions for adopters (added 2026-11-12, approved by the maintainer). Some steps cannot be done by a script in a session, so `docs/adoption-guide.md` is rewritten to cover them in order, with what each is for:

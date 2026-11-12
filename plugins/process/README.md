@@ -159,3 +159,9 @@ To place the issues on a GitHub Project as well:
 3. Create a token that can write to the Project and save it as the repository secret `RFR_PROJECT_TOKEN`. The workflow's own token cannot write to Projects. A classic token needs the `project` scope; a fine-grained token needs read and write access to the organization's Projects (or, for a user Project, a classic token).
 
 After each merge, each persona, epic, and story is added to the board. Personas sit in Personas. Epics and stories move to the furthest stage that approved work at or below them has reached: a story whose design is approved sits in Design, and moves to User docs when its documentation is approved. Without the token, the board is skipped and the log says so.
+
+## The GitHub gate
+
+With the gate, approval is a review in GitHub and nothing is merged by hand (rules-for-robots `docs/specs/github-gate.md`). An agent pushes a branch; `templates/workflows/rfr-open-pr.yml` opens the pull request as a GitHub App and turns on auto-merge; branch protection holds a pull request that touches a gated folder until its approver reviews it, and lets any other merge when the checks pass. Because the App is the pull request's author, this works in a solo project, where the agent uses the approver's own credentials.
+
+`node .rfr/checks/process-github-setup.mjs --checks <names>` prints what it would change, and with `--apply` copies the workflow, writes the CODEOWNERS block, allows auto-merge, and sets branch protection, keeping what is already there. Creating the App, installing it, and storing its private key as the `RFR_APP_PRIVATE_KEY` secret are for a person; the script lists them. `/rfr-process:setup` runs it for you.
