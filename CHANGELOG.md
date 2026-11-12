@@ -10,13 +10,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [7.2.0] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #209.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Added
 
-- **WA-012: read and update the handoff file** (#PR). An agent reads `docs/handoff.md` before starting work in a session, and updates it before the session ends. The file covers what is done, what is open, what needs a live test, the lead's decisions the code does not show, and lessons. It was a candidate waiting on its long-session eval; it ships now on the maintainer's direction, and the `ls-handoff` eval case measures it in the rules arms. Every template gets a `docs/handoff.md` and a line in `AGENTS.md` naming it, and `install-rules` creates both in an existing project.
+- **WA-012: read and update the handoff file** (#209). An agent reads `docs/handoff.md` before starting work in a session, and updates it before the session ends. The file covers what is done, what is open, what needs a live test, the lead's decisions the code does not show, and lessons. It was a candidate waiting on its long-session eval; it ships now on the maintainer's direction, and the `ls-handoff` eval case measures it in the rules arms. Every template gets a `docs/handoff.md` and a line in `AGENTS.md` naming it, and `install-rules` creates both in an existing project.
 - `rfr-core` 7.2.0. Adopters: run `/rfr-core:install-rules` to add `docs/handoff.md` and the `AGENTS.md` line, or name your existing handoff file in `AGENTS.md`.
 
 ## [7.1.0] - 2026-11-12
