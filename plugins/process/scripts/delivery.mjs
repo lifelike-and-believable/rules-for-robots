@@ -188,7 +188,15 @@ function stop(root) {
   }
   if (!marker.reported) {
     writeMarker(root, { ...marker, reported: true });
-    block(`rfr-process: the delivery on ${marker.branch} is complete and pushed. Before you stop, tell the lead once: what was built, anything set aside in docs/decisions/, and how to review it.\n${gateFor(root)}`);
+    // Accepting the delivery and validating it are two approvals (AC-11): name the tutorials that
+    // are still drafts, so the lead knows what following them will record.
+    const ref = defaultBranchRef(root);
+    const inBranch = new Set(ref ? [...lines(git(root, ['diff', '--name-only', ref, '--', 'docs/tutorials'])), ...lines(git(root, ['ls-files', '--others', '--exclude-standard', '--', 'docs/tutorials']))] : []);
+    const drafts = loadArtifacts(workingTree(root)).artifacts.filter(a => a.stage === 'tutorials' && a.status !== 'approved' && (!ref || inBranch.has(a.file))).map(a => a.file);
+    const validation = drafts.length
+      ? `\nSay plainly that the feature is built and not yet validated. Approving the pull request accepts the work onto the default branch. Validation is the lead following ${drafts.join(', ')} against the delivery; when they say it holds, the tutorial is marked approved in a pull request of its own, which they approve. Leave the tutorial a draft until then.`
+      : '';
+    block(`rfr-process: the delivery on ${marker.branch} is complete and pushed. Before you stop, tell the lead once: what was built, anything set aside in docs/decisions/, and how to review it.${validation}\n${gateFor(root)}`);
     return;
   }
   clearMarker(root);

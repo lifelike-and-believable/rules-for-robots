@@ -499,7 +499,7 @@ export function renderNext({ steps, product = [], note = null }) {
   for (const s of steps) {
     if (idle.includes(s) || s.step === 'done') continue;
     const what = s.step === 'approve' ? `${STAGE_WORDS[s.stage]}${names(s.files)} is ${pending(s)}`
-      : s.step === 'validate' ? `${STAGE_WORDS[s.stage]}${names(s.files)} is ${pending(s)}; the approver follows it against the delivery`
+      : s.step === 'validate' ? `built, not yet validated: the approver follows the tutorial${names(s.files)} against the delivery, and it is then marked approved${s.inBranch ? ' (the tutorial is in this branch)' : ''}`
         : s.step === 'write' ? `write ${STAGE_WORDS[s.stage]}`
           : s.step === 'deliver' ? 'delivery is open: the spec, tests, implementation, and tutorial, on one branch (/rfr-process:deliver)'
             : `delivery is under way${names(s.files)}`;

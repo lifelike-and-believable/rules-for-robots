@@ -6,6 +6,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Added
 
+- **Accepting a delivery and validating it are two approvals** (#229; delivery-run AC-11). `rfr-process` 1.7.0. A delivery leaves its tutorial a draft. Approving the delivery's pull request accepts the work onto the default branch, and its description now says "Built, not yet validated" and how to validate; the agent's end-of-run report says the same and names the tutorial; and the process state lists the feature as built and not yet validated. When the approver has followed the tutorial, an agent marks it approved in a pull request of its own, whose description says "Validation", and approving that is the validation. From the first real run, where the lead approved a delivery on its recorded decisions before following its tutorial, and nothing said those were different. Adopters: nothing to do; re-run `node .rfr/checks/process-github-setup.mjs --apply` only if your `rfr-open-pr.yml` predates the description step.
+
 - **Finishing a feature from where it stands** (#227; delivery-run AC-9 and AC-10). `rfr-process` 1.6.0: `delivery.mjs where [name]` says how far a feature has got, and `delivery.mjs start <name>` starts a run for a named story or spec, which may already be on the default branch. The run asks only for what the feature lacks, so one built before it had a tutorial is asked only for the tutorial. The `deliver` skill treats "finish it" as "deliver it", starts by finding where the feature stands, and for a feature still at an earlier stage writes that one stage and stops for approval. Adopters: nothing to do.
 
 ### Fixed
