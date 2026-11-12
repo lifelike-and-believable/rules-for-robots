@@ -173,3 +173,9 @@ At the start of every session in a project with `docs/product/process.yml`, a `S
 The reusable workflow's `change` job fails a pull request that changes source code unless it belongs to a feature with an approved spec (the spec is in the pull request, or its tests cite it), or a commit message declares `Change: fix` or `Change: trivial` and the change fits: a fix changes a test and adds no source file; a trivial change adds no source file and touches no `public-api` path.
 
 Work with nothing a user sees (a repository skeleton, build tooling) gets a design of its own with `no-user-docs: <reason>` in its front matter; a spec may derive from that design in place of user documentation. The approver approves that line with the design.
+
+## The delivery run
+
+Once a feature's user documentation is approved, `/rfr-process:deliver` takes it to a pushed branch the approver can test: the spec, failing tests, the implementation, and the tutorial, with a commit for each (rules-for-robots `docs/specs/delivery-run.md`). `delivery.mjs start` marks the run as under way on its branch. While it is, a `Stop` hook sends the agent back to work at the end of a turn until everything is committed and pushed, at most three times with no new commit in between. A session with no run under way, or on another branch, stops when it means to. What cannot be done is set aside in `docs/decisions/<spec name>.md` with `[set aside: tests]` or `[set aside: tutorial]` and the reason. When the run is complete the agent reports once, with the link to review the pull request and the line the approver can run to approve it from the Claude Code prompt.
+
+The workflow that opens the pull request writes its description from the branch (`checks/ci/process-pr-body.mjs`): any design that lets a spec skip user documentation, the review packet, the decision files, and the approve line.

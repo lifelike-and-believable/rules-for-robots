@@ -1,5 +1,5 @@
 {
-  "description": "rfr-process hooks: hold back agent merges (and turning on auto-merge) of pull requests that touch gated process folders, unless the person's own words cover the merge, because the approver's merge is the approval; and refuse writing a design, user documentation, a spec, or a tutorial before the stage it derives from is approved, unless process.yml waives that stage; and tell every session, at its start, where each feature stands and what the process allows next (docs/specs/project-process.md, docs/specs/process-state.md).",
+  "description": "rfr-process hooks: hold back agent merges (and turning on auto-merge) of pull requests that touch gated process folders, unless the person's own words cover the merge, because the approver's merge is the approval; and refuse writing a design, user documentation, a spec, or a tutorial before the stage it derives from is approved, unless process.yml waives that stage; and tell every session, at its start, where each feature stands and what the process allows next (docs/specs/project-process.md, docs/specs/process-state.md); and, while a delivery run is under way on the current branch, send the agent back to work at the end of a turn until the delivery is committed and pushed (docs/specs/delivery-run.md).",
   "hooks": {
     "PreToolUse": [
       {
@@ -30,6 +30,17 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/process-next.mjs\"",
             "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs\"",
+            "timeout": 30
           }
         ]
       }

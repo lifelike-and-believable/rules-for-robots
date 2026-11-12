@@ -141,6 +141,8 @@ Built on 2026-11-12 ([spec](specs/process-state.md), pull request #221): the `Se
 
 ### 25d: The delivery run
 
+Built on 2026-11-12 ([spec](specs/delivery-run.md), pull request #224): the `deliver` skill as the run contract, `delivery.mjs` with the marker and the `Stop` hook, the gate text, and the pull request description written by the workflow. Not built here: the trigger where rfr-core is loaded, because its default-allow hook refuses the tool a session uses to subscribe to a pull request; that is a change to rfr-core with a release, and comes next. Until then one message from the lead starts a delivery after they approve the packet. Feedback #132 does not arise with one branch for each feature.
+
 The trigger, the run contract, the stop check, the end point (delivery pull request open, tutorial recorded, preview deployed, lead notified once), and feedback #132.
 
 Reviewing at the gate (added 2026-11-12, approved by the maintainer). The approval stays a review in GitHub; the session makes it easy to reach and to give. The maintainer: "now that I'm approving the things I care about, I'm good taking the time to actually review."
