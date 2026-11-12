@@ -1,5 +1,6 @@
 ---
 status: draft
+tests-commit: d01ef49d13a3cb6c975e0a6b7ea41efdf67d4658
 ---
 
 # The GitHub gate
@@ -46,5 +47,5 @@ The trials of phase 25a showed the way out on a real repository ([trial 1](../..
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25b.
-- Pull requests: added when opened.
+- Pull requests: #218.
 - Not done in this slice: the guide's pass condition (a second repository set up from the guide alone), which needs the maintainer to install the App on it.

@@ -99,6 +99,30 @@ on:
 
 The template repos already include it. It never fails the workflow, and pull requests from forks get no comment because their token is read-only. Agents still confirm the checks on the current head commit before merging; `/rfr-core:merge-when-green <pr>` does the whole wait, check, merge, and continue sequence.
 
+## The GitHub gate (projects that use rfr-process)
+
+The gate moves approval and merging to GitHub, so that no agent merges and nothing has to guess your approval from what you typed. An agent pushes a branch. A workflow opens the pull request as a GitHub App and turns on auto-merge. A pull request that touches a gated folder (`docs/product/`, `docs/design/`, `docs/user/`, `docs/tutorials/`) waits for its approver's review in GitHub; any other merges itself when the checks pass. The App matters because a session, local or cloud, pushes with your credentials, and GitHub does not let you approve a pull request you opened. Spec: [github-gate](specs/github-gate.md); the trial it comes from: [evals/results/2026-11-12-25a-trial-1](../evals/results/2026-11-12-25a-trial-1/README.md).
+
+Before you start: required reviews are not available for a private repository on GitHub's free plan. There the gate cannot hold a pull request, and the script says so.
+
+Three steps are yours, because they involve a credential:
+
+1. **Create the App.** In your account's or organisation's settings: Developer settings, GitHub Apps, New GitHub App. Give it a name and any homepage URL, turn the webhook off, set the repository permissions Contents and Pull requests to "Read and write", and choose "Only on this account". Create it, note the App ID, and generate a private key, which downloads as a `.pem` file.
+2. **Install it** on the repository: the App's page, Install App, "Only select repositories".
+3. **Store the private key** as the repository's Actions secret `RFR_APP_PRIVATE_KEY` (Settings, Secrets and variables, Actions): the whole file, including the BEGIN and END lines. Do not paste it into a chat with an agent.
+
+The rest is one command, from a checkout of rules-for-robots at `.rfr`, in a repository where `/rfr-process:setup` has written `docs/product/process.yml`:
+
+```
+node .rfr/checks/process-github-setup.mjs --app-id <the App ID> --checks <your required check names, comma-separated>
+```
+
+It prints what it would change and changes nothing. Add `--apply` to copy the workflow to `.github/workflows/rfr-open-pr.yml`, write the CODEOWNERS block for the gated folders, store the App ID as the variable `RFR_APP_ID`, allow auto-merge, and set branch protection on the default branch: your checks required, a code owner's review required, and the rules applied to administrators. Protection the repository already has is kept. Commit the two files through a pull request. `/rfr-process:setup` runs the same command for you.
+
+Then check it once: push a branch that changes only code, and it should become a pull request by the App and merge itself; push one that changes a file under `docs/design/`, and it should wait until you approve it.
+
+**Choosing the mode.** A project cannot set Claude Code's permission mode, so this part is yours too. For a session on your machine, set auto mode once in your user settings; for a cloud session, choose Auto when you start it. Agents then run without permission prompts, and the gate above is what holds work for your review.
+
 ## Team
 
 - Commit `.claude/settings.json` with `extraKnownMarketplaces` and `enabledPlugins` (the template repos already do), so every collaborator gets the same plugin.

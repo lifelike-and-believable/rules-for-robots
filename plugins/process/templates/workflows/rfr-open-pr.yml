@@ -1,0 +1,47 @@
+# Copy to .github/workflows/rfr-open-pr.yml in a repository that uses the rfr-process plugin
+# (docs/specs/github-gate.md in rules-for-robots), or let `node .rfr/checks/process-github-setup.mjs
+# --apply` copy it. When an agent pushes a branch, this opens the pull request as your GitHub App and
+# turns on auto-merge. Because the App is the author, the person whose credentials the agent uses can
+# give the approving review that a gated folder needs; a pull request that touches no gated folder
+# merges itself when the checks pass.
+# Needs: the App installed on this repository with Contents and Pull requests set to read and write,
+# its ID in the Actions variable RFR_APP_ID, its private key in the Actions secret
+# RFR_APP_PRIVATE_KEY, and "Allow auto-merge" turned on. Change `main` below if your default branch
+# has another name, and the branch patterns if your agents use other names.
+name: open-pr
+
+on:
+  push:
+    branches: ['claude/**', 'phase-*/**', 'feature/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: open-pr-${{ github.ref }}
+
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    steps:
+      # The App's token, not the workflow's own: a pull request opened with the workflow's token does
+      # not start other workflows, so the checks would never run on it.
+      - id: app
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.RFR_APP_ID }}
+          private-key: ${{ secrets.RFR_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v5
+      - name: Open the pull request and turn on auto-merge
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          BRANCH: ${{ github.ref_name }}
+          BASE: main
+        run: |
+          number=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -z "$number" ]; then
+            title=$(git log -1 --format=%s)
+            gh pr create --head "$BRANCH" --base "$BASE" --title "$title" --body "Opened by the rfr-process workflow for branch \`$BRANCH\`."
+            number=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          fi
+          gh pr merge "$number" --auto --merge
