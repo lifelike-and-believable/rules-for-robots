@@ -137,6 +137,14 @@ Remove what section 4 lists, with its tests and specs; reduce the command guard;
 
 Run 19i-4, then the acceptance test in section 1 on one feature in XR Studio In A Box. Release as 8.0.0 with a migration note.
 
+### After 25f: verification strength inside the delivery run
+
+Added 2026-11-12, after a look at Robert C. Martin's agent tooling ([github.com/unclebob](https://github.com/unclebob)). It does not cover the planning stages or the gates, which are this plan's subject; it bears on the quality of what a delivery run produces, where this plan leans on reviewer agents at the end of one long branch. Only READMEs and skill files were read, and none of the tools has been run here.
+
+- Trial `mutator` (mutation testing of the changed functions) and `crapper` (complexity against coverage) on one delivery branch, beside the reviewer agents and the sabotage step.
+- Trial mutating a runnable tutorial's expected values (the text a step types or expects to see) and confirming the run fails, so a tutorial that does not test the product is caught.
+- Keep whichever finds something the reviewers missed, at a cost the keep rule (R38) accepts. The stop check in 25d already takes the related point that passing checks do not show a feature is complete: it asks whether the approved user documentation is met.
+
 ### Freeze
 
 From the start of 25a until 25f passes, guard and permission behaviour changes only through this plan. Feedback is triaged and queued. A rule, hook, or skill change ships to adopters only after the session replay and the delegated eval pass, which is the playbook's practice of running the eval suite on any change to agent configuration.
