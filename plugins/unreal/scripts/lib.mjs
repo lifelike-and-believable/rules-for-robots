@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import nodePath from 'node:path';
+import { approvedInChat, chatQuestion, recordRefusal } from './chat-approval.mjs';
 
 let lastInput = {};
 
@@ -65,7 +66,27 @@ export function deny(reason) {
   }));
 }
 
+// A decision the person must make. Under default allow it is never a permission prompt
+// (default-allow AC-10): the call is refused, and the agent asks in chat; once the person says yes,
+// the same call goes ahead. A project with "permissions": "ask" gets the prompt, as before.
 export function ask(reason) {
+  if (guardSettings(lastInput.cwd ?? process.cwd()).permissions !== 'ask') {
+    const yes = approvedInChat(lastInput);
+    if (yes) {
+      approve(`${reason.split(':')[0]}: approved in chat ("${String(yes).slice(0, 80)}")`);
+      return;
+    }
+    recordRefusal(lastInput, reason);
+    logDecision('chat', reason);
+    process.stdout.write(JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: chatQuestion(reason),
+      },
+    }));
+    return;
+  }
   logDecision('ask', reason);
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
@@ -131,6 +152,8 @@ export function guardSettings(cwd = process.cwd()) {
   } catch {
     // No settings file, or one that cannot be read: the defaults hold.
   }
+  // RFR_PERMISSIONS=ask for one session or run, as a project's setting would.
+  if (process.env.RFR_PERMISSIONS === 'ask') settings.permissions = 'ask';
   return settings;
 }
 

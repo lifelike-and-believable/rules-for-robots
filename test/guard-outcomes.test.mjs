@@ -11,7 +11,8 @@ const REPO = path.resolve('.');
 const run = (script, input, data) => spawnSync(process.execPath, [`plugins/core/scripts/${script}`], {
   input: JSON.stringify(input),
   encoding: 'utf8',
-  env: { ...process.env, CLAUDE_PLUGIN_DATA: data },
+  // The prompt path, which a project keeps with "permissions": "ask" (default-allow AC-10).
+  env: { ...process.env, CLAUDE_PLUGIN_DATA: data, RFR_PERMISSIONS: 'ask' },
 });
 const lines = data => fs.readFileSync(path.join(data, 'guard-decisions.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
 
@@ -40,7 +41,7 @@ test('guard-tiers#AC-6: a call that was not asked about, or was asked and never 
   assert.deepEqual(lines(data).map(l => l.decision), ['ask']);
   // With logging off, no pending record is left behind either.
   const off = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-outcome-'));
-  spawnSync(process.execPath, ['plugins/core/scripts/guard-commands.mjs'], { input: JSON.stringify({ tool_use_id: 'toolu_x', tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force' } }), env: { ...process.env, CLAUDE_PLUGIN_DATA: off, RFR_GUARD_LOG: '0' } });
+  spawnSync(process.execPath, ['plugins/core/scripts/guard-commands.mjs'], { input: JSON.stringify({ tool_use_id: 'toolu_x', tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force' } }), env: { ...process.env, CLAUDE_PLUGIN_DATA: off, RFR_GUARD_LOG: '0', RFR_PERMISSIONS: 'ask' } });
   assert.deepEqual(fs.readdirSync(off), []);
 });
 

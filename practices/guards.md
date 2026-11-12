@@ -13,9 +13,9 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 
 ## Default allow
 
-rfr-core allows the agent's working tools without a prompt: the shell, file edits, web search and fetch, and the GitHub MCP tools ([docs/specs/default-allow.md](../docs/specs/default-allow.md)). A person is asked only for the named asks below. Where work reaches something the person must review, the guard refuses and the agent stops and reports in chat; it does not raise a prompt. The guards' asks and refusals win over the allow on the same call; `evals/results/2026-11-12-hook-combination/` records the check. Claude Code's protected paths (`.claude`, `.git`, `.mcp.json`) and any deny rule still apply. A project that wants Claude Code's own prompts back sets `"permissions": "ask"` in `.claude/rfr.json`.
+rfr-core allows the agent's working tools without a prompt: the shell, file edits, web search and fetch, the GitHub MCP tools, and any MCP tool that only reads ([docs/specs/default-allow.md](../docs/specs/default-allow.md)). No guard raises a permission prompt: a person cannot judge a command's text, so a prompt protects nothing. For each named ask below, and for an MCP tool that changes something through another service, the guard refuses the call, and its reason tells the agent to ask the person in chat, in plain words, what it wants to do and why. When the person says yes (a typed reply, or their answer to the agent's own question), the same call goes ahead once; anything else approves nothing. Where work reaches something the person must review, such as a merge that approves gated documents, the agent reports it in chat the same way. The guards' refusals win over the allow on the same call; `evals/results/2026-11-12-hook-combination/` records the check. Claude Code's own protected paths (`.claude`, `.git`, `.mcp.json`) and any deny rule still apply, and rfr cannot remove those prompts. A project that wants prompts back sets `"permissions": "ask"` in `.claude/rfr.json`, or `RFR_PERMISSIONS=ask` for one session.
 
-### Named asks
+### Named asks (asked in chat)
 
 | Action | Guard | Corpus cases |
 |---|---|---|

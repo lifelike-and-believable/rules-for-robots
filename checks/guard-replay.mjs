@@ -175,7 +175,10 @@ function runHook(hook, input, env) {
       } catch {
         o = null;
       }
-      if (o?.permissionDecision === 'ask' || o?.permissionDecision === 'deny') resolve({ decision: o.permissionDecision, reason: o.permissionDecisionReason ?? '' });
+      // A refusal that sends the agent to ask the person in chat is the person's decision, as an ask
+      // was before default-allow AC-10: it counts as an ask.
+      if (o?.permissionDecision === 'deny' && /needs the person's decision|is the person's review/.test(o.permissionDecisionReason ?? '')) resolve({ decision: 'ask', reason: o.permissionDecisionReason });
+      else if (o?.permissionDecision === 'ask' || o?.permissionDecision === 'deny') resolve({ decision: o.permissionDecision, reason: o.permissionDecisionReason ?? '' });
       else if (o?.additionalContext) resolve({ decision: 'inform', reason: o.additionalContext });
       else resolve({ decision: 'allow', reason: '' });
     });

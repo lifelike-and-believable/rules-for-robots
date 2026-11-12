@@ -43,8 +43,10 @@ test('guard-commands prints an ask decision only for risky commands', () => {
   assert.equal(risky.status, 0);
   const decision = JSON.parse(risky.stdout).hookSpecificOutput;
   assert.equal(decision.hookEventName, 'PreToolUse');
-  assert.equal(decision.permissionDecision, 'ask');
+  // The person decides in chat, never at a prompt (default-allow AC-10).
+  assert.equal(decision.permissionDecision, 'deny');
   assert.match(decision.permissionDecisionReason, /WA-003/);
+  assert.match(decision.permissionDecisionReason, /needs the person's decision/);
 
   const safe = runHook('guard-commands.mjs', { tool_name: 'Bash', tool_input: { command: 'npm test' } });
   assert.equal(safe.status, 0);
@@ -118,7 +120,7 @@ test('guard-mcp asks before Vercel reads that return decrypted environment varia
   }
   // The hook passes tool_input through, so a decrypting call asks end to end.
   const run = input => spawnSync(process.execPath, ['plugins/web/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
-  assert.match(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1', decrypt: 'true' } }).stdout, /"permissionDecision":\s*"ask"/);
+  assert.match(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1', decrypt: 'true' } }).stdout, /"permissionDecision":\s*"deny".*needs the person's decision/);
   assert.equal(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1' } }).stdout.trim(), '');
 });
 
@@ -180,7 +182,9 @@ test('guard-commands catches PowerShell deletes and test writes (#23)', () => {
 
 test('guard-commands asks for the PowerShell tool (#23)', () => {
   const result = runHook('guard-commands.mjs', { tool_name: 'PowerShell', tool_input: { command: 'Remove-Item -Recurse -Force build' } });
-  assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  const out = JSON.parse(result.stdout).hookSpecificOutput;
+  assert.equal(out.permissionDecision, 'deny');
+  assert.match(out.permissionDecisionReason, /needs the person's decision/);
 });
 
 test('hooks.json runs guard-commands for Bash and PowerShell (#23)', () => {
@@ -604,7 +608,10 @@ test('rm -rf asks unless everything it deletes is ignored by git and untracked (
   assert.equal(decideCommand('rm -rf not-there', { cwd: r.dir }), null, 'nothing to delete');
   // Tracked files with no uncommitted changes are allowed, with the command that restores them (guard tiers AC-12).
   assert.equal(decideCommand('rm -rf dist build', { cwd: r.dir }).decision, 'inform');
-  for (const command of ['rm -rf .', 'rm -rf /', 'rm -rf dist/*', 'rm -rf ../elsewhere']) {
+  // A path outside the project and every temp folder. ../elsewhere would be inside the temp folder,
+  // where this fixture repository lives, and is scratch since default-allow decision 6.
+  const elsewhere = sh(path.join(os.homedir(), `rfr-hooks-elsewhere-${process.pid}`));
+  for (const command of ['rm -rf .', 'rm -rf /', 'rm -rf dist/*', `rm -rf ${elsewhere}`]) {
     assert.equal(decideCommand(command, { cwd: r.dir }).decision, 'ask', command);
   }
 });

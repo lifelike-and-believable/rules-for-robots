@@ -1,6 +1,6 @@
 {
   "name": "rfr-unreal",
-  "version": "2.0.6",
+  "version": "2.1.0",
   "description": "Unreal Engine plugin skills, agents, and hooks from rules-for-robots: the unreal-engineer agent, Fab packaging, Unreal Insights profiling, and an editor -ExecCmds check. Requires rfr-core.",
   "author": {
     "name": "Lifelike & Believable Animation Design"

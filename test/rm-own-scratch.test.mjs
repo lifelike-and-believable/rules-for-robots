@@ -37,21 +37,20 @@ test('default-allow#AC-2: a temp folder the same line copied the repository into
   }
 });
 
-test('default-allow#AC-2: a folder that was there before the line, or a target outside the new folder, still asks', () => {
+test('default-allow#AC-2: any folder in a temp folder but the project goes; the temp folder itself, a glob escaping it, or a path outside still asks', () => {
   const dir = repo();
+  // Since default-allow decision 6, a folder directly under the temp folder is scratch too, made by
+  // this line or not, and so is a repository there that is not the project.
   const existing = fresh();
   fs.mkdirSync(existing);
   fs.writeFileSync(path.join(existing, 'keep.txt'), 'keep\n');
-  // cp into a folder that exists merges into it, so the folder's earlier contents are not the line's own.
-  assert.equal(decideCommand(`cp -r . ${sh(existing)} && rm -rf ${sh(existing)}`, { cwd: dir })?.decision, 'ask');
-  // A folder directly under the temp folder that this line did not make.
-  assert.equal(decideCommand(`rm -rf ${sh(existing)}`, { cwd: dir })?.decision, 'ask');
-  // Escaping the new folder with .. or an absolute path.
+  assert.equal(decideCommand(`rm -rf ${sh(existing)}`, { cwd: dir })?.decision, undefined);
+  assert.equal(decideCommand(`cp -r . ${sh(existing)} && rm -rf ${sh(existing)}`, { cwd: dir })?.decision, undefined);
+  // The temp folder itself, and a glob that climbs out of the new folder into it.
+  assert.equal(decideCommand(`rm -rf ${sh(os.tmpdir())}`, { cwd: dir })?.decision, 'ask');
   const copy = sh(fresh());
   assert.equal(decideCommand(`cp -r . ${copy} && cd ${copy} && rm -rf ../*`, { cwd: dir })?.decision, 'ask');
-  assert.equal(decideCommand(`cp -r . ${copy} && cd ${copy} && rm -rf ${sh(existing)}`, { cwd: dir })?.decision, 'ask');
-  // A folder made outside any temp folder is not covered.
-  const outside = sh(path.join(dir, '..', `rfr-own-scratch-outside-${process.pid}`));
-  assert.equal(decideCommand(`mkdir ${outside} && rm -rf ${outside}/..`, { cwd: dir })?.decision, 'ask');
+  // A folder outside every temp folder and the project.
+  assert.equal(decideCommand(`rm -rf ${sh(path.join(os.homedir(), `rfr-own-scratch-outside-${process.pid}`))}`, { cwd: dir })?.decision, 'ask');
   fs.rmSync(existing, { recursive: true, force: true });
 });

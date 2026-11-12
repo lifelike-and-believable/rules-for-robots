@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const CLAUDE = process.env.CLAUDE_BIN || 'claude';
 const decide = path.join(here, 'decide.mjs').replace(/\\/g, '/');
 const MODE = process.env.MODE || 'default';
-const pairs = MODE === 'default' ? [['allow', 'none'], ['none', 'none'], ['allow', 'ask'], ['ask', 'allow'], ['allow', 'deny'], ['ask', 'none']] : [['allow', 'none'], ['allow', 'ask'], ['allow', 'deny']];
+const pairs = MODE === 'default' ? [['allow', 'none'], ['none', 'none'], ['allow', 'ask'], ['ask', 'allow'], ['allow', 'deny'], ['ask', 'none']] : [['allow', 'none'], ['none', 'none'], ['allow', 'ask'], ['allow', 'deny']];
 const results = [];
 for (const [a, b] of pairs) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `rfr-hookcheck-${a}-${b}-`));
