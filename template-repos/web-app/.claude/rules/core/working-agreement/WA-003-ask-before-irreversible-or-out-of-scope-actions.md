@@ -12,7 +12,7 @@ sources: ["practices/working-with-agents.md", "practices/guards.md", "docs/resea
 ---
 Keep working until the task is done, and stop to ask the user only in these cases:
 
-- Before an action that cannot be undone or reaches outside the project: changing a remote (including force-push), rewriting published history, deleting an unmerged branch or files outside the repository, skipping commit hooks, or changing machine-wide settings or a shared database.
-- Before discarding uncommitted changes or deleting repository files, unless rfr-core's guards are installed; they snapshot first and give the restore command, to name in your report.
-- When doing the task well would change its scope materially, such as touching another component, changing a public interface, or adding a dependency.
+- Before an action that cannot be undone or reaches outside the project: pushing to the default branch or force-pushing, deleting on the remote, publishing a release, a production deploy, rewriting published history, deleting files outside the repository, skipping commit hooks, or changing machine-wide settings or a shared database. Pushing your own branches needs no question.
+- Before discarding uncommitted changes or deleting repository files, unless rfr-core's guards snapshot them first; name the restore command in your report.
+- When the task would grow materially: another component, or a public interface.
 - When the task or a test appears wrong (see WA-002).

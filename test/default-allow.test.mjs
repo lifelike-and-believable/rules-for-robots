@@ -80,6 +80,28 @@ test('default-allow#AC-2: the named asks ask, and pushes to other branches and p
   for (const id of ids) assert.equal(corpus.find(c => c.id === id)?.tier, 4, `${id} is a tier-4 corpus case`);
 });
 
+test('default-allow#AC-5: every template enables its plugins and carries ask rules for the named asks no instruction approves', () => {
+  for (const profile of ['web-app', 'static-site', 'unreal-plugin', 'general']) {
+    const settings = JSON.parse(fs.readFileSync(`template-repos/${profile}/.claude/settings.json`, 'utf8'));
+    assert.equal(settings.enabledPlugins['rfr-core@rules-for-robots'], true, profile);
+    for (const rule of ['Bash(git push --force *)', 'PowerShell(git push --force *)', 'Bash(git push origin main)', 'Bash(git push --delete *)', 'Bash(vercel --prod *)']) {
+      assert.ok(settings.permissions.ask.includes(rule), `${profile}: ${rule}`);
+    }
+    // A release is not an ask rule: a rule would override the person's "release 5.11.0".
+    assert.ok(!settings.permissions.ask.some(rule => /release|tag/.test(rule)), profile);
+  }
+});
+
+test('default-allow#AC-6: a push to a feature branch needs no instruction, and a release still does', () => {
+  const dir = repo();
+  assert.equal(decideCommand('git push -u origin feature', { cwd: dir }), null);
+  assert.ok(defaultAllow({ tool_name: 'Bash', cwd: dir }));
+  assert.equal(decideCommand('gh release create v1.0.1', { cwd: dir })?.decision, 'ask');
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-default-allow-r-')), 's.jsonl');
+  fs.writeFileSync(file, `${JSON.stringify({ type: 'user', origin: { kind: 'human' }, timestamp: '2026-11-12T02:00:00Z', message: { content: 'release 1.0.1' } })}\n`);
+  assert.equal(decideCommand('gh release create v1.0.1', { cwd: dir, transcriptPath: file })?.decision, 'allow');
+});
+
 test('default-allow#AC-3: the recorded check shows another hook\'s ask or deny wins over an allow', () => {
   const dir = 'evals/results/2026-11-12-hook-combination';
   for (const file of ['default-mode.json', 'auto-mode.json']) {
