@@ -40,8 +40,9 @@ Default allow (6.0) removed Claude Code's prompts for ordinary work, but kept a 
 | AC-6 | WA-002, WA-003, and WA-009 say: name what only the person can authorise in the plan, before work starts; during the run, never ask, park and record instead; never trigger a permission prompt. The delegated-mode candidates say the same. | review: the rules. |
 | AC-7 | Replaying the commands of real sessions (this repository's session of 2026-11-09 to 11-12 and the XR Studio In A Box cloud session of 2026-11-12) through the guards refuses only actions on the never list. | test: a recorded replay in `evals/results/`. |
 | AC-8 | `practices/guards.md` and `practices/security-for-agentic-projects.md` describe the model, and say that Claude Code's own prompts (protected paths, the auto-mode classifier) go only in `bypassPermissions` mode, which the person chooses, and in which rfr's refusals still hold. | review: the guides. |
+| AC-9 | A session may subscribe to a pull request's activity, and unsubscribe: the default-allow hook allows the `subscribe_pr_activity` and `unsubscribe_pr_activity` tools of the Claude Code session server, which change nothing at the pull request and only arrange for the session to be told when it is reviewed or merged. The merge of a feature packet can then start its delivery (delivery-run). The session tools that act for the person (starting sessions, scheduled tasks, changing an environment) and a tool of the same name on another server are still refused. Added 2026-11-12, after the hook refused the subscription in a trial (`evals/results/2026-11-12-25a-trials-2-4/`). | test: both tools allowed; the other session tools and another server's tool refused; nothing decided under `"permissions": "ask"`. |
 
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 19, slice 19j.
-- Pull requests: #203.
+- Pull requests: #203, #225 (AC-9).

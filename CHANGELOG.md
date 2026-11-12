@@ -4,7 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [7.3.0] - 2026-11-12
+
+Pull requests: #189, #218, #219, #221, #222, #224, #225.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+The first release of the rewrite plan (`docs/rewrite-plan.md`, Phase 25): approval and merging move to GitHub, every session is told where each feature stands, source changes need an approved spec, and a delivery run carries an approved feature to a pushed branch. Nothing is removed yet; the merge guard, task approval, and solo-mode approval stay until the plan's removal phase.
+
 ### Added
+
+- **A session may subscribe to a pull request** (#225; unattended AC-9). rfr-core's default-allow hook allows the session tools `subscribe_pr_activity` and `unsubscribe_pr_activity`, which it refused as changes to another service. They change nothing at the pull request; they arrange for the session to be told when it is reviewed or merged, so the merge of a feature packet can start its delivery. Other session tools are still refused. `rfr-core` 7.3.0. Adopters: nothing to do.
 
 - **The delivery run** (#224; delivery-run spec, rewrite plan 25d). `rfr-process` 1.5.0 adds the `deliver` skill, which takes a feature from approved user documentation to a pushed branch (spec, failing tests, implementation, tutorial) without asking the lead, and `delivery.mjs`, whose `Stop` hook keeps that run going: while a run is under way on the current branch it sends the agent back to work until the delivery is committed and pushed, at most three times with no new commit in between, and then has it report once with the review link and the approve line. A session with no run under way is not affected. What cannot be done is set aside in `docs/decisions/<spec name>.md`. The workflow that opens the pull request now writes its description from the branch (`checks/ci/process-pr-body.mjs`): a design marked `no-user-docs`, the review packet, the decision files, and the approve line. Adopters: nothing to do for the skill and the hook. To get the description, re-run `node .rfr/checks/process-github-setup.mjs --apply` and commit the updated `rfr-open-pr.yml`.
 
