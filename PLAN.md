@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v5.11.0 (2026-11-12). Phases 0 to 7, 9, 12, 13, 16, and 17 complete. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v6.0.0 (2026-11-12). Phases 0 to 7, 9, 12, 13, 16, and 17 complete. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -418,7 +418,7 @@ Pull requests: #162 (19a), #166 (19b), #167 (19h), #168 (19c).
 - **19c:** the decision queue: `needs-lead` issues with options, a default, and its date, and the `/rfr-core:decisions` skill. Done (#168).
 - **19h:** the preferences log (`docs/preferences.md` in the templates and `install-rules`), checked by the reviewers, and the `ls-repeat-correction` eval case, built and unit-tested with its runs waiting. Done (#167).
 - **19d, 19e:** replaced by Phase 23. **19f, 19g:** wait for the maintainer's review.
-- **19i:** default allow ([spec](docs/specs/default-allow.md), draft): rfr allows the agent's working tools and asks only for a named list of irreversible or outward actions, so a delegated implementation prompts only where a person must decide. Approved 2026-11-12: merges once CI is green, review points stop and report instead of prompting, and every project switches on its next plugin update.
+- **19i:** default allow ([spec](docs/specs/default-allow.md), draft): rfr allows the agent's working tools and asks only for a named list of irreversible or outward actions, so a delegated implementation prompts only where a person must decide. Approved 2026-11-12: merges once CI is green, review points stop and report instead of prompting, and every project switches on its next plugin update. 19i-1 to 19i-3 done in 6.0.0 (#198, #PR); 19i-4, the eval of a delegated multi-PR build, waits for a budget decision.
 
 ### Phases 20 to 22: Consolidation, targeted evals, missing guards (planned)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Only 21a (delegated wording against test gaming, up to $20) is approved to run; the rest wait for the maintainer's review of steps 1 to 5 of the brief.

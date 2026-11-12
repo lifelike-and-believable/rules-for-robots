@@ -50,6 +50,26 @@
       "Bash(npx vitest *)",
       "PowerShell(npx vitest *)"
     ],
+    "ask": [
+      "Bash(git push --force *)",
+      "PowerShell(git push --force *)",
+      "Bash(git push -f *)",
+      "PowerShell(git push -f *)",
+      "Bash(git push origin main)",
+      "PowerShell(git push origin main)",
+      "Bash(git push origin master)",
+      "PowerShell(git push origin master)",
+      "Bash(git push --delete *)",
+      "PowerShell(git push --delete *)",
+      "Bash(git push origin --delete *)",
+      "PowerShell(git push origin --delete *)",
+      "Bash(gh repo delete *)",
+      "PowerShell(gh repo delete *)",
+      "Bash(vercel --prod *)",
+      "PowerShell(vercel --prod *)",
+      "Bash(vercel deploy --prod *)",
+      "PowerShell(vercel deploy --prod *)"
+    ],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)",
