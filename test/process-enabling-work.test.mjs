@@ -41,7 +41,7 @@ test('process-state#AC-10 a spec may derive from an approved design that needs n
 
 test('process-state#AC-10 without that statement a spec straight from a design still fails the stage order', () => {
   const root = project({ 'docs/design/skeleton.md': enabling('approved', ''), 'docs/specs/skeleton.md': SPEC });
-  assert.match(stageProblems(root).join('\n'), /skeleton\.md.*derives from no user documentation/);
+  assert.match(stageProblems(root).join('\n'), /spec-skeleton: derives from no user documentation/);
 });
 
 test('process-state#AC-10 the statement needs a reason, belongs on a design, and not on one that user documentation derives from', () => {
