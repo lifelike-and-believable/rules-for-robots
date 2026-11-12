@@ -130,6 +130,8 @@ It prints what it would change and changes nothing. Add `--apply` to copy the wo
 
 Start a new session after it merges: a session that began earlier still has the old merge rule in its context.
 
+Expect one red check on a gated pull request until you approve it: `process / approvals` fails while the review is missing and passes when it reruns on your review. It is not a required check, and the pull request is held by the code-owner rule, not by it. (It is due to be removed for projects with the gate.)
+
 Then check it once: push a branch that changes only code, and it should become a pull request by the App and merge itself; push one that changes a file under `docs/design/`, and it should wait until you approve it.
 
 **Choosing the mode.** A project cannot set Claude Code's permission mode, so this part is yours too. For a session on your machine, set auto mode once in your user settings; for a cloud session, choose Auto when you start it. Agents then run without permission prompts, and the gate above is what holds work for your review.
