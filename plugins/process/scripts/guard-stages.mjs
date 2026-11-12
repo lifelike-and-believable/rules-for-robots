@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+// PreToolUse (Edit, Write, MultiEdit): stage order in the session (docs/specs/project-process.md,
+// AC-64). In a project with docs/product/process.yml, writing a design, user documentation, a spec,
+// or a tutorial is refused unless its derived-from links an approved artifact of the stage before it
+// (stories, design, user documentation), or process.yml waives that stage. The refusal names the
+// stage to write first, so the agent cannot skip ahead to a spec and code, and nobody is asked: the
+// process check in CI fails the same way (AC-63).
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadArtifacts, parseArtifact, readConfig, requiredUpstream, stageOf, workingTree } from './lib/process.mjs';
+
+const NAMES = { stories: 'approved user stories', design: 'an approved design', 'user-docs': 'approved user documentation' };
+
+// The content a file will have after this tool call, or null when it cannot be worked out.
+function contentAfter(tool, input, abs) {
+  if (tool === 'Write') return typeof input.content === 'string' ? input.content : null;
+  let text;
+  try { text = fs.readFileSync(abs, 'utf8'); } catch { return null; }
+  const edits = tool === 'MultiEdit' ? input.edits ?? [] : [input];
+  for (const e of edits) {
+    if (typeof e.old_string !== 'string' || !text.includes(e.old_string)) return null;
+    text = e.replace_all ? text.split(e.old_string).join(e.new_string) : text.replace(e.old_string, () => e.new_string);
+  }
+  return text;
+}
+
+// The refusal reason for this call, or null to allow it.
+export function decideStage(input, root) {
+  const tool = input?.tool_name;
+  if (!['Edit', 'Write', 'MultiEdit'].includes(tool)) return null;
+  const abs = path.resolve(input.cwd ?? root, input.tool_input?.file_path ?? '');
+  const rel = path.relative(root, abs).split(path.sep).join('/');
+  if (!rel || rel.startsWith('..') || !rel.endsWith('.md')) return null;
+  const stage = stageOf(rel);
+  const loaded = readConfig(root);
+  if (!loaded || !stage) return null;
+  const waived = loaded.config?.waived ?? {};
+  if (waived[stage]) return null;
+  const need = requiredUpstream(stage, waived);
+  if (!need) return null;
+  const after = contentAfter(tool, input.tool_input ?? {}, abs);
+  if (after === null) return null;
+  const parsed = parseArtifact(after);
+  const { artifacts } = loadArtifacts(workingTree(root));
+  const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const linked = (parsed.links ?? []).map(l => byId.get(l.target)).filter(Boolean);
+  if (linked.some(a => a.stage === need && ['approved', 'implemented'].includes(a.status))) return null;
+  const what = { design: 'a design', 'user-docs': 'user documentation', specs: 'a technical spec', tutorials: 'a tutorial' }[stage];
+  return `rfr-process (stage order): ${rel} is ${what}, and every stage is required in this project: it must derive from ${NAMES[need]}, linked in its derived-from, and none is. Write the ${need === 'user-docs' ? 'user documentation' : need} for these stories first, and get it approved, then link it here. A stage is skipped only when docs/product/process.yml waives it, with a reason, before the work starts; do not waive it yourself. Until then, carry on with work that does not depend on it.`;
+}
+
+async function main() {
+  let raw = '';
+  for await (const chunk of process.stdin) raw += chunk;
+  let input = {};
+  try { input = JSON.parse(raw || '{}'); } catch { /* nothing to check */ }
+  const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  let reason = null;
+  try { reason = decideStage(input, root); } catch { reason = null; }
+  if (reason) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } }));
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();

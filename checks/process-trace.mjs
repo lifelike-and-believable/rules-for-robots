@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, sectionHash, slug, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -138,6 +138,17 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
   const adopting = !!config?.adoptionUntil && now.toISOString().slice(0, 10) <= config.adoptionUntil;
   const { byId, linkState } = analyse(artifacts);
 
+  // In a process project every spec is a process artifact (AC-63): one with no id would skip the
+  // stage order, so it is an error unless specs are waived.
+  if (config && !config.waived?.specs) {
+    const dir = path.join(root, 'docs', 'specs');
+    for (const f of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+      if (!f.endsWith('.md') || /^(readme|_)/i.test(f)) continue;
+      const parsed = parseArtifact(fs.readFileSync(path.join(dir, f), 'utf8'));
+      if (!parsed.front?.id) errors.push(`docs/specs/${f}: a spec in a process project needs an id and derived-from links, so the stage order applies to it (add them, or waive specs in ${CONFIG_PATH})`);
+    }
+  }
+
   const seen = new Map();
   for (const a of artifacts) {
     if (!a.id) continue;
@@ -202,6 +213,15 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     if (a.stage === 'user-docs') {
       const { designs, missing } = undefinedNames(a, byId, artifacts);
       for (const n of missing) warnings.push(`${name}: **${n}** is not named in its design (${designs.join(', ')}); use the design's name, add it to the design, or, if it is emphasis and not a name, remove the bold`);
+    }
+
+    // Stage order (AC-63): every delivery stage is required unless process.yml waives it. An artifact
+    // derives from the nearest earlier stage that is not waived, so a spec cannot come straight from
+    // stories while the design and the user documentation are still to be written.
+    const need = config?.waived?.[a.stage] ? null : requiredUpstream(a.stage, config?.waived ?? {});
+    if (need && !a.links.some(l => byId.get(l.target)?.stage === need)) {
+      const waivable = need === 'stories' ? '' : `, or waive ${need} in ${CONFIG_PATH} with the reason the project does not need it, before the work starts`;
+      problems.push(`${name}: derives from no ${need === 'user-docs' ? 'user documentation' : need} (stage order: ${need} comes before ${a.stage}); write and approve it first, then link it in derived-from${waivable}`);
     }
 
     if (a.stage === 'specs') {

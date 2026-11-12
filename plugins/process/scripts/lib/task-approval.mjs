@@ -46,8 +46,19 @@ export function latestInput(transcriptPath) {
     if (entry?.type !== 'user' || entry.isSidechain || entry.isMeta) continue;
     if (entry.origin?.kind === 'human') {
       const text = messageText(entry.message?.content).trim();
-      if (text) return { kind: 'typed', text, timestamp: entry.timestamp ?? '' };
-      continue;
+      if (!text) continue;
+      // The question the agent asked just before, in its own text, so a "yes" to it counts (#205).
+      let asked = '';
+      for (let k = i - 1; k >= 0; k--) {
+        const prev = entries[k];
+        if (prev?.isSidechain) continue;
+        if (prev?.type === 'user' && prev.origin?.kind === 'human') break;
+        if (prev?.type === 'assistant' && Array.isArray(prev.message?.content)) {
+          const said = prev.message.content.filter(b => b?.type === 'text').map(b => b.text).join('\n');
+          if (said.trim()) { asked = said; break; }
+        }
+      }
+      return { kind: 'typed', text, timestamp: entry.timestamp ?? '', ...(asked ? { asked } : {}) };
     }
     const content = Array.isArray(entry.message?.content) ? entry.message.content : [];
     const answered = content.some(block => block?.type === 'tool_result' && askIds.has(block.tool_use_id));
@@ -64,6 +75,9 @@ export function latestInput(transcriptPath) {
 const MERGE_NEGATED = /\b(don'?t|do\s+not|never|not|no|without|hold\s+off|stop|wait\s+(before|to))\b[^.!?\n]{0,30}\bmerg/i;
 const MERGE_SKILL = /(?:^|<command-name>)\s*\/(?:[\w-]+:)?merge-when-green\b/i;
 const MERGE_WHOLE = /^(?:(?:yes|ok(?:ay)?|sure|great|thanks)[,.!]?\s+)?(?:please\s+)?(?:go\s+ahead\s+(?:and\s+)?)?(?:squash[- ]|rebase[- ])?merge\b(?:\s+(?:it|this|that|them|both|all|the\s+pr|pr|pull\s+request))?(?:\s*(?:#?\d+|pr\s*#?\d+|https:\/\/\S+\/pull\/\d+)(?:\s*(?:,|and)\s*#?\d+)*)?(?:\s+(?:now|when|once|after|if)\b[^.!?\n]{0,40})?(?:,?\s+(?:please|thanks))?[.!]*$/i;
+// A merge clause at the start of a message, ended by a comma, a semicolon, "and", or "then" before
+// another request. Its numbers are the merge's ("merge 301 and 302" is two pull requests, not a clause).
+const MERGE_LEAD = /^(?:(?:yes|yeah|ok(?:ay)?|sure|great|thanks)[,.!]?\s+)?(?:please\s+)?(?:go\s+ahead\s+(?:and\s+)?)?(?:squash[- ]|rebase[- ])?merge\b(?:\s+(?:it|this|that|them|both|all|the\s+pr|pr|pull\s+request))?(?:\s*(?:#?\d+|pr\s*#?\d+|https:\/\/\S+\/pull\/\d+)(?:\s*(?:,|and)\s*#?\d+\b)*)?(?:\s+(?:now|when|once|after|if)\b[^,;.!?\n]{0,40}?)?(?=\s*(?:[,;]|\band\b(?!\s*#?\d)|\bthen\b))/i;
 const MERGE_CONDITIONAL = /\bmerge\b[^.!?\n]{0,40}\b(?:when|once|after|if)\b[^.!?\n]{0,30}\b(?:green|pass(?:es|ing)?|ci|checks?)\b/i;
 
 export function prNumbersIn(text) {
@@ -85,6 +99,11 @@ export function mergeInstruction(text) {
   }
   if (MERGE_NEGATED.test(t) || /\?\s*$/.test(t)) return null;
   if (MERGE_WHOLE.test(t) || MERGE_CONDITIONAL.test(t)) return { numbers: prNumbersIn(t) };
+  // A merge clause that opens the message, then "and" or a comma and another request: "merge 344 and
+  // go through the gaps", "yes, merge 344 and put up the scenario" (#206). The pull requests come from
+  // the merge clause only.
+  const lead = MERGE_LEAD.exec(t);
+  if (lead) return { numbers: prNumbersIn(lead[0]) };
   // A merge clause joined to other tasks: "merge 301, then release 5.11.0", "merge and release 5.11.0".
   for (const clause of t.split(/[,;]|\.\s|\bthen\b|\band\s+(?=(?:then\s+)?(?:release|publish|tag|push|deploy|continue|carry\s+on|start|move\s+on)\b)/i)) {
     const c = clause.trim().replace(/^(?:and\s+)?(?:then\s+)?/i, '');
@@ -121,10 +140,35 @@ export function tasksIn(text, { question = false } = {}) {
   return tasks;
 }
 
+// A short reply that agrees: yes, ok, sure, go ahead (for both), do it, please do, sounds good. A
+// negation or a question in it does not.
+const AGREES = /^\s*(?:yes|yep|yeah|yup|ok(?:ay)?|sure|go\s+ahead|do\s+it|please\s+do|sounds\s+good|approved?|proceed|go\s+for\s+it)\b/i;
+const AGREES_NOT = /\b(?:no|not|don'?t|do\s+not|never|wait|hold|stop|cancel|but)\b|\?\s*$/i;
+export const agrees = text => typeof text === 'string' && AGREES.test(text) && !AGREES_NOT.test(text) && text.trim().split(/\s+/).length <= 12;
+
+// The questions in the agent's own message: its sentences that end with a question mark.
+// Sentences end at . ! or ? followed by a space or the end, so a version such as 7.1.0 stays whole.
+const questionsIn = text => String(text).split(/(?<=[.!?])\s+|\n+/).map(s => s.trim()).filter(s => s.endsWith('?'));
+
 // The tasks the person's latest input approves, with the words quoted in the reason.
 export function approvedTasks(input) {
   if (!input) return null;
-  if (input.kind === 'typed') return { ...tasksIn(input.text), quote: input.text, timestamp: input.timestamp };
+  if (input.kind === 'typed') {
+    const tasks = { ...tasksIn(input.text), quote: input.text, timestamp: input.timestamp };
+    // A "yes" or "go ahead for both" to the agent's own question approves what the question named
+    // ("Merge #344 and start the next task?"), as an answer through AskUserQuestion does (#205).
+    if (agrees(input.text) && input.asked) {
+      for (const question of questionsIn(input.asked)) {
+        const found = tasksIn(question, { question: true });
+        tasks.releases.push(...found.releases);
+        tasks.branches.push(...found.branches);
+        tasks.deployPreview ||= found.deployPreview;
+        if (found.merge) tasks.merge = { numbers: [...(tasks.merge?.numbers ?? []), ...found.merge.numbers] };
+        if (found.releases.length || found.branches.length || found.deployPreview || found.merge) tasks.quote = `${input.text} (to: ${question})`;
+      }
+    }
+    return tasks;
+  }
   const merged = { releases: [], branches: [], deployPreview: false, merge: null, quote: '', timestamp: input.timestamp };
   for (const { question, answer } of input.pairs) {
     if (DECLINED.test(answer)) continue;

@@ -74,6 +74,8 @@ It warns, without failing, when a bold name in a user documentation page appears
 
 `--status` lists each persona, epic, and story, how far the work below it has reached, and anything stale or withdrawn.
 
+Every stage is required, in order. A design derives from approved stories, user documentation from an approved design, and specs and tutorials from approved user documentation. The process check fails an artifact that skips a stage, and the `guard-stages` hook refuses writing one in the session, naming the stage to write first; nobody is asked. A project that does not need a stage waives it in `process.yml` before the work starts, with the reason (`waived:` mapping `design`, `user-docs`, or `specs` to a sentence); an agent never waives one itself.
+
 Existing projects can set `adoption-until: <date>` in `process.yml`. Until that date, problems with artifacts that have no links yet are warnings.
 
 ## Approvals
