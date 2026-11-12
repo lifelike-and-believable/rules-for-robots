@@ -30,6 +30,11 @@ export function defaultDecision(input, settings = guardSettings(input?.cwd ?? pr
   const [, server, action] = mcp;
   if (READS.test(action)) return { decision: 'allow', reason: `rfr-core (default allow): ${action} only reads` };
   if (GITHUB_SERVER.test(server) && !GITHUB_HELD.test(action)) return { decision: 'allow', reason: `rfr-core (default allow): ${action} is a GitHub tool for the agent's own work` };
+  // Subscribing to a pull request changes nothing there: it arranges for this session to be told
+  // when the pull request is reviewed or merged, which is how the merge of a feature packet starts
+  // its delivery (unattended AC-9). The session tools that act for the person (starting sessions,
+  // scheduling, changing an environment) are not in this list.
+  if (/^claude[-_]code[-_]remote$/i.test(server) && /^(un)?subscribe_pr_activity$/.test(action)) return { decision: 'allow', reason: `rfr-core (default allow): ${action} only arranges for this session to be told about a pull request` };
   // Vercel tools are rfr-web's to decide, with their own reasons.
   if (/vercel/i.test(server)) return { decision: 'allow', reason: `rfr-core (default allow): rfr-web's guard decides ${action}` };
   return { decision: 'never', reason: askReason({ source: 'rfr-core (default allow)', action: `${action.replace(/_/g, ' ')} through ${server.replace(/^(plugin|claude_ai)_/, '').replace(/_/g, ' ')}`, why: 'it changes something outside the project, in another service', instead: 'say in your report what you would have done there' }) };
