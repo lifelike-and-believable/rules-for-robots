@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: 339fc0ff9d8347c0ae0579e360f63efaad27e04e
+tests-commit: [339fc0ff9d8347c0ae0579e360f63efaad27e04e, 91306524a78cf9e6cdb43310fb4d5e81230eda35]
 ---
 
 # Process state and the change check
@@ -35,6 +35,8 @@ Under the GitHub gate ([github-gate](github-gate.md)) the agent does not write t
 | AC-7 | The pull request that adds `docs/product/process.yml` passes, and while `adoption-until` is in the future the check's failures are warnings. | test: the adoption pull request; before and after the date. |
 | AC-8 | `checks/ci/process-change.mjs` reads the changed files and commit messages between `BASE_SHA` and `HEAD_SHA` with git and runs the check; the reusable process workflow has a `change` job that runs it on pull requests with the full history. | test: a temporary repository with a declared fix; the workflow job. |
 | AC-9 | The adoption guide and the `setup` skill say how to declare a fix or a trivial change, and name `process / change` among the checks to require. | review: the guide and the skill. |
+| AC-10 | Work with no user-facing behaviour (a repository skeleton, build tooling) has a route through the process. A design can say `no-user-docs: <reason>` in its front matter, and a spec may then derive from that design in place of user documentation, with its criteria citing the design's sections. The process check fails the statement without a reason of at least ten characters, on an artifact that is not a design, or on a design that user documentation derives from. Without the statement, a spec straight from a design still fails the stage order. (Added 2026-11-12: the maintainer chose this over a third declaration, so that the short path is opened by a design they approve and not by the agent.) | test: the field is read; a spec from such a design passes; one from a plain design fails; no reason, the wrong stage, and a design with user documentation each fail. |
+| AC-11 | The session guard allows writing a spec that derives from such a design once the design is approved, and refuses it while the design is a draft or does not carry the statement. | test: approved, draft, and plain designs. |
 
 ## Scope
 
@@ -51,4 +53,4 @@ Under the GitHub gate ([github-gate](github-gate.md)) the agent does not write t
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25c.
-- Pull requests: #221.
+- Pull requests: #221, #222 (AC-10, AC-11).
