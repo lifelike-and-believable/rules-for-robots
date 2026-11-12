@@ -1,6 +1,6 @@
 # rules-for-robots
 
-Rules, best practices, and agent definitions that steer Claude Code toward high-quality software, websites, web apps, and Unreal Engine plugins. The plan is in `PLAN.md`; the evidence behind it is in `docs/research/`.
+Rules, best practices, and agent definitions that steer Claude Code toward high-quality software, websites, web apps, and Unreal Engine plugins. The plan is in `PLAN.md`; the evidence behind it is in `docs/research/`. Read `docs/handoff.md` at the start of a session for the current state and the maintainer's standing direction, and update it before the session ends.
 
 ## Commands
 
