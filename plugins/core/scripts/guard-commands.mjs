@@ -507,7 +507,12 @@ export function executedText(command) {
   return commands.map(({ words, scripts = [] }) => {
     let k = 0;
     while (k < words.length && /^(sudo|command|env|exec|\w+=\S*)$/.test(words[k])) k++;
-    return [words.join(' '), ...(SHELLS.test(words[k] ?? '') ? scripts : [])].join(' ; ');
+    // A word with spaces in it is one quoted argument, such as a commit message that mentions
+    // --no-verify: its spaces are joined so the patterns do not read it as separate arguments. A script
+    // a shell runs is matched as its own text (unattended AC-7, found replaying a real session).
+    const shell = SHELLS.test(words[k] ?? '');
+    const joined = words.map((w, i) => (/\s/.test(w) && !(shell && /^-\w*c$/.test(words[i - 1] ?? '')) ? w.replace(/\s+/g, '_') : w)).join(' ');
+    return [joined, ...(SHELLS.test(words[k] ?? '') ? scripts : [])].join(' ; ');
   }).join(' ; ');
 }
 

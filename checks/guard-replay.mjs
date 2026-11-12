@@ -175,9 +175,9 @@ function runHook(hook, input, env) {
       } catch {
         o = null;
       }
-      // A refusal that sends the agent to ask the person in chat is the person's decision, as an ask
-      // was before default-allow AC-10: it counts as an ask.
-      if (o?.permissionDecision === 'deny' && /needs the person's decision|is the person's review/.test(o.permissionDecisionReason ?? '')) resolve({ decision: 'ask', reason: o.permissionDecisionReason });
+      // A never-list refusal (docs/specs/unattended.md) is the old tier-4 decision, made in the plan, as an ask
+      // was before: it counts as one.
+      if (o?.permissionDecision === 'deny' && /Claude does not do this here|is the person's review/.test(o.permissionDecisionReason ?? '')) resolve({ decision: 'ask', reason: o.permissionDecisionReason });
       else if (o?.permissionDecision === 'ask' || o?.permissionDecision === 'deny') resolve({ decision: o.permissionDecision, reason: o.permissionDecisionReason ?? '' });
       else if (o?.additionalContext) resolve({ decision: 'inform', reason: o.additionalContext });
       else resolve({ decision: 'allow', reason: '' });

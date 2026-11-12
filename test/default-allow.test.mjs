@@ -136,7 +136,7 @@ test("default-allow#AC-4: a merge that is the person's review stops and reports 
   const stop = JSON.parse(mergeOutput(merge(['docs/design/reader.md']), root)).hookSpecificOutput;
   assert.equal(stop.permissionDecision, 'deny');
   assert.match(stop.permissionDecisionReason, /touches gated process files/);
-  assert.match(stop.permissionDecisionReason, /do not merge it and do not ask for a prompt: stop, tell the person/);
+  assert.match(stop.permissionDecisionReason, /do not merge it and do not ask: leave the pull request open for them/);
   assert.doesNotMatch(stop.permissionDecisionReason, /Confirm only if/);
   // The person's instruction covers it: allowed.
   assert.equal(JSON.parse(mergeOutput(merge(['docs/design/reader.md'], 'merge 12 when green'), root)).hookSpecificOutput.permissionDecision, 'allow');

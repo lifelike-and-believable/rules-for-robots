@@ -5,7 +5,6 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import nodePath from 'node:path';
-import { approvedInChat, chatQuestion, recordRefusal } from './chat-approval.mjs';
 
 let lastInput = {};
 
@@ -66,23 +65,22 @@ export function deny(reason) {
   }));
 }
 
-// A decision the person must make. Under default allow it is never a permission prompt
-// (default-allow AC-10): the call is refused, and the agent asks in chat; once the person says yes,
-// the same call goes ahead. A project with "permissions": "ask" gets the prompt, as before.
+// The reason for refusing an action on the never list (docs/specs/unattended.md, AC-2): nobody is
+// asked, during the run or in chat. The agent does it another way, or sets that part aside for the
+// person to decide at review.
+export const neverReason = reason => `${reason} Claude does not do this here, and nobody will be asked during the run. Do it another way, or, if the task cannot be done without it, set that part aside, record what it needs and why in the pull request's ## Decisions section, and carry on with the rest; the person decides it at review.`;
+
+// An action the guards would once have asked about. The run is unattended (docs/specs/unattended.md,
+// AC-1): it is refused with a reason the agent acts on, never a permission prompt. A project with
+// "permissions": "ask" gets the prompt, as before.
 export function ask(reason) {
   if (guardSettings(lastInput.cwd ?? process.cwd()).permissions !== 'ask') {
-    const yes = approvedInChat(lastInput);
-    if (yes) {
-      approve(`${reason.split(':')[0]}: approved in chat ("${String(yes).slice(0, 80)}")`);
-      return;
-    }
-    recordRefusal(lastInput, reason);
-    logDecision('chat', reason);
+    logDecision('never', reason);
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         permissionDecision: 'deny',
-        permissionDecisionReason: chatQuestion(reason),
+        permissionDecisionReason: neverReason(reason),
       },
     }));
     return;

@@ -43,10 +43,10 @@ test('guard-commands prints an ask decision only for risky commands', () => {
   assert.equal(risky.status, 0);
   const decision = JSON.parse(risky.stdout).hookSpecificOutput;
   assert.equal(decision.hookEventName, 'PreToolUse');
-  // The person decides in chat, never at a prompt (default-allow AC-10).
+  // Refused, and nobody is asked during the run (unattended AC-2).
   assert.equal(decision.permissionDecision, 'deny');
   assert.match(decision.permissionDecisionReason, /WA-003/);
-  assert.match(decision.permissionDecisionReason, /needs the person's decision/);
+  assert.match(decision.permissionDecisionReason, /Claude does not do this here, and nobody will be asked/);
 
   const safe = runHook('guard-commands.mjs', { tool_name: 'Bash', tool_input: { command: 'npm test' } });
   assert.equal(safe.status, 0);
@@ -120,7 +120,7 @@ test('guard-mcp asks before Vercel reads that return decrypted environment varia
   }
   // The hook passes tool_input through, so a decrypting call asks end to end.
   const run = input => spawnSync(process.execPath, ['plugins/web/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
-  assert.match(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1', decrypt: 'true' } }).stdout, /"permissionDecision":\s*"deny".*needs the person's decision/);
+  assert.match(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1', decrypt: 'true' } }).stdout, /"permissionDecision":\s*"deny".*Claude does not do this here/);
   assert.equal(run({ tool_name: 'mcp__Vercel__filter_project_envs', tool_input: { idOrName: 'prj_1' } }).stdout.trim(), '');
 });
 
@@ -184,7 +184,7 @@ test('guard-commands asks for the PowerShell tool (#23)', () => {
   const result = runHook('guard-commands.mjs', { tool_name: 'PowerShell', tool_input: { command: 'Remove-Item -Recurse -Force build' } });
   const out = JSON.parse(result.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'deny');
-  assert.match(out.permissionDecisionReason, /needs the person's decision/);
+  assert.match(out.permissionDecisionReason, /Claude does not do this here/);
 });
 
 test('hooks.json runs guard-commands for Bash and PowerShell (#23)', () => {

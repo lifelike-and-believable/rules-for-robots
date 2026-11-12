@@ -8,6 +8,26 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [7.0.0] - 2026-11-12
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+This release includes 6.0.1 and 6.1.0, which were not published on their own. 6.1.0's chat approval is removed.
+
+### Changed
+
+- **Unattended runs** (#PR; `docs/specs/unattended.md`). Nothing during a run asks the person anything, by prompt or in chat.
+  - **Never list:** actions that cannot be undone or reach outside the project are refused, with a reason that names what to do instead: force-pushes, pushes to the default branch, remote deletions, rewriting history, deletes outside the project and temp folders, production deploys, secret reads, skipped hooks, machine-wide settings, destructive database commands, and changes in another service through an MCP tool. If the task can't be done without one, the agent sets that part aside, records it in the pull request's `## Decisions` section, and finishes the rest. A "yes" in chat does not unlock one.
+  - **The plan:** what only you can authorise (a release, a production deploy, a shared-database migration) is named in the plan, and your approval in your own words lets those calls through.
+  - **Review stops:** a merge that is your review waits for you.
+  - **Tests:** test edits never ask.
+- **WA-002, WA-003, and WA-009** say: ask before the run, never during it. Questions and approvals go in the plan; something unplanned is set aside and recorded, never asked about. WA-002 now sets aside a task or test that looks wrong instead of stopping. The delegated-mode WA-003 candidate matches.
+- **Quoted arguments are not matched as commands.** A commit message that mentions `--no-verify` or `git push --force` no longer reads as running it; the script a shell runs with `-c` still does. This was found by replaying real sessions (`evals/results/2026-11-12-unattended-replay/`), where only never-list actions were refused, and nothing asked.
+- The guides explain the model and how to remove Claude Code's own remaining prompts: `bypassPermissions` mode, which you choose, and in which rfr's refusals still hold.
+- `rfr-core` 7.0.0, `rfr-web` 2.0.0, `rfr-process` 1.0.0, `rfr-unreal` 3.0.0, `rfr-android` 0.3.0. Adopters: nothing to do; to have rfr's guards prompt instead of refuse, set `"permissions": "ask"` in `.claude/rfr.json`. Name releases and production deploys in the plan you approve, since they are refused otherwise.
+
 ## [6.1.0] - 2026-11-12
 
 Pull requests: #202.

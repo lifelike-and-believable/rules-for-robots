@@ -71,9 +71,13 @@ test('guard-tiers#AC-8: the replay reproduces the committed decisions for the ca
   // Bash calls only: they do not depend on the edits made before them.
   const calls = picked.filter(i => all[i].tool_name === 'Bash').map(i => all[i]);
   const result = await replay(calls, { base: summary.base, specs: summary.specs, states: ['clean'] });
-  for (const v of ['baseline', 'tiered']) {
-    assert.equal(result.states.clean[v].decisions, calls.map(c => clean[v].decisions[c.i]).join(''), v);
-  }
+  // The baseline is a fixed version, so it reproduces exactly.
+  assert.equal(result.states.clean.baseline.decisions, calls.map(c => clean.baseline.decisions[c.i]).join(''), 'baseline');
+  // The tiered guards are the current ones: they may allow what the record asked about (unattended
+  // AC-7 removed false positives), but never ask or refuse what the record allowed.
+  const strength = { '.': 0, i: 0, '?': 1, x: 1 };
+  const now = [...result.states.clean.tiered.decisions];
+  calls.forEach((c, k) => assert.ok(strength[now[k]] <= strength[clean.tiered.decisions[c.i]], `call ${c.i}: ${clean.tiered.decisions[c.i]} then, ${now[k]} now`));
 });
 
 test('guard-tiers#AC-8: a dangerous command only mentioned in a script does not ask; one a shell runs still does', () => {

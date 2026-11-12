@@ -11,11 +11,18 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 
 "Now" is what the guard does in this release. "Target" is the tier the spec sets; where they differ, the slice that moves it is named. The corpus in `test/fixtures/guard-corpus.json` holds a case for each row and fails when a guard's decision drifts from its tier.
 
-## Default allow
+## Unattended runs
 
-rfr-core allows the agent's working tools without a prompt: the shell, file edits, web search and fetch, the GitHub MCP tools, and any MCP tool that only reads ([docs/specs/default-allow.md](../docs/specs/default-allow.md)). No guard raises a permission prompt: a person cannot judge a command's text, so a prompt protects nothing. For each named ask below, and for an MCP tool that changes something through another service, the guard refuses the call, and its reason tells the agent to ask the person in chat, in plain words, what it wants to do and why. When the person says yes (a typed reply, or their answer to the agent's own question), the same call goes ahead once; anything else approves nothing. Where work reaches something the person must review, such as a merge that approves gated documents, the agent reports it in chat the same way. The guards' refusals win over the allow on the same call; `evals/results/2026-11-12-hook-combination/` records the check. Claude Code's own protected paths (`.claude`, `.git`, `.mcp.json`) and any deny rule still apply, and rfr cannot remove those prompts. A project that wants prompts back sets `"permissions": "ask"` in `.claude/rfr.json`, or `RFR_PERMISSIONS=ask` for one session.
+A session runs without the person ([docs/specs/unattended.md](../docs/specs/unattended.md)). Nothing during the run asks them anything, by prompt or in chat.
 
-### Named asks (asked in chat)
+- **Allowed.** rfr-core allows the agent's working tools: the shell, file edits (tests included), web search and fetch, the GitHub MCP tools, and any MCP tool that only reads ([default allow](../docs/specs/default-allow.md)).
+- **Never.** The actions in the table below are refused, with a reason that names what to do instead. If the task cannot be done without one, the agent sets that part aside, records it in the pull request's `## Decisions` section, and finishes the rest; the person decides it at review. A "yes" in chat does not unlock one.
+- **Decided in the plan.** What only the person can authorise (a release, a production deploy, a shared-database migration, a paid service) is named in the plan before work starts, and their approval in their own words, read by task approval, lets those calls through.
+- **Review stops.** A merge that is the person's review, such as one that approves gated process documents, is refused, and the pull request waits for them.
+
+The guards' refusals win over the allow on the same call; `evals/results/2026-11-12-hook-combination/` records the check. Claude Code's own prompts (protected paths such as `.claude`, `.git`, and `.mcp.json`, and auto mode's classifier) are outside rfr's control. The only way to remove them is `bypassPermissions` mode, which the person chooses for a session; rfr's refusals still hold there, because a hook's refusal blocks in every mode. A project that wants prompts instead of refusals sets `"permissions": "ask"` in `.claude/rfr.json`, or `RFR_PERMISSIONS=ask` for one session.
+
+### Named asks: the never list
 
 | Action | Guard | Corpus cases |
 |---|---|---|
