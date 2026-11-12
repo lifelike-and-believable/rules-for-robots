@@ -6,14 +6,15 @@
 // green" into a recorded decision instead of something the agent does on its own. When the person's
 // latest typed message in the session already says to merge (AC-52), that is the confirmation, and
 // the hook does not ask again: "merge when green" is carried out when CI finishes. Projects without
-// docs/product/process.yml are not affected, and neither are stages whose gate is notify or agent. If the pull request's files cannot be listed (no gh,
-// no network), it asks as well, and says why.
+// docs/product/process.yml are not affected, and neither are stages whose gate is notify or agent. The
+// pull request's files come from gh, or, where there is no gh (cloud sessions), from git fetching the
+// pull request's head; if neither can list them, it asks as well, and says why.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { hasId, readConfig, readWorkMode, stagesWithGate, stageOf } from './lib/process.mjs';
-import { approvedTasks, latestInput, mergeInstruction } from './lib/task-approval.mjs';
+import { approvedTasks, latestInput, mergeInstruction, openedInSession } from './lib/task-approval.mjs';
 
 // Flags of `gh pr merge` that take a value, so their value is not the pull request argument.
 const VALUE_FLAGS = new Set(['-b', '--body', '-F', '--body-file', '-t', '--subject', '--match-head-commit', '-A', '--author-email', '-R', '--repo']);
@@ -81,6 +82,47 @@ function listWithGh(target) {
   return r.stdout.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
+function git(cwd, args, timeout = 8000) {
+  const r = spawnSync('git', args, { cwd, encoding: 'utf8', timeout });
+  if (r.error || r.status !== 0) throw new Error((r.error?.message ?? r.stderr ?? '').trim() || `git exited ${r.status}`);
+  return r.stdout.trim();
+}
+
+// The pull request's files from git alone, for sessions with no gh (cloud sessions merge with the
+// GitHub MCP tools): fetch refs/pull/<n>/head from origin and diff it against its merge base with the
+// default branch. Only for a pull request on this repository's origin, named by number.
+export function listWithGit(target, root) {
+  const number = target.kind === 'unknown' ? null : targetNumber(target);
+  if (number === null) throw new Error('the pull request has no number the guard can fetch');
+  const origin = git(root, ['remote', 'get-url', 'origin'], 5000);
+  if (target.kind === 'api') {
+    const repo = /github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?\/?$/i.exec(origin);
+    if (!repo || repo[1].toLowerCase() !== String(target.owner).toLowerCase() || repo[2].toLowerCase() !== String(target.repo).toLowerCase()) {
+      throw new Error(`#${number} is in ${target.owner}/${target.repo}, not this checkout's origin`);
+    }
+  }
+  git(root, ['fetch', '--quiet', '--no-tags', 'origin', `+refs/pull/${number}/head:refs/rfr/pull/${number}`]);
+  let base = '';
+  for (const ref of ['origin/HEAD', 'origin/main', 'origin/master']) {
+    try { base = git(root, ['merge-base', ref, `refs/rfr/pull/${number}`], 5000); break; } catch { /* try the next */ }
+  }
+  if (!base) throw new Error('no default branch to compare the pull request with');
+  return git(root, ['diff', '--name-only', base, `refs/rfr/pull/${number}`]).split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+// gh first, then git: either one listing the files is enough.
+function listFilesDefault(target, root) {
+  try {
+    return listWithGh(target);
+  } catch (ghError) {
+    try {
+      return listWithGit(target, root);
+    } catch (gitError) {
+      throw new Error(`gh: ${ghError.message}; git: ${gitError.message}`);
+    }
+  }
+}
+
 function describeWithGh(target) {
   if (target.kind === 'unknown') throw new Error('unknown pull request');
   const args = target.kind === 'gh'
@@ -144,6 +186,12 @@ export function instructionCovers({ transcriptPath, target, describePr = describ
   const message = { timestamp: tasks.timestamp };
   let number = targetNumber(target);
   let createdAt = null;
+  const quoted = () => tasks.quote.replace(/\s+/g, ' ').trim().slice(0, 90);
+  // The pull request this session opened is the one its "merge when green" is about, even when the
+  // instruction came first ("fix it, open a PR, and merge when green"); no lookup needed.
+  if (!instruction.numbers.length && number !== null && openedInSession(transcriptPath, number, target.kind === 'api' ? target : {})) {
+    return { covered: true, quote: quoted() };
+  }
   if (number === null || !instruction.numbers.length) {
     try {
       ({ number, createdAt } = describePr(target));
@@ -151,7 +199,7 @@ export function instructionCovers({ transcriptPath, target, describePr = describ
       return { covered: false, why: '' };
     }
   }
-  const quote = tasks.quote.replace(/\s+/g, ' ').trim().slice(0, 90);
+  const quote = quoted();
   if (instruction.numbers.length) {
     return instruction.numbers.includes(number) ? { covered: true, quote } : { covered: false, why: ` Your latest instruction names #${instruction.numbers.join(', #')}, not #${number}.` };
   }
@@ -172,14 +220,14 @@ function taskApprovalOff(root) {
   }
 }
 
-export function decideMerge({ input, root, listFiles = listWithGh, describePr = describeWithGh }) {
+export function decideMerge({ input, root, listFiles = listFilesDefault, describePr = describeWithGh }) {
   const target = mergeTarget(input);
   if (!target) return { ask: false, reason: '' };
   const loaded = readConfig(root);
   if (!loaded) return { ask: false, reason: '' };
   let files;
   try {
-    files = listFiles(target);
+    files = listFiles(target, root);
   } catch (e) {
     return { ask: true, reason: `rfr-process: could not list the pull request's files (${e.message}), so it may touch gated process folders, where merging is the approver's decision. Confirm only if you are the approver and want it merged now.` };
   }

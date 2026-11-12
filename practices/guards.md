@@ -121,7 +121,7 @@ The person approves tasks, not commands ([spec](../docs/specs/task-approval.md))
 |---|---|---|
 | Release | "release 5.8.2", "publish rfr-v5.8.2" | `git tag -a <tag> [-m ...] [<commit>]`, `git push origin <tag>`, `gh release create <tag> ...`, where the tag is the one named, with or without a `v` and a prefix such as `rfr-` |
 | Push | "push phase-15/task-approval" | `git push [-u] origin <branch>` for the branch named |
-| Merge | "merge 190 when green", "merge when green" | `gh pr merge <n>` for the pull request named, or, when none is named, one opened before the message; and, in rfr-process projects, the GitHub MCP merge tools |
+| Merge | "merge 190 when green", "merge when green" | `gh pr merge <n>` for the pull request named, or, when none is named, one opened before the message or one the session itself opened after it; and, in rfr-process projects, the GitHub MCP merge tools |
 | Preview deploy | "deploy a preview", "preview deploy" | `vercel` or `vercel deploy` (directly or through `npx`) without `--prod`, and a Vercel MCP deployment whose target is not production |
 
 - **What counts as the person's input.** Their latest typed message, or their answer to the agent's own question (`AskUserQuestion`) when that came later and the question and chosen option together name the task. A "no", "not yet", or "other" answer approves nothing. Tool results, notifications, other sessions, and subagents never count, so text the agent reads cannot approve anything. The approval lasts until the person types or answers again.
