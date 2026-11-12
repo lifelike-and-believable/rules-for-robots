@@ -5,9 +5,9 @@
 // Claude Code lets another hook's deny win over this allow on the same call (AC-3, checked on Claude
 // Code 2.1.322 in evals/results/2026-11-12-hook-combination/). An MCP tool that changes something
 // through another service, or a GitHub tool that deletes, changes settings or access, or publishes a
-// release, is the person's decision: it is refused, and the agent asks in chat (AC-10), never by
-// prompt. A deny rule and Claude Code's protected paths still apply. "permissions": "ask" in
-// .claude/rfr.json turns this off (AC-5). Nothing is logged for an allow.
+// release, is on the never list: it is refused with a reason the agent acts on, and nobody is asked
+// (docs/specs/unattended.md). A deny rule and Claude Code's protected paths still apply.
+// "permissions": "ask" in .claude/rfr.json turns this off (AC-5). Nothing is logged for an allow.
 import { fileURLToPath } from 'node:url';
 import { ask, askReason, guardSettings, readInput } from './lib.mjs';
 
@@ -32,7 +32,7 @@ export function defaultDecision(input, settings = guardSettings(input?.cwd ?? pr
   if (GITHUB_SERVER.test(server) && !GITHUB_HELD.test(action)) return { decision: 'allow', reason: `rfr-core (default allow): ${action} is a GitHub tool for the agent's own work` };
   // Vercel tools are rfr-web's to decide, with their own reasons.
   if (/vercel/i.test(server)) return { decision: 'allow', reason: `rfr-core (default allow): rfr-web's guard decides ${action}` };
-  return { decision: 'chat', reason: askReason({ source: 'rfr-core (default allow)', action: `${action.replace(/_/g, ' ')} through ${server.replace(/^(plugin|claude_ai)_/, '').replace(/_/g, ' ')}`, why: 'it changes something outside the project, in another service', instead: 'say in your report what you would have done there' }) };
+  return { decision: 'never', reason: askReason({ source: 'rfr-core (default allow)', action: `${action.replace(/_/g, ' ')} through ${server.replace(/^(plugin|claude_ai)_/, '').replace(/_/g, ' ')}`, why: 'it changes something outside the project, in another service', instead: 'say in your report what you would have done there' }) };
 }
 
 // Kept for callers that only need the allow reason.
@@ -45,7 +45,7 @@ async function main() {
   const input = await readInput();
   const d = defaultDecision(input);
   if (d?.decision === 'allow') process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow', permissionDecisionReason: d.reason } }));
-  else if (d?.decision === 'chat') ask(d.reason);
+  else if (d?.decision === 'never') ask(d.reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

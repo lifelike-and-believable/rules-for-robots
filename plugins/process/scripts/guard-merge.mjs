@@ -15,7 +15,6 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { hasId, readConfig, readWorkMode, stagesWithGate, stageOf } from './lib/process.mjs';
 import { approvedTasks, latestInput, mergeInstruction, openedInSession, standingInstructions } from './lib/task-approval.mjs';
-import { approvedInChat, recordRefusal } from './lib/chat-approval.mjs';
 
 // Flags of `gh pr merge` that take a value, so their value is not the pull request argument.
 const VALUE_FLAGS = new Set(['-b', '--body', '-F', '--body-file', '-t', '--subject', '--match-head-commit', '-A', '--author-email', '-R', '--repo']);
@@ -282,20 +281,15 @@ function permissionsAsk(root) {
 
 // Under default allow, a merge that needs the person's review is a review stop, not a prompt
 // (default-allow AC-4): the guard refuses, and the reason tells the agent to stop and report.
+// A merge that is the person's review is not made, and nobody is asked during the run
+// (docs/specs/unattended.md, AC-4): the pull request waits for them.
 export function reviewStopReason(reason) {
   const what = reason.replace(/\s*Confirm only if you are the approver[\s\S]*$/, '').trim();
-  return `${what} This merge is the person's review, so do not merge it and do not ask for a prompt: stop, tell the person this pull request is waiting for their review and why, and carry on with other work. When they say yes in chat, run the same merge again unchanged and it will go ahead.`;
+  return `${what} Merging it is the person's review, so do not merge it and do not ask: leave the pull request open for them, say in your report and its ## Decisions section that it waits for their review and why, and carry on with other work. Merge it later only if they say so.`;
 }
 
-// input is the hook input, for the person's yes in chat (default-allow AC-10).
-export function mergeOutput({ ask, allow, reason }, root, input = null) {
-  if (ask) {
-    if (permissionsAsk(root)) return askOutput(reason);
-    const yes = input && approvedInChat(input);
-    if (yes) return allowOutput(`rfr-process: merge approved in chat ("${String(yes).slice(0, 80)}")`);
-    if (input) recordRefusal(input, reason);
-    return denyOutput(reviewStopReason(reason));
-  }
+export function mergeOutput({ ask, allow, reason }, root) {
+  if (ask) return permissionsAsk(root) ? askOutput(reason) : denyOutput(reviewStopReason(reason));
   if (allow) return allowOutput(reason);
   return '';
 }
@@ -306,7 +300,7 @@ async function main() {
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* not JSON: nothing to check */ }
   const root = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const out = mergeOutput(decideMerge({ input, root }), root, input);
+  const out = mergeOutput(decideMerge({ input, root }), root);
   if (out) process.stdout.write(out);
 }
 

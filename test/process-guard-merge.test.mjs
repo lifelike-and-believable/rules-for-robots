@@ -98,7 +98,7 @@ test('project-process#AC-7: the hook prints an ask decision, and nothing for an 
   assert.equal(stopped.status, 0);
   const out = JSON.parse(stopped.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'deny');
-  assert.match(out.permissionDecisionReason, /stop, tell the person this pull request is waiting for their review/);
+  assert.match(out.permissionDecisionReason, /leave the pull request open for them/);
   // A project that keeps Claude Code's prompts ("permissions": "ask") is asked, as before.
   fs.mkdirSync(path.join(root, '.claude'), { recursive: true });
   fs.writeFileSync(path.join(root, '.claude', 'rfr.json'), '{ "permissions": "ask" }\n');
