@@ -452,7 +452,7 @@ From the quiet-launcher project, which fits no profile: an `rfr-android` plugin 
 - **24d:** the `android-app` profile, profile inference, and documentation.
 
 ### Phase 25: Rewrite of rfr-core and rfr-process (planned)
-Plan: [docs/rewrite-plan.md](docs/rewrite-plan.md) (proposed 2026-11-12, after a whole-system review; its decisions D1 to D8 wait for the maintainer).
+Plan: [docs/rewrite-plan.md](docs/rewrite-plan.md) (written 2026-11-12 after a whole-system review; approved the same day with the recommended answer for each of its decisions D1 to D8).
 
 The lead approves a feature packet, and agents carry the feature unsupervised to an implementation the lead can test. Approval and merging move to GitHub (a bot-authored pull request, a required review on gated folders, auto-merge), containment to the environment, and stage order to one CI rule and a state command; the merge guard, task approval, and the default-allow hook go.
 
@@ -505,7 +505,7 @@ Open items only; finished work is recorded under its phase. `docs/handoff.md` ho
 Since 7.0.0 the standing direction is: the person is never interrupted during a run (no prompts, no questions in chat), things Claude must never do are refused, and what only the person can authorise is decided in the plan (`docs/specs/unattended.md`). The development process comes before everything else (23m). Judge new work against both.
 
 0. Most urgent:
-   - **The maintainer's decisions on the rewrite plan** ([docs/rewrite-plan.md](docs/rewrite-plan.md), D1 to D8). If it goes ahead, guard and permission behaviour is frozen until its acceptance test passes, and 25a's trials are the next work.
+   - **The rewrite plan's trials (25a)** ([docs/rewrite-plan.md](docs/rewrite-plan.md)). The plan is approved. Guard and permission behaviour is frozen until its acceptance test passes. The first trial, a workflow that opens a pull request as a GitHub App, needs the maintainer to create the App.
    - **Confirm XR Studio In A Box's adoption of 7.1.0.** Its design and user documentation for Layer 1 come before any more implementation. Then triage the feedback it files.
    - **The delegated multi-PR eval (19i-4)**, which waits for the maintainer's budget decision (about $15 to $25). It is the test of "no interruptions during a run".
 

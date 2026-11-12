@@ -1,6 +1,6 @@
 # Rewrite plan: rfr-core and rfr-process
 
-A plan to rebuild the two plugins around one outcome: the project lead approves a design and its user documentation, and agents carry the feature, unsupervised, to an implementation the lead can test against those documents. Written 2026-11-12 after a whole-system review asked for by the maintainer. It is a proposal: section 6 lists the decisions that are the maintainer's, each with a recommendation, and nothing in it is built yet.
+A plan to rebuild the two plugins around one outcome: the project lead approves a design and its user documentation, and agents carry the feature, unsupervised, to an implementation the lead can test against those documents. Written 2026-11-12 after a whole-system review asked for by the maintainer. The maintainer approved it on 2026-11-12, taking the recommended answer for each decision in section 6. Nothing in it is built yet.
 
 The staged process in [docs/specs/project-process.md](specs/project-process.md) (the stages, their artifacts, and the human gates) is kept. Everything else was open to change.
 
@@ -141,9 +141,11 @@ Run 19i-4, then the acceptance test in section 1 on one feature in XR Studio In 
 
 From the start of 25a until 25f passes, guard and permission behaviour changes only through this plan. Feedback is triaged and queued. A rule, hook, or skill change ships to adopters only after the session replay and the delegated eval pass, which is the playbook's practice of running the eval suite on any change to agent configuration.
 
-## 6. Decisions for the maintainer
+## 6. Decisions
 
-| # | Decision | Recommendation |
+Approved by the maintainer on 2026-11-12: "I approve each of the 8 decision recommendations."
+
+| # | Decision | Decided |
 |---|---|---|
 | D1 | The human gates | The four in section 3; specs stay agent-approved |
 | D2 | Pull requests per feature | Two; split delivery only for large features |
@@ -160,7 +162,7 @@ From the start of 25a until 25f passes, guard and permission behaviour changes o
 - **Auto mode is not under rfr's control.** Its classifier can change between Claude Code versions. The replay and the acceptance test are rerun on a new version.
 - **One long delivery branch drifts** when several features are in flight, and a failed run is found at the end. CI on every push and the reviewer agents stand in for the intermediate merges.
 - **Removing in-session guards trusts the environment.** Native Windows has no sandbox, as `practices/security-for-agentic-projects.md` already records.
-- **Fixes and trivial changes merge with no person's review**, which the playbook does not do. The explicit claim on the pull request, the reviewer agents, and the test-change review are what stand behind them; D8 lets the maintainer choose otherwise.
+- **Fixes and trivial changes merge with no person's review**, which the playbook does not do. The explicit claim on the pull request, the reviewer agents, and the test-change review are what stand behind them; The maintainer chose this in D8.
 
 ## 8. Not in this plan
 
