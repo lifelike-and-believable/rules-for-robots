@@ -332,7 +332,8 @@ function discardRisk(entries, snaps) {
 // `..` and symlinks in its existing parent, loses nothing a project holds. A folder directly under
 // the temp directory may be another tool's or project's working area, so it still asks.
 function tempRoots() {
-  const roots = new Set([os.tmpdir(), process.env.TMPDIR, '/tmp'].filter(Boolean).map(p => path.resolve(p)));
+  // /var/tmp is the other temp folder on Linux and macOS: cloud sessions copy repositories there.
+  const roots = new Set([os.tmpdir(), process.env.TMPDIR, '/tmp', ...(process.platform === 'win32' ? [] : ['/var/tmp'])].filter(Boolean).map(p => path.resolve(p)));
   for (const r of [...roots]) {
     try {
       roots.add(fs.realpathSync.native(r));
@@ -343,12 +344,31 @@ function tempRoots() {
   return [...roots];
 }
 
-function insideTemp(abs) {
+function insideTemp(abs, depth = 2) {
   const real = canonical(abs);
   return tempRoots().some(root => {
     const rel = path.relative(root, real);
-    return rel && !rel.startsWith('..') && !path.isAbsolute(rel) && rel.split(path.sep).length >= 2;
+    return rel && !rel.startsWith('..') && !path.isAbsolute(rel) && rel.split(path.sep).length >= depth;
   });
+}
+
+// The folders a command creates (default-allow, 2026-11-12): the destination of cp -r, mkdir, git
+// clone, and git worktree add, resolved from the folder the command runs in. Only one that did not
+// exist when the line started counts, so its contents are all the line's own.
+function createdFolders(words, dir) {
+  const plain = words.filter(w => !w.startsWith('-'));
+  let made = [];
+  if (words[0] === 'cp' && words.slice(1).some(w => /^-[a-zA-Z]*[rRa]/.test(w) || w === '--recursive' || w === '--archive') && plain.length >= 3) made = [plain.at(-1)];
+  else if (words[0] === 'mkdir') made = plain.slice(1);
+  else if (words[0] === 'git' && words[1] === 'clone' && plain.length >= 4) made = [plain[3]];
+  else if (words[0] === 'git' && words[1] === 'worktree' && words[2] === 'add') {
+    const args = words.slice(3);
+    for (let k = 0; k < args.length; k++) {
+      if (/^(-b|-B|--reason)$/.test(args[k])) { k++; continue; }
+      if (!args[k].startsWith('-')) { made = [args[k]]; break; }
+    }
+  }
+  return made.filter(w => !/[*?[{$~]/.test(w)).map(w => resolveFromShell(dir, w)).filter(abs => !fs.existsSync(abs));
 }
 
 // $NAME and ${NAME} in a word, from assignments made earlier in the same command (`R=/tmp/x; rm -rf $R/y`).
@@ -371,7 +391,11 @@ const RM_CHANGED = { ...RM, why: 'some of these files have uncommitted changes o
 
 function rmRisk(entries, hints = [], snaps = []) {
   const vars = new Map();
+  // Folders this line made inside a temp folder: deleting one later in the line loses nothing that
+  // was there before ("cp -r . /var/tmp/check && ... && rm -rf /var/tmp/check").
+  const made = [];
   for (const { words, dir } of entries) {
+    for (const abs of createdFolders(words, dir)) if (insideTemp(abs, 1)) made.push(abs);
     if (words.length && words.every(w => /^\w+=/.test(w))) {
       for (const w of words) {
         const [name, ...rest] = w.split('=');
@@ -393,12 +417,16 @@ function rmRisk(entries, hints = [], snaps = []) {
     const recursive = flags.some(f => f === '--recursive' || (/^-[a-zA-Z]+$/.test(f) && /[rR]/.test(f)));
     const force = flags.some(f => f === '--force' || (/^-[a-zA-Z]+$/.test(f) && f.includes('f')));
     if (!recursive || !force) continue;
+    const within = (abs, m) => abs === m || abs.startsWith(m + path.sep) || abs.startsWith(`${m}/`);
     for (const word of args.filter(w => !w.startsWith('-'))) {
       const target = word.includes('$') ? expand(word, vars) : word;
+      // Inside a folder this line made, a relative target, globs included, stays inside it.
+      if (target !== null && made.some(m => within(dir, m)) && !/(^|\/)\.\.(\/|$)/.test(target) && !/^[/~\\]|^[A-Za-z]:/.test(target)) continue;
       // A glob, an unexpanded variable, or a leading ~ (the shell's home folder) asks. A ~ inside a
       // name, as in an 8.3 short name (C:/Users/RUNNER~1), is an ordinary character to the shell.
       if (target === null || /[*?[{$]/.test(target) || target.startsWith('~') || ['.', './', '..', '/'].includes(target)) return RM;
       const abs = resolveFromShell(dir, target);
+      if (made.some(m => within(abs, m))) continue;
       // A target in no git repository is throwaway only inside the temp directory; one in a
       // repository (even a repository under the temp directory) gets the git checks below.
       let near = path.dirname(abs);
