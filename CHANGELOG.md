@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Fixed
+
+- **A feature's pull request cannot merge before its tutorial exists** (#226; process-state AC-12). Under the GitHub gate a pushed branch has auto-merge on, so a delivery pushed part-way, after its tests and before its tutorial, would have merged as soon as its checks passed, with nothing for the approver to review. The first real delivery run pushed that way. The `process / change` check now fails a feature's pull request until a tutorial derives from the user documentation its spec derives from; the tutorial is in a gated folder, so the pull request then waits for the approver. `rfr-process` 1.5.1. Adopters: nothing to do if `process / change` is a required check; make it one if it is not.
+
 ## [7.3.0] - 2026-11-12
 
 Pull requests: #189, #218, #219, #221, #222, #224, #225.
