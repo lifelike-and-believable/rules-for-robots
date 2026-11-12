@@ -170,6 +170,8 @@ Review of the verify suite (added 2026-11-12, approved by the maintainer). On th
 
 ### 25f: Acceptance and release
 
+First evidence, 2026-11-12: a real delivery run on `xr-studio-in-a-box` took Layer 1 slice 2 from approved user documentation to a merged pull request in about 46 minutes with no interruption, started by one message from the lead ([record](../evals/results/2026-11-12-first-delivery-run/README.md)). It found two gaps, both fixed the same day: a delivery pushed part-way could merge before validation, and a feature built before it had a tutorial could not be finished. Still to show: the feature validated by its tutorial, the packet's merge starting a run, and a second run.
+
 Run 19i-4, then the acceptance test in section 1 on one feature in XR Studio In A Box. Release as 8.0.0 with a migration note.
 
 ### After 25f: verification strength inside the delivery run
