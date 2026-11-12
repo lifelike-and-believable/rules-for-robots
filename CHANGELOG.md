@@ -10,7 +10,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [6.0.0] - 2026-11-12
 
-Pull requests: #197 (spec), #198, #PR.
+Pull requests: #197 (spec), #198, #199.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
@@ -18,7 +18,7 @@ This release includes 5.11.0, which was not published on its own.
 
 ### Changed
 
-- **Default allow** (#197, #198, #PR; `docs/specs/default-allow.md`). rfr-core now allows the agent's working tools without a prompt (the shell, file edits, web search and fetch, and the GitHub MCP tools) and asks only for a named list of actions that cannot be undone or reach outside the project. The list is in `practices/guards.md`, "Named asks": force-pushes and pushes to the default branch, deleting on the remote, publishing a release, production deploys, secret reads, destructive database commands, and deletes no snapshot covers. A check on Claude Code 2.1.322 (`evals/results/2026-11-12-hook-combination/`) shows a guard's ask or refusal wins over the allow on the same call. Claude Code's protected paths and any deny rule still apply.
+- **Default allow** (#197, #198, #199; `docs/specs/default-allow.md`). rfr-core now allows the agent's working tools without a prompt (the shell, file edits, web search and fetch, and the GitHub MCP tools) and asks only for a named list of actions that cannot be undone or reach outside the project. The list is in `practices/guards.md`, "Named asks": force-pushes and pushes to the default branch, deleting on the remote, publishing a release, production deploys, secret reads, destructive database commands, and deletes no snapshot covers. A check on Claude Code 2.1.322 (`evals/results/2026-11-12-hook-combination/`) shows a guard's ask or refusal wins over the allow on the same call. Claude Code's protected paths and any deny rule still apply.
 - **Merges stop for review instead of prompting.** The agent merges a pull request when its checks pass. In rfr-process projects, a merge that approves gated process files with no instruction of yours covering it is refused with a reason that tells the agent to stop and report that the pull request is waiting for you.
 - `guard-commands` asks for the named asks Claude Code used to prompt for: pushes to the default branch (including `HEAD:main` and a bare `git push` on it), remote deletions (`--delete`, `:ref`, `--mirror`, `--prune`, `gh repo delete`, `gh release delete`), tag pushes and `gh release create` unless your instruction names the version, and `vercel --prod` and promotions through the CLI.
 - WA-003 and WA-009: once you have agreed a plan, the agent carries it out, merging as checks pass. It asks in chat only for decisions and named asks, and reports review points in chat instead of triggering a prompt. Pushing its own branches needs no question, and new dependencies are named in the pull request.
