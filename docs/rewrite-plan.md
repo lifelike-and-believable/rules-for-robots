@@ -109,6 +109,8 @@ One slice per branch and pull request, as now. Phase 25 in `PLAN.md`.
 
 Each trial tests one assumption the design rests on. No plugin code changes in this phase.
 
+Trial 1 (the App-opened pull request and the required review) passed on 2026-11-12: [evals/results/2026-11-12-25a-trial-1/](../evals/results/2026-11-12-25a-trial-1/README.md).
+
 | Trial | Passes when | If it fails |
 |---|---|---|
 | A workflow opens a pull request as an App, and the lead's review is required on gated folders | On one repository: a pushed branch becomes a bot-authored pull request, CI runs on it, an ungated one merges itself when green, and a gated one waits for the lead's review | The lead approves through a required GitHub environment review, which is weaker because the agent's token could give it |
