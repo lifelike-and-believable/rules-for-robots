@@ -144,7 +144,9 @@ Fix the off-by-one in paging
 Change: fix
 ```
 
-A fix must change or add a test and add no source file. `Change: trivial` (a dependency bump, a rename) must add no source file and touch no `public-api` path. Anything larger is a feature. The declaration is in the commit and not the pull request's description, because under the gate the workflow writes the description.
+A fix must change or add a test and add no source file. `Change: trivial` (a dependency bump, a rename) must add no source file and touch no `public-api` path. Anything larger is a feature.
+
+Work with nothing a user sees, such as a repository skeleton or build tooling, is neither: it adds files, and it has no user documentation to derive a spec from. Give it a design of its own in `docs/design/` whose front matter says `no-user-docs:` with the reason. Its spec may then derive from that design. You approve that line when you approve the design, so look for it in a design pull request: it is the one way a spec skips user documentation, and the process check refuses it on a design that user documentation derives from. The declaration is in the commit and not the pull request's description, because under the gate the workflow writes the description.
 
 **Choosing the mode.** A project cannot set Claude Code's permission mode, so this part is yours too. For a session on your machine, set auto mode once in your user settings; for a cloud session, choose Auto when you start it. Agents then run without permission prompts, and the gate above is what holds work for your review.
 

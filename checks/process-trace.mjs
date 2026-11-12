@@ -219,7 +219,18 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
     // derives from the nearest earlier stage that is not waived, so a spec cannot come straight from
     // stories while the design and the user documentation are still to be written.
     const need = config?.waived?.[a.stage] ? null : requiredUpstream(a.stage, config?.waived ?? {});
-    if (need && !a.links.some(l => byId.get(l.target)?.stage === need)) {
+    // Work with no user-facing behaviour (process-state AC-10): a spec may derive from a design that
+    // says, with a reason, that what it covers needs no user documentation. The approver approves
+    // that statement with the design.
+    const enablingDesign = t => t?.stage === 'design' && typeof t.noUserDocs === 'string' && t.noUserDocs.length >= 10;
+    const enabling = a.stage === 'specs' && need === 'user-docs' && a.links.some(l => enablingDesign(byId.get(l.target)));
+    if (a.noUserDocs !== undefined) {
+      const readers = artifacts.filter(u => u.stage === 'user-docs' && u.links.some(l => l.target === a.id));
+      if (a.stage !== 'design') problems.push(`${name}: no-user-docs is only for a design; remove it`);
+      else if (a.noUserDocs.length < 10) problems.push(`${name}: no-user-docs needs a reason (a sentence saying why the work this design covers has nothing a user sees)`);
+      else if (readers.length) problems.push(`${name}: says no-user-docs, but ${readers.map(u => u.id ?? u.file).join(', ')} derives from it; a design with user documentation is not enabling work, so remove no-user-docs or give the enabling work its own design`);
+    }
+    if (need && !enabling && !a.links.some(l => byId.get(l.target)?.stage === need)) {
       const waivable = need === 'stories' ? '' : `, or waive ${need} in ${CONFIG_PATH} with the reason the project does not need it, before the work starts`;
       problems.push(`${name}: derives from no ${need === 'user-docs' ? 'user documentation' : need} (stage order: ${need} comes before ${a.stage}); write and approve it first, then link it in derived-from${waivable}`);
     }
@@ -231,7 +242,7 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
           const link = a.links.find(l => l.key === src);
           const stage = link && byId.get(link.target)?.stage;
           if (!link) problems.push(`${name}#${c.id}: source ${src} is not in derived-from`);
-          else if (stage && stage !== 'stories' && stage !== 'user-docs') problems.push(`${name}#${c.id}: source ${src} is not a story or user documentation`);
+          else if (stage && stage !== 'stories' && stage !== 'user-docs' && !enablingDesign(byId.get(link.target))) problems.push(`${name}#${c.id}: source ${src} is not a story or user documentation`);
         }
       }
     }

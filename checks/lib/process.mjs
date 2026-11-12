@@ -202,6 +202,9 @@ export function parseArtifact(text) {
     if (key === 'id') front.id = value.trim() || null;
     else if (key === 'status') front.status = value.trim() || null;
     else if (key === 'withdrawn') front.withdrawn = value.trim() || null;
+    // A design can say the work it covers needs no user documentation, with the reason
+    // (process-state AC-10). Set only when the field is present.
+    else if (key === 'no-user-docs') front.noUserDocs = value.trim();
     else if (key === 'derived-from') {
       inLinks = true;
       if (value.trim() && value.trim() !== '[]') errors.push('derived-from must be a block list ("  - id#section: hash")');

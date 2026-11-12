@@ -8,7 +8,11 @@ derived-from:
 
 # <Feature> design
 
-<!-- docs/design/<feature>.md. The user documentation is written from this. -->
+<!-- docs/design/<feature>.md. The user documentation is written from this.
+     For work with nothing a user sees (a repository skeleton, build tooling), give it a design of its
+     own and add `no-user-docs: <the reason>` to the front matter: its spec may then derive from this
+     design. The approver approves that line with the design. Never add it to a design that covers
+     something a user sees. -->
 
 ## Personas
 
