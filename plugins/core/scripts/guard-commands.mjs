@@ -368,7 +368,8 @@ function createdFolders(words, dir) {
       if (!args[k].startsWith('-')) { made = [args[k]]; break; }
     }
   }
-  return made.filter(w => !/[*?[{$~]/.test(w)).map(w => resolveFromShell(dir, w)).filter(abs => !fs.existsSync(abs));
+  // A ~ only at the start is the home folder; inside a name (C:/Users/RUNNER~1) it is a character.
+  return made.filter(w => !/[*?[{$]/.test(w) && !w.startsWith('~')).map(w => resolveFromShell(dir, w)).filter(abs => !fs.existsSync(abs));
 }
 
 // $NAME and ${NAME} in a word, from assignments made earlier in the same command (`R=/tmp/x; rm -rf $R/y`).
