@@ -143,6 +143,13 @@ Built on 2026-11-12 ([spec](specs/process-state.md), pull request #221): the `Se
 
 The trigger, the run contract, the stop check, the end point (delivery pull request open, tutorial recorded, preview deployed, lead notified once), and feedback #132.
 
+Reviewing at the gate (added 2026-11-12, approved by the maintainer). The approval stays a review in GitHub; the session makes it easy to reach and to give. The maintainer: "now that I'm approving the things I care about, I'm good taking the time to actually review."
+
+- When a gated pull request opens, the session tells the lead once, with the link to its review page first, because the rendered documents and mock-ups are read there, and then the line the lead can run themselves from the Claude Code prompt to approve without leaving it (`! gh pr review <number> --approve`). The agent never runs that command; refusing it is 25e's.
+- The pull request the workflow opens carries the review packet at the top of its description (open questions and assumptions first, from `checks/process-packet.mjs`), since the agent no longer writes the description.
+- A design that says `no-user-docs` is named in that packet, so the one line that lets a spec skip user documentation is in front of the lead when they approve it.
+- To check: whether the `!` prefix is available in a cloud session's interface. Where it is not, the link and the GitHub mobile app are the way.
+
 ### 25e: Removal and rules
 
 Remove what section 4 lists, with its tests and specs; reduce the command guard; prune and rewrite the rules; rerun the evals for TEST-001 and WA-002, whose wording changed after their last run; replay recorded sessions through the new guards.
