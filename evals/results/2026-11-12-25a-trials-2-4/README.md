@@ -31,7 +31,7 @@ The session was told to subscribe to the packet's pull request, wait, and run de
 | 17:44:23 | Implementation committed; 6 of 6 pass |
 | 17:44:30 | Tutorial committed, branch pushed, one report, session idle |
 | 17:44:39 | The workflow opened pull request #6 as `rfr-agent` |
-| 17:47:36 | An approving review on #6 under the lead's account, three minutes after the session went idle |
+| 17:47:36 | The lead approved #6 (confirmed by the lead; the session had been idle for three minutes and made no approval call) |
 | 17:50:36 | #6 merged itself |
 
 - No permission denial in any turn, and the session opened, approved, and merged nothing.
