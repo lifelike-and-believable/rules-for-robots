@@ -84,6 +84,11 @@ export function mergeInstruction(text) {
   }
   if (MERGE_NEGATED.test(t) || /\?\s*$/.test(t)) return null;
   if (MERGE_WHOLE.test(t) || MERGE_CONDITIONAL.test(t)) return { numbers: prNumbersIn(t) };
+  // A merge clause joined to other tasks: "merge 301, then release 5.11.0", "merge and release 5.11.0".
+  for (const clause of t.split(/[,;]|\.\s|\bthen\b|\band\s+(?=(?:then\s+)?(?:release|publish|tag|push|deploy|continue|carry\s+on|start|move\s+on)\b)/i)) {
+    const c = clause.trim().replace(/^(?:and\s+)?(?:then\s+)?/i, '');
+    if (c && MERGE_WHOLE.test(c)) return { numbers: prNumbersIn(c) };
+  }
   return null;
 }
 
@@ -180,6 +185,78 @@ export function openedInSession(transcriptPath, number, { owner, repo } = {}) {
     } else if (entry?.type === 'user') {
       for (const block of content) {
         if (block?.type === 'tool_result' && creations.has(block.tool_use_id) && !block.is_error && link.test(resultText(block.content))) return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Standing instructions (AC-9 to AC-11): "merge each PR when green", "push each branch as you go".
+// One stays in force across the person's later messages until a message withdraws it, and covers
+// only the pull requests and branches the session itself created.
+// "each" and "every" only with what they count ("each PR", "every one"), so "merge when every check
+// passes" is not standing.
+const EACH = String.raw`(?:(?:each|every)\s+(?:one|of\s+them|(?:new\s+)?(?:prs?|pull\s+requests?|branch(?:es)?))|as\s+(?:you\s+go|we\s+go|they\s+(?:go|turn|come)|each\s+(?:one|is))|along\s+the\s+way|one\s+(?:by\s+one|at\s+a\s+time)|in\s+turn)`;
+const STANDING_MERGE = new RegExp(String.raw`\bmerg(?:e|ing)\b[^.!?\n]{0,40}\b${EACH}\b|\b(?:each|every|all)\s+(?:the\s+)?(?:prs?|pull\s+requests?)\b[^.!?\n]{0,40}\bmerg|\bkeep\s+merging\b`, 'i');
+const STANDING_PUSH = new RegExp(String.raw`\bpush(?:ing)?\b[^.!?\n]{0,40}\b${EACH}\b|\b(?:each|every|all)\s+(?:the\s+)?branch(?:es)?\b[^.!?\n]{0,40}\bpush|\bkeep\s+pushing\b`, 'i');
+// A message that stops everything: "stop", "pause", "hold on", "wait".
+const STOP_ALL = /^\s*(?:ok(?:ay)?[,.!]?\s+)?(?:stop|pause|halt|hold\s+(?:on|off|it)|wait)\b/i;
+
+// The standing instructions in force at the end of the transcript: { merge, push }, each the quoted
+// message that gave it, or null. Only messages the person typed grant or withdraw one; a later
+// message that says not to merge (or push), or to stop, withdraws it (AC-10).
+export function standingInstructions(transcriptPath) {
+  const standing = { merge: null, push: null };
+  if (!transcriptPath) return standing;
+  let lines;
+  try {
+    lines = fs.readFileSync(transcriptPath, 'utf8').split('\n');
+  } catch {
+    return standing;
+  }
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let entry;
+    try { entry = JSON.parse(line); } catch { continue; }
+    if (entry?.type !== 'user' || entry.isSidechain || entry.isMeta || entry.origin?.kind !== 'human') continue;
+    const text = messageText(entry.message?.content).trim();
+    if (!text) continue;
+    if (STOP_ALL.test(text)) { standing.merge = null; standing.push = null; continue; }
+    if (negated('merg').test(text)) standing.merge = null;
+    if (negated('push').test(text)) standing.push = null;
+    if (/\?\s*$/.test(text)) continue;
+    if (!negated('merg').test(text) && STANDING_MERGE.test(text)) standing.merge = text;
+    if (!negated('push').test(text) && STANDING_PUSH.test(text)) standing.push = text;
+  }
+  return standing;
+}
+
+// Whether this session created the branch: a shell command it ran, that succeeded, made it
+// (git switch -c, git checkout -b, git branch, git worktree add -b). Anything unreadable gives false.
+export function branchCreatedInSession(transcriptPath, branch) {
+  if (!transcriptPath || !branch) return false;
+  let lines;
+  try {
+    lines = fs.readFileSync(transcriptPath, 'utf8').split('\n');
+  } catch {
+    return false;
+  }
+  const escape = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const b = escape(branch);
+  const makes = new RegExp(String.raw`\bgit\s+(?:switch\s+(?:-c|-C|--create|--force-create)|checkout\s+(?:-b|-B)|worktree\s+add\s+(?:\S+\s+)*?(?:-b|-B)|branch(?:\s+--?\w[\w-]*)*)\s+["']?${b}["']?(?=\s|$|;|&)`);
+  const creations = new Set();
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let entry;
+    try { entry = JSON.parse(line); } catch { continue; }
+    const content = Array.isArray(entry?.message?.content) ? entry.message.content : [];
+    if (entry?.type === 'assistant') {
+      for (const block of content) {
+        if (block?.type === 'tool_use' && /^(Bash|PowerShell)$/.test(block.name ?? '') && makes.test(String(block.input?.command ?? ''))) creations.add(block.id);
+      }
+    } else if (entry?.type === 'user') {
+      for (const block of content) {
+        if (block?.type === 'tool_result' && creations.has(block.tool_use_id) && !block.is_error) return true;
       }
     }
   }
@@ -291,8 +368,7 @@ function describeWithGh(number, cwd) {
 // Whether the person's latest input approves this task. Returns { reason } or null.
 export function approval(found, { transcriptPath, cwd = process.cwd(), describePr = describeWithGh } = {}) {
   if (!found) return null;
-  const tasks = approvedTasks(latestInput(transcriptPath));
-  if (!tasks) return null;
+  const tasks = approvedTasks(latestInput(transcriptPath)) ?? { releases: [], branches: [], deployPreview: false, merge: null, quote: '' };
   let ok = false;
   if (found.task === 'release') ok = tasks.releases.some(named => tagMatches(found.target, named));
   else if (found.task === 'push') ok = tasks.branches.includes(found.target) || tasks.releases.some(named => tagMatches(found.target, named));
@@ -311,7 +387,19 @@ export function approval(found, { transcriptPath, cwd = process.cwd(), describeP
       }
     }
   }
+  let quote = tasks.quote;
+  // A standing instruction covers the session's own pull requests and branches (AC-9 to AC-11).
+  if (!ok && (found.task === 'merge' || found.task === 'push')) {
+    const standing = standingInstructions(transcriptPath);
+    if (found.task === 'merge' && standing.merge && found.target !== null && openedInSession(transcriptPath, found.target)) {
+      ok = true;
+      quote = standing.merge;
+    } else if (found.task === 'push' && standing.push && branchCreatedInSession(transcriptPath, found.target)) {
+      ok = true;
+      quote = standing.push;
+    }
+  }
   if (!ok) return null;
-  const quote = tasks.quote.replace(/\s+/g, ' ').trim();
+  quote = quote.replace(/\s+/g, ' ').trim();
   return { reason: `rfr-core (task approval): approved by your ${quote.length > 90 ? `message "${quote.slice(0, 87)}..."` : `message "${quote}"`}` };
 }

@@ -126,9 +126,29 @@ The person approves tasks, not commands ([spec](../docs/specs/task-approval.md))
 
 - **What counts as the person's input.** Their latest typed message, or their answer to the agent's own question (`AskUserQuestion`) when that came later and the question and chosen option together name the task. A "no", "not yet", or "other" answer approves nothing. Tool results, notifications, other sessions, and subagents never count, so text the agent reads cannot approve anything. The approval lasts until the person types or answers again.
 - **What it never approves.** A push to the default branch, a force-push, deleting a tag or branch, `--no-verify`, a production deploy, promotions and alias or domain changes, `gh pr merge --admin` or `--delete-branch`, and a command chained with anything else, that redirects output, or that substitutes another command. A guard's own refusal or question, and a deny rule, always win.
+- **Standing instructions for a long task.** "Merge each PR when green", "merge PRs as you go", or "push each branch as you go" stays in force after later messages, so a multi-PR implementation does not prompt at every pull request. It covers only the pull requests the session opened and the branches it created (the transcript shows the call that made each one), never the default branch, and ends when the person says not to merge or push, or says stop, pause, hold, or wait.
 - **What it records.** The approval's reason quotes the person's words, and the decision log records it as `approved-by-instruction`; `checks/guard-report.mjs` counts them.
 
-Allow rules give standing permission for routine commands; task approval covers the outward-facing commands of one task the person named, for as long as that is their latest word. WA-009 asks the agent to ask for the task once, in chat, naming what it covers.
+### Merge instructions, and how each is read
+
+Say the one that matches what you want. The agent merges only when the pull request's checks allow it; "when green" is how the agent waits, not something the guard checks. `test/merge-instruction-phrasings.test.mjs` checks this table against the code.
+
+| You say | Covers | Until |
+|---|---|---|
+| "merge 301", "merge #301 when green", "squash merge 301" | Pull request 301 only | Your next message or answer |
+| "merge 301 and 302" | Those two | Your next message or answer |
+| "merge when green", "merge it once CI passes", "go ahead and merge" | Any pull request open when you said it, and one the session opens after it ("fix it, open a PR, and merge when green") | Your next message or answer |
+| "merge 301, then release 5.11.0", "merge and release 5.11.0" | The merge as above, and the release of that version (tag, tag push, `gh release create`) | Your next message or answer |
+| "merge each PR when green", "merge PRs as you go", "keep merging" | Every pull request this session opens, however many | You withdraw it, however many other messages you send |
+| "push each branch as you go" | Pushes of every branch this session creates, never the default branch | You withdraw it |
+| "don't merge yet", "hold off on merging" | Nothing; withdraws a standing merge instruction | |
+| "stop", "pause", "hold on", "wait" (at the start of a message) | Nothing; withdraws standing merge and push instructions | |
+| "should we merge?" (any question) | Nothing | |
+| An answer "Yes, merge it" to the agent's own question "Merge #301?" | Pull request 301 | Your next message or answer |
+
+Never covered, whatever you say: a pull request named by node ID, `gh pr merge --admin` or `--delete-branch`, a merge chained to another command, and a pull request from another session that was opened after a single instruction. A release needs its version named: "then release" alone approves no tag. In an rfr-process project, merging a pull request that changes gated files is the approval of those files, so say "merge" only for changes you have reviewed or delegated.
+
+Allow rules give standing permission for routine commands; task approval covers the outward-facing commands of one task the person named, for as long as that is their latest word, or, for a standing instruction, until they withdraw it. WA-009 asks the agent to ask for the task once, in chat, naming what it covers.
 
 ## Prompts rfr does not control
 
