@@ -143,6 +143,16 @@ The trigger, the run contract, the stop check, the end point (delivery pull requ
 
 Remove what section 4 lists, with its tests and specs; reduce the command guard; prune and rewrite the rules; rerun the evals for TEST-001 and WA-002, whose wording changed after their last run; replay recorded sessions through the new guards.
 
+Review of the verify suite (added 2026-11-12, approved by the maintainer). On that date `npm run verify` had 11 steps and 116 test files (about 13,400 lines); 38 files test the process, 16 of them named after a pilot round; 14 touch components this plan removes; and every pull request, documents-only ones included, runs all of it on Linux (about 1 minute) and Windows (6 to 7 minutes).
+
+- **Inventory first.** Each test file and each verify step is classed keep, merge, or remove, with the reason and the spec criteria it cites. The maintainer approves the list before any test changes.
+- **Tests of removed components** go with them. A test locked by a spec's `tests-commit` is removed only with that spec retired or the file listed under its `unlocks:`.
+- **Pilot-round files** are folded into files named by the behaviour they cover.
+- **Domain tests move to the plugin they test.** Each of `rfr-unreal`, `rfr-web`, `rfr-android`, and `rfr-feedback` gets its own `test/` folder, and the inventory names each file's owning plugin. CI runs a plugin's tests when that plugin, or shared code it depends on (the libraries the build copies from `checks/lib/`), changes; `npm run verify` still runs everything locally.
+- **Domain logic leaves rfr-core and the shared workflow**, so an adopting project runs only the checks of the plugins it enables: the production-deploy and database refusals in `guard-commands.mjs` (Vercel, Drizzle, Prisma) move to `rfr-web`, and the `mutation` and `tutorials` jobs in `rfr-process.yml` run only for the profiles that use them.
+- **Documents-only changes** get a shorter path, and the Windows job's time is investigated.
+- Existing test files are changed with the Edit tool, and the test-change review judges the result, as for any other change.
+
 ### 25f: Acceptance and release
 
 Run 19i-4, then the acceptance test in section 1 on one feature in XR Studio In A Box. Release as 8.0.0 with a migration note.
