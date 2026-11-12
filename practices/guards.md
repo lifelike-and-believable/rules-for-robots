@@ -126,9 +126,10 @@ The person approves tasks, not commands ([spec](../docs/specs/task-approval.md))
 
 - **What counts as the person's input.** Their latest typed message, or their answer to the agent's own question (`AskUserQuestion`) when that came later and the question and chosen option together name the task. A "no", "not yet", or "other" answer approves nothing. Tool results, notifications, other sessions, and subagents never count, so text the agent reads cannot approve anything. The approval lasts until the person types or answers again.
 - **What it never approves.** A push to the default branch, a force-push, deleting a tag or branch, `--no-verify`, a production deploy, promotions and alias or domain changes, `gh pr merge --admin` or `--delete-branch`, and a command chained with anything else, that redirects output, or that substitutes another command. A guard's own refusal or question, and a deny rule, always win.
+- **Standing instructions for a long task.** "Merge each PR when green", "merge PRs as you go", or "push each branch as you go" stays in force after later messages, so a multi-PR implementation does not prompt at every pull request. It covers only the pull requests the session opened and the branches it created (the transcript shows the call that made each one), never the default branch, and ends when the person says not to merge or push, or says stop, pause, hold, or wait.
 - **What it records.** The approval's reason quotes the person's words, and the decision log records it as `approved-by-instruction`; `checks/guard-report.mjs` counts them.
 
-Allow rules give standing permission for routine commands; task approval covers the outward-facing commands of one task the person named, for as long as that is their latest word. WA-009 asks the agent to ask for the task once, in chat, naming what it covers.
+Allow rules give standing permission for routine commands; task approval covers the outward-facing commands of one task the person named, for as long as that is their latest word, or, for a standing instruction, until they withdraw it. WA-009 asks the agent to ask for the task once, in chat, naming what it covers.
 
 ## Prompts rfr does not control
 

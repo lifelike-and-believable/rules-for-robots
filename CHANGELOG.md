@@ -8,6 +8,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [5.11.0] - 2026-11-12
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- Standing instructions for long tasks (#PR; task-approval AC-9 to AC-11). "Merge each PR when green", "merge PRs as you go", or "push each branch as you go" now stays in force after your later messages, so a multi-PR implementation no longer prompts at each pull request once you have said it. It covers only the pull requests the session opened and the branches it created, never the default branch, force-pushes, or deletions. It ends when you say not to merge or push, or say stop, pause, hold, or wait. The approval's reason quotes your standing instruction, and the decision log records it as before. Applies to `gh pr merge` and `git push` in rfr-core and to the GitHub MCP merge tools in rfr-process.
+- `rfr-core` 5.11.0, `rfr-web` 1.1.3, `rfr-process` 0.19.0. Adopters: nothing to do; to keep a prompt for each merge, give single instructions ("merge 301 when green") rather than standing ones, or turn task approval off with `"taskApproval": "off"`.
+
 ## [5.10.1] - 2026-11-12
 
 Pull requests: #195.
