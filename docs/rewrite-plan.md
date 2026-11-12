@@ -109,7 +109,7 @@ One slice per branch and pull request, as now. Phase 25 in `PLAN.md`.
 
 Each trial tests one assumption the design rests on. No plugin code changes in this phase.
 
-Trial 1 (the App-opened pull request and the required review) passed on 2026-11-12: [evals/results/2026-11-12-25a-trial-1/](../evals/results/2026-11-12-25a-trial-1/README.md). Trial 5 (squash merging and the spec lock) passed with a condition the same day: delivery pull requests merge with a merge commit, and a squash is safe only when the branch's last commit sets the spec to `implemented` ([result](../evals/results/2026-11-12-25a-trial-5/README.md)).
+Trial 1 (the App-opened pull request and the required review) passed on 2026-11-12: [evals/results/2026-11-12-25a-trial-1/](../evals/results/2026-11-12-25a-trial-1/README.md). Trial 5 (squash merging and the spec lock) passed with a condition the same day: delivery pull requests merge with a merge commit, and a squash is safe only when the branch's last commit sets the spec to `implemented` ([result](../evals/results/2026-11-12-25a-trial-5/README.md)). Trials 2 to 4 passed the same day on two fixture features in cloud sessions ([result](../evals/results/2026-11-12-25a-trials-2-4/README.md)): no prompt in auto mode, delivery started by the packet's merge, and the stop check, on its second version, sent an agent that stopped after the spec back to finish. 25a is complete; the result lists what it found for 25d and 25e.
 
 | Trial | Passes when | If it fails |
 |---|---|---|
