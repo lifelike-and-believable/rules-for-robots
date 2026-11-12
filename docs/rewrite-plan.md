@@ -145,6 +145,8 @@ The trigger, the run contract, the stop check, the end point (delivery pull requ
 
 Remove what section 4 lists, with its tests and specs; reduce the command guard; prune and rewrite the rules; rerun the evals for TEST-001 and WA-002, whose wording changed after their last run; replay recorded sessions through the new guards.
 
+The approvals check on gated pull requests (added 2026-11-12, from the first real use of the gate on `xr-studio-in-a-box`, pull request #351). In team mode `process / approvals` fails on a pull request that touches a gated folder until its approver has reviewed it, then reruns and passes. With the gate, GitHub's code-owner requirement already holds that pull request, so the check adds a red mark on every gated pull request that means nothing is wrong; the maintainer noticed it on the first one. In a project with the gate, the check either goes or reports "waiting for review" without failing. Until then the adoption guide says to expect it.
+
 Review of the verify suite (added 2026-11-12, approved by the maintainer). On that date `npm run verify` had 11 steps and 116 test files (about 13,400 lines); 38 files test the process, 16 of them named after a pilot round; 14 touch components this plan removes; and every pull request, documents-only ones included, runs all of it on Linux (about 1 minute) and Windows (6 to 7 minutes).
 
 - **Inventory first.** Each test file and each verify step is classed keep, merge, or remove, with the reason and the spec criteria it cites. The maintainer approves the list before any test changes.
