@@ -8,6 +8,20 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [7.1.0] - 2026-11-12
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Changed
+
+- **The development process is enforced** (#PR; project-process AC-63 and AC-64, feedback #204). Every stage is required unless `process.yml` waives it ahead of time, with a reason (`waived:`). A design must derive from approved stories, user documentation from an approved design, and specs and tutorials from approved user documentation. The process check fails an artifact that skips a stage, and a spec without an id in a process project fails instead of being skipped. rfr-process's new `guard-stages` hook refuses writing one in the session, naming the stage to write and get approved first, so an agent cannot go from stories straight to a spec and code. Nobody is asked, and an agent never waives a stage itself.
+- **Merge instructions as people write them** (#PR; task-approval AC-13 and AC-14).
+  - "merge 344 and go through the gaps" and "yes, merge 344 and put up the scenario" are merge instructions for #344 (feedback #206).
+  - A short "yes" or "go ahead for both" to the agent's own question ("Merge #344 and start the next task?") approves what the question named (feedback #205).
+- `rfr-core` 7.1.0, `rfr-web` 2.1.0, `rfr-process` 1.1.0. Adopters: a process project whose specs derive straight from stories now fails the process check. Write and approve the design and user documentation and link them, or waive the stage in `process.yml` with the reason, before the work continues. A spec in `docs/specs/` without an id needs one, or `waived: specs`.
+
 ## [7.0.0] - 2026-11-12
 
 Pull requests: #203.

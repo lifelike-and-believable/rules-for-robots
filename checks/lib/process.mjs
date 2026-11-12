@@ -24,7 +24,23 @@ export const STAGES = [
 ];
 export const STAGE_ORDER = STAGES.map(s => s.name);
 const CONFIG_STAGES = new Set([...STAGE_ORDER, 'release']);
-const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'gates', 'public-api', 'adoption-until', 'project']);
+const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'gates', 'public-api', 'adoption-until', 'project', 'waived']);
+
+// Stage order (project-process AC-63): every delivery stage is required unless process.yml waives it,
+// with a reason, before work starts. An artifact of each stage below must derive from an approved
+// artifact of the nearest stage before it in this chain that is not waived.
+const UPSTREAM = {
+  design: ['stories'],
+  'user-docs': ['design', 'stories'],
+  specs: ['user-docs', 'design', 'stories'],
+  tutorials: ['user-docs', 'design', 'stories'],
+};
+
+// The stage an artifact of `stage` must derive from: the first of its upstream stages that is not
+// waived. null for a stage with no required upstream here.
+export function requiredUpstream(stage, waived = {}) {
+  return UPSTREAM[stage]?.find(s => !waived[s]) ?? null;
+}
 export const STATUSES = new Set(['draft', 'approved', 'implemented']);
 
 // ---- YAML subset ------------------------------------------------------------------------------
@@ -104,7 +120,7 @@ function validDate(s) {
 
 export function parseProcessConfig(text) {
   const { data, errors } = parseYamlSubset(text);
-  const config = { mode: 'team', default: [], stages: {}, gates: {}, publicApi: [], adoptionUntil: null, project: null };
+  const config = { mode: 'team', default: [], stages: {}, gates: {}, publicApi: [], adoptionUntil: null, project: null, waived: {} };
   for (const key of Object.keys(data)) if (!CONFIG_KEYS.has(key)) errors.push(`process.yml: unknown key "${key}"`);
   if (data.mode !== undefined && data.mode !== null) {
     if (data.mode === 'team' || data.mode === 'solo') config.mode = data.mode;
@@ -129,6 +145,16 @@ export function parseProcessConfig(text) {
         if (!CONFIG_STAGES.has(stage)) errors.push(`process.yml: unknown stage "${stage}" in gates (known: ${[...CONFIG_STAGES].join(', ')})`);
         else if (!GATE_TYPES.includes(type)) errors.push(`process.yml: gate for "${stage}" must be one of ${GATE_TYPES.join(', ')}, not "${type}"`);
         else config.gates[stage] = type;
+      }
+    }
+  }
+  if (data.waived !== undefined && data.waived !== null) {
+    if (typeof data.waived !== 'object' || Array.isArray(data.waived)) errors.push('process.yml: "waived" must map stage names to the reason each is waived');
+    else {
+      for (const [stage, reason] of Object.entries(data.waived)) {
+        if (!['design', 'user-docs', 'specs'].includes(stage)) errors.push(`process.yml: only design, user-docs, and specs can be waived, not "${stage}"`);
+        else if (typeof reason !== 'string' || reason.trim().length < 10) errors.push(`process.yml: waived ${stage} needs a reason (a sentence saying why the project does not need it)`);
+        else config.waived[stage] = reason.trim();
       }
     }
   }

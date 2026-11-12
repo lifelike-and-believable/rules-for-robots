@@ -1,5 +1,5 @@
 {
-  "description": "rfr-process hooks: ask the person to confirm agent merges (and turning on auto-merge) of pull requests that touch gated process folders, unless their latest typed message says to merge, because the approver's merge is the approval (docs/specs/project-process.md).",
+  "description": "rfr-process hooks: hold back agent merges (and turning on auto-merge) of pull requests that touch gated process folders, unless the person's own words cover the merge, because the approver's merge is the approval; and refuse writing a design, user documentation, a spec, or a tutorial before the stage it derives from is approved, unless process.yml waives that stage (docs/specs/project-process.md).",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +8,16 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-merge.mjs\"",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-stages.mjs\"",
             "timeout": 15
           }
         ]

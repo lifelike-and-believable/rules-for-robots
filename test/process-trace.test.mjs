@@ -175,9 +175,12 @@ test('project-process#AC-2: missing id or status, an unknown status, and impleme
   assert.deepEqual(runProcessTrace(specImplemented.root).errors, []);
 });
 
-test('project-process#AC-2: a spec in docs/specs without an id is not a process artifact', () => {
+test('project-process#AC-2: a spec in docs/specs without an id fails in a process project, unless specs are waived (AC-63)', () => {
   const { root } = project();
   write(root, 'docs/specs/plain.md', '---\nstatus: approved\n---\n\n# A plain Phase 10 spec\n');
+  assert.match(errorsOf(root), /docs\/specs\/plain\.md: a spec in a process project needs an id/);
+  const config = fs.readFileSync(path.join(root, 'docs/product/process.yml'), 'utf8');
+  write(root, 'docs/product/process.yml', `${config}waived:\n  specs: this project has no technical specs of its own\n`);
   assert.deepEqual(runProcessTrace(root).errors, []);
 });
 
@@ -205,8 +208,10 @@ test('project-process#AC-2: rule 3, an approved artifact linking to a draft or w
   const withdrawn = project({ change: d => { Object.assign(d['design-retarget'], { status: 'draft', withdrawn: 'flow changed (#12)' }); } });
   assert.match(errorsOf(withdrawn.root), /docs-retarget.*design-retarget.*draft/);
 
+  // A spec that skips the drafts and derives from the story directly breaks the stage order (AC-63).
   const bothDraft = project({ change: d => { d['design-retarget'].status = 'draft'; d['docs-retarget'].status = 'draft'; d['spec-retarget'].links = ['story-retarget-batch']; d['spec-retarget'].body = d['spec-retarget'].body.replace('docs-retarget#retarget-a-batch |', 'story-retarget-batch |'); } });
-  assert.deepEqual(runProcessTrace(bothDraft.root).errors, []);
+  assert.deepEqual(runProcessTrace(bothDraft.root).errors.map(e => e.split(':')[0]), ['spec-retarget']);
+  assert.match(errorsOf(bothDraft.root), /spec-retarget: derives from no user documentation \(stage order/);
 });
 
 test('project-process#AC-2: rule 4, a stale link, fails and passes again once the hash is re-recorded', () => {
