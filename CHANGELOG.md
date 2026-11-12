@@ -10,7 +10,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [7.0.0] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #203.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
@@ -18,7 +18,7 @@ This release includes 6.0.1 and 6.1.0, which were not published on their own. 6.
 
 ### Changed
 
-- **Unattended runs** (#PR; `docs/specs/unattended.md`). Nothing during a run asks the person anything, by prompt or in chat.
+- **Unattended runs** (#203; `docs/specs/unattended.md`). Nothing during a run asks the person anything, by prompt or in chat.
   - **Never list:** actions that cannot be undone or reach outside the project are refused, with a reason that names what to do instead: force-pushes, pushes to the default branch, remote deletions, rewriting history, deletes outside the project and temp folders, production deploys, secret reads, skipped hooks, machine-wide settings, destructive database commands, and changes in another service through an MCP tool. If the task can't be done without one, the agent sets that part aside, records it in the pull request's `## Decisions` section, and finishes the rest. A "yes" in chat does not unlock one.
   - **The plan:** what only you can authorise (a release, a production deploy, a shared-database migration) is named in the plan, and your approval in your own words lets those calls through.
   - **Review stops:** a merge that is your review waits for you.

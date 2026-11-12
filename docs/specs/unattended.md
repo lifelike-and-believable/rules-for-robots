@@ -44,4 +44,4 @@ Default allow (6.0) removed Claude Code's prompts for ordinary work, but kept a 
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 19, slice 19j.
-- Pull requests: #PR.
+- Pull requests: #203.
