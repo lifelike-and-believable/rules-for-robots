@@ -165,8 +165,9 @@ Say the one that matches what you want. The agent merges only when the pull requ
 | "merge 301, then release 5.11.0", "merge and release 5.11.0" | The merge as above, and the release of that version (tag, tag push, `gh release create`) | Your next message or answer |
 | "merge each PR when green", "merge PRs as you go", "keep merging" | Every pull request this session opens, however many | You withdraw it, however many other messages you send |
 | "push each branch as you go" | Pushes of every branch this session creates, never the default branch | You withdraw it |
+| "publish the release", "then release", "publish a release when you're done" | The release of the version the project has prepared: the newest released section of `CHANGELOG.md`, or `package.json`'s version | You withdraw it ("don't release yet", or stop, pause, hold, wait) |
 | "don't merge yet", "hold off on merging" | Nothing; withdraws a standing merge instruction | |
-| "stop", "pause", "hold on", "wait" (at the start of a message) | Nothing; withdraws standing merge and push instructions | |
+| "stop", "pause", "hold on", "wait" (at the start of a message) | Nothing; withdraws standing merge, push, and release instructions | |
 | "should we merge?" (any question) | Nothing | |
 | An answer "Yes, merge it" to the agent's own question "Merge #301?" | Pull request 301 | Your next message or answer |
 
