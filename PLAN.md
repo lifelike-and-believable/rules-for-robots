@@ -418,6 +418,7 @@ Pull requests: #162 (19a), #166 (19b), #167 (19h), #168 (19c).
 - **19c:** the decision queue: `needs-lead` issues with options, a default, and its date, and the `/rfr-core:decisions` skill. Done (#168).
 - **19h:** the preferences log (`docs/preferences.md` in the templates and `install-rules`), checked by the reviewers, and the `ls-repeat-correction` eval case, built and unit-tested with its runs waiting. Done (#167).
 - **19d, 19e:** replaced by Phase 23. **19f, 19g:** wait for the maintainer's review.
+- **19i:** default allow ([spec](docs/specs/default-allow.md), draft): rfr allows the agent's working tools and asks only for a named list of irreversible or outward actions, so a delegated implementation prompts only where a person must decide. Approved 2026-11-12: merges once CI is green, review points stop and report instead of prompting, and every project switches on its next plugin update.
 
 ### Phases 20 to 22: Consolidation, targeted evals, missing guards (planned)
 Plan: [docs/improvement-plan.md](docs/improvement-plan.md). Only 21a (delegated wording against test gaming, up to $20) is approved to run; the rest wait for the maintainer's review of steps 1 to 5 of the brief.
