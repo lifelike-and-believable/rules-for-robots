@@ -10,14 +10,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.10.1] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #195.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Fixed
 
-- "Merge when green" now covers the pull request the session opens after you say it (#PR; project-process AC-52, amended). Before, an instruction that named no pull request covered only pull requests already open, so "apply the fixes, open a PR, and merge when green" still asked at the merge. The session's own pull request is found in its transcript (the GitHub MCP `create_pull_request` call or `gh pr create`, and the link in its result), with no GitHub lookup. A pull request the session did not open still needs to be open before the instruction, or named in it. This applies to `gh pr merge` in rfr-core and to the GitHub MCP merge tools in rfr-process.
-- rfr-process's merge guard no longer needs `gh` to see which files a pull request changes (#PR). Cloud sessions have no `gh`, so the guard asked before every merge of a pull request on a gated project; it now fetches the pull request's head with git and diffs it against the default branch, and asks only if neither works.
+- "Merge when green" now covers the pull request the session opens after you say it (#195; project-process AC-52, amended). Before, an instruction that named no pull request covered only pull requests already open, so "apply the fixes, open a PR, and merge when green" still asked at the merge. The session's own pull request is found in its transcript (the GitHub MCP `create_pull_request` call or `gh pr create`, and the link in its result), with no GitHub lookup. A pull request the session did not open still needs to be open before the instruction, or named in it. This applies to `gh pr merge` in rfr-core and to the GitHub MCP merge tools in rfr-process.
+- rfr-process's merge guard no longer needs `gh` to see which files a pull request changes (#195). Cloud sessions have no `gh`, so the guard asked before every merge of a pull request on a gated project; it now fetches the pull request's head with git and diffs it against the default branch, and asks only if neither works.
 - `rfr-core` 5.10.1, `rfr-web` 1.1.2, `rfr-process` 0.18.1. Adopters: nothing to do.
 
 ## [5.10.0] - 2026-11-11
