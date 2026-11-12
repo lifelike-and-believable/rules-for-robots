@@ -429,7 +429,7 @@ Pull requests: #169 (21a).
 
 ### Phase 23: Process changes (in progress)
 Plan: [docs/improvement-plan-process.md](docs/improvement-plan-process.md).
-Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 (23l).
+Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 (23l), #207 (23m).
 
 - **23a:** `checks/process-gate-report.mjs` and the baseline in `evals/results/2026-11-10-gate-baseline/`. Done (#163). At the pull request, approvals rarely changed anything (Kettlebird: 91 of 96 unchanged); the maintainer's review happens in the session before the pull request opens.
 - **23f:** the tier inferred from the changed paths; a label only raises it. Done (#170).
@@ -437,6 +437,7 @@ Pull requests: #163 (23a), #170 (23f), #171 (23j), #172 (23b), #173 (23c), #181 
 - **23b:** gate types (`approve`, `notify`, `agent`) with defaults by working mode. Done (#172).
 - **23c:** the batched interview, product brief, feature packet, and the review packet script. Done (#173).
 - **23l:** `checks/process-rework-report.mjs` (amendments to approved artifacts, and which came after a spec built on them), the review packet's mismatches and `slows` count, guide text for turning a repeated correction into a review check, and regression cases from feedback triage, from Anthropic's AI-native SDLC playbook. Built (#181); the pilot baseline waits for the pilots' clones.
+- **23m:** stage order enforced (project-process AC-63, AC-64). Every stage is required unless `process.yml` waives it ahead of time with a reason; the process check fails an artifact that skips a stage, and the `guard-stages` hook refuses writing one. From XR Studio's feedback #204, where an agent went from stories straight to a spec and code. Done in 7.1.0 (#207). The maintainer: "The development process is what matters most."
 - **23k:** the two probes, written up for the maintainer to run and judge in [evals/results/2026-11-10-23k-probes/](evals/results/2026-11-10-23k-probes/README.md) (#174). Not yet run. 23d and later wait for their results.
 
 ### Phase 24: Android plugin and a core-only profile (planned)
@@ -487,7 +488,13 @@ From Phase 1 on, each milestone lands as one or more PRs on its own branch.
 
 ## 14. Immediate next steps
 
-Open items only; finished work is recorded under its phase.
+Open items only; finished work is recorded under its phase. `docs/handoff.md` holds the state a new session needs; read it first.
+
+Since 7.0.0 the standing direction is: the person is never interrupted during a run (no prompts, no questions in chat), things Claude must never do are refused, and what only the person can authorise is decided in the plan (`docs/specs/unattended.md`). The development process comes before everything else (23m). Judge new work against both.
+
+0. Most urgent:
+   - **Confirm XR Studio In A Box's adoption of 7.1.0.** Its design and user documentation for Layer 1 come before any more implementation. Then triage the feedback it files.
+   - **The delegated multi-PR eval (19i-4)**, which waits for the maintainer's budget decision (about $15 to $25). It is the test of "no interruptions during a run".
 
 1. The improvement plans, in the brief's order: measure (19a, 23a), housekeeping (18a, 18b), delegated mode (19b, 19h, 19c, then the 21a eval), process (23f, 23j, 23b, 23c), and the probes (23k). The rest of both plans waits for the maintainer's review of what those produce.
 2. Eval rounds that have machinery and no result: 10c (55 runs, $20 to $30), 14b, 15e. Phase 21 orders them under the D8 cap of $150.
