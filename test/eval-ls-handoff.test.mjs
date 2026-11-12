@@ -108,8 +108,9 @@ test('ls-handoff: the case has five prompts in two sessions', () => {
   const testCase = loadCase(CASE);
   assert.equal(testCase.prompts.length, 5);
   assert.deepEqual(splitSessions(testCase.prompts, testCase.meta.newSessionAt), [[0, 1, 2, 3], [4]]);
-  assert.deepEqual(testCase.meta.candidates, ['WA-012-handoff']);
-  assert.ok(fs.existsSync(`evals/candidates/${testCase.meta.candidates[0]}.md`));
+  // WA-012 is a core rule since 2026-11-12, so the case measures it in the rules arms.
+  assert.ok(testCase.meta.rules.includes('WA-012'));
+  assert.ok(fs.existsSync('rules/core/working-agreement/WA-012-read-and-update-the-handoff-file.md'));
 });
 
 test('ls-handoff: the fixture tests pass and the untouched fixture fails the grader', async () => {

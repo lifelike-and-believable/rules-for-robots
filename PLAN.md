@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v7.1.0 (2026-11-12). Phases 0 to 7, 9, 12, 13, 16, and 17 complete. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v7.2.0 (2026-11-12). Phases 0 to 7, 9, 12, 13, 16, and 17 complete. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -499,7 +499,7 @@ Since 7.0.0 the standing direction is: the person is never interrupted during a 
 1. The improvement plans, in the brief's order: measure (19a, 23a), housekeeping (18a, 18b), delegated mode (19b, 19h, 19c, then the 21a eval), process (23f, 23j, 23b, 23c), and the probes (23k). The rest of both plans waits for the maintainer's review of what those produce.
 2. Eval rounds that have machinery and no result: 10c (55 runs, $20 to $30), 14b, 15e. Phase 21 orders them under the D8 cap of $150.
 3. 11d: the release readiness check and the stage 8 template (process plan 23i); release notes and the triage skill stay deferred (P6).
-4. The long-session eval round (#69): seven multi-prompt cases for the candidate rules from #28 to #35, #52, and #57; cases and graders are built, the paid runs are staged.
+4. The long-session eval round (#69): seven multi-prompt cases for the candidate rules from #28 to #35, #52, and #57; cases and graders are built, the paid runs are staged. WA-012 (handoff) shipped in 7.2.0 on the maintainer's direction (#PR); `ls-handoff` now measures it rather than gating it.
 5. Replay the Kettlebird pilot's sessions (guard tiers AC-8) and add them to the attention baseline (19a); both need commands run on the pilot's machine.
 6. An opt-in owned-paths hook and CI check (#47).
 7. The remaining Phase 8 work: an Unreal API-change case, leave-one-pack-out and single-rule ablations, and the wording experiments.

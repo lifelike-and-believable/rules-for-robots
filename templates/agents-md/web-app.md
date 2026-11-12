@@ -14,3 +14,4 @@
 
 Rules for this project are in `.claude/rules/`. Leave any tool-managed blocks in this file (such as the Next.js `nextjs-agent-rules` markers) as they are.
 Read `docs/preferences.md` before design, interface, or documentation work, and add to it when the project lead corrects something.
+Read `docs/handoff.md` at the start of a session, and update it before the session ends (WA-012).

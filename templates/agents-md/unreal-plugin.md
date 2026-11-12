@@ -17,3 +17,4 @@
 
 Rules for this project are in `.claude/rules/`. Check unfamiliar engine APIs against the installed engine headers for each supported version.
 Read `docs/preferences.md` before design, interface, or documentation work, and add to it when the project lead corrects something.
+Read `docs/handoff.md` at the start of a session, and update it before the session ends (WA-012).

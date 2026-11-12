@@ -104,6 +104,9 @@ export function renderPayload({ rulesRoot = RULES, root = ROOT, dest }) {
   // The preferences log (improvement plan 19h), which install-rules offers to create.
   const preferences = path.join(root, 'templates', 'repo-files', 'common', 'docs', 'preferences.md');
   if (fs.existsSync(preferences)) fs.copyFileSync(preferences, path.join(dest, 'preferences.md'));
+  // The handoff file (WA-012), which install-rules offers to create.
+  const handoff = path.join(root, 'templates', 'repo-files', 'common', 'docs', 'handoff.md');
+  if (fs.existsSync(handoff)) fs.copyFileSync(handoff, path.join(dest, 'handoff.md'));
   // The shared permission rules, which install-rules merges with the profile's (WA-009).
   const shared = path.join(root, 'templates', 'repo-files', 'common', '.claude', 'settings.json');
   if (fs.existsSync(shared)) {
