@@ -85,6 +85,11 @@ export function mergeInstruction(text) {
   }
   if (MERGE_NEGATED.test(t) || /\?\s*$/.test(t)) return null;
   if (MERGE_WHOLE.test(t) || MERGE_CONDITIONAL.test(t)) return { numbers: prNumbersIn(t) };
+  // A merge clause joined to other tasks: "merge 301, then release 5.11.0", "merge and release 5.11.0".
+  for (const clause of t.split(/[,;]|\.\s|\bthen\b|\band\s+(?=(?:then\s+)?(?:release|publish|tag|push|deploy|continue|carry\s+on|start|move\s+on)\b)/i)) {
+    const c = clause.trim().replace(/^(?:and\s+)?(?:then\s+)?/i, '');
+    if (c && MERGE_WHOLE.test(c)) return { numbers: prNumbersIn(c) };
+  }
   return null;
 }
 
