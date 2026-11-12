@@ -12,8 +12,19 @@ import { fileURLToPath } from 'node:url';
 import { gateOf, parseArtifact, readConfig, readWorkMode, stageOf } from '../lib/process.mjs';
 import { buildPacket, changedArtifacts, formatPacket } from '../process-packet.mjs';
 
-export function prBody({ packet = '', enabling = [], decisions = [], gated = false, number = null, branch = '' }) {
+export function prBody({ packet = '', enabling = [], decisions = [], tutorials = [], gated = false, number = null, branch = '' }) {
   const out = [];
+  // Accepting a delivery and validating it are two approvals (AC-11). A tutorial that is still a
+  // draft means this pull request delivers the feature; one marked approved means it records the
+  // lead's validation.
+  const drafts = tutorials.filter(t => t.status !== 'approved');
+  const validated = tutorials.filter(t => t.status === 'approved');
+  if (drafts.length) {
+    out.push('## Built, not yet validated', '', `Approving this pull request accepts the work onto the default branch. It does not record that you have validated the feature: ${drafts.map(t => `\`${t.file}\``).join(', ')} ${drafts.length === 1 ? 'is' : 'are'} still a draft.`, '', 'To validate, follow the tutorial against the delivery. When it holds, ask an agent to set its `status: approved`; that comes to you as a pull request of its own, and approving it is your validation. If a step does not go as written, say which, and the tutorial stays a draft until it does.', '');
+  }
+  if (validated.length) {
+    out.push('## Validation', '', `Approving this pull request records that you followed ${validated.map(t => `\`${t.file}\``).join(', ')} against the delivery and the feature does what the user documentation says.`, '');
+  }
   if (enabling.length) {
     out.push('## Skips user documentation', '', 'Approving this pull request lets a spec derive from the design below with no user documentation, because the work has nothing a user sees. Check that is true.', '');
     for (const e of enabling) out.push(`- **${e.id}** (\`${e.file}\`): ${e.reason}`);
@@ -41,7 +52,8 @@ export function readPrBody(root, base) {
   const enabling = files.filter(f => stageOf(f) === 'design').map(f => ({ file: f, front: parseArtifact(read(f)).front })).filter(e => e.front?.noUserDocs).map(e => ({ id: e.front.id ?? e.file, file: e.file, reason: e.front.noUserDocs }));
   const decisions = files.filter(f => /^docs\/decisions\/[^/]+\.md$/.test(f)).map(f => ({ file: f, text: read(f) })).filter(d => d.text.trim());
   const packet = artifacts.length ? formatPacket(buildPacket({ artifacts })) : '';
-  return { packet, enabling, decisions, gated };
+  const tutorials = artifacts.filter(a => a.stage === 'tutorials').map(a => ({ file: a.file, status: a.status }));
+  return { packet, enabling, decisions, tutorials, gated };
 }
 
 function main(argv) {

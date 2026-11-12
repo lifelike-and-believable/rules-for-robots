@@ -26,7 +26,7 @@ One branch, a commit for each step, in this order:
 1. **The spec**, `docs/specs/<feature>.md`, from the plugin's spec template: an `id`, `derived-from` linking the approved user documentation it comes from, and acceptance criteria that each name their source section. Take every criterion from the approved documents. Where they do not say, do not invent behaviour: see "When something is open". Check the finished spec against those documents, then set `status: approved`.
 2. **The tests**, before any implementation, each citing its criterion (`<spec name>#AC-n`). Run them and see them fail for the right reason. Commit them on their own, and record that commit as the spec's `tests-commit`.
 3. **The implementation**, until the project's verify command passes. Change the code, not the tests.
-4. **The tutorial**, `docs/tutorials/<feature>.md`, deriving from the user documentation: the steps a person follows to try the feature. Run every step yourself against the built feature and record what happened. A spec for work with nothing a user sees (its design says `no-user-docs`) needs no tutorial.
+4. **The tutorial**, `docs/tutorials/<feature>.md`, deriving from the user documentation: the steps a person follows to try the feature. Run every step yourself against the built feature and record what happened. Leave it `status: draft`: the lead's approval of the tutorial is their validation, and it comes after they have followed it. A spec for work with nothing a user sees (its design says `no-user-docs`) needs no tutorial.
 5. **Push the branch.** A workflow opens the pull request and writes its description from the branch. You may push earlier to see the checks run: the pull request cannot merge until the tutorial is in it, and then it waits for the lead. Do not open, approve, or merge a pull request yourself.
 
 ## Rules for the run
@@ -45,6 +45,17 @@ One branch, a commit for each step, in this order:
 
 ## When the run ends
 
-When everything is committed and pushed, the check asks you to report once. Tell the lead: what was built, anything in `docs/decisions/`, and how to review it. `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" gate` prints the review link and the line the lead can run to approve from the Claude Code prompt. Then stop. The lead validates by following the tutorial against the delivery, and their approval of the pull request merges it.
+When everything is committed and pushed, the check asks you to report once. Tell the lead: what was built, anything in `docs/decisions/`, and how to review it. `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" gate` prints the review link and the line the lead can run to approve from the Claude Code prompt. Then stop.
+
+Say plainly that the feature is built and not yet validated. The lead gives two approvals, and they mean different things:
+
+- **Approving the delivery's pull request** accepts the work onto the default branch. The lead may do that after reading your decisions.
+- **Approving the tutorial** records that they followed it against the delivery and the feature does what the user documentation says. Until then the tutorial stays a draft, the process state lists the feature as built and not yet validated, and the release check does not count it.
+
+## When the lead has validated
+
+When the lead says they followed the tutorial and it holds, set the tutorial's `status: approved`, record its hashes (`node .rfr/checks/process-relink.mjs <tutorial id>`), and push that on its own branch. It is a gated change, so it reaches the lead as a pull request, and their approval of it is the validation on the record. Do not make that change before they say so.
+
+When the lead reports that a step did not go as the tutorial says, find out which is wrong. If the code does not do what the approved user documentation says, that is a fix: a failing test first, then the code, with `Change: fix` at the end of the commit message. If the user documentation is wrong, change it and push it for the lead's approval. The tutorial stays a draft until every step holds.
 
 If the session can subscribe to the pull request's activity, subscribe, so that review comments reach you.
