@@ -1,5 +1,8 @@
 ---
 status: draft
+unlocks:
+  - test/process-guard-merge.test.mjs: AC-4 makes a merge that needs the person's review a refusal that tells the agent to stop and report, so the hook-output test expects that under default allow, and an ask under "permissions": "ask"; nothing else changes
+  - test/fixtures/guard-corpus.json: AC-2 adds the named asks the guards did not cover (pushes to the default branch, remote deletions, tag pushes and releases, production deploys through the Vercel CLI) and two allowed pushes and deploys; no existing case changes
 ---
 
 # Default allow

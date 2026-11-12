@@ -9,7 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { appendGuardLog, approve, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
-import { approval, commandTask } from './task-approval.mjs';
+import { approval, commandTask, defaultBranches } from './task-approval.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -219,6 +219,18 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   const asking = r => ({ decision: 'ask', reason: askReason({ source: `rfr-core (${r.rule})`, action: r.action, why: r.why, instead: r.instead }) });
   const risk = findOtherRisk(command, cwd, hints, snaps);
   if (risk) return asking(risk);
+  // Named asks that rfr-core allows by default no longer reach Claude Code's own prompt
+  // (default-allow AC-2): publishing a release asks unless the person's instruction approves it;
+  // pushing to the default branch, deleting on the remote, and production deploys always ask.
+  const named = namedAsk(command, cwd);
+  if (named) {
+    if (named.kind === 'publish' && transcriptPath && (settings ?? guardSettings(cwd)).taskApproval !== 'off') {
+      const found = commandTask(command, { cwd: cwd ?? process.cwd() });
+      const approved = approval(found, { transcriptPath, cwd: cwd ?? process.cwd(), ...(describePr ? { describePr } : {}) });
+      if (approved) return { decision: 'allow', reason: approved.reason, task: found.task };
+    }
+    return asking(named);
+  }
   const notes = [];
   let snapshots = [];
   if (snaps.length) {
@@ -515,6 +527,66 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
   }
   for (const root of trees.keys()) pruneSnapshots(root, { now });
   return { lines: [...new Set(lines)], refs };
+}
+
+const PUSH_DEFAULT = { rule: 'WA-003', action: 'pushing to the default branch', why: 'it changes the shared branch directly, without a pull request or its checks', instead: 'push a branch and open a pull request' };
+const REMOTE_DELETE = { rule: 'WA-003', action: 'deleting a branch, tag, release, or repository on the remote', why: 'it removes shared work from the remote, outside the project folder', instead: 'leave it in place and report what you would delete' };
+const PUBLISH = { rule: 'WA-003', kind: 'publish', action: 'publishing a release or pushing a tag', why: 'a published release or tag reaches everyone who installs or fetches it', instead: 'stop and report that the release is ready, naming the version' };
+const PROD_DEPLOY = { rule: 'NODE-002', action: 'a production deploy, promotion, alias, or domain change', why: 'it changes what users of the live site see', instead: 'deploy a preview and report its URL' };
+
+// The words of a git command from its subcommand on: git -C <dir>, -c <k=v>, and other global
+// options are skipped. null when the words are not a git command.
+function gitArgs(words) {
+  if (words[0] !== 'git') return null;
+  let k = 1;
+  while (k < words.length && words[k].startsWith('-')) k += ['-C', '-c', '--git-dir', '--work-tree', '--namespace'].includes(words[k]) ? 2 : 1;
+  return words.slice(k);
+}
+
+// The named ask a command line makes (default-allow AC-2), or null. Pushes are read with the folder
+// each runs in, so a push of the current branch is checked against the default branch.
+export function namedAsk(command, cwd) {
+  const entries = commandsWithDirs(command, cwd ?? process.cwd()) ?? [];
+  for (const { words: raw, dir } of entries) {
+    let words = raw;
+    while (words.length && /^(sudo|command|env|exec|\w+=\S*)$/.test(words[0])) words = words.slice(1);
+    if (['npx', 'bunx'].includes(words[0])) words = words.slice(1);
+    else if (words[0] === 'pnpm' && words[1] === 'dlx') words = words.slice(2);
+    const g = gitArgs(words);
+    if (g?.[0] === 'push') {
+      const args = g.slice(1);
+      const flags = args.filter(a => a.startsWith('-'));
+      if (flags.some(f => /^(-d|--delete|--mirror|--prune)$/.test(f))) return REMOTE_DELETE;
+      if (flags.some(f => /^(--tags|--follow-tags|--all)$/.test(f))) return PUBLISH;
+      const positional = [];
+      for (let k = 0; k < args.length; k++) {
+        if (/^(-o|--push-option|--repo|--receive-pack|--exec)$/.test(args[k])) { k++; continue; }
+        if (!args[k].startsWith('-')) positional.push(args[k]);
+      }
+      const defaults = defaultBranches(dir);
+      const refspecs = positional.slice(1);
+      if (!refspecs.length) {
+        const current = git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']).out.trim();
+        if (current && defaults.has(current)) return PUSH_DEFAULT;
+        continue;
+      }
+      for (const spec of refspecs) {
+        if (spec.startsWith(':')) return REMOTE_DELETE;
+        const [src, dst = src] = spec.replace(/^\+/, '').split(':');
+        const target = dst === 'HEAD' ? git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']).out.trim() : dst.replace(/^refs\/heads\//, '');
+        if (/^refs\/tags\//.test(dst) || git(dir, ['show-ref', '--verify', '--quiet', `refs/tags/${src}`]).status === 0) return PUBLISH;
+        if (defaults.has(target)) return PUSH_DEFAULT;
+      }
+      continue;
+    }
+    if (words[0] === 'gh' && words[1] === 'release' && /^(create|upload|edit)$/.test(words[2] ?? '')) return PUBLISH;
+    if (words[0] === 'gh' && ((words[1] === 'release' && words[2] === 'delete') || (words[1] === 'repo' && /^(delete|archive|rename)$/.test(words[2] ?? '')))) return REMOTE_DELETE;
+    if (words[0] === 'vercel') {
+      const rest = words.slice(1);
+      if (rest.some(w => /^(--prod|--production|--target=prod(uction)?)$/i.test(w)) || /^(promote|alias|aliases|domains|rollback)$/i.test(rest[0] ?? '') || rest.some((w, k) => w === '--target' && /^prod/i.test(rest[k + 1] ?? ''))) return PROD_DEPLOY;
+    }
+  }
+  return null;
 }
 
 // The reason for any refusal or question, or null; kept for callers that only need to know whether

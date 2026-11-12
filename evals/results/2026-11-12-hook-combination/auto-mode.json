@@ -1,0 +1,44 @@
+{
+  "claudeCode": "2.1.322 (Claude Code)",
+  "results": [
+    {
+      "hooks": "allow + none",
+      "ran": true,
+      "denials": [],
+      "cost": 0.011683440000000002,
+      "result": "I ran the command once. It completed without error, and the shell's working directory reset to the hookcheck folder, which is expected.\n\nI did not verify that `ran.txt` now exists or contains `ran`, since you asked for only that one command."
+    },
+    {
+      "hooks": "allow + ask",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_018Ryvwxxhh2XrX1qrVXKNo1",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-allow-ask-Gy8gVq/ran.txt','ran')\"",
+            "description": "Write 'ran' marker file into the temp hookcheck directory"
+          }
+        }
+      ],
+      "cost": 0.0117505,
+      "result": "The command did not run. The Bash call returned `test hook: ask` instead of executing, so `ran.txt` was not written. I did not retry, since the hook asked for a decision and the command was not approved.\n\nThe command was the one you specified, unchanged:\n\n```\nnode -e \"require('fs').writeFileSync('C:"
+    },
+    {
+      "hooks": "allow + deny",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_01KNpR4h3KNkiB7PxUUcVjUT",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-allow-deny-fdJ768/ran.txt','ran')\"",
+            "description": "Write ran.txt marker file via node"
+          }
+        }
+      ],
+      "cost": 0.011706240000000001,
+      "result": "The command didn't run. A PreToolUse hook on the Bash tool returned `test hook: deny`, so `ran.txt` was not created.\n\nI didn't retry it or try another way to write the file, since the hook denied it on purpose. If you want the file written, you'll need to allow this command or change the hook's rule"
+    }
+  ]
+}

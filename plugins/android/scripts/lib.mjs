@@ -117,14 +117,17 @@ export const refuseReason = ({ source, action, next }) => `${source}: ${action}.
 export const DEFAULT_TEST_WEAKENING = 'defer';
 
 // taskApproval: 'on' (the default) or 'off' (task-approval AC-6).
+// permissions: 'default-allow' (the default: rfr-core allows the agent's working tools and asks only
+// for the named asks) or 'ask' (Claude Code's own settings decide, as before; default-allow AC-5).
 export function guardSettings(cwd = process.cwd()) {
-  const settings = { testWeakening: DEFAULT_TEST_WEAKENING, taskApproval: 'on' };
+  const settings = { testWeakening: DEFAULT_TEST_WEAKENING, taskApproval: 'on', permissions: 'default-allow' };
   const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', timeout: 5000 });
   const root = r.status === 0 ? r.stdout.trim() : (process.env.CLAUDE_PROJECT_DIR ?? cwd);
   try {
     const json = JSON.parse(fs.readFileSync(nodePath.join(root, '.claude', 'rfr.json'), 'utf8'));
     if (json?.testWeakening === 'ask' || json?.testWeakening === 'defer') settings.testWeakening = json.testWeakening;
     if (json?.taskApproval === 'off') settings.taskApproval = 'off';
+    if (json?.permissions === 'ask') settings.permissions = 'ask';
   } catch {
     // No settings file, or one that cannot be read: the defaults hold.
   }
