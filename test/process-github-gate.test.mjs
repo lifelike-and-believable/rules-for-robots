@@ -89,7 +89,7 @@ test('github-gate#AC-3 a repository already set up has an empty plan', () => {
   const protection = {
     required_status_checks: { strict: false, contexts: ['verify'] },
     enforce_admins: { enabled: true },
-    required_pull_request_reviews: { require_code_owner_reviews: true, required_approving_review_count: 0, require_last_push_approval: false },
+    required_pull_request_reviews: { dismiss_stale_reviews: true, require_code_owner_reviews: true, required_approving_review_count: 0, require_last_push_approval: false },
     restrictions: null,
   };
   const plan = planSetup({ repo: { ...REPO, allow_auto_merge: true }, protection, variable: { value: '42' }, appId: '42', checks: ['verify'] });

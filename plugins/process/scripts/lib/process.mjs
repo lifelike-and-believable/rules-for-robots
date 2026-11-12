@@ -484,7 +484,7 @@ const NEXT_RULE = [
   "rfr-process: this project follows a staged process. Before any work, find the feature's stage below.",
   'Do only what that stage allows; when a stage is missing, write it instead of working round it. Approved user documentation is the definition of done.',
   'A source change belongs to a feature with an approved spec, or says `Change: fix` or `Change: trivial` at the end of a commit message (a fix changes a test and adds no source file; a trivial change adds no source file).',
-  'After you push a branch the approver must review, tell them once, with the link to review it, and do not build on it until it has merged. When a feature\'s delivery is open, run /rfr-process:deliver and finish it without asking.',
+  'After you push a branch the approver must review, tell them once, with the link to review it, subscribe to its pull request if you can, so that their review reaches you, and do not build on it until it has merged. When a feature\'s delivery is open, run /rfr-process:deliver and finish it without asking.',
 ];
 const NEXT_MAX_LINES = 40;
 

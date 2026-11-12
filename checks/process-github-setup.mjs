@@ -58,7 +58,9 @@ function protectionBody(current, checks) {
     required_status_checks: { strict: Boolean(status.strict), contexts: [...new Set([...(status.contexts ?? []), ...checks])] },
     enforce_admins: true,
     required_pull_request_reviews: {
-      ...(reviews.dismiss_stale_reviews !== undefined ? { dismiss_stale_reviews: reviews.dismiss_stale_reviews } : {}),
+      // A new push cancels an earlier approval (AC-8), so what an agent pushes after the approver
+      // has reviewed is reviewed again before it can merge.
+      dismiss_stale_reviews: true,
       require_code_owner_reviews: true,
       required_approving_review_count: reviews.required_approving_review_count ?? 0,
       require_last_push_approval: false,
@@ -75,7 +77,7 @@ function protectionIsSet(current, checks) {
   if (!current) return false;
   const reviews = current.required_pull_request_reviews;
   const contexts = current.required_status_checks?.contexts ?? [];
-  return Boolean(reviews?.require_code_owner_reviews) && !reviews.require_last_push_approval
+  return Boolean(reviews?.require_code_owner_reviews) && !reviews.require_last_push_approval && reviews.dismiss_stale_reviews === true
     && enabled(current.enforce_admins) && checks.every(c => contexts.includes(c));
 }
 

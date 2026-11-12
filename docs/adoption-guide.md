@@ -126,7 +126,7 @@ The rest an agent can do, in a repository where `/rfr-process:setup` has written
 node .rfr/checks/process-github-setup.mjs --app-id <the App ID> --checks <your required check names, comma-separated>
 ```
 
-It prints what it would change and changes nothing. Add `--apply` to copy the workflow to `.github/workflows/rfr-open-pr.yml`, write the CODEOWNERS block for the gated folders, store the App ID as the variable `RFR_APP_ID`, allow auto-merge, and set branch protection on the default branch: your checks required, a code owner's review required, and the rules applied to administrators. Protection the repository already has is kept. Open one pull request with the two files it wrote and the changes from steps 6 and 7. The workflow is not on the default branch yet, so this one pull request is opened by hand; it touches no gated folder, so it merges when the checks pass.
+It prints what it would change and changes nothing. Add `--apply` to copy the workflow to `.github/workflows/rfr-open-pr.yml`, write the CODEOWNERS block for the gated folders, store the App ID as the variable `RFR_APP_ID`, allow auto-merge, and set branch protection on the default branch: your checks required, a code owner's review required, an earlier approval dismissed by a new push, and the rules applied to administrators. Protection the repository already has is kept. Open one pull request with the two files it wrote and the changes from steps 6 and 7. The workflow is not on the default branch yet, so this one pull request is opened by hand; it touches no gated folder, so it merges when the checks pass.
 
 Start a new session after it merges: a session that began earlier still has the old merge rule in its context.
 
@@ -153,6 +153,8 @@ Work with nothing a user sees, such as a repository skeleton or build tooling, i
 "Finish slice 2" or "finish it" works the same way: the agent first finds how far the feature has got, and picks it up from there. A feature that was built before it had a tutorial is asked only for the tutorial; one that is still waiting for its design or user documentation gets that one stage written, and then waits for you.
 
 The pull request's description is written by the workflow from the branch: a design that lets a spec skip user documentation is named first, then the review packet, then the decisions. Re-run `node .rfr/checks/process-github-setup.mjs --apply` after updating rules-for-robots to get the current workflow.
+
+**Reviewing in GitHub.** You can comment on a pull request or request changes there, and a session that is still running answers: it subscribes to the pull request when it pushes, fixes what you raised on the same branch, and replies on the pull request saying what changed. A new push cancels your earlier approval, so you look again before it merges. If the session has ended, ask a new one to finish the feature; it reads the open review first. The agent acts only on reviews from the approvers in `process.yml`; a comment from anyone else is information to it, which matters on a public repository.
 
 **Choosing the mode.** A project cannot set Claude Code's permission mode, so this part is yours too. For a session on your machine, set auto mode once in your user settings; for a cloud session, choose Auto when you start it. Agents then run without permission prompts, and the gate above is what holds work for your review.
 

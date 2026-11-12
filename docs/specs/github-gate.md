@@ -1,6 +1,8 @@
 ---
 status: draft
-tests-commit: d01ef49d13a3cb6c975e0a6b7ea41efdf67d4658
+tests-commit: [d01ef49d13a3cb6c975e0a6b7ea41efdf67d4658, 9d491cd524d7ab6e764f9e511a07306edda77970]
+unlocks:
+  - test/process-github-gate.test.mjs: AC-8 (2026-11-12) adds a setting the gate needs, that a new push dismisses an earlier approval, so the AC-3 fixture of a repository already set up gains that setting; without it the plan is no longer empty, which the AC-8 test now checks; nothing else changes
 ---
 
 # The GitHub gate
@@ -31,6 +33,7 @@ The trials of phase 25a showed the way out on a real repository ([trial 1](../..
 | AC-5 | The script always ends by listing what only a person can do: create the App with Contents and Pull requests set to read and write, install it on the repository, and store its private key as the `RFR_APP_PRIVATE_KEY` secret. It checks whether that secret exists and says so. When GitHub refuses branch protection for the repository's plan, it says that required reviews are not available there instead of reporting a bare failure. | test: the list; a missing and a present secret; a 403 from the protection request. |
 | AC-6 | The `setup` skill has a step that runs the script, first without `--apply` to show the plan, and names the three manual steps. The "Development process" section it writes into `AGENTS.md` says that agents push branches and do not open, approve, or merge pull requests where the gate is set up. | test: the skill names the script, `--apply`, the template, the secret, and the agent rule. |
 | AC-7 | `docs/adoption-guide.md` has a section on the gate: what it is for, the manual steps in order, the command, choosing auto mode (which a project cannot set), and the plan limit. | review: the guide. |
+| AC-8 | Branch protection is set so that a new push dismisses an earlier approval. What an agent pushes after the approver has reviewed, in answer to a review or otherwise, cannot merge until they approve again. A repository set up before this, or with the setting off, gets it in the plan. (Added 2026-11-12: without it an approval stood across later pushes, so commits the approver never saw could merge; trial 1 had listed this as not tested.) | test: no protection, the setting off, the setting absent, and the setting on. |
 
 ## Scope
 
@@ -47,5 +50,5 @@ The trials of phase 25a showed the way out on a real repository ([trial 1](../..
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25b.
-- Pull requests: #218.
+- Pull requests: #218, #230 (AC-8).
 - Not done in this slice: the guide's pass condition (a second repository set up from the guide alone), which needs the maintainer to install the App on it.

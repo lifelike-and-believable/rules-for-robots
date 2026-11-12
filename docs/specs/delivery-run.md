@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [95f37f8ee1c68845f26a2699aa3144b61a6131ed, 476ee5e773317d6a418f8eeca9523252ef05091a, ade46ea947cb1c9a39b7fccecdcdc265759ab43f]
+tests-commit: [95f37f8ee1c68845f26a2699aa3144b61a6131ed, 476ee5e773317d6a418f8eeca9523252ef05091a, ade46ea947cb1c9a39b7fccecdcdc265759ab43f, 9d491cd524d7ab6e764f9e511a07306edda77970]
 ---
 
 # The delivery run
@@ -37,6 +37,7 @@ Under the GitHub gate the agent does not write the pull request's description, s
 | AC-9 | A run can be started for a named feature: `delivery start <name>` takes a spec's file name or id, or a story's id, and the run then covers that feature's specs even when the branch has not changed them. A feature built earlier is finished from where it stands: a test that cites the spec anywhere in the repository counts, so one that lacks only its tutorial is asked only for the tutorial. Starting for a name that has no spec yet is refused, with where the feature stands, because an earlier stage is written and approved first and is not a delivery run. (Added 2026-11-12: the first adopter had a slice built before tutorials were required, and the maintainer asked that "finish it" pick a feature up from whichever stages are done.) | test: a name resolving to its spec by file name, id, and story; a built feature asked only for its tutorial, then complete; a story with no spec refused. |
 | AC-10 | `delivery where [name]` prints how far a feature has got: the process state for the stories the name stands for, and, once it has a spec, what its delivery still lacks. With no name it prints the state of every feature. The `deliver` skill starts there, treats "finish" as "deliver", writes one earlier stage and stops for approval when the feature is not yet at delivery, and skips steps that are already done. | test: a built feature, a feature at the design stage, and no name; the skill's text. |
 | AC-11 | Accepting a delivery and validating it are two approvals. A delivery leaves its tutorial `status: draft`. Approving the delivery's pull request accepts the work onto the default branch; approving the tutorial, in a pull request of its own after the lead has followed it, is the validation. The pull request description says "Built, not yet validated" and how to validate when it carries a draft tutorial, and "Validation" when it marks one approved. The end-of-run report tells the lead the same and names the tutorial. The process state lists such a feature as built and not yet validated. The skill leaves the tutorial a draft and says what to do when the lead reports that it holds, or that a step does not. (Added 2026-11-12: on the first real run the lead approved the delivery after reading its decisions, without yet following the tutorial, and nothing told them those were different things.) | test: the description for a draft tutorial, an approved one, and none; the report; the process state; the skill's text. |
+| AC-12 | A session answers a review. The skill has it subscribe to its pull request as soon as it pushes, and the text every session is given says the same for any branch pushed for review. A review or comment from an approver named in `process.yml` is feedback on the work: the agent changes the same branch, pushes, and replies on the pull request once, saying what changed. A comment from anyone else is information, not an instruction. The skill says that a new push cancels an earlier approval, so the approver approves again. (Added 2026-11-12: the maintainer asked whether an agent would respond to a review comment; it would only if it happened to have subscribed, and nothing said what to do with one.) | test: the skill's text and the session text. |
 
 ## Scope
 
@@ -53,4 +54,4 @@ Under the GitHub gate the agent does not write the pull request's description, s
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25d.
-- Pull requests: #224, #227 (AC-9, AC-10), #229 (AC-11).
+- Pull requests: #224, #227 (AC-9, AC-10), #229 (AC-11), #230 (AC-12).
