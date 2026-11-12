@@ -24,6 +24,13 @@ test('process-state#AC-12 it passes once a tutorial derives from the user docume
   assert.equal(check(['M src/export.ts', 'M test/export.test.ts'], { tutorials: ['user-export'] }).ok, true, 'a later change to a delivered feature');
 });
 
+test('process-state#AC-12 a spec already marked implemented is not asked again, and each document is named once', () => {
+  const delivered = spec({ name: 'import', file: 'docs/specs/import.md', status: 'implemented', userDocs: ['user-import'] });
+  assert.equal(check(['M src/export.ts', 'M test/export.test.ts'], { specs: [spec(), delivered], cited: ['export', 'import'], tutorials: ['user-export'] }).ok, true);
+  const repeated = check(['A src/export.ts', 'A test/export.test.ts'], { specs: [spec({ userDocs: ['user-export', 'user-export', 'user-b'] })] });
+  assert.match(repeated.problems.join('\n'), /derives from user-export, user-b\./);
+});
+
 test('process-state#AC-12 enabling work, a spec with no user documentation behind it, needs no tutorial', () => {
   assert.equal(check(['A src/build.ts', 'A test/build.test.ts'], { specs: [spec({ userDocs: [] })] }).ok, true);
 });
