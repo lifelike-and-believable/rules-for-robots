@@ -200,14 +200,33 @@ export function openedInSession(transcriptPath, number, { owner, repo } = {}) {
 const EACH = String.raw`(?:(?:each|every)\s+(?:one|of\s+them|(?:new\s+)?(?:prs?|pull\s+requests?|branch(?:es)?))|as\s+(?:you\s+go|we\s+go|they\s+(?:go|turn|come)|each\s+(?:one|is))|along\s+the\s+way|one\s+(?:by\s+one|at\s+a\s+time)|in\s+turn)`;
 const STANDING_MERGE = new RegExp(String.raw`\bmerg(?:e|ing)\b[^.!?\n]{0,40}\b${EACH}\b|\b(?:each|every|all)\s+(?:the\s+)?(?:prs?|pull\s+requests?)\b[^.!?\n]{0,40}\bmerg|\bkeep\s+merging\b`, 'i');
 const STANDING_PUSH = new RegExp(String.raw`\bpush(?:ing)?\b[^.!?\n]{0,40}\b${EACH}\b|\b(?:each|every|all)\s+(?:the\s+)?branch(?:es)?\b[^.!?\n]{0,40}\bpush|\bkeep\s+pushing\b`, 'i');
+// A release instruction that names no version ("publish the release", "then release", "publish a
+// release when you're done"): it covers the version the project has prepared (AC-12). "Release notes"
+// is not a release.
+const RELEASE_UNNAMED = /\b(?:publish|cut|do|make|create|ship)\s+(?:a|the)\s+(?:new\s+)?release\b(?!\s+notes)|\b(?:then|and)\s+(?:publish\s+|cut\s+)?(?:the\s+)?release\b(?!\s+notes)|^\s*(?:please\s+)?release\s+(?:it|this|that|now)\b/i;
 // A message that stops everything: "stop", "pause", "hold on", "wait".
 const STOP_ALL = /^\s*(?:ok(?:ay)?[,.!]?\s+)?(?:stop|pause|halt|hold\s+(?:on|off|it)|wait)\b/i;
 
-// The standing instructions in force at the end of the transcript: { merge, push }, each the quoted
-// message that gave it, or null. Only messages the person typed grant or withdraw one; a later
-// message that says not to merge (or push), or to stop, withdraws it (AC-10).
+// The version the project has prepared for release: the newest released section of CHANGELOG.md
+// ("## [6.0.1] - ..."), or package.json's version; null when neither can be read.
+export function preparedVersion(cwd = process.cwd()) {
+  const root = gitOut(cwd, ['rev-parse', '--show-toplevel']) || cwd;
+  try {
+    const m = /^## \[v?(\d+\.\d+\.\d+(?:[-+][\w.]+)?)\]/m.exec(fs.readFileSync(`${root}/CHANGELOG.md`, 'utf8'));
+    if (m) return m[1];
+  } catch { /* no changelog */ }
+  try {
+    const v = JSON.parse(fs.readFileSync(`${root}/package.json`, 'utf8'))?.version;
+    if (typeof v === 'string' && VERSION.test(v)) return v;
+  } catch { /* no package.json */ }
+  return null;
+}
+
+// The standing instructions in force at the end of the transcript: { merge, push, release }, each the
+// quoted message that gave it, or null. Only messages the person typed grant or withdraw one; a later
+// message that says not to merge (or push, or release), or to stop, withdraws it (AC-10, AC-12).
 export function standingInstructions(transcriptPath) {
-  const standing = { merge: null, push: null };
+  const standing = { merge: null, push: null, release: null };
   if (!transcriptPath) return standing;
   let lines;
   try {
@@ -222,12 +241,14 @@ export function standingInstructions(transcriptPath) {
     if (entry?.type !== 'user' || entry.isSidechain || entry.isMeta || entry.origin?.kind !== 'human') continue;
     const text = messageText(entry.message?.content).trim();
     if (!text) continue;
-    if (STOP_ALL.test(text)) { standing.merge = null; standing.push = null; continue; }
+    if (STOP_ALL.test(text)) { standing.merge = null; standing.push = null; standing.release = null; continue; }
     if (negated('merg').test(text)) standing.merge = null;
     if (negated('push').test(text)) standing.push = null;
+    if (negated('(release|publish)').test(text)) standing.release = null;
     if (/\?\s*$/.test(text)) continue;
     if (!negated('merg').test(text) && STANDING_MERGE.test(text)) standing.merge = text;
     if (!negated('push').test(text) && STANDING_PUSH.test(text)) standing.push = text;
+    if (!negated('(release|publish)').test(text) && RELEASE_UNNAMED.test(text)) standing.release = text;
   }
   return standing;
 }
@@ -389,6 +410,16 @@ export function approval(found, { transcriptPath, cwd = process.cwd(), describeP
     }
   }
   let quote = tasks.quote;
+  // A release instruction that names no version covers the version the project has prepared, from
+  // the message that gave it until a message withdraws it (AC-12).
+  if (!ok && (found.task === 'release' || found.task === 'push')) {
+    const standing = standingInstructions(transcriptPath);
+    const version = standing.release ? preparedVersion(cwd) : null;
+    if (version && tagMatches(found.target, version)) {
+      ok = true;
+      quote = standing.release;
+    }
+  }
   // A standing instruction covers the session's own pull requests and branches (AC-9 to AC-11).
   if (!ok && (found.task === 'merge' || found.task === 'push')) {
     const standing = standingInstructions(transcriptPath);
