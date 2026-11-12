@@ -10,13 +10,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [5.11.0] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #196.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Added
 
-- Standing instructions for long tasks (#PR; task-approval AC-9 to AC-11). "Merge each PR when green", "merge PRs as you go", or "push each branch as you go" now stays in force after your later messages, so a multi-PR implementation no longer prompts at each pull request once you have said it. It covers only the pull requests the session opened and the branches it created, never the default branch, force-pushes, or deletions. It ends when you say not to merge or push, or say stop, pause, hold, or wait. The approval's reason quotes your standing instruction, and the decision log records it as before. Applies to `gh pr merge` and `git push` in rfr-core and to the GitHub MCP merge tools in rfr-process.
+- Standing instructions for long tasks (#196; task-approval AC-9 to AC-11). "Merge each PR when green", "merge PRs as you go", or "push each branch as you go" now stays in force after your later messages, so a multi-PR implementation no longer prompts at each pull request once you have said it. It covers only the pull requests the session opened and the branches it created, never the default branch, force-pushes, or deletions. It ends when you say not to merge or push, or say stop, pause, hold, or wait. The approval's reason quotes your standing instruction, and the decision log records it as before. Applies to `gh pr merge` and `git push` in rfr-core and to the GitHub MCP merge tools in rfr-process.
 - `rfr-core` 5.11.0, `rfr-web` 1.1.3, `rfr-process` 0.19.0. Adopters: nothing to do; to keep a prompt for each merge, give single instructions ("merge 301 when green") rather than standing ones, or turn task approval off with `"taskApproval": "off"`.
 
 ## [5.10.1] - 2026-11-12

@@ -69,4 +69,4 @@ The maintainer's goal: once a design is agreed, implementation should need few o
 
 - Plan item: `PLAN.md`, Phase 15.
 - Slices: one, after this spec is approved: recognizer, guard changes, setting, log, WA-009, guides, and tests. Done (#192).
-- Pull requests: #191 (spec), #192 (implementation), #PR (standing instructions, AC-9 to AC-11).
+- Pull requests: #191 (spec), #192 (implementation), #196 (standing instructions, AC-9 to AC-11).
