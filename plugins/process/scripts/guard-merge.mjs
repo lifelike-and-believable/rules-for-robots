@@ -14,7 +14,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { hasId, readConfig, readWorkMode, stagesWithGate, stageOf } from './lib/process.mjs';
-import { approvedTasks, latestInput, mergeInstruction, openedInSession } from './lib/task-approval.mjs';
+import { approvedTasks, latestInput, mergeInstruction, openedInSession, standingInstructions } from './lib/task-approval.mjs';
 
 // Flags of `gh pr merge` that take a value, so their value is not the pull request argument.
 const VALUE_FLAGS = new Set(['-b', '--body', '-F', '--body-file', '-t', '--subject', '--match-head-commit', '-A', '--author-email', '-R', '--repo']);
@@ -182,7 +182,12 @@ function targetNumber(target) {
 export function instructionCovers({ transcriptPath, target, describePr = describeWithGh }) {
   const tasks = approvedTasks(latestInput(transcriptPath));
   const instruction = tasks?.merge;
-  if (!instruction) return { covered: false, why: '' };
+  // A standing instruction ("merge each PR when green") covers every pull request this session
+  // opened, whatever the person has typed since, until they withdraw it (task-approval AC-9 to AC-11).
+  const own = targetNumber(target) !== null && openedInSession(transcriptPath, targetNumber(target), target.kind === 'api' ? target : {});
+  const standing = own ? standingInstructions(transcriptPath).merge : null;
+  const viaStanding = standing ? { covered: true, quote: standing.replace(/\s+/g, ' ').trim().slice(0, 90) } : null;
+  if (!instruction) return viaStanding ?? { covered: false, why: '' };
   const message = { timestamp: tasks.timestamp };
   let number = targetNumber(target);
   let createdAt = null;
@@ -196,17 +201,17 @@ export function instructionCovers({ transcriptPath, target, describePr = describ
     try {
       ({ number, createdAt } = describePr(target));
     } catch {
-      return { covered: false, why: '' };
+      return viaStanding ?? { covered: false, why: '' };
     }
   }
   const quote = quoted();
   if (instruction.numbers.length) {
-    return instruction.numbers.includes(number) ? { covered: true, quote } : { covered: false, why: ` Your latest instruction names #${instruction.numbers.join(', #')}, not #${number}.` };
+    return instruction.numbers.includes(number) ? { covered: true, quote } : viaStanding ?? { covered: false, why: ` Your latest instruction names #${instruction.numbers.join(', #')}, not #${number}.` };
   }
   const opened = Date.parse(createdAt);
   const said = Date.parse(message.timestamp);
-  if (Number.isNaN(opened) || Number.isNaN(said)) return { covered: false, why: '' };
-  if (opened > said) return { covered: false, why: ` This pull request was opened after your instruction to merge, which named no pull request, so it does not cover this one.` };
+  if (Number.isNaN(opened) || Number.isNaN(said)) return viaStanding ?? { covered: false, why: '' };
+  if (opened > said) return viaStanding ?? { covered: false, why: ` This pull request was opened after your instruction to merge, which named no pull request, so it does not cover this one.` };
   return { covered: true, quote };
 }
 
