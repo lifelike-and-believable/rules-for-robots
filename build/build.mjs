@@ -122,6 +122,8 @@ export const PROCESS_LIB = path.join(ROOT, 'checks', 'lib', 'process.mjs');
 export const PROCESS_LIB_COPY = path.join(ROOT, 'plugins', 'process', 'scripts', 'lib', 'process.mjs');
 export const LIB_COPIES = [
   { src: PROCESS_LIB, dest: PROCESS_LIB_COPY, label: 'process plugin library' },
+  // The delivery run's stop check needs to know which changed files are tests (delivery-run AC-2).
+  { src: path.join(ROOT, 'checks', 'lib', 'test-paths.mjs'), dest: path.join(ROOT, 'plugins', 'process', 'scripts', 'lib', 'test-paths.mjs'), label: 'process plugin test-paths lib' },
   { src: path.join(ROOT, 'checks', 'lib', 'test-diff.mjs'), dest: path.join(ROOT, 'plugins', 'core', 'scripts', 'lib', 'test-diff.mjs'), label: 'core plugin test-diff library' },
   { src: path.join(ROOT, 'checks', 'lib', 'test-paths.mjs'), dest: path.join(ROOT, 'plugins', 'core', 'scripts', 'lib', 'test-paths.mjs'), label: 'core plugin test-paths library' },
   { src: path.join(ROOT, 'checks', 'test-change-evidence.mjs'), dest: path.join(ROOT, 'plugins', 'core', 'scripts', 'test-change-evidence.mjs'), label: 'core plugin test-change evidence script' },

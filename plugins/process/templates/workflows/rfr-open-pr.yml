@@ -32,7 +32,10 @@ jobs:
           app-id: ${{ vars.RFR_APP_ID }}
           private-key: ${{ secrets.RFR_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Open the pull request and turn on auto-merge
+        id: open
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           BRANCH: ${{ github.ref_name }}
@@ -45,3 +48,26 @@ jobs:
             number=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           fi
           gh pr merge "$number" --auto --merge
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+      # The agent does not write the description, so build it from the branch: the review packet,
+      # any design that lets a spec skip user documentation, the decisions the agent recorded, and
+      # the line to approve with. Refreshed on every push; a failure here never fails the workflow.
+      - uses: actions/checkout@v5
+        continue-on-error: true
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          path: .rfr
+      - uses: actions/setup-node@v5
+        continue-on-error: true
+        with:
+          node-version: 22
+      - name: Write the pull request's description
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          BRANCH: ${{ github.ref_name }}
+          BASE: main
+          NUMBER: ${{ steps.open.outputs.number }}
+        run: |
+          node .rfr/checks/ci/process-pr-body.mjs . --base "origin/$BASE" --number "$NUMBER" --branch "$BRANCH" > "$RUNNER_TEMP/body.md"
+          gh pr edit "$NUMBER" --body-file "$RUNNER_TEMP/body.md"

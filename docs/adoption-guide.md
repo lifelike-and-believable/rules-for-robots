@@ -148,6 +148,10 @@ A fix must change or add a test and add no source file. `Change: trivial` (a dep
 
 Work with nothing a user sees, such as a repository skeleton or build tooling, is neither: it adds files, and it has no user documentation to derive a spec from. Give it a design of its own in `docs/design/` whose front matter says `no-user-docs:` with the reason. Its spec may then derive from that design. You approve that line when you approve the design, so look for it in a design pull request: it is the one way a spec skips user documentation, and the process check refuses it on a design that user documentation derives from. The declaration is in the commit and not the pull request's description, because under the gate the workflow writes the description.
 
+**Delivery.** Once you have approved a feature's user documentation, an agent delivers it with `/rfr-process:deliver`: the spec, failing tests, the implementation, and the tutorial, on one branch. While that run is under way, a check at the end of each turn sends the agent back to work until everything is committed and pushed, so it does not stop to ask you. What it could not do, and any question the approved documents left open, it writes in `docs/decisions/<spec name>.md`, which appears in the pull request's description. When it finishes it tells you once, with the link to review and the line you can run yourself to approve from the Claude Code prompt (`! gh pr review <branch> --approve`). You validate by following the tutorial against the delivery.
+
+The pull request's description is written by the workflow from the branch: a design that lets a spec skip user documentation is named first, then the review packet, then the decisions. Re-run `node .rfr/checks/process-github-setup.mjs --apply` after updating rules-for-robots to get the current workflow.
+
 **Choosing the mode.** A project cannot set Claude Code's permission mode, so this part is yours too. For a session on your machine, set auto mode once in your user settings; for a cloud session, choose Auto when you start it. Agents then run without permission prompts, and the gate above is what holds work for your review.
 
 ## Team
