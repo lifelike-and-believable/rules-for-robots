@@ -8,6 +8,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [7.2.0] - 2026-11-12
+
+Pull requests: #209.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Added
+
+- **WA-012: read and update the handoff file** (#209). An agent reads `docs/handoff.md` before starting work in a session, and updates it before the session ends. The file covers what is done, what is open, what needs a live test, the lead's decisions the code does not show, and lessons. It was a candidate waiting on its long-session eval; it ships now on the maintainer's direction, and the `ls-handoff` eval case measures it in the rules arms. Every template gets a `docs/handoff.md` and a line in `AGENTS.md` naming it, and `install-rules` creates both in an existing project.
+- `rfr-core` 7.2.0. Adopters: run `/rfr-core:install-rules` to add `docs/handoff.md` and the `AGENTS.md` line, or name your existing handoff file in `AGENTS.md`.
+
 ## [7.1.0] - 2026-11-12
 
 Pull requests: #207.
