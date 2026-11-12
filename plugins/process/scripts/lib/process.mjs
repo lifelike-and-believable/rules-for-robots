@@ -6,6 +6,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 export const CONFIG_PATH = 'docs/product/process.yml';
 
@@ -430,4 +431,142 @@ export function markdownLinks(body, file, firstLine = 1) {
     }
   }
   return links;
+}
+
+// ---- process state (docs/specs/process-state.md) ----------------------------------------------
+
+// Approved, and not merely marked so in the working branch: an artifact is approved when the pull
+// request that carries it merges, so one that is new or changed in this branch is not yet.
+const approvedNow = a => (a.status === 'approved' || a.status === 'implemented') && !a.inBranch;
+const STAGE_WORDS = { stories: 'the story', design: 'the design', 'user-docs': 'the user documentation', specs: 'the spec', tutorials: 'the tutorial' };
+
+// The first thing still to do for each story, in stage order (AC-1): { story, step, stage, files,
+// inBranch }, where step is approve, write, deliver, delivering, validate, or done. Artifacts
+// belong to a story when they derive from it, directly or through others.
+export function featureSteps(artifacts, config) {
+  const waived = config?.waived ?? {};
+  const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const below = new Map([...byId.values()].map(a => [a, []]));
+  for (const a of byId.values()) for (const l of a.links ?? []) { const t = byId.get(l.target); if (t && t !== a) below.get(t).push(a); }
+  const steps = [];
+  for (const story of byId.values()) {
+    if (story.stage !== 'stories') continue;
+    const seen = new Set([story]);
+    const queue = [story];
+    while (queue.length) for (const d of below.get(queue.shift())) if (!seen.has(d)) { seen.add(d); queue.push(d); }
+    const at = stage => [...seen].filter(a => a.stage === stage);
+    const make = (step, stage, items = []) => {
+      const pending = items.filter(a => !approvedNow(a));
+      return { story: story.id, step, stage, files: (pending.length ? pending : items).map(a => a.file), inBranch: pending.some(a => a.inBranch), started: seen.size > 1 };
+    };
+    if (!approvedNow(story)) { steps.push(make('approve', 'stories', [story])); continue; }
+    let found = null;
+    for (const stage of ['design', 'user-docs']) {
+      if (waived[stage]) continue;
+      const items = at(stage);
+      if (!items.length) { found = make('write', stage); break; }
+      if (items.some(a => !approvedNow(a))) { found = make('approve', stage, items); break; }
+    }
+    if (found) { steps.push(found); continue; }
+    const tutorials = at('tutorials');
+    const specs = at('specs');
+    if (tutorials.length && tutorials.every(approvedNow)) steps.push(make('done', 'tutorials', tutorials));
+    else if (tutorials.length) steps.push(make('validate', 'tutorials', tutorials));
+    else steps.push(make(specs.length ? 'delivering' : 'deliver', 'specs', specs));
+  }
+  return steps.sort((p, q) => p.story.localeCompare(q.story));
+}
+
+const NEXT_RULE = [
+  "rfr-process: this project follows a staged process. Before any work, find the feature's stage below.",
+  'Do only what that stage allows; when a stage is missing, write it instead of working round it. Approved user documentation is the definition of done.',
+  'A source change belongs to a feature with an approved spec, or says `Change: fix` or `Change: trivial` at the end of a commit message (a fix changes a test and adds no source file; a trivial change adds no source file).',
+];
+const NEXT_MAX_LINES = 40;
+
+// The text an agent is given at the start of a session (AC-3).
+export function renderNext({ steps, product = [], note = null }) {
+  const names = files => (files.length ? ` (${files.join(', ')})` : '');
+  const pending = s => (s.inBranch ? 'in this branch, and not approved until its pull request merges' : 'a draft, waiting for approval');
+  // Stories with nothing written for them yet: a backlog, named in one line and not as open work.
+  const idle = steps.filter(s => s.step === 'write' && !s.started);
+  // Stories at the same step on the same files (one design or spec often covers several) share a line.
+  const groups = new Map();
+  for (const s of steps) {
+    if (idle.includes(s) || s.step === 'done') continue;
+    const what = s.step === 'approve' ? `${STAGE_WORDS[s.stage]}${names(s.files)} is ${pending(s)}`
+      : s.step === 'validate' ? `${STAGE_WORDS[s.stage]}${names(s.files)} is ${pending(s)}; the approver follows it against the delivery`
+        : s.step === 'write' ? `write ${STAGE_WORDS[s.stage]}`
+          : s.step === 'deliver' ? 'delivery is open: the spec, tests, implementation, and tutorial, on one branch'
+            : `delivery is under way${names(s.files)}`;
+    const key = `${['approve', 'validate'].includes(s.step) ? 'waiting' : 'open'}\n${what}`;
+    groups.set(key, [...(groups.get(key) ?? []), s.story]);
+  }
+  const waiting = [];
+  const open = [];
+  for (const [key, stories] of groups) {
+    const [kind, what] = key.split('\n');
+    const shown = stories.slice(0, 6);
+    const line = stories.length === 1 ? `${stories[0]}: ${what}` : `${what} (${stories.length} stories): ${shown.join(', ')}${stories.length > shown.length ? `, and ${stories.length - shown.length} more` : ''}`;
+    (kind === 'waiting' ? waiting : open).push(line);
+  }
+  const done = steps.filter(s => s.step === 'done').length;
+  const lines = [...NEXT_RULE];
+  if (note) lines.push(note);
+  const section = (title, items) => { if (items.length) lines.push('', title, ...items.map(i => `  - ${i}`)); };
+  section('Waiting on the approver (review the pull request; do not build on these yet):', waiting);
+  section('Open for an agent:', open);
+  section('Product-level drafts:', product.map(a => `${a.id} (${a.stage}, ${a.file}): ${a.inBranch ? 'in this branch, not yet approved' : 'a draft'}`));
+  if (idle.length) {
+    const shown = idle.slice(0, 8).map(s => s.story);
+    lines.push('', `Not started (${idle.length} ${idle.length === 1 ? 'story' : 'stories'} with no ${STAGE_WORDS[idle[0].stage].replace(/^the /, '')} yet): ${shown.join(', ')}${idle.length > shown.length ? `, and ${idle.length - shown.length} more` : ''}. Start one only when asked to.`);
+  }
+  if (!steps.length) lines.push('', 'No stories yet: the product brief (concept, requirements, personas, epics) comes first.');
+  if (done) lines.push('', `Done: ${done} feature${done === 1 ? '' : 's'} with an approved tutorial.`);
+  if (lines.length <= NEXT_MAX_LINES) return lines.join('\n');
+  const kept = lines.slice(0, NEXT_MAX_LINES - 1);
+  return [...kept, `... and ${lines.length - kept.length} more lines (node .rfr/checks/process-next.mjs lists everything)`].join('\n');
+}
+
+function gitOut(root, args) {
+  const r = spawnSync('git', ['-c', 'core.quotepath=off', ...args], { cwd: root, encoding: 'utf8' });
+  return r.status === 0 ? r.stdout : null;
+}
+
+// The remote default branch as a ref, or null when the repository has none to read.
+export function defaultBranchRef(root) {
+  const head = gitOut(root, ['symbolic-ref', '-q', '--short', 'refs/remotes/origin/HEAD']);
+  if (head?.trim()) return head.trim();
+  for (const ref of ['origin/main', 'origin/master']) if (gitOut(root, ['rev-parse', '--verify', '-q', ref]) !== null) return ref;
+  return null;
+}
+
+// The files under docs/ that differ from a ref, or that git does not track yet: what this branch
+// has that the ref does not. Two git calls, whatever the number of artifacts.
+export function changedSince(root, ref) {
+  const lines = out => (out ?? '').split('\n').map(l => l.trim()).filter(Boolean);
+  return new Set([
+    ...lines(gitOut(root, ['diff', '--name-only', ref, '--', 'docs'])),
+    ...lines(gitOut(root, ['ls-files', '--others', '--exclude-standard', '--', 'docs'])),
+  ]);
+}
+
+// The state for a project, or null when it has no process.yml (AC-2). Approval is read from the
+// remote default branch: an artifact that is new or changed in the working tree is in this branch.
+export function processNext(root) {
+  const loaded = readConfig(root);
+  if (!loaded) return null;
+  const work = loadArtifacts(workingTree(root)).artifacts;
+  const ref = defaultBranchRef(root);
+  let artifacts = work;
+  let note = null;
+  if (ref) {
+    const changed = changedSince(root, ref);
+    artifacts = work.map(a => (changed.has(a.file) ? { ...a, inBranch: true } : a));
+  } else {
+    note = 'There is no remote default branch to read, so this is the working tree: an artifact marked approved here may not have been reviewed.';
+  }
+  const steps = featureSteps(artifacts, loaded.config ?? {});
+  const product = artifacts.filter(a => ['concept', 'discovery', 'requirements', 'personas', 'epics'].includes(a.stage) && !approvedNow(a));
+  return { steps, product, text: renderNext({ steps, product, note }) };
 }

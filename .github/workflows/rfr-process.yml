@@ -173,6 +173,31 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node .rfr/checks/ci/process-tier.mjs .
 
+  # A pull request that changes source belongs to a feature with an approved spec, or declares
+  # itself a fix or a trivial change in a commit message (docs/specs/process-state.md).
+  change:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: ${{ inputs.rules-ref }}
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Change check
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node .rfr/checks/ci/process-change.mjs .
+
   codeowners:
     if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
