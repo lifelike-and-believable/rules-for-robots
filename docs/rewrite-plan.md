@@ -121,6 +121,14 @@ Each trial tests one assumption the design rests on. No plugin code changes in t
 
 A setup script and workflow for adopting repositories: the App's pull request workflow, auto-merge, branch protection, and CODEOWNERS from `process.yml`. `setup` runs it and reports what it could not set.
 
+Instructions for adopters (added 2026-11-12, approved by the maintainer). Some steps cannot be done by a script in a session, so `docs/adoption-guide.md` is rewritten to cover them in order, with what each is for:
+
+- creating the GitHub App and installing it on the repository, with the App ID and private key stored as an Actions variable and secret (GitHub's App manifest flow may shorten this; untried);
+- choosing auto mode, which a project cannot set: once in the adopter's user settings for the local CLI, or when starting a cloud session;
+- the plan limit: required reviews are not available on private repositories on GitHub's free plan (D7), said before the adopter starts.
+
+The maintainer's own setup for the 25a trials is the first draft, and its steps and surprises are recorded as they happen. Passes when the trial repository is set up a second time by following only the guide, and what the guide got wrong is fixed before 8.0.0.
+
 ### 25c: Process state and the code rule
 
 `process next`; the always-on process rule; a CI rule that a pull request changing source cites an approved spec, or claims `fix` or `trivial` in its description; the tier check reads the claim and stops inferring.
