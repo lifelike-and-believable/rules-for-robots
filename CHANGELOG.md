@@ -8,6 +8,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [5.10.1] - 2026-11-12
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+### Fixed
+
+- "Merge when green" now covers the pull request the session opens after you say it (#PR; project-process AC-52, amended). Before, an instruction that named no pull request covered only pull requests already open, so "apply the fixes, open a PR, and merge when green" still asked at the merge. The session's own pull request is found in its transcript (the GitHub MCP `create_pull_request` call or `gh pr create`, and the link in its result), with no GitHub lookup. A pull request the session did not open still needs to be open before the instruction, or named in it. This applies to `gh pr merge` in rfr-core and to the GitHub MCP merge tools in rfr-process.
+- rfr-process's merge guard no longer needs `gh` to see which files a pull request changes (#PR). Cloud sessions have no `gh`, so the guard asked before every merge of a pull request on a gated project; it now fetches the pull request's head with git and diffs it against the default branch, and asks only if neither works.
+- `rfr-core` 5.10.1, `rfr-web` 1.1.2, `rfr-process` 0.18.1. Adopters: nothing to do.
+
 ## [5.10.0] - 2026-11-11
 
 Pull requests: #194.

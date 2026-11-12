@@ -143,6 +143,50 @@ export function tagMatches(tag, named) {
   return new RegExp(`^(?:[A-Za-z][\\w.-]*-)?v?${version}$`, 'i').test(tag);
 }
 
+// The text of a tool result's content: a string, or the text blocks of a content list.
+function resultText(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content.map(block => (typeof block === 'string' ? block : block?.type === 'text' ? block.text : '')).join('\n');
+}
+
+// Whether this session opened the pull request: the transcript holds a call that created it (the
+// GitHub MCP create_pull_request tool, or a shell command running gh pr create) whose result links to
+// it, as .../pull/<number> (in owner/repo when they are known). A merge instruction that names no pull
+// request covers the pull request its own task opened, even after the instruction (project-process
+// AC-52, amended 2026-11-12). Subagents count: they work for the session. Anything unreadable gives false.
+export function openedInSession(transcriptPath, number, { owner, repo } = {}) {
+  if (!transcriptPath || !Number.isInteger(number)) return false;
+  let lines;
+  try {
+    lines = fs.readFileSync(transcriptPath, 'utf8').split('\n');
+  } catch {
+    return false;
+  }
+  const escape = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const link = new RegExp(`${owner && repo ? `github\\.com/${escape(owner)}/${escape(repo)}` : ''}/pull/${number}(?!\\d)`, 'i');
+  const creations = new Set();
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let entry;
+    try { entry = JSON.parse(line); } catch { continue; }
+    const content = Array.isArray(entry?.message?.content) ? entry.message.content : [];
+    if (entry?.type === 'assistant') {
+      for (const block of content) {
+        if (block?.type !== 'tool_use') continue;
+        const creates = /^mcp__.*create_pull_request$/i.test(block.name ?? '')
+          || (/^(Bash|PowerShell)$/.test(block.name ?? '') && /\bgh\s+pr\s+create\b/.test(String(block.input?.command ?? '')));
+        if (creates) creations.add(block.id);
+      }
+    } else if (entry?.type === 'user') {
+      for (const block of content) {
+        if (block?.type === 'tool_result' && creations.has(block.tool_use_id) && !block.is_error && link.test(resultText(block.content))) return true;
+      }
+    }
+  }
+  return false;
+}
+
 function gitOut(cwd, args) {
   const r = spawnSync('git', args, { cwd, encoding: 'utf8', timeout: 5000 });
   return r.status === 0 ? r.stdout.trim() : '';
@@ -238,7 +282,7 @@ export function mcpTask(toolName, toolInput) {
 }
 
 // GitHub's opening time for a pull request, so a merge instruction that names no pull request
-// covers only those already open when it was given (project-process AC-52).
+// covers those already open when it was given, besides the one the session opened (project-process AC-52).
 function describeWithGh(number, cwd) {
   const r = spawnSync('gh', ['pr', 'view', ...(number ? [String(number)] : []), '--json', 'number,createdAt'], { cwd, encoding: 'utf8', timeout: 8000 });
   if (r.status !== 0) throw new Error((r.stderr || 'gh pr view failed').trim());
@@ -257,6 +301,7 @@ export function approval(found, { transcriptPath, cwd = process.cwd(), describeP
   else if (found.task === 'merge' && tasks.merge) {
     let number = found.target;
     if (tasks.merge.numbers.length && number !== null) ok = tasks.merge.numbers.includes(number);
+    else if (!tasks.merge.numbers.length && number !== null && openedInSession(transcriptPath, number)) ok = true;
     else {
       try {
         const pr = describePr(number, cwd);
