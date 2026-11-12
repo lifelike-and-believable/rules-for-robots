@@ -10,7 +10,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [6.0.0] - 2026-11-12
 
-Pull requests: #197 (spec), #198, #199, #PR.
+Pull requests: #197 (spec), #198, #199, #200.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
@@ -23,7 +23,7 @@ This release includes 5.11.0, which was not published on its own.
 - `guard-commands` asks for the named asks Claude Code used to prompt for: pushes to the default branch (including `HEAD:main` and a bare `git push` on it), remote deletions (`--delete`, `:ref`, `--mirror`, `--prune`, `gh repo delete`, `gh release delete`), tag pushes and `gh release create` unless your instruction names the version, and `vercel --prod` and promotions through the CLI.
 - WA-003 and WA-009: once you have agreed a plan, the agent carries it out, merging as checks pass. It asks in chat only for decisions and named asks, and reports review points in chat instead of triggering a prompt. Pushing its own branches needs no question, and new dependencies are named in the pull request.
 - Templates and `install-rules` commit `.claude/settings.json` with the plugins enabled, so cloud sessions load the guards, plus `ask` rules for the named asks no instruction approves, as a second layer where the hooks are not loaded. `install-rules` also checks that the default branch requires the verify check.
-- A release instruction that names no version ("publish the release", "merge as you go, then publish a release when you're done") now covers the version the project has prepared (the newest `CHANGELOG.md` release, or `package.json`), and stays in force after later messages until withdrawn (#PR; task-approval AC-12). Before, it approved nothing, and the release was blocked.
+- A release instruction that names no version ("publish the release", "merge as you go, then publish a release when you're done") now covers the version the project has prepared (the newest `CHANGELOG.md` release, or `package.json`), and stays in force after later messages until withdrawn (#200; task-approval AC-12). Before, it approved nothing, and the release was blocked.
 - `rfr-core` 6.0.0, `rfr-web` 1.2.0, `rfr-process` 0.20.0, `rfr-unreal` 2.0.6, `rfr-android` 0.1.3. Adopters: nothing to do; the change applies on the plugin update. To keep Claude Code's own prompts, add `"permissions": "ask"` to `.claude/rfr.json`. Run `/rfr-core:install-rules` to commit the settings that cloud sessions need, and make sure the default branch requires your verify check, because merges now rely on it.
 
 ## [5.11.0] - 2026-11-12
