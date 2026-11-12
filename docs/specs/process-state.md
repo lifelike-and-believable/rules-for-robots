@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: [339fc0ff9d8347c0ae0579e360f63efaad27e04e, 91306524a78cf9e6cdb43310fb4d5e81230eda35]
+tests-commit: [339fc0ff9d8347c0ae0579e360f63efaad27e04e, 91306524a78cf9e6cdb43310fb4d5e81230eda35, 5bbeed8b4545e1ed1ca35b9ce00d72ddfccecd47]
 ---
 
 # Process state and the change check
@@ -37,6 +37,7 @@ Under the GitHub gate ([github-gate](github-gate.md)) the agent does not write t
 | AC-9 | The adoption guide and the `setup` skill say how to declare a fix or a trivial change, and name `process / change` among the checks to require. | review: the guide and the skill. |
 | AC-10 | Work with no user-facing behaviour (a repository skeleton, build tooling) has a route through the process. A design can say `no-user-docs: <reason>` in its front matter, and a spec may then derive from that design in place of user documentation, with its criteria citing the design's sections. The process check fails the statement without a reason of at least ten characters, on an artifact that is not a design, or on a design that user documentation derives from. Without the statement, a spec straight from a design still fails the stage order. (Added 2026-11-12: the maintainer chose this over a third declaration, so that the short path is opened by a design they approve and not by the agent.) | test: the field is read; a spec from such a design passes; one from a plain design fails; no reason, the wrong stage, and a design with user documentation each fail. |
 | AC-11 | The session guard allows writing a spec that derives from such a design once the design is approved, and refuses it while the design is a draft or does not carry the statement. | test: approved, draft, and plain designs. |
+| AC-12 | A feature's pull request cannot merge before its tutorial exists. When a pull request with source changes rests on a process spec that derives from user documentation, the change check fails unless a tutorial in `docs/tutorials/` derives from that user documentation. Enabling work, whose spec derives from no user documentation, a spec already marked `implemented`, a fix, a trivial change, and a pull request with no source change are not asked for one. (Added 2026-11-12, from the first real delivery run: under the GitHub gate a pushed branch has auto-merge on, and a branch pushed after the tests would have merged as soon as its checks passed, with no tutorial and so no review by the approver. The tutorial is in a gated folder, so once it is in the pull request the approver's review holds the merge.) | test: a feature with and without its tutorial; a later change to a delivered feature; enabling work; a fix; no source. |
 
 ## Scope
 
@@ -53,4 +54,4 @@ Under the GitHub gate ([github-gate](github-gate.md)) the agent does not write t
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25c.
-- Pull requests: #221, #222 (AC-10, AC-11).
+- Pull requests: #221, #222 (AC-10, AC-11), #226 (AC-12).

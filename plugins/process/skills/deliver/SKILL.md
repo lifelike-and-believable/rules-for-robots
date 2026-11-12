@@ -22,7 +22,7 @@ One branch, a commit for each step, in this order:
 2. **The tests**, before any implementation, each citing its criterion (`<spec name>#AC-n`). Run them and see them fail for the right reason. Commit them on their own, and record that commit as the spec's `tests-commit`.
 3. **The implementation**, until the project's verify command passes. Change the code, not the tests.
 4. **The tutorial**, `docs/tutorials/<feature>.md`, deriving from the user documentation: the steps a person follows to try the feature. Run every step yourself against the built feature and record what happened. A spec for work with nothing a user sees (its design says `no-user-docs`) needs no tutorial.
-5. **Push the branch.** A workflow opens the pull request and writes its description from the branch. Do not open, approve, or merge a pull request yourself.
+5. **Push the branch.** A workflow opens the pull request and writes its description from the branch. You may push earlier to see the checks run: the pull request cannot merge until the tutorial is in it, and then it waits for the lead. Do not open, approve, or merge a pull request yourself.
 
 ## Rules for the run
 

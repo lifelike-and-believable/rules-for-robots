@@ -4,14 +4,15 @@
 // and that spec is approved or implemented. Otherwise a commit message in it declares the change
 // with a `Change: fix` or `Change: trivial` trailer, and the change has to fit: a trivial change
 // adds no source file and touches no public-api path; a fix changes a test and adds no source file.
-// The pull request that adds process.yml passes, and until adoption-until failures are warnings.
+// A feature's pull request also needs its tutorial before it can merge. The pull request that adds
+// process.yml passes, and until adoption-until failures are warnings.
 // Environment: BASE_SHA, HEAD_SHA. Skipped without process.yml.
 // Usage: node checks/ci/process-change.mjs [project root]
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_PATH, hasId, parseArtifact, readConfig } from '../lib/process.mjs';
+import { CONFIG_PATH, hasId, loadArtifacts, parseArtifact, readConfig, workingTree } from '../lib/process.mjs';
 import { isTestOrBaseline } from '../lib/test-paths.mjs';
 import { matchGlob } from './process-tier.mjs';
 
@@ -32,8 +33,10 @@ function declarations(messages) {
 const WAYS = 'Give it a feature: a spec in docs/specs/ that derives from approved user documentation, approved, with its tests citing it. Or, if it is a bug fix, end a commit message with `Change: fix` (it must change a test and add no source file); if it changes no behaviour, with `Change: trivial` (it must add no source file).';
 
 // files: [{ status, path }] (git's A, M, D, R). messages: the commit messages. specs: the process
-// project's specs, [{ name, file, status, isProcess }]. cited: spec names the changed tests cite.
-export function checkChange({ files, messages = [], specs = [], cited = [], config = {}, today = new Date().toISOString().slice(0, 10) }) {
+// project's specs, [{ name, file, status, isProcess, userDocs }]. cited: spec names the changed
+// tests cite. tutorials: the user documentation ids that some tutorial derives from, or null when
+// the caller does not know (the tutorial rule is then not applied).
+export function checkChange({ files, messages = [], specs = [], cited = [], tutorials = null, config = {}, today = new Date().toISOString().slice(0, 10) }) {
   if (files.some(f => f.status === 'A' && f.path === CONFIG_PATH)) return { ok: true, kind: 'adoption', problems: [], warnings: [] };
   const source = files.filter(f => f.status !== 'D' && isSource(f.path));
   if (!source.length) return { ok: true, kind: 'no-source', problems: [], warnings: [] };
@@ -60,6 +63,16 @@ export function checkChange({ files, messages = [], specs = [], cited = [], conf
         ? `the spec${mine.length === 1 ? '' : 's'} it has (${mine.map(s => `${s.file}: ${s.isProcess ? s.status : 'no id, so not a process artifact'}`).join('; ')}) ${mine.length === 1 ? 'is' : 'are'} not an approved spec`
         : 'no approved spec is changed by it or cited by its tests';
       problems.push(`this pull request changes source (${source.slice(0, 5).map(f => f.path).join(', ')}${source.length > 5 ? `, and ${source.length - 5} more` : ''}) and ${why}. ${WAYS}`);
+    } else if (tutorials) {
+      // A feature's delivery is not complete without its tutorial (AC-12). The tutorial is in a gated
+      // folder, so a pull request that has it waits for the approver; one pushed part-way, without
+      // it, must not merge on green checks alone.
+      const known = new Set(tutorials);
+      for (const s of mine) {
+        const docs = [...new Set(s.userDocs ?? [])];
+        // A spec already marked implemented was delivered before; it is not asked again here.
+        if (s.isProcess && s.status !== 'implemented' && docs.length && !docs.some(d => known.has(d))) problems.push(`the delivery of ${s.file} is not complete: no tutorial in docs/tutorials/ derives from ${docs.join(', ')}. Add it to this branch; the pull request then waits for the approver, who validates the feature by following it`);
+      }
     }
   }
 
@@ -86,6 +99,12 @@ export function readChange(root, base, head) {
     const text = fs.readFileSync(path.join(dir, f), 'utf8');
     return { name: f.slice(0, -3), file: `docs/specs/${f}`, status: parseArtifact(text).front?.status ?? null, isProcess: hasId(text) };
   });
+  // Which user documentation each spec derives from, and which has a tutorial (AC-12).
+  const { artifacts } = loadArtifacts(workingTree(root));
+  const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const userDocsOf = a => a.links.map(l => byId.get(l.target)).filter(t => t?.stage === 'user-docs').map(t => t.id);
+  for (const s of specs) s.userDocs = userDocsOf(artifacts.find(a => a.file === s.file) ?? { links: [] });
+  const tutorials = [...new Set(artifacts.filter(a => a.stage === 'tutorials').flatMap(userDocsOf))].sort();
   const cited = new Set();
   for (const f of files) {
     if (f.status === 'D' || !isTestOrBaseline(f.path)) continue;
@@ -93,7 +112,7 @@ export function readChange(root, base, head) {
     try { text = fs.readFileSync(path.join(root, f.path), 'utf8'); } catch { continue; }
     for (const m of text.matchAll(/([\w.-]+)#AC-\d+/g)) cited.add(m[1]);
   }
-  return { files, messages, specs, cited: [...cited].sort(), config: readConfig(root)?.config ?? {} };
+  return { files, messages, specs, cited: [...cited].sort(), tutorials, config: readConfig(root)?.config ?? {} };
 }
 
 function main(argv) {
