@@ -15,6 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { hasId, readConfig, readWorkMode, stagesWithGate, stageOf } from './lib/process.mjs';
 import { approvedTasks, latestInput, mergeInstruction, openedInSession, standingInstructions } from './lib/task-approval.mjs';
+import { approvedInChat, recordRefusal } from './lib/chat-approval.mjs';
 
 // Flags of `gh pr merge` that take a value, so their value is not the pull request argument.
 const VALUE_FLAGS = new Set(['-b', '--body', '-F', '--body-file', '-t', '--subject', '--match-head-commit', '-A', '--author-email', '-R', '--repo']);
@@ -283,11 +284,18 @@ function permissionsAsk(root) {
 // (default-allow AC-4): the guard refuses, and the reason tells the agent to stop and report.
 export function reviewStopReason(reason) {
   const what = reason.replace(/\s*Confirm only if you are the approver[\s\S]*$/, '').trim();
-  return `${what} This merge is the person's review, so do not merge it and do not ask for a prompt: stop, tell the person this pull request is waiting for their review and why, and carry on with other work. Merge it when they say so.`;
+  return `${what} This merge is the person's review, so do not merge it and do not ask for a prompt: stop, tell the person this pull request is waiting for their review and why, and carry on with other work. When they say yes in chat, run the same merge again unchanged and it will go ahead.`;
 }
 
-export function mergeOutput({ ask, allow, reason }, root) {
-  if (ask) return permissionsAsk(root) ? askOutput(reason) : denyOutput(reviewStopReason(reason));
+// input is the hook input, for the person's yes in chat (default-allow AC-10).
+export function mergeOutput({ ask, allow, reason }, root, input = null) {
+  if (ask) {
+    if (permissionsAsk(root)) return askOutput(reason);
+    const yes = input && approvedInChat(input);
+    if (yes) return allowOutput(`rfr-process: merge approved in chat ("${String(yes).slice(0, 80)}")`);
+    if (input) recordRefusal(input, reason);
+    return denyOutput(reviewStopReason(reason));
+  }
   if (allow) return allowOutput(reason);
   return '';
 }
@@ -298,7 +306,7 @@ async function main() {
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* not JSON: nothing to check */ }
   const root = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const out = mergeOutput(decideMerge({ input, root }), root);
+  const out = mergeOutput(decideMerge({ input, root }), root, input);
   if (out) process.stdout.write(out);
 }
 

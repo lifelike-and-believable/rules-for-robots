@@ -8,6 +8,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 - `rfr-android` 0.1.0, a domain plugin for Android, Android TV, and Google TV apps (#189; android-plugin spec, slice 24b). Its `guard-adb` hook asks before an `adb` command changes a shared device (install, uninstall, reboot, push, `settings put`, `pm` and `cmd package` changes, or an `adb shell` command it does not recognise), and lets reads, connections, and remote-control input run without asking. Nothing asks on an emulator, or on a device the project lists under `android.disposable` in `.claude/rfr.json`; scripts that change a device can be listed under `android.deviceScripts`. The guard reads the device from `-s`, then `ANDROID_SERIAL` in the command line, then the environment, then the one connected device. Eight guard corpus cases and `practices/guards.md` cover it; the build copies `rfr-core`'s hook library and shell parser into the plugin. Adopters: nothing to do unless you work on Android; then `/plugin install rfr-android@rules-for-robots`, and list your emulators' or test devices' serials as disposable if you want no prompts on them.
 
+## [6.1.0] - 2026-11-12
+
+Pull requests: #PR.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+This release includes 6.0.1, which was not published on its own.
+
+### Changed
+
+- **No guard ever raises a permission prompt** (#PR; default-allow AC-10, decision 6). A person cannot judge a command's text, so a prompt protects nothing. Every decision that was a prompt is now a refusal that tells the agent to ask you in chat, in plain words, what it wants to do and why. This covers force-pushes, pushes to the default branch, remote deletions, releases, production deploys, secret reads, deletes outside the project, MCP tools that change something in another service, and merges that are your review. When you say yes, the same call goes ahead once. A no, a question, or a different call approves nothing. The shared logic is `chat-approval.mjs`, which the build copies into every plugin.
+- **Deletes in a temp folder are scratch** (#PR). `rm -rf` of anything in `/tmp`, `/var/tmp`, or the system temp folder goes ahead, including a copy or clone of the project there. The exception is the session's own project, if it happens to live in one. A cloud session got two prompts for a scratch Postgres folder under `/tmp` under 6.0.0.
+- MCP tools that only read (`get_`, `list_`, `search_`, and so on) are allowed for every server, not only GitHub. The replay check counts a chat refusal as a decision for the person, as it counted a prompt.
+- `RFR_PERMISSIONS=ask` brings prompts back for one session, as `"permissions": "ask"` does for a project.
+- `rfr-core` 6.1.0, `rfr-web` 1.3.0, `rfr-process` 0.21.0, `rfr-unreal` 2.1.0, `rfr-android` 0.2.0. Adopters: nothing to do. Claude Code's own prompts for protected paths (`.claude`, `.git`, `.mcp.json`) are outside rfr's control and remain.
+
 ## [6.0.1] - 2026-11-12
 
 Pull requests: #201.

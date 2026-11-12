@@ -42,7 +42,7 @@ test('rm -rf still asks for the temp directory itself, an escape from it, an unk
   for (const command of [
     `rm -rf ${sh(os.tmpdir())}`,
     `rm -rf ${dir}/../..`,
-    `rm -rf ${sh(path.join(os.tmpdir(), 'some-tool-workspace'))}`,
+    // A folder directly under the temp folder no longer asks (default-allow decision 6); see rm-own-scratch.test.mjs.
     'rm -rf $SOMEWHERE/wt',
     `R=$(pwd); rm -rf $R/wt`,
     `rm -rf ${sh(os.homedir())}/project`,
@@ -121,7 +121,8 @@ test('each ask is written to the decision log, without the command or file conte
   const r = spawnSync(process.execPath, ['plugins/core/scripts/guard-commands.mjs'], {
     input: JSON.stringify({ session_id: 's1', tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force origin main' } }),
     encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PLUGIN_DATA: data },
+    // The prompt path, which a project keeps with "permissions": "ask" (default-allow AC-10).
+    env: { ...process.env, CLAUDE_PLUGIN_DATA: data, RFR_PERMISSIONS: 'ask' },
   });
   assert.match(r.stdout, /"permissionDecision":"ask"/);
   const lines = fs.readFileSync(path.join(data, 'guard-decisions.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l));

@@ -1,37 +1,51 @@
 #!/usr/bin/env node
 // PreToolUse: default allow (docs/specs/default-allow.md). rfr-core allows the agent's working tools
-// (the shell, file edits, web search and fetch, and the GitHub MCP tools) so Claude Code does not
-// prompt for ordinary work. The named asks still ask, because Claude Code lets another hook's ask or
-// deny win over this allow on the same call (AC-3, checked on Claude Code 2.1.322 in
-// evals/results/2026-11-12-hook-combination/): guard-commands, guard-test-edits, guard-owned-paths,
-// rfr-process's merge guard, and rfr-web's Vercel guard decide those. A deny rule and Claude Code's
-// protected paths still apply. "permissions": "ask" in .claude/rfr.json turns this off (AC-5).
-// Nothing is logged for an allow, so the guard log keeps only the decisions a person sees.
+// (the shell, file edits, web search and fetch, the GitHub MCP tools, and any MCP tool that only
+// reads) so Claude Code does not prompt for ordinary work. The guards' decisions still win, because
+// Claude Code lets another hook's deny win over this allow on the same call (AC-3, checked on Claude
+// Code 2.1.322 in evals/results/2026-11-12-hook-combination/). An MCP tool that changes something
+// through another service, or a GitHub tool that deletes, changes settings or access, or publishes a
+// release, is the person's decision: it is refused, and the agent asks in chat (AC-10), never by
+// prompt. A deny rule and Claude Code's protected paths still apply. "permissions": "ask" in
+// .claude/rfr.json turns this off (AC-5). Nothing is logged for an allow.
 import { fileURLToPath } from 'node:url';
-import { guardSettings, readInput } from './lib.mjs';
+import { ask, askReason, guardSettings, readInput } from './lib.mjs';
 
 const WORK_TOOLS = new Set(['Bash', 'PowerShell', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'WebSearch', 'WebFetch']);
 
-// GitHub MCP tools stay with Claude Code's prompt when they delete, change repository settings or
-// access, or publish a release: those are named asks with no guard of their own (AC-1, AC-2).
-const GITHUB_TOOL = /^mcp__(?:.*_)?github(?:_[^_]*)?__(.+)$/i;
+const MCP_TOOL = /^mcp__(.+?)__(.+)$/;
+const GITHUB_SERVER = /(?:^|_)github(?:_|$)/i;
 const GITHUB_HELD = /delete|remove|release|tag|setting|secret|collaborator|webhook|protection|ruleset|transfer|archive|visibility|create_repository|fork_repository|team|member|permission/i;
+// An action that only reads: get_, list_, search_, read_, fetch_, query_, find_, describe_, show_, view_.
+const READS = /^(get|list|search|read|fetch|query|find|describe|show|view|count|aggregate)_/i;
 
-// Whether rfr-core allows this tool call by default. Returns the reason, or null.
-export function defaultAllow(input, settings = guardSettings(input?.cwd ?? process.cwd())) {
+// The default decision for a tool call: { decision: 'allow', reason }, { decision: 'chat', reason }
+// for one that needs the person's decision, or null to leave it to the other guards and Claude Code.
+export function defaultDecision(input, settings = guardSettings(input?.cwd ?? process.cwd())) {
   if (settings.permissions === 'ask') return null;
   const tool = String(input?.tool_name ?? '');
-  if (WORK_TOOLS.has(tool)) return `rfr-core (default allow): ${tool} is one of the agent's working tools; the named asks still ask`;
-  const github = GITHUB_TOOL.exec(tool);
-  if (github && (/^(get|list|search|read)_/i.test(github[1]) || !GITHUB_HELD.test(github[1]))) return `rfr-core (default allow): ${github[1]} is a GitHub tool for the agent's own work; deletions, settings, and releases still ask`;
-  return null;
+  if (WORK_TOOLS.has(tool)) return { decision: 'allow', reason: `rfr-core (default allow): ${tool} is one of the agent's working tools` };
+  const mcp = MCP_TOOL.exec(tool);
+  if (!mcp) return null;
+  const [, server, action] = mcp;
+  if (READS.test(action)) return { decision: 'allow', reason: `rfr-core (default allow): ${action} only reads` };
+  if (GITHUB_SERVER.test(server) && !GITHUB_HELD.test(action)) return { decision: 'allow', reason: `rfr-core (default allow): ${action} is a GitHub tool for the agent's own work` };
+  // Vercel tools are rfr-web's to decide, with their own reasons.
+  if (/vercel/i.test(server)) return { decision: 'allow', reason: `rfr-core (default allow): rfr-web's guard decides ${action}` };
+  return { decision: 'chat', reason: askReason({ source: 'rfr-core (default allow)', action: `${action.replace(/_/g, ' ')} through ${server.replace(/^(plugin|claude_ai)_/, '').replace(/_/g, ' ')}`, why: 'it changes something outside the project, in another service', instead: 'say in your report what you would have done there' }) };
+}
+
+// Kept for callers that only need the allow reason.
+export function defaultAllow(input, settings) {
+  const d = defaultDecision(input, settings);
+  return d?.decision === 'allow' ? d.reason : null;
 }
 
 async function main() {
   const input = await readInput();
-  const reason = defaultAllow(input);
-  if (!reason) return;
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow', permissionDecisionReason: reason } }));
+  const d = defaultDecision(input);
+  if (d?.decision === 'allow') process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow', permissionDecisionReason: d.reason } }));
+  else if (d?.decision === 'chat') ask(d.reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

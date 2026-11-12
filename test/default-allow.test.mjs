@@ -44,10 +44,12 @@ test("default-allow#AC-1: the hook allows the agent's working tools and GitHub t
   for (const tool of ['mcp__github__delete_file', 'mcp__github__create_release', 'mcp__github__update_repository_settings', 'mcp__github__add_collaborator', 'mcp__github__create_repository']) {
     assert.equal(defaultAllow({ tool_name: tool }, on), null, tool);
   }
-  // Other tools and MCP servers are not the hook's to allow.
-  for (const tool of ['mcp__Vercel__create_deployment', 'mcp__claude_ai_Gmail__create_draft', 'Read', 'Agent']) {
+  // A change through another service is a chat decision, not an allow (AC-10), and tools that never
+  // prompt are not the hook's to decide. Vercel calls go on to rfr-web's guard.
+  for (const tool of ['mcp__claude_ai_Gmail__create_draft', 'Read', 'Agent']) {
     assert.equal(defaultAllow({ tool_name: tool }, on), null, tool);
   }
+  assert.ok(defaultAllow({ tool_name: 'mcp__Vercel__create_deployment' }, on));
   // "permissions": "ask" turns it off, and it is on when the project says nothing.
   assert.equal(defaultAllow({ tool_name: 'Bash' }, { permissions: 'ask' }), null);
   assert.ok(defaultAllow({ tool_name: 'Bash', cwd: repo() }));

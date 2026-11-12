@@ -395,6 +395,10 @@ function rmRisk(entries, hints = [], snaps = []) {
   // Folders this line made inside a temp folder: deleting one later in the line loses nothing that
   // was there before ("cp -r . /var/tmp/check && ... && rm -rf /var/tmp/check").
   const made = [];
+  // The session's own project: the repository the command line starts in.
+  const start = entries[0]?.dir;
+  const startTop = start ? git(start, ['rev-parse', '--show-toplevel']) : { status: 1 };
+  const project = startTop.status === 0 ? canonical(startTop.out.trim()) : null;
   for (const { words, dir } of entries) {
     for (const abs of createdFolders(words, dir)) if (insideTemp(abs, 1)) made.push(abs);
     if (words.length && words.every(w => /^\w+=/.test(w))) {
@@ -428,6 +432,15 @@ function rmRisk(entries, hints = [], snaps = []) {
       if (target === null || /[*?[{$]/.test(target) || target.startsWith('~') || ['.', './', '..', '/'].includes(target)) return RM;
       const abs = resolveFromShell(dir, target);
       if (made.some(m => within(abs, m))) continue;
+      // Inside a temp folder, anything but the session's own project is throwaway, including a copy or
+      // clone of it: the person is never asked about scratch folders (default-allow decision 6). The
+      // project itself, even when it lives in a temp folder, keeps the git checks below.
+      if (insideTemp(abs, 1)) {
+        let near = abs;
+        while (!fs.existsSync(near) && path.dirname(near) !== near) near = path.dirname(near);
+        const top = git(fs.existsSync(near) && fs.statSync(near).isDirectory() ? near : path.dirname(near), ['rev-parse', '--show-toplevel']);
+        if (top.status !== 0 || (project && canonical(top.out.trim()) !== project)) continue;
+      }
       // A target in no git repository is throwaway only inside the temp directory; one in a
       // repository (even a repository under the temp directory) gets the git checks below.
       let near = path.dirname(abs);
