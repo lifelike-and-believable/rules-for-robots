@@ -1,7 +1,17 @@
 {
-  "description": "rfr-core default hooks: ask before destructive commands (WA-003, PG-001), edits to existing tests (TEST-001), and edits outside the owned paths listed in AGENTS.md (#47); log whether each ask was approved (guard tiers AC-6); at the end of each turn, format the files edited in it with the project's own formatter. The Vercel MCP guard is in rfr-web and the Unreal editor check in rfr-unreal.",
+  "description": "rfr-core default hooks: allow the agent's working tools without a prompt (default allow; \"permissions\": \"ask\" in .claude/rfr.json turns it off); ask before destructive or outward commands (WA-003, PG-001), edits to existing tests (TEST-001), and edits outside the owned paths listed in AGENTS.md (#47); log whether each ask was approved (guard tiers AC-6); at the end of each turn, format the files edited in it with the project's own formatter. The Vercel MCP guard is in rfr-web and the Unreal editor check in rfr-unreal.",
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Edit|Write|MultiEdit|NotebookEdit|WebSearch|WebFetch|mcp__.*[Gg]it[Hh]ub.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/allow-default.mjs\"",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Bash|PowerShell",
         "hooks": [

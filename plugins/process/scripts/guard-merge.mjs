@@ -266,15 +266,40 @@ export function allowOutput(reason) {
   return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow', permissionDecisionReason: reason } });
 }
 
+export function denyOutput(reason) {
+  return JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } });
+}
+
+// Whether the project keeps Claude Code's own prompts ("permissions": "ask" in .claude/rfr.json).
+function permissionsAsk(root) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, '.claude', 'rfr.json'), 'utf8'))?.permissions === 'ask';
+  } catch {
+    return false;
+  }
+}
+
+// Under default allow, a merge that needs the person's review is a review stop, not a prompt
+// (default-allow AC-4): the guard refuses, and the reason tells the agent to stop and report.
+export function reviewStopReason(reason) {
+  const what = reason.replace(/\s*Confirm only if you are the approver[\s\S]*$/, '').trim();
+  return `${what} This merge is the person's review, so do not merge it and do not ask for a prompt: stop, tell the person this pull request is waiting for their review and why, and carry on with other work. Merge it when they say so.`;
+}
+
+export function mergeOutput({ ask, allow, reason }, root) {
+  if (ask) return permissionsAsk(root) ? askOutput(reason) : denyOutput(reviewStopReason(reason));
+  if (allow) return allowOutput(reason);
+  return '';
+}
+
 async function main() {
   let raw = '';
   for await (const chunk of process.stdin) raw += chunk;
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* not JSON: nothing to check */ }
   const root = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const { ask, allow, reason } = decideMerge({ input, root });
-  if (ask) process.stdout.write(askOutput(reason));
-  else if (allow) process.stdout.write(allowOutput(reason));
+  const out = mergeOutput(decideMerge({ input, root }), root);
+  if (out) process.stdout.write(out);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();

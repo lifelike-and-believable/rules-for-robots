@@ -92,9 +92,16 @@ test('project-process#AC-7: the hook prints an ask decision, and nothing for an 
   const quiet = spawnSync(process.execPath, [script], { input: JSON.stringify({ ...bash('gh pr view 12'), cwd: root }), encoding: 'utf8' });
   assert.equal(quiet.status, 0);
   assert.equal(quiet.stdout, '');
-  // With PATH emptied, gh cannot run, so the files cannot be listed and the hook asks.
+  // With PATH emptied, neither gh nor git can run, so the files cannot be listed. Under default allow
+  // (default-allow AC-4) that is a review stop: the hook refuses and tells the agent to report.
+  const stopped = spawnSync(process.execPath, [script], { input: JSON.stringify({ ...bash('gh pr merge 12'), cwd: root }), encoding: 'utf8', env: { PATH: '' } });
+  assert.equal(stopped.status, 0);
+  const out = JSON.parse(stopped.stdout).hookSpecificOutput;
+  assert.equal(out.permissionDecision, 'deny');
+  assert.match(out.permissionDecisionReason, /stop, tell the person this pull request is waiting for their review/);
+  // A project that keeps Claude Code's prompts ("permissions": "ask") is asked, as before.
+  fs.mkdirSync(path.join(root, '.claude'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.claude', 'rfr.json'), '{ "permissions": "ask" }\n');
   const asked = spawnSync(process.execPath, [script], { input: JSON.stringify({ ...bash('gh pr merge 12'), cwd: root }), encoding: 'utf8', env: { PATH: '' } });
-  assert.equal(asked.status, 0);
-  const out = JSON.parse(asked.stdout);
-  assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(JSON.parse(asked.stdout).hookSpecificOutput.permissionDecision, 'ask');
 });

@@ -1,0 +1,92 @@
+{
+  "claudeCode": "2.1.322 (Claude Code)",
+  "results": [
+    {
+      "hooks": "allow + none",
+      "ran": true,
+      "denials": [],
+      "cost": 0.011956180000000002,
+      "result": "I ran the command once, as requested. It returned no output, which is expected for a `writeFileSync` call. The shell's working directory was reset afterward, but that doesn't affect the write.\n\nI didn't verify that `ran.txt` now exists or contains `ran`, since you asked me to stop after the one comm"
+    },
+    {
+      "hooks": "none + none",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_016gp8L2ciM2NDdVa78MiB2u",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-none-none-vYOdB5/ran.txt','ran')\"",
+            "description": "Write 'ran' to ran.txt in the temp check directory"
+          }
+        }
+      ],
+      "cost": 0.01172208,
+      "result": "The command didn't run. The Bash tool returned \"This command requires approval,\" so the file `ran.txt` was not written.\n\nI didn't retry or try an alternative, since you asked for exactly this one command. If you approve it, I can run it again. Otherwise, the file will stay absent."
+    },
+    {
+      "hooks": "allow + ask",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_01C7p6mDEg8kofSbvsx4o7gN",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-allow-ask-f4Pb4K/ran.txt','ran')\"",
+            "description": "Write ran.txt marker file with node"
+          }
+        }
+      ],
+      "cost": 0.012115000000000003,
+      "result": "The command did not run. The Bash call returned `test hook: ask`, which means a hook asked for confirmation before the command executed, and the call errored out. I did not retry it or try another route to write the file, since you asked for exactly one command.\n\nI haven't verified whether `ran.txt`"
+    },
+    {
+      "hooks": "ask + allow",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_01YTddSg3JmbBpWP3wkdunFK",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-ask-allow-BknOOY/ran.txt','ran')\"",
+            "description": "Write ran.txt marker file via node"
+          }
+        }
+      ],
+      "cost": 0.01172521,
+      "result": "The command did not run. The Bash call returned `test hook: ask`, so a permission hook asked for approval and the call failed. The file `ran.txt` was not written.\n\nI did not retry, since a denied or held call should not be re-run verbatim. If you want the command to go through, approve it in your pe"
+    },
+    {
+      "hooks": "allow + deny",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_01W57rUpTZcdZtFVRpxros1w",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-allow-deny-q3G9sf/ran.txt','ran')\"",
+            "description": "Write ran.txt marker file via node"
+          }
+        }
+      ],
+      "cost": 0.011731140000000001,
+      "result": "The command was blocked before it ran. A `PreToolUse:Bash` hook returned `test hook: deny`, so `ran.txt` was not written. I haven't retried or tried another way to write the file, since the hook denied this command on purpose.\n\nIf you want the marker file created, you'll need to allow this command o"
+    },
+    {
+      "hooks": "ask + none",
+      "ran": false,
+      "denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_01XfXvAPgHp1pjbU4S2ULXH9",
+          "tool_input": {
+            "command": "node -e \"require('fs').writeFileSync('<tmp>/rfr-hookcheck-ask-none-MKz3NG/ran.txt','ran')\"",
+            "description": "Write ran.txt marker file via node"
+          }
+        }
+      ],
+      "cost": 0.01184041,
+      "result": "The command did not run. The Bash call returned `test hook: ask`, which means a hook asked for confirmation before the command executed. This session is non-interactive, so I can't answer that prompt, and I didn't retry the command.\n\nThe file `ran.txt` was not created. The command was a single `node"
+    }
+  ]
+}
