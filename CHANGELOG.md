@@ -10,14 +10,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [7.1.0] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #207.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Changed
 
-- **The development process is enforced** (#PR; project-process AC-63 and AC-64, feedback #204). Every stage is required unless `process.yml` waives it ahead of time, with a reason (`waived:`). A design must derive from approved stories, user documentation from an approved design, and specs and tutorials from approved user documentation. The process check fails an artifact that skips a stage, and a spec without an id in a process project fails instead of being skipped. rfr-process's new `guard-stages` hook refuses writing one in the session, naming the stage to write and get approved first, so an agent cannot go from stories straight to a spec and code. Nobody is asked, and an agent never waives a stage itself.
-- **Merge instructions as people write them** (#PR; task-approval AC-13 and AC-14).
+- **The development process is enforced** (#207; project-process AC-63 and AC-64, feedback #204). Every stage is required unless `process.yml` waives it ahead of time, with a reason (`waived:`). A design must derive from approved stories, user documentation from an approved design, and specs and tutorials from approved user documentation. The process check fails an artifact that skips a stage, and a spec without an id in a process project fails instead of being skipped. rfr-process's new `guard-stages` hook refuses writing one in the session, naming the stage to write and get approved first, so an agent cannot go from stories straight to a spec and code. Nobody is asked, and an agent never waives a stage itself.
+- **Merge instructions as people write them** (#207; task-approval AC-13 and AC-14).
   - "merge 344 and go through the gaps" and "yes, merge 344 and put up the scenario" are merge instructions for #344 (feedback #206).
   - A short "yes" or "go ahead for both" to the agent's own question ("Merge #344 and start the next task?") approves what the question named (feedback #205).
 - `rfr-core` 7.1.0, `rfr-web` 2.1.0, `rfr-process` 1.1.0. Adopters: a process project whose specs derive straight from stories now fails the process check. Write and approve the design and user documentation and link them, or waive the stage in `process.yml` with the reason, before the work continues. A spec in `docs/specs/` without an id needs one, or `waived: specs`.
