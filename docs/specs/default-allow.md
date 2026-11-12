@@ -73,4 +73,4 @@ Task approval stays, for its original purpose: pre-approving a named ask in chat
 
 - Plan item: `PLAN.md`, Phase 19 (delegated work), slice 19i.
 - Slices, after the open questions are answered: 19i-1 the check of hook asks under allow rules (AC-4), first, since it decides how AC-2 and AC-3 are enforced; 19i-2 the settings, rules, setting, templates, and install-rules (AC-1 to AC-3, AC-5); 19i-3 task approval, the rules, and the guides (AC-6 to AC-8); 19i-4 the eval (AC-9).
-- Pull requests: #PR (spec).
+- Pull requests: #197 (spec).
