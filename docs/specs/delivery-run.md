@@ -1,6 +1,6 @@
 ---
 status: draft
-tests-commit: 95f37f8ee1c68845f26a2699aa3144b61a6131ed
+tests-commit: [95f37f8ee1c68845f26a2699aa3144b61a6131ed, 476ee5e773317d6a418f8eeca9523252ef05091a]
 ---
 
 # The delivery run
@@ -34,6 +34,8 @@ Under the GitHub gate the agent does not write the pull request's description, s
 | AC-6 | `delivery gate` prints, for the current branch, the link to its pull request on GitHub and the approve line (`! gh pr review <branch> --approve`), from the origin remote, with no network call. | test: an https and an ssh remote. |
 | AC-7 | `checks/ci/process-pr-body.mjs` writes a pull request description from the branch: the review packet for the process artifacts it changes; each changed design marked `no-user-docs`, with its reason, under a heading that says it lets a spec skip user documentation; the decision files it changes; and, when it touches a gated stage, the approve line. The workflow template has a step that runs it and edits the pull request, and that step cannot fail the workflow. | test: the sections for a packet with an open item, an enabling design, and a decision file; an ungated change has no approve line; the workflow step. |
 | AC-8 | rfr-process has a `deliver` skill that states the run: start it with `delivery start`; write the spec, failing tests, implementation, and tutorial on one branch with a commit for each; never ask the lead and never end the turn to wait; set aside what cannot be done; push the branch and do not open, approve, or merge a pull request. The text every session is given names the skill for a feature whose delivery is open, and says to tell the lead once, with the review link, after pushing a branch they must review. | test: the skill's text; the session text; `hooks.json` registers the `Stop` hook. |
+| AC-9 | A run can be started for a named feature: `delivery start <name>` takes a spec's file name or id, or a story's id, and the run then covers that feature's specs even when the branch has not changed them. A feature built earlier is finished from where it stands: a test that cites the spec anywhere in the repository counts, so one that lacks only its tutorial is asked only for the tutorial. Starting for a name that has no spec yet is refused, with where the feature stands, because an earlier stage is written and approved first and is not a delivery run. (Added 2026-11-12: the first adopter had a slice built before tutorials were required, and the maintainer asked that "finish it" pick a feature up from whichever stages are done.) | test: a name resolving to its spec by file name, id, and story; a built feature asked only for its tutorial, then complete; a story with no spec refused. |
+| AC-10 | `delivery where [name]` prints how far a feature has got: the process state for the stories the name stands for, and, once it has a spec, what its delivery still lacks. With no name it prints the state of every feature. The `deliver` skill starts there, treats "finish" as "deliver", writes one earlier stage and stops for approval when the feature is not yet at delivery, and skips steps that are already done. | test: a built feature, a feature at the design stage, and no name; the skill's text. |
 
 ## Scope
 
@@ -50,4 +52,4 @@ Under the GitHub gate the agent does not write the pull request's description, s
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25d.
-- Pull requests: #224.
+- Pull requests: #224, #227 (AC-9, AC-10).

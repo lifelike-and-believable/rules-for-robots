@@ -1,6 +1,6 @@
 ---
 name: deliver
-description: Deliver a feature whose user documentation is approved - write its spec, failing tests, implementation, and tutorial on one branch and push it, without asking the lead anything. Use when the process state says a feature's delivery is open, when a feature packet's pull request has merged, or when the user asks to deliver or build an approved feature.
+description: Deliver or finish a feature - find how far it has got, then write whatever it still lacks (spec, failing tests, implementation, tutorial) on one branch and push it, without asking the lead anything. Use when the user asks to deliver, build, or finish a feature or slice, when the process state says a feature's delivery is open or under way, or when a feature packet's pull request has merged.
 argument-hint: "[story or feature name]"
 ---
 
@@ -10,9 +10,14 @@ A delivery run takes a feature from approved user documentation to a pushed bran
 
 ## Before you start
 
-1. Check the feature is ready. Its story, design, and user documentation are approved on the default branch (the process state given at the start of the session lists it under "delivery is open"; `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" status` and the state command show the same). If the user documentation is still waiting for approval, do not start: tell the lead once that it is waiting, and stop.
-2. Create the feature's branch from the up-to-date default branch: `feature/<name>`, or the `claude/` branch the session was given.
-3. Start the run: `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" start`. It records that a run is under way on this branch and lists what is still to do. From here until the run ends, a check at the end of each turn sends you back to work while anything on that list is missing.
+"Deliver it", "finish it", and "finish slice 2" all mean the same thing: find out how far the feature has got, and pick it up from there. Do not assume it starts at the spec.
+
+1. **Find where it stands.** `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" where <story id or spec file name>` prints the feature's stage and, once it has a spec, what its delivery still lacks. With no name it lists every feature; use that to turn what the lead called it ("slice 2") into a story or spec name.
+2. **If it is at an earlier stage, this is not a delivery.** A story, design, or user documentation that is still to be written: write that one stage from the plugin's template and the guide, push the branch, tell the lead once that it is waiting for their approval, with the review link, and stop. Do not start a run, and do not write the stages after it. If it is already written and waiting for the lead's approval, tell them once and stop.
+3. **Otherwise create the feature's branch** from the up-to-date default branch: `feature/<name>`, or the `claude/` branch the session was given.
+4. **Start the run:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" start <story id or spec file name>`. It records that a run is under way on this branch and lists what is still to do. Name the feature when its spec is already on the default branch, so that the run finishes it from where it stands: a feature that was built before it had a tutorial lacks only the tutorial. From here until the run ends, a check at the end of each turn sends you back to work while anything on that list is missing.
+
+Do only the steps on that list. Skip any step below that is already done and approved; do not rewrite an approved spec or rework code that passes.
 
 ## The run
 

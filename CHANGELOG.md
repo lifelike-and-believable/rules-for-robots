@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Added
+
+- **Finishing a feature from where it stands** (#227; delivery-run AC-9 and AC-10). `rfr-process` 1.6.0: `delivery.mjs where [name]` says how far a feature has got, and `delivery.mjs start <name>` starts a run for a named story or spec, which may already be on the default branch. The run asks only for what the feature lacks, so one built before it had a tutorial is asked only for the tutorial. The `deliver` skill treats "finish it" as "deliver it", starts by finding where the feature stands, and for a feature still at an earlier stage writes that one stage and stops for approval. Adopters: nothing to do.
+
 ### Fixed
 
 - **A feature's pull request cannot merge before its tutorial exists** (#226; process-state AC-12). Under the GitHub gate a pushed branch has auto-merge on, so a delivery pushed part-way, after its tests and before its tutorial, would have merged as soon as its checks passed, with nothing for the approver to review. The first real delivery run pushed that way. The `process / change` check now fails a feature's pull request until a tutorial derives from the user documentation its spec derives from; the tutorial is in a gated folder, so the pull request then waits for the approver. `rfr-process` 1.5.1. Adopters: nothing to do if `process / change` is a required check; make it one if it is not.
