@@ -10,13 +10,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [6.0.1] - 2026-11-12
 
-Pull requests: #PR.
+Pull requests: #201.
 
 Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
 
 ### Fixed
 
-- `rm -rf` of a folder the same command line made inside a temp folder no longer asks (#PR). A cloud session that copied the repository to `/var/tmp`, ran a clean install there, and deleted the copy in one command got two prompts under 6.0.0: `/var/tmp` was not one of the guard's temp folders, and the copy holds `.git`, so the guard saw a repository outside the project. Now a folder the line creates with `cp -r`, `mkdir`, `git clone`, or `git worktree add` inside `/tmp`, `/var/tmp`, or the system temp folder, and that did not exist before the line, can be deleted later in the line, along with relative paths inside it, globs included. A folder that existed before, or a target that leaves the new folder (`..`, an absolute path), still asks.
+- `rm -rf` of a folder the same command line made inside a temp folder no longer asks (#201). A cloud session that copied the repository to `/var/tmp`, ran a clean install there, and deleted the copy in one command got two prompts under 6.0.0: `/var/tmp` was not one of the guard's temp folders, and the copy holds `.git`, so the guard saw a repository outside the project. Now a folder the line creates with `cp -r`, `mkdir`, `git clone`, or `git worktree add` inside `/tmp`, `/var/tmp`, or the system temp folder, and that did not exist before the line, can be deleted later in the line, along with relative paths inside it, globs included. A folder that existed before, or a target that leaves the new folder (`..`, an absolute path), still asks.
 - `rfr-core` 6.0.1. Adopters: nothing to do.
 
 ## [6.0.0] - 2026-11-12
