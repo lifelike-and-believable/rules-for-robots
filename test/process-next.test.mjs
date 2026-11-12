@@ -58,9 +58,18 @@ test('process-state#AC-3 the text has the rule, then each section in order', () 
   assert.match(text, /story-b: write the user documentation/);
 });
 
+test('process-state#AC-3 stories nobody has started are one line, with a count', () => {
+  const many = [];
+  for (let i = 0; i < 60; i++) many.push(art(`story-${String(i).padStart(2, '0')}`, 'stories', 'approved'));
+  const text = renderNext({ steps: featureSteps(many, config()), product: [] });
+  assert.match(text, /Not started \(60 stories with no design yet\): story-00, story-01, .* and 52 more/);
+  assert.ok(!text.includes('story-59'));
+  assert.ok(!/write the design/.test(text), 'a story with nothing downstream is not listed as open work');
+});
+
 test('process-state#AC-3 the text is capped at 40 lines and counts what it leaves out', () => {
   const many = [];
-  for (let i = 0; i < 60; i++) many.push(art(`story-${i}`, 'stories', 'approved'));
+  for (let i = 0; i < 60; i++) many.push(art(`story-${i}`, 'stories', 'approved'), art(`design-${i}`, 'design', 'approved', [`story-${i}`]));
   const text = renderNext({ steps: featureSteps(many, config()), product: [] });
   assert.ok(text.split('\n').length <= 40);
   assert.match(text, /and \d+ more/);
@@ -114,7 +123,7 @@ test('process-state#AC-4 the SessionStart hook gives the state as additional con
   assert.equal(r.status, 0);
   const out = JSON.parse(r.stdout);
   assert.equal(out.hookSpecificOutput.hookEventName, 'SessionStart');
-  assert.match(out.hookSpecificOutput.additionalContext, /story-a: write the design/);
+  assert.match(out.hookSpecificOutput.additionalContext, /Not started \(1 story with no design yet\): story-a/);
   const hooks = JSON.parse(fs.readFileSync('plugins/process/hooks/hooks.json', 'utf8')).hooks;
   assert.ok(hooks.SessionStart.some(g => g.hooks.some(h => h.command.includes('process-next.mjs'))));
 });
