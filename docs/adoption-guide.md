@@ -120,7 +120,7 @@ The rest an agent can do, in a repository where `/rfr-process:setup` has written
 5. **Get the script.** Clone rules-for-robots into `.rfr` at the repository's root (`git clone https://github.com/lifelike-and-believable/rules-for-robots .rfr`; keep `.rfr` out of your commits), or run the script from any other checkout and pass your repository's folder as its first argument.
 6. **Set `mode: team` in `docs/product/process.yml`**, even when you work alone. In solo mode the approvals check expects the approver to be the one who merged; with the gate the App merges, so that check would fail on every gated merge. In team mode it looks for the approver's review, which is what the gate asks for.
 7. **Replace the merge rule in `AGENTS.md`**, if the project was set up before the gate: agents push their branch and do not open, approve, or merge pull requests; the workflow opens the pull request, and GitHub merges it when the checks pass and, for a gated folder, the approver has reviewed it.
-8. **Run the setup script.** For `--checks`, give the names of the checks every pull request must pass, exactly as GitHub shows them on a pull request: the project's own verify check, and `process / process-trace` and `process / tier` from the process workflow.
+8. **Run the setup script.** For `--checks`, give the names of the checks every pull request must pass, exactly as GitHub shows them on a pull request: the project's own verify check, and `process / process-trace`, `process / tier`, and `process / change` from the process workflow.
 
 ```
 node .rfr/checks/process-github-setup.mjs --app-id <the App ID> --checks <your required check names, comma-separated>
@@ -133,6 +133,18 @@ Start a new session after it merges: a session that began earlier still has the 
 Expect one red check on a gated pull request until you approve it: `process / approvals` fails while the review is missing and passes when it reruns on your review. It is not a required check, and the pull request is held by the code-owner rule, not by it. (It is due to be removed for projects with the gate.)
 
 Then check it once: push a branch that changes only code, and it should become a pull request by the App and merge itself; push one that changes a file under `docs/design/`, and it should wait until you approve it.
+
+**What the process tells an agent, and what it checks.** At the start of every session rfr-process gives the agent the state of the project: which features are waiting for your approval, which work is open, and the process rule. Approval is read from the default branch, so an artifact the agent marked `approved` in its own branch does not count until you have approved its pull request. `node .rfr/checks/process-next.mjs` prints the same text.
+
+The `process / change` check fails a pull request that changes source code with no approved spec behind it. A feature needs nothing extra: its spec, approved and deriving from approved user documentation, is in the branch, or its tests cite it. A bug fix or a change with no effect on behaviour says so in a commit message, on a line of its own at the end:
+
+```
+Fix the off-by-one in paging
+
+Change: fix
+```
+
+A fix must change or add a test and add no source file. `Change: trivial` (a dependency bump, a rename) must add no source file and touch no `public-api` path. Anything larger is a feature. The declaration is in the commit and not the pull request's description, because under the gate the workflow writes the description.
 
 **Choosing the mode.** A project cannot set Claude Code's permission mode, so this part is yours too. For a session on your machine, set auto mode once in your user settings; for a cloud session, choose Auto when you start it. Agents then run without permission prompts, and the gate above is what holds work for your review.
 

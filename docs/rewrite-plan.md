@@ -135,6 +135,8 @@ The maintainer's own setup for the 25a trials is the first draft, and its steps 
 
 ### 25c: Process state and the code rule
 
+Built on 2026-11-12 ([spec](specs/process-state.md), pull request #221): the `SessionStart` hook and `checks/process-next.mjs`, which carry the process rule in place of a separate rule file, and the `change` job. The tier check is left as it is until the verify suite review in 25e. A declaration is a commit trailer, because under the gate the agent does not write the pull request's description. Open: work with no user-facing behaviour (a repository skeleton, build tooling) has no route but a spec that derives from user documentation, which it does not have; the maintainer decides how such work is declared.
+
 `process next`; the always-on process rule; a CI rule that a pull request changing source cites an approved spec, or claims `fix` or `trivial` in its description; the tier check reads the claim and stops inferring.
 
 ### 25d: The delivery run
