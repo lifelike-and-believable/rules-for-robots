@@ -7,11 +7,11 @@
 # open delivery; that delivery's own merge runs this again for the next.
 # Needs three steps only a person can do: create a routine in Claude Code on this repository whose
 # prompt is /rfr-process:deliver with no feature name; add an API trigger to it and generate its
-# token, which is shown once; and copy the routine's address from its API trigger into the
-# repository variable RFR_DELIVER_ROUTINE, then create an environment named `rfr-deliver` in the repository's settings,
-# limit its deployment branches to the default branch, and store the token there as the environment
-# secret RFR_DELIVER_TOKEN. Only a run on the default branch can then read the token, so a workflow
-# added on another branch cannot. Until then the job says what is open and succeeds.
+# token, which is shown once; and create an environment named `rfr-deliver` in the repository's
+# settings, limit its deployment branches to the default branch, and store two secrets there: the
+# routine's address, copied from its API trigger, as the environment secret RFR_DELIVER_ROUTINE, and
+# its token as the environment secret RFR_DELIVER_TOKEN. Only a run on the default branch can then
+# read the token, so a workflow added on another branch cannot. Until then the job says what is open and succeeds.
 # Change `main` below if your default branch has another name.
 name: deliver
 
@@ -61,7 +61,7 @@ jobs:
           restore-keys: rfr-deliver-
       - name: Start a delivery if one is open
         env:
-          RFR_DELIVER_ROUTINE: ${{ vars.RFR_DELIVER_ROUTINE }}
+          RFR_DELIVER_ROUTINE: ${{ secrets.RFR_DELIVER_ROUTINE || vars.RFR_DELIVER_ROUTINE }}
           RFR_DELIVER_TOKEN: ${{ secrets.RFR_DELIVER_TOKEN }}
         run: node .rfr/checks/ci/deliver-on-merge.mjs . --marker .rfr-deliver/last.json
       - uses: actions/cache/save@v4

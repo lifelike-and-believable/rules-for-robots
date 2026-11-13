@@ -4,7 +4,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264.
 
 ### Changed
 
@@ -13,7 +13,7 @@ Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263.
   - `templates/workflows/rfr-deliver.yml` runs it: on a push to the default branch only, with read-only repository permission, one run at a time, in an environment only the default branch can use. The routine's token is read from that environment's secret, sent only to `api.anthropic.com`, and never printed. A marker stops a second merge within 45 minutes from starting the same delivery again.
   - The guide and the `setup` skill give the three steps only a person can do.
 
-  Adopters: update `rfr-process` to 2.10.0. This is optional: without it, say "deliver it" after approving a packet. To have approved packets delivered without anyone starting them: copy `templates/workflows/rfr-deliver.yml` to `.github/workflows/`; create a routine in Claude Code on the repository whose prompt is `/rfr-process:deliver`; add an API trigger to it and generate its token; copy the routine's address from its API trigger into the repository variable `RFR_DELIVER_ROUTINE`; and create an environment named `rfr-deliver`, limited to the default branch, with the token as its secret `RFR_DELIVER_TOKEN`, so that only a run on the default branch can read it. Runs it starts count against the routine owner's Claude subscription.
+  Adopters: update `rfr-process` to 2.10.0. This is optional: without it, say "deliver it" after approving a packet. To have approved packets delivered without anyone starting them: copy `templates/workflows/rfr-deliver.yml` to `.github/workflows/`; create a routine in Claude Code on the repository whose prompt is `/rfr-process:deliver`; add an API trigger to it and generate its token; and create an environment named `rfr-deliver`, limited to the default branch, with two secrets: the routine's address, copied from its API trigger, as `RFR_DELIVER_ROUTINE`, and its token as `RFR_DELIVER_TOKEN` (2.10.3), so that only a run on the default branch can read them. Runs it starts count against the routine owner's Claude subscription.
 
 - **Organised user documentation** (Phase 27e; lasting-tutorials AC-16 to AC-21). `rfr-process` 2.9.0. From the maintainer's feedback: "user documentation should survive the development process and be easily navigable by the users of the production system."
   - User documentation has a shape: a start page, `docs/user/README.md`; a folder for each area of the product, with an overview, `docs/user/<area>/README.md`; and every other page in an area's folder. Templates for the start page and an overview are new, and `setup` and `bootstrap` write the start page with the product brief.
