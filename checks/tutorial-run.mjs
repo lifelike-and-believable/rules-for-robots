@@ -20,6 +20,7 @@
 //   ... --provides <list> the services this place provides, comma-separated (lasting-tutorials AC-14):
 //                        a tutorial whose needs: names one not in the list is not run here, which is
 //                        reported and does not fail the run; without the option, needs are ignored
+//   ... --place <name>   local, preview, or staging: take that list from try.provides in process.yml
 // Playwright is loaded from the project being checked (its own dependency), so this script works
 // from an .rfr checkout.
 import fs from 'node:fs';
@@ -323,6 +324,15 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
 // cannot be run here (it is not a web tutorial) is skipped, with the reason. Each tutorial that
 // starts from another begins with that tutorial's people still signed in (runTutorial's `from`),
 // against whatever the product holds by then, which includes what earlier tutorials in the run did.
+// The services the place being tried has (AC-14): the --provides list when given; otherwise, when the
+// run names its place (--place local, preview, or staging), what the project's try.provides lists for
+// it. null means needs are not checked: no list was given, and the project lists nothing for the place.
+export function providesFor({ given = null, place = null, config = null }) {
+  if (given) return given;
+  const listed = place ? config?.try?.provides?.[place] : null;
+  return Array.isArray(listed) ? listed : null;
+}
+
 // `report` is called with each result as it is known, so a long run prints as it goes.
 //
 // Needs (lasting-tutorials AC-14). `provides` is the list of services this place has, or null. With a
@@ -388,9 +398,12 @@ async function main(argv) {
   const given = k === -1 ? null : args.splice(k, 2)[1] ?? '';
   if (given !== null && !given.includes('{name}')) { console.error('--sign-in must contain {name}, for example /try/sign-in?as={name}'); process.exit(2); }
   const p = args.indexOf('--provides');
-  const provides = p === -1 ? null : (args.splice(p, 2)[1] ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  const givenProvides = p === -1 ? null : (args.splice(p, 2)[1] ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  const q = args.indexOf('--place');
+  const place = q === -1 ? null : args.splice(q, 2)[1] ?? null;
   const coverageOnly = args.includes('--coverage');
   const root = path.resolve(args.find(a => !a.startsWith('--')) ?? '.');
+  const provides = providesFor({ given: givenProvides, place, config: readConfig(root)?.config ?? null });
   // The command line wins; otherwise the project's own sign-in path, from try.sign-in (AC-5).
   const signIn = given ?? readConfig(root)?.config?.try?.signIn ?? null;
   const { errors, warnings, tutorials } = checkCoverage(root, { lasting: process.env.RFR_LASTING_TUTORIALS === 'warn' ? 'warn' : 'fail' });

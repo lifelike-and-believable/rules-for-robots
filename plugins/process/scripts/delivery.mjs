@@ -260,8 +260,11 @@ function stop(root) {
     // Where to try it (lasting-tutorials AC-8): the tutorials this branch adds or changes, the preview,
     // and the local command, as the pull request's "Try it" section gives them.
     const tryConfig = readConfig(root)?.config?.try ?? {};
+    // A tutorial has front matter; a README beside the tutorials is not one to follow.
     const changedTutorials = [...inBranch].filter(f => f.endsWith('.md') && fs.existsSync(path.join(root, f))).sort()
-      .map(f => ({ file: f, title: tutorialTitle(fs.readFileSync(path.join(root, f), 'utf8')) }));
+      .map(f => ({ file: f, text: fs.readFileSync(path.join(root, f), 'utf8') }))
+      .filter(t => parseArtifact(t.text).front)
+      .map(t => ({ file: t.file, title: tutorialTitle(t.text) }));
     const tryLines = tryItLines({ tutorials: changedTutorials, preview: tryConfig.preview, local: tryConfig.local, where: 'pr' });
     const tryIt = tryLines.length ? `\nAlso tell the lead, once, where to try it:\n${tryLines.filter(Boolean).join('\n')}` : '';
     block(`rfr-process: the delivery on ${marker.branch} is complete and pushed. Before you stop, tell the lead once: what was built, anything set aside in docs/decisions/, and how to review it.${validation}${tryIt}\n${gateFor(root)}`);

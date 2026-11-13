@@ -67,7 +67,9 @@ jobs:
         run: |
           if [ -n "$BYPASS" ]; then export RFR_TUTORIAL_HEADER="$BYPASS_HEADER: $BYPASS"; fi
           # The runner loads Playwright from the project first, then from .rfr.
-          node .rfr/checks/tutorial-run.mjs . --base-url "$BASE_URL" --record "$RUNNER_TEMP/tutorials"
+          # --place preview: a tutorial that needs a service try.provides does not list for previews
+          # is reported as not run here, and does not fail the run.
+          node .rfr/checks/tutorial-run.mjs . --place preview --base-url "$BASE_URL" --record "$RUNNER_TEMP/tutorials"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

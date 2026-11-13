@@ -57,7 +57,8 @@ export function readPrBody(root, base) {
   const packet = artifacts.length ? formatPacket(buildPacket({ artifacts })) : '';
   const tutorials = artifacts.filter(a => a.stage === 'tutorials').map(a => ({ file: a.file, status: a.status }));
   const tryIt = {
-    tutorials: files.filter(f => stageOf(f) === 'tutorials').map(f => ({ file: f, title: tutorialTitle(read(f)) ?? f })),
+    // A tutorial has front matter; a README or a note beside the tutorials is not one to follow.
+    tutorials: files.filter(f => stageOf(f) === 'tutorials' && parseArtifact(read(f)).front).map(f => ({ file: f, title: tutorialTitle(read(f)) ?? f })),
     preview: config.try?.preview ?? false,
     local: config.try?.local ?? null,
   };

@@ -103,8 +103,9 @@ function parseYamlSubset(text) {
       if (child && (target === null || Array.isArray(target))) data[parent][child] = [...(target ?? []), unquote(item[1])];
       else if (!child && (data[parent] === null || Array.isArray(data[parent]))) data[parent] = [...(data[parent] ?? []), unquote(item[1])];
       else errors.push(`line ${i + 1}: unexpected list item`);
-    } else if (field && parent && child && indent > childIndent && (data[parent][child] === null || isMap(data[parent][child]))) {
-      // A mapping under a second-level key, such as the places under try.provides.
+    } else if (field && parent === 'try' && child && indent > childIndent && (data[parent][child] === null || isMap(data[parent][child]))) {
+      // A mapping under a second-level key: the places under try.provides. Only try: nests this far,
+      // so a mistaken third level under stages:, gates:, or waived: is still an error.
       const [, key, value] = field;
       if (data[parent][child] === null) data[parent][child] = {};
       if (value === undefined || value === '') { data[parent][child][key] = null; grandchild = key; continue; }
@@ -113,6 +114,8 @@ function parseYamlSubset(text) {
       if (parsed.error) errors.push(`line ${i + 1}: ${parsed.error}`);
       data[parent][child][key] = parsed.value;
     } else if (field && parent && indent > 0) {
+      // Deeper than a second-level key that is waiting for its value, outside try: nothing reads it.
+      if (parent !== 'try' && child && indent > childIndent) { errors.push(`line ${i + 1}: cannot read "${raw.trim()}"`); continue; }
       const [, key, value] = field;
       grandchild = null;
       if (data[parent] === null) data[parent] = {};
@@ -240,7 +243,8 @@ function parseTry(value, errors) {
 
 // A tutorial's title: the first "# " heading of its body, or null.
 export function tutorialTitle(text) {
-  return /^#\s+(.+?)\s*#*\s*$/m.exec(parseArtifact(text ?? '').body ?? '')?.[1] ?? null;
+  // Closing #s count only after a space ("# Title ##"), so "# Learning C#" keeps its #.
+  return /^#\s+(.+?)(?:\s+#+)?\s*$/m.exec(parseArtifact(text ?? '').body ?? '')?.[1] ?? null;
 }
 
 // Where the lead can try a change (lasting-tutorials AC-8): the lines that name the tutorials it adds

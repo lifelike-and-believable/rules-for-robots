@@ -154,14 +154,16 @@ export function needsOf(text) {
   const at = lines.findIndex(l => /^needs:/.test(l));
   if (at === -1) return { needs: null, error: null };
   const how = 'list the services, like needs: [mail, tripo]';
-  const value = lines[at].slice('needs:'.length).trim();
+  // A comment after the value or after an item is not part of it.
+  const plain = s => s.replace(/\s+#.*$/, '').trim();
+  const value = plain(lines[at].slice('needs:'.length));
   let needs;
   if (!value) {
     needs = [];
     for (const l of lines.slice(at + 1)) {
-      const item = /^\s+-\s+(.*?)\s*$/.exec(l);
+      const item = /^\s*-\s+(.*?)\s*$/.exec(l);
       if (!item) break;
-      needs.push(item[1].replace(/^(['"])(.*)\1$/, '$2'));
+      needs.push(plain(item[1]).replace(/^(['"])(.*)\1$/, '$2'));
     }
     if (!needs.length) return { needs: null, error: `needs: names no service; ${how}, or remove the line` };
   } else if (value.startsWith('[') && value.endsWith(']')) {

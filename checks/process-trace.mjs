@@ -134,15 +134,17 @@ function analyse(artifacts) {
   return { byId, linkState, stale };
 }
 
-// The package script a try.local command runs, or null when it is not one of the forms checked:
-// npm run <script>, pnpm run <script>, pnpm <script>, yarn run <script>, yarn <script>. pnpm and
-// yarn commands that are not scripts (install, add, exec, dlx, create) are not checked.
-const PACKAGE_COMMANDS = new Set(['install', 'i', 'add', 'exec', 'dlx', 'create']);
+// The package script a try.local command runs, or null when it is not a form the check can be sure
+// of. Only "<npm|pnpm|yarn> run <script>" at the start of the command is read, with nothing before
+// the script name and no option that points at another package (-w, --workspace, --filter, -C,
+// --cwd, -r, --prefix, "workspace"): the script would then be in another package.json. "pnpm dev"
+// and "yarn dev" are not read, because the name may be a built-in command or a program, not a script.
 export function localScript(command) {
-  const m = /^\s*(npm\s+run(?:-script)?|pnpm\s+run|yarn\s+run|pnpm|yarn)\s+([^\s;&|]+)/.exec(command ?? '');
+  const text = command ?? '';
+  const m = /^\s*(?:npm\s+run(?:-script)?|pnpm\s+run|yarn\s+run)\s+([^\s;&|-][^\s;&|]*)/.exec(text);
   if (!m) return null;
-  if (!/\brun/.test(m[1]) && PACKAGE_COMMANDS.has(m[2])) return null;
-  return m[2];
+  if (/(?:^|\s)(?:-w|--workspace|--workspaces|--filter|-C|--cwd|-r|--recursive|--prefix)(?:[=\s]|$)|\sworkspace\s/.test(text)) return null;
+  return m[1];
 }
 
 export function runProcessTrace(root, { base = null, now = new Date(), lasting = 'fail' } = {}) {

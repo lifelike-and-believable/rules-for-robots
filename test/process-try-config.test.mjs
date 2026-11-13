@@ -98,7 +98,7 @@ test('lasting-tutorials#AC-5: the process check accepts a local command whose sc
 });
 
 test('lasting-tutorials#AC-5: the process check fails a local command that runs a script the project does not have', () => {
-  for (const [local, script] of [['npm run try', 'try'], ['pnpm run start:try', 'start:try'], ['pnpm demo', 'demo'], ['yarn demo', 'demo']]) {
+  for (const [local, script] of [['npm run try', 'try'], ['pnpm run start:try', 'start:try'], ['yarn run demo', 'demo']]) {
     const root = project({ 'docs/product/process.yml': yml(local), 'package.json': pkg({ dev: 'vite' }) });
     assert.deepEqual(tryErrors(root), [`process.yml: try.local runs the package script "${script}", which package.json does not have; add a "${script}" script to package.json, or change try.local to the command that starts the product`], local);
   }
