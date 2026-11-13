@@ -7,8 +7,10 @@
 # Needs three steps only a person can do: create a routine in Claude Code on this repository whose
 # prompt is /rfr-process:deliver with no feature name; add an API trigger to it and generate its
 # token, which is shown once; and store the routine's id as the repository variable
-# RFR_DELIVER_ROUTINE and the token as the repository secret RFR_DELIVER_TOKEN (Settings, Secrets
-# and variables, Actions). Until then the job says what is open and succeeds.
+# RFR_DELIVER_ROUTINE, then create an environment named `rfr-deliver` in the repository's settings,
+# limit its deployment branches to the default branch, and store the token there as the environment
+# secret RFR_DELIVER_TOKEN. Only a run on the default branch can then read the token, so a workflow
+# added on another branch cannot. Until then the job says what is open and succeeds.
 # Change `main` below if your default branch has another name.
 name: deliver
 
@@ -19,8 +21,10 @@ on:
 permissions:
   contents: read
 
-# One run at a time for the repository, and none cancelled: a run started while another is still
-# starting a delivery could otherwise start the same one twice.
+# One run at a time for the repository, and none cancelled, so two runs never race. That alone does
+# not stop a second start: a delivery shows as under way only once its session pushes the spec. The
+# marker below does: for 45 minutes after a delivery starts, a run starts no other for that feature,
+# and by then the delivery has pushed its spec and shows as under way.
 concurrency:
   group: rfr-deliver
   cancel-in-progress: false
@@ -28,6 +32,7 @@ concurrency:
 jobs:
   deliver:
     runs-on: ubuntu-latest
+    environment: rfr-deliver
     steps:
       # The whole history: a delivery is under way when another branch adds its spec, and the check
       # compares each remote branch with the default branch. It fetches every branch from origin
@@ -35,16 +40,31 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      # `main` follows rules-for-robots as it changes, and this job runs it with the routine's token
+      # in its environment. A project that needs that fixed should pin `ref:` to a release tag or
+      # commit.
       - uses: actions/checkout@v5
         with:
           repository: lifelike-and-believable/rules-for-robots
           ref: main
           path: .rfr
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # The marker of the last delivery started, from the most recent run that saved one.
+      - uses: actions/cache/restore@v4
+        with:
+          path: .rfr-deliver
+          key: rfr-deliver-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: rfr-deliver-
       - name: Start a delivery if one is open
         env:
           RFR_DELIVER_ROUTINE: ${{ vars.RFR_DELIVER_ROUTINE }}
           RFR_DELIVER_TOKEN: ${{ secrets.RFR_DELIVER_TOKEN }}
-        run: node .rfr/checks/ci/deliver-on-merge.mjs .
+        run: node .rfr/checks/ci/deliver-on-merge.mjs . --marker .rfr-deliver/last.json
+      - uses: actions/cache/save@v4
+        if: hashFiles('.rfr-deliver/last.json') != ''
+        with:
+          path: .rfr-deliver
+          key: rfr-deliver-${{ github.run_id }}-${{ github.run_attempt }}
