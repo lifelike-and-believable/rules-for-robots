@@ -11,8 +11,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { STAGES, approversFor, gateOf, gatedStages, readConfig, readWorkMode } from './lib/process.mjs';
-import { BEGIN, END, applyBlock } from './process-codeowners.mjs';
+import { readConfig, readWorkMode } from './lib/process.mjs';
+import { applyBlock, renderBlock } from './process-codeowners.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE = path.join(HERE, '..', 'plugins', 'process', 'templates', 'workflows', 'rfr-open-pr.yml');
@@ -27,22 +27,10 @@ export const MANUAL_STEPS = [
   `Generate a private key for the App and store the whole .pem file as the Actions secret ${SECRET}.`,
 ];
 
-const owner = a => (a.startsWith('@') ? a : `@${a}`);
 
 // The CODEOWNERS block for every stage a person approves, in any mode: the App is the pull
 // request's author, so the approver can review it in a solo project too.
-export function gateCodeowners(config, workMode = 'supervised') {
-  const gated = new Set(gatedStages(config));
-  const lines = [BEGIN];
-  for (const stage of STAGES) {
-    if (!gated.has(stage.name) || gateOf(stage.name, config, workMode) !== 'approve') continue;
-    const approvers = approversFor(stage.name, config);
-    if (!approvers?.length) continue;
-    lines.push(`${stage.file ? `/${stage.file}` : `/${stage.dir}/`} ${approvers.map(owner).join(' ')}`);
-  }
-  lines.push(END, '');
-  return lines.join('\n');
-}
+export const gateCodeowners = (config, workMode = 'supervised') => renderBlock(config, workMode);
 
 const enabled = v => Boolean(v && typeof v === 'object' ? v.enabled : v);
 

@@ -4,6 +4,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Removed
+
+- **Solo and team mode** (rewrite plan 25e; decision D5). `rfr-process` 2.2.0. There is one path: approval is the approver's review in GitHub, which the GitHub gate lets them give whoever opened the pull request. The `mode:` line in `process.yml` is ignored, and the template drops it. The CODEOWNERS check now writes and checks the block in solo mode too. It renders the same block as the gate's setup script: each `approve` stage with approvers. Before, the two disagreed about `agent` and `notify` stages, so a project with those gates failed the drift check under the gate. Adopters: delete `mode:` from `process.yml` if you like. Run `node .rfr/checks/process-codeowners.mjs` once if the `process / codeowners` check fails.
+
 ### Changed
 
 - **The command guard refuses the never list, by every route** (rewrite plan 25e). From the security review of #235. `guard-commands` now also refuses:

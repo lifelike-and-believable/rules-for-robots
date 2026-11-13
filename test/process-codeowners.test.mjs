@@ -81,14 +81,20 @@ test('project-process#AC-9: the drift check passes on a current block and fails 
   assert.equal(runCodeowners(root, { check: true }).ok, false);
 });
 
-test('project-process#AC-9: solo mode needs no block, so writing and checking both skip', () => {
-  const root = project('mode: solo\ndefault: [lead]\n');
-  assert.equal(renderBlock(parseProcessConfig('mode: solo\ndefault: [lead]\n').config), null);
-  const checked = runCodeowners(root, { check: true });
-  assert.equal(checked.ok, true);
-  assert.match(checked.message, /solo/);
+test('project-process#AC-9: solo mode gets the same block as team mode, which the GitHub gate needs (rewrite plan 25e)', async () => {
+  const solo = 'mode: solo\ndefault: [lead]\n';
+  const block = renderBlock(parseProcessConfig(solo).config);
+  assert.equal(block, renderBlock(parseProcessConfig('mode: team\ndefault: [lead]\n').config));
+  assert.match(block, /^\/docs\/design\/ @lead$/m);
+  const root = project(solo);
+  assert.equal(runCodeowners(root, { check: true }).ok, false, 'a missing block is drift in solo mode too');
   runCodeowners(root, { check: false });
-  assert.equal(fs.existsSync(path.join(root, '.github/CODEOWNERS')), false);
+  assert.equal(fs.readFileSync(path.join(root, '.github/CODEOWNERS'), 'utf8'), block);
+  // The gate's setup script writes the same block, so the drift check and the gate agree.
+  const { gateCodeowners } = await import('../checks/process-github-setup.mjs');
+  const gated = parseProcessConfig('default: [lead]\ngates:\n  stories: agent\n  requirements: notify\n').config;
+  assert.equal(gateCodeowners(gated), renderBlock(gated));
+  assert.doesNotMatch(renderBlock(gated), /stories|requirements/, 'agent and notify stages need no code owner');
 });
 
 test('project-process#AC-9: without process.yml there is nothing to check', () => {
