@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { armPrompts, pluginArgs, prepareWorkspace, removeWorktrees } from '../evals/run.mjs';
 import { runProcessTrace } from '../checks/process-trace.mjs';
 
@@ -33,7 +34,7 @@ test('the fixture is a process project whose packet is approved, with its link h
 test('the grader fails the untouched workspace, passes a correct delivery, and counts interruptions', async () => {
   const dir = await prepareWorkspace({ name: 'delivery-delegated', dir: CASE, meta }, 'rules+hooks');
   const git = (...args) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' }).stdout;
-  const grade = (await import(path.join(CASE, 'grade.mjs'))).default;
+  const grade = (await import(pathToFileURL(path.join(CASE, 'grade.mjs')).href)).default;
   try {
     assert.ok(!fs.readFileSync(path.join(dir, '.claude', 'settings.json'), 'utf8').includes('enabledPlugins'), 'no published plugins');
     assert.equal(grade({ dir, git, tools: [], finalText: '' }).pass, false);
