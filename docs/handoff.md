@@ -25,7 +25,7 @@ The rewrite plan replaced the approach of 6.x and 7.0 to 7.2, which tried to tel
 
 | Release | What it did |
 |---|---|
-| on `main`, unreleased | rfr-process 1.5.1 to 2.1.0, rfr-web 3.0.0, rfr-unreal 3.1.0, rfr-android 0.4.0, and rfr-core changes that take its version at the next release. Delivery: a feature's pull request needs its tutorial, finishing a feature from where it stands, accepting and validating as two approvals, answering a review. 25e so far: agents cannot approve a pull request (#233); approval in chat, the merge guard, default allow, `merge-when-green`, and `"permissions": "ask"` removed (#235); the tier check and the approvals job's review check retired (#236); the command guard refuses the never list by every route (#237). |
+| 7.4.0 | 2026-11-13, on the maintainer's word. Phase 25e complete (#233 to #247), and the first part of 25f: the delegated eval (#248) and the MCP refusal audit (#249). rfr-core 7.4.0, rfr-process 2.4.1, rfr-web 3.1.1. Released as 7.x so today's fixes reach every session; installed copies update only when a plugin's version changes. |
 | 7.3.0 | The first release of the rewrite plan: the GitHub gate, process state and the change check, the route for enabling work, the delivery run; rfr-core lets a session subscribe to a pull request. Tagged and published on the maintainer's word. |
 | 7.0.0 to 7.2.0 | Unattended runs, stage order on documents (`guard-stages`), the handoff rule. `guard-stages` and the modes are still in place; 25e changes or removes them. |
 

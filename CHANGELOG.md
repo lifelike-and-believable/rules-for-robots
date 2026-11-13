@@ -4,6 +4,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+## [7.4.0] - 2026-11-13
+
+Pull requests: #226, #227, #228, #229, #230, #231, #232, #233, #234, #235, #236, #237, #238, #239, #240, #241, #242, #243, #244, #245, #246, #247, #248, #249.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+Phase 25e of the rewrite plan (`docs/rewrite-plan.md`) and the first part of 25f:
+- **Delivery:** a delivery is finished from where it stands, and accepting it and validating it are two approvals.
+- **Removed:** approval in chat, the merge guard, default allow, the tier check, and the solo, team, supervised, and delegated modes.
+- **Guards:** they refuse the never list by every route. The web stack's commands moved to rfr-web.
+- **Rules:** the core rules went from 22 to 12, and TEST-001 and WA-002 kept their measured effect.
+- **The delegated delivery eval** passed 20 of 20, after its smoke run found two faults that are fixed here.
+- **The MCP guard** no longer refuses tools that only read or act locally.
+
+This is a 7.x release so that today's fixes reach every session; 8.0.0 follows the acceptance test on a real feature.
+
 ### Changed
 
 - **A delivery run's decisions file is named after its branch** (rewrite plan 25e, verify inventory slice h; delivery-run AC-3 amended). `rfr-process` 2.4.0. A run records its questions, choices, and set-aside work in `docs/decisions/<branch>.md`, with each `/` written as `-` (`feature/export` writes `docs/decisions/feature-export.md`). `delivery.mjs start` prints the name. Before, every run wrote `docs/decisions/<spec name>.md`, so two runs touching the same spec in parallel conflicted. A file named after the spec is still read, so a run under way keeps working. Adopters: nothing to do; new runs use the new name.
