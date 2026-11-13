@@ -1,5 +1,7 @@
-// Tests for the tenth round of fixes from the Kettlebird pilot (docs/specs/project-process.md,
-// "Pilot findings: round 10"). Each test title cites the criterion it covers (project-process#AC-n).
+// Tests for how the web tutorial runner finds controls and sizes the page
+// (docs/specs/project-process.md): a click by text picks the visible control (AC-49), and a tutorial
+// can set its viewport (AC-50). Moved unchanged from the pilot-round files (rewrite plan 25e). Each
+// test title cites the criterion it covers (project-process#AC-n).
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

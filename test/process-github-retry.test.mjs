@@ -1,14 +1,12 @@
-// Tests for the Agentic XR Pipeline personas feedback and the solo-merge false alarm
-// (docs/specs/project-process.md, "Project findings: Agentic XR Pipeline, round 3").
-// Each test title cites the criterion it covers (project-process#AC-n).
+// Tests for retrying GitHub server errors in the process jobs (docs/specs/project-process.md,
+// AC-48): the approvals job's notify path and issue sync. Moved unchanged from the Agentic XR
+// Pipeline round 3 file (rewrite plan 25e). Each test title cites the criterion it covers.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { relink } from '../checks/process-relink.mjs';
-import { runProcessTrace } from '../checks/process-trace.mjs';
 import { runApprovals } from '../checks/ci/process-approvals.mjs';
 import { syncIssues } from '../checks/ci/process-sync.mjs';
 
@@ -22,43 +20,13 @@ function git(root, ...args) {
   return r.stdout.trim();
 }
 
-// ---- AC-46: [to validate] ----------------------------------------------------------------------
-
-const CONCEPT = '---\nid: concept\nstatus: approved\n---\n\n# Concept\n\n## Audience\n\nPerformers.\n';
-const persona = body => `---\nid: persona-performer\nstatus: approved\nderived-from:\n  - concept#audience:\n---\n\n# Solo performer\n\n## Goals\n\n${body}\n`;
-
-function personaProject(body) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-xr3-'));
-  write(root, 'docs/product/process.yml', 'default: [lead]\n');
-  write(root, 'docs/product/concept.md', CONCEPT);
-  write(root, 'docs/product/personas/performer.md', persona(body));
-  relink(root, ['persona-performer']);
-  return runProcessTrace(root, {});
-}
-
-test('project-process#AC-46: an approved artifact with [to validate] is listed but not warned about', () => {
-  const r = personaProject('- Runs a show alone, with no operator. [to validate]\n- Streams weekly. [to validate]');
-  assert.deepEqual(r.errors, []);
-  assert.deepEqual(r.warnings.filter(w => /to validate/.test(w)), [], r.warnings.join('\n'));
-  const items = (r.openItems ?? []).filter(o => o.id === 'persona-performer');
-  assert.deepEqual(items.map(o => o.marker), ['[to validate]', '[to validate]']);
-});
-
-test('project-process#AC-46: the warning for [assumed] does not suggest rewording it as settled text', () => {
-  const r = personaProject('- Runs a show alone. [assumed]');
-  const w = r.warnings.filter(x => /\[assumed\]/.test(x));
-  assert.equal(w.length, 1, r.warnings.join('\n'));
-  assert.doesNotMatch(w[0], /reword/i);
-  assert.match(w[0], /\[to validate\]/);
-});
-
-// ---- AC-47 and AC-48: approvals ----------------------------------------------------------------
+// ---- Approvals ---------------------------------------------------------------------------------
 
 const SOLO = 'mode: solo\ndefault: [lead]\n';
 const artifact = (id, body = '# Title\n') => `---\nid: ${id}\nstatus: draft\n---\n\n${body}`;
 
 function soloRepo({ squashSubject = null, gates = '' } = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-xr3-approvals-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-retry-approvals-'));
   git(root, 'init', '-q', '-b', 'main');
   write(root, 'docs/product/process.yml', SOLO + gates);
   write(root, 'docs/product/concept.md', artifact('concept'));
@@ -104,7 +72,6 @@ function fakeGitHub({ prs = {}, fail = () => null } = {}) {
 
 const pushEnv = r => ({ GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'acme/app', GITHUB_TOKEN: 't', GITHUB_API_URL: 'https://api.github.test', GITHUB_SHA: r.head });
 const approve = (r, gh) => runApprovals({ root: r.root, env: pushEnv(r), fetch: gh.fetch, log: () => {}, sleep: async () => {} });
-const mergedPr = (number, sha, login = 'lead') => ({ number, merged: true, merged_at: '2026-11-05T12:00:00Z', merge_commit_sha: sha, merged_by: { login } });
 
 test('project-process#AC-48: approvals retries a server error and then passes', async () => {
   // Since rewrite plan 25e the job calls GitHub after a merge only for a notify stage: the lookup of
@@ -118,10 +85,10 @@ test('project-process#AC-48: approvals retries a server error and then passes', 
   assert.match(gh.issues[0].title, /#2/, 'the pull request number comes from the merge subject when the lookup is empty');
 });
 
-// ---- AC-48: issue sync -------------------------------------------------------------------------
+// ---- Issue sync --------------------------------------------------------------------------------
 
 function syncProject() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-xr3-sync-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-retry-sync-'));
   write(root, 'docs/product/process.yml', 'default: [lead]\n');
   write(root, 'docs/product/concept.md', '---\nid: concept\nstatus: approved\n---\n\n# Concept\n');
   write(root, 'docs/product/personas/performer.md', '---\nid: persona-performer\nstatus: draft\n---\n\n# Performer\n');
