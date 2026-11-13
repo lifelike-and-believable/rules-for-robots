@@ -154,6 +154,8 @@ Reviewing at the gate (added 2026-11-12, approved by the maintainer). The approv
 
 ### 25e: Removal and rules
 
+The refusal of an agent approving a pull request was built first, on 2026-11-12 ([github-gate AC-9](specs/github-gate.md), pull request #233): `gh pr review --approve`, an `APPROVE` review through the API, and the GitHub MCP review tools. Scanned against 5,549 shell commands and 1,163 MCP calls in the maintainer's local transcripts, it refused none.
+
 Remove what section 4 lists, with its tests and specs; reduce the command guard; prune and rewrite the rules; rerun the evals for TEST-001 and WA-002, whose wording changed after their last run; replay recorded sessions through the new guards.
 
 The approvals check on gated pull requests (added 2026-11-12, from the first real use of the gate on `xr-studio-in-a-box`, pull request #351). In team mode `process / approvals` fails on a pull request that touches a gated folder until its approver has reviewed it, then reruns and passes. With the gate, GitHub's code-owner requirement already holds that pull request, so the check adds a red mark on every gated pull request that means nothing is wrong; the maintainer noticed it on the first one. In a project with the gate, the check either goes or reports "waiting for review" without failing. Until then the adoption guide says to expect it.
