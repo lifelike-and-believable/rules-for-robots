@@ -4,7 +4,7 @@ status: draft
 
 # Lasting tutorials and a place to try them
 
-A tutorial is how the lead validates a feature, and it should also be what a user follows to learn it. This spec makes a tutorial a lasting piece of user documentation that runs wherever the product runs, and makes getting somewhere to follow it one click or one command. It answers the maintainer's feedback on the 25f acceptance test, 2026-11-13: "Tutorials should survive the development process and be usable both during the development process and once the system is deployed", and their question whether the tutorial set-up can be simpler. The maintainer approved the six changes in "The tutorial" below the same day; and the seven decisions in the table at the end later that day, each as recommended. A later section, "Organised user documentation", answers further feedback of the same day; its four decisions (D8 to D11) are not yet answered. This is Phase 27 of `PLAN.md`; slice 27a is built (#255). The `status` field stays `draft` until every `test:` criterion has a citing test.
+A tutorial is how the lead validates a feature, and it should also be what a user follows to learn it. This spec makes a tutorial a lasting piece of user documentation that runs wherever the product runs, and makes getting somewhere to follow it one click or one command. It answers the maintainer's feedback on the 25f acceptance test, 2026-11-13: "Tutorials should survive the development process and be usable both during the development process and once the system is deployed", and their question whether the tutorial set-up can be simpler. The maintainer approved the six changes in "The tutorial" below the same day; and the seven decisions in the table at the end later that day, each as recommended. A later section, "Organised user documentation", answers further feedback of the same day; its four decisions (D8 to D11) were approved that day as well. This is Phase 27 of `PLAN.md`; slice 27a is built (#255). The `status` field stays `draft` until every `test:` criterion has a citing test.
 
 ## Problem
 
@@ -131,9 +131,9 @@ Approved by the maintainer on 2026-11-13, each as recommended: "yes to all decis
 
 ### Decisions on organised user documentation
 
-Added 2026-11-13 and not yet answered.
+Approved by the maintainer on 2026-11-13, each as recommended: "spec approved with recommended decisions."
 
-| # | Decision | Recommendation | The alternative, and what it costs |
+| # | Decision | Decided | The alternative, and what it costs |
 |---|---|---|---|
 | D8 | What is user documentation organised by? | The areas of the product as its user sees them, following its navigation, with a place to start for each persona on the start page. | By persona: pages that several roles use have no one home. By epic or feature: that is the order it was built in, which is the problem. |
 | D9 | Folders, or a tag? | A folder for each area with an overview page. The shape is visible in the repository, in a pull request, and in CODEOWNERS. | An `area:` line in each page and a generated index: no files move, and nobody sees the shape without running a tool. |

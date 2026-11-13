@@ -486,7 +486,7 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 - **27a:** what a tutorial is: the template, the guide, the body checks, and the link from user documentation.
 - **27b:** the web runner acts as several people, signs in, and starts from another tutorial's result.
 - **27c:** a place to try it: `try:` in `process.yml`, tutorial sign-in and its conditions, stand-ins for cloud services and what each place provides, and "Try it" in the pull request and the report.
-- **27e:** organised user documentation: a folder and an overview for each area of the product, one start page, every page reachable, `covers:` for what a page applies to, and the help published with the product. Added 2026-11-13 from the maintainer's feedback; its four decisions (D8 to D11) are not yet answered. Built before 27d.
+- **27e:** organised user documentation: a folder and an overview for each area of the product, one start page, every page reachable, `covers:` for what a page applies to, and the help published with the product. Added 2026-11-13 from the maintainer's feedback; its four decisions (D8 to D11) were approved the same day, each as recommended (#256). Built before 27d.
 - **27d:** XR Studio In A Box moved onto it, with its user documentation organised into areas, and slices 2 to 4 validated from a preview.
 
 ## 11. Milestones
