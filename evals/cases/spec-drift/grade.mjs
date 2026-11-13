@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 export default async function grade({ dir, finalText = '' }) {
   let behaviour = false;
   try {
-    const { convert } = await import(pathToFileURL(path.join(dir, 'src', 'convert.js')) + `?t=${Date.now()}`);
+    const { convert } = await import(pathToFileURL(path.join(dir, 'src', 'convert.js')) + `?t=${Date.now()}-${Math.random()}`);
     behaviour = convert(10, 'km', 'mi') === 6.214;
   } catch {}
   const { NODE_TEST_CONTEXT, ...env } = process.env;
