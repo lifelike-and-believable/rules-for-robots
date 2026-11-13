@@ -25,7 +25,7 @@ export const STAGES = [
 ];
 export const STAGE_ORDER = STAGES.map(s => s.name);
 const CONFIG_STAGES = new Set([...STAGE_ORDER, 'release']);
-const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'gates', 'public-api', 'adoption-until', 'project', 'waived']);
+const CONFIG_KEYS = new Set(['mode', 'default', 'stages', 'gates', 'public-api', 'adoption-until', 'project', 'waived', 'try']);
 
 // Stage order (project-process AC-63): every delivery stage is required unless process.yml waives it,
 // with a reason, before work starts. An artifact of each stage below must derive from an approved
@@ -68,12 +68,16 @@ function scalarOrList(value) {
   return { value: unquote(v) };
 }
 
-// Parses lines into { key: scalar | list | { key: scalar | list } }. Returns { data, errors }.
+// Parses lines into { key: scalar | list | { key: scalar | list | { key: scalar | list } } }. The
+// third level is for try.provides (a place, then its services). Returns { data, errors }.
 function parseYamlSubset(text) {
   const data = {};
   const errors = [];
   let parent = null;   // top-level key whose value is a mapping or block list
-  let child = null;    // second-level key whose value is a block list
+  let child = null;    // second-level key whose value is a block list or a mapping
+  let childIndent = 0; // the indent of that second-level key
+  let grandchild = null; // third-level key whose value is a block list
+  const isMap = v => v !== null && typeof v === 'object' && !Array.isArray(v);
   for (const [i, raw] of text.split(/\r?\n/).entries()) {
     const line = stripComment(raw).replace(/\s+$/, '');
     if (!line.trim()) continue;
@@ -83,21 +87,39 @@ function parseYamlSubset(text) {
     if (indent === 0 && field) {
       const [, key, value] = field;
       child = null;
+      grandchild = null;
       if (value === undefined || value === '') { data[key] = null; parent = key; continue; }
       parent = null;
       const parsed = scalarOrList(value);
       if (parsed.error) errors.push(`line ${i + 1}: ${parsed.error}`);
       data[key] = parsed.value;
+    } else if (item && parent && grandchild) {
+      const target = data[parent][child][grandchild];
+      if (target === null || Array.isArray(target)) data[parent][child][grandchild] = [...(target ?? []), unquote(item[1])];
+      else errors.push(`line ${i + 1}: unexpected list item`);
     } else if (item && parent) {
       const target = child ? data[parent][child] : null;
       if (child && (target === null || Array.isArray(target))) data[parent][child] = [...(target ?? []), unquote(item[1])];
       else if (!child && (data[parent] === null || Array.isArray(data[parent]))) data[parent] = [...(data[parent] ?? []), unquote(item[1])];
       else errors.push(`line ${i + 1}: unexpected list item`);
-    } else if (field && parent && indent > 0) {
+    } else if (field && parent === 'try' && child && indent > childIndent && (data[parent][child] === null || isMap(data[parent][child]))) {
+      // A mapping under a second-level key: the places under try.provides. Only try: nests this far,
+      // so a mistaken third level under stages:, gates:, or waived: is still an error.
       const [, key, value] = field;
+      if (data[parent][child] === null) data[parent][child] = {};
+      if (value === undefined || value === '') { data[parent][child][key] = null; grandchild = key; continue; }
+      grandchild = null;
+      const parsed = scalarOrList(value);
+      if (parsed.error) errors.push(`line ${i + 1}: ${parsed.error}`);
+      data[parent][child][key] = parsed.value;
+    } else if (field && parent && indent > 0) {
+      // Deeper than a second-level key that is waiting for its value, outside try: nothing reads it.
+      if (parent !== 'try' && child && indent > childIndent) { errors.push(`line ${i + 1}: cannot read "${raw.trim()}"`); continue; }
+      const [, key, value] = field;
+      grandchild = null;
       if (data[parent] === null) data[parent] = {};
       if (Array.isArray(data[parent])) { errors.push(`line ${i + 1}: mixes a list and a mapping under ${parent}`); continue; }
-      if (value === undefined || value === '') { data[parent][key] = null; child = key; continue; }
+      if (value === undefined || value === '') { data[parent][key] = null; child = key; childIndent = indent; continue; }
       child = null;
       const parsed = scalarOrList(value);
       if (parsed.error) errors.push(`line ${i + 1}: ${parsed.error}`);
@@ -121,7 +143,7 @@ function validDate(s) {
 
 export function parseProcessConfig(text) {
   const { data, errors } = parseYamlSubset(text);
-  const config = { mode: 'team', default: [], stages: {}, gates: {}, publicApi: [], adoptionUntil: null, project: null, waived: {} };
+  const config = { mode: 'team', default: [], stages: {}, gates: {}, publicApi: [], adoptionUntil: null, project: null, waived: {}, try: null };
   for (const key of Object.keys(data)) if (!CONFIG_KEYS.has(key)) errors.push(`process.yml: unknown key "${key}"`);
   // mode: solo | team is accepted and ignored since rewrite plan 25e (decision D5: one path). With the
   // GitHub gate the approval is always the approver's review, so existing files keep working.
@@ -171,7 +193,70 @@ export function parseProcessConfig(text) {
     if (validDate(data['adoption-until'])) config.adoptionUntil = data['adoption-until'];
     else errors.push(`process.yml: adoption-until must be a date (YYYY-MM-DD), not "${data['adoption-until']}"`);
   }
+  config.try = parseTry(data.try, errors);
   return { config, errors };
+}
+
+// A place to try the product (docs/specs/lasting-tutorials.md, AC-5 and AC-14). process.yml's try:
+// block becomes config.try, or null when there is none:
+//   { local: string | null,     the command that starts the product in a fresh, known state and prints its address
+//     preview: boolean,         whether each pull request gets a preview deployment
+//     url: string | null,       the deployed product's address
+//     staging: string | null,   a shared staging address with real services
+//     signIn: string | null,    the path that signs a session in as a named person, with {name} in it
+//     state: string | null,     the path or command that loads the result of a named tutorial
+//     provides: { local?: [service], preview?: [service], staging?: [service] } | null }
+const TRY_KEYS = ['local', 'preview', 'url', 'staging', 'sign-in', 'state', 'provides'];
+export const TRY_PLACES = ['local', 'preview', 'staging'];
+
+function parseTry(value, errors) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    errors.push('process.yml: "try" must be a mapping of local, preview, url, staging, sign-in, state, and provides');
+    return null;
+  }
+  const out = { local: null, preview: false, url: null, staging: null, signIn: null, state: null, provides: null };
+  for (const [key, v] of Object.entries(value)) {
+    if (!TRY_KEYS.includes(key)) { errors.push(`process.yml: unknown key "${key}" under try (known: ${TRY_KEYS.join(', ')})`); continue; }
+    if (key === 'preview') {
+      if (v === 'true' || v === 'false') out.preview = v === 'true';
+      else errors.push(`process.yml: try.preview must be true or false, not "${v ?? ''}"`);
+    } else if (key === 'provides') {
+      if (v === null || typeof v !== 'object' || Array.isArray(v)) { errors.push('process.yml: try.provides must map places (local, preview, staging) to lists of services, like "local: [mail]"'); continue; }
+      out.provides = {};
+      for (const [place, services] of Object.entries(v)) {
+        if (!TRY_PLACES.includes(place)) errors.push(`process.yml: try.provides names "${place}", which is not a place (local, preview, or staging)`);
+        else out.provides[place] = asList(services);
+      }
+    } else if (typeof v !== 'string' || !v.trim()) {
+      errors.push(`process.yml: try.${key} must be text on one line, not a list or an empty value`);
+    } else if (key === 'sign-in') {
+      if (v.includes('{name}')) out.signIn = v;
+      else errors.push('process.yml: try.sign-in must contain {name}, where the person\'s name goes, for example /try/sign-in?as={name}');
+    } else {
+      out[key] = v;
+    }
+  }
+  return out;
+}
+
+// A tutorial's title: the first "# " heading of its body, or null.
+export function tutorialTitle(text) {
+  // Closing #s count only after a space ("# Title ##"), so "# Learning C#" keeps its #.
+  return /^#\s+(.+?)(?:\s+#+)?\s*$/m.exec(parseArtifact(text ?? '').body ?? '')?.[1] ?? null;
+}
+
+// Where the lead can try a change (lasting-tutorials AC-8): the lines that name the tutorials it adds
+// or changes ([{ file, title }]), then the preview when there is one, then the local command. `where`
+// says where the preview's link is: 'below' in a pull request's description, 'pr' in the report.
+// Empty when there is no tutorial to follow.
+export function tryItLines({ tutorials = [], preview = false, local = null, where = 'below' }) {
+  if (!tutorials.length) return [];
+  const lines = ['Follow these tutorials to try the change:', ''];
+  for (const t of tutorials) lines.push(`- ${t.title ?? t.file} (\`${t.file}\`)`);
+  if (preview) lines.push('', `Open the preview linked ${where === 'pr' ? 'from the pull request' : 'below'}, when its deployment finishes.`);
+  if (local) lines.push('', `To try it on your own machine, run \`${local}\` and open the address it prints.`);
+  return lines;
 }
 
 // ---- artifacts --------------------------------------------------------------------------------

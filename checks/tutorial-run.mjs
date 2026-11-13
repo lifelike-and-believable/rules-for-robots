@@ -15,15 +15,20 @@
 //   ... --record <dir>   save a screenshot per step, failure.png, and a video per tutorial (video.webm,
 //                        or video-<person>.webm for each person a tutorial names)
 //   ... --sign-in <path> the path that signs a session in as a named person, with {name} in it
-//                        (for example /try/sign-in?as={name}); without it, sign-in steps are manual
+//                        (for example /try/sign-in?as={name}); without it, the runner uses try.sign-in
+//                        from docs/product/process.yml, and with neither, sign-in steps are manual
+//   ... --provides <list> the services this place provides, comma-separated (lasting-tutorials AC-14):
+//                        a tutorial whose needs: names one not in the list is not run here, which is
+//                        reported and does not fail the run; without the option, needs are ignored
+//   ... --place <name>   local, preview, or staging: take that list from try.provides in process.yml
 // Playwright is loaded from the project being checked (its own dependency), so this script works
 // from an .rfr checkout.
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { parseArtifact } from './lib/process.mjs';
-import { bodyProblems, parseSteps, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
+import { parseArtifact, readConfig } from './lib/process.mjs';
+import { bodyProblems, needsOf, parseSteps, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
 
 const RUNNERS = new Set(['web', 'unreal', 'manual']);
 const TUTORIALS = 'docs/tutorials';
@@ -46,7 +51,8 @@ function listTutorials(root) {
   return out.map(file => {
     const text = fs.readFileSync(path.join(root, file), 'utf8');
     const parsed = parseArtifact(text);
-    return { file, text, id: parsed.front?.id ?? null, runner: runnerOf(text), startsFrom: startsFromOf(text), body: parsed.body };
+    const needs = needsOf(text);
+    return { file, text, id: parsed.front?.id ?? null, runner: runnerOf(text), startsFrom: startsFromOf(text), needs: needs.needs ?? [], needsError: needs.error, body: parsed.body };
   });
 }
 
@@ -83,6 +89,7 @@ export function checkCoverage(root, { lasting = 'fail' } = {}) {
     // What a lasting tutorial may not hold (lasting-tutorials AC-2). With lasting: 'warn' these are
     // warnings, for a project whose tutorials were written before the rule (AC-15).
     for (const p of bodyProblems(t.body, t.runner)) (lasting === 'warn' ? warnings : errors).push(`${name}: ${p}`);
+    if (t.needsError) errors.push(`${name}: ${t.needsError}`);
   }
   // A tutorial named like a spec is probably a spec in the wrong place (AC-2): a warning only.
   let specs = [];
@@ -317,8 +324,22 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
 // cannot be run here (it is not a web tutorial) is skipped, with the reason. Each tutorial that
 // starts from another begins with that tutorial's people still signed in (runTutorial's `from`),
 // against whatever the product holds by then, which includes what earlier tutorials in the run did.
+// The services the place being tried has (AC-14): the --provides list when given; otherwise, when the
+// run names its place (--place local, preview, or staging), what the project's try.provides lists for
+// it. null means needs are not checked: no list was given, and the project lists nothing for the place.
+export function providesFor({ given = null, place = null, config = null }) {
+  if (given) return given;
+  const listed = place ? config?.try?.provides?.[place] : null;
+  return Array.isArray(listed) ? listed : null;
+}
+
 // `report` is called with each result as it is known, so a long run prints as it goes.
-export async function runTutorials({ tutorials, baseUrl, root = process.cwd(), timeout, browser = null, record = null, headers = null, signIn = null, report = () => {} }) {
+//
+// Needs (lasting-tutorials AC-14). `provides` is the list of services this place has, or null. With a
+// list, a tutorial whose needs are not all in it is not run here: { status: 'not-run', reason:
+// 'needs <service>, ...' }, and so is one that starts from a tutorial not run here. That is not a
+// failure. With null, needs are ignored and every tutorial runs.
+export async function runTutorials({ tutorials, baseUrl, root = process.cwd(), timeout, browser = null, record = null, headers = null, signIn = null, provides = null, report = () => {} }) {
   const byId = new Map(tutorials.filter(t => t.id).map(t => [t.id, t]));
   const done = new Map();
   const running = new Set();
@@ -332,7 +353,9 @@ export async function runTutorials({ tutorials, baseUrl, root = process.cwd(), t
     running.add(key);
     let r = null;
     let from = null;
-    if (t.startsFrom) {
+    const unmet = provides ? (t.needs ?? []).filter(n => !provides.includes(n)) : [];
+    if (unmet.length) r = { id: key, status: 'not-run', reason: `needs ${unmet.join(', ')}` };
+    else if (t.startsFrom) {
       const start = byId.get(t.startsFrom);
       let why = null;
       if (!start) why = 'is not a tutorial';
@@ -342,6 +365,7 @@ export async function runTutorials({ tutorials, baseUrl, root = process.cwd(), t
         const before = await run(start);
         if (before.status === 'fail') why = 'failed';
         else if (before.status === 'skip') why = 'was skipped';
+        else if (before.status === 'not-run') r = { id: key, status: 'not-run', reason: `starts from ${t.startsFrom}, which was not run here` };
         else from = before.end;
       }
       if (why) r = { id: key, status: 'skip', reason: `starts from ${t.startsFrom}, which ${why}` };
@@ -371,10 +395,17 @@ async function main(argv) {
   const j = args.indexOf('--record');
   const record = j === -1 ? null : path.resolve(args.splice(j, 2)[1]);
   const k = args.indexOf('--sign-in');
-  const signIn = k === -1 ? null : args.splice(k, 2)[1] ?? '';
-  if (signIn !== null && !signIn.includes('{name}')) { console.error('--sign-in must contain {name}, for example /try/sign-in?as={name}'); process.exit(2); }
+  const given = k === -1 ? null : args.splice(k, 2)[1] ?? '';
+  if (given !== null && !given.includes('{name}')) { console.error('--sign-in must contain {name}, for example /try/sign-in?as={name}'); process.exit(2); }
+  const p = args.indexOf('--provides');
+  const givenProvides = p === -1 ? null : (args.splice(p, 2)[1] ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  const q = args.indexOf('--place');
+  const place = q === -1 ? null : args.splice(q, 2)[1] ?? null;
   const coverageOnly = args.includes('--coverage');
   const root = path.resolve(args.find(a => !a.startsWith('--')) ?? '.');
+  const provides = providesFor({ given: givenProvides, place, config: readConfig(root)?.config ?? null });
+  // The command line wins; otherwise the project's own sign-in path, from try.sign-in (AC-5).
+  const signIn = given ?? readConfig(root)?.config?.try?.signIn ?? null;
   const { errors, warnings, tutorials } = checkCoverage(root, { lasting: process.env.RFR_LASTING_TUTORIALS === 'warn' ? 'warn' : 'fail' });
   for (const w of warnings) console.warn(`warning: ${w}`);
   for (const e of errors) console.error(e);
@@ -392,15 +423,18 @@ async function main(argv) {
   const report = r => {
     if (r.status === 'ok') console.log(`ok   ${r.id} (${r.steps} steps)`);
     else if (r.status === 'fail') console.error(`FAIL ${r.id}: ${r.failure.message}`);
+    else if (r.status === 'not-run') console.log(`n/a  ${r.id}: not run here: ${r.reason}`);
     else console.error(`SKIP ${r.id}: not run, because it ${r.reason}`);
     for (const m of r.manual ?? []) console.log(`note ${r.id}: step ${m.step} signs in as ${m.person} by hand: no --sign-in was given, so the runner skipped it`);
   };
   let results;
   try {
-    results = await runTutorials({ tutorials, baseUrl, root, browser, record, headers, signIn, report });
+    results = await runTutorials({ tutorials, baseUrl, root, browser, record, headers, signIn, provides, report });
   } finally {
     await browser.close();
   }
+  const away = results.filter(r => r.status === 'not-run').length;
+  if (away) console.log(`${away} tutorial(s) not run here, because they need a service this run does not provide (it provides: ${provides.length ? provides.join(', ') : 'nothing'}).`);
   const skipped = results.filter(r => r.status === 'skip').length;
   if (skipped) console.error(`${skipped} tutorial(s) skipped because a tutorial they start from did not pass.`);
   if (skipped || results.some(r => r.status === 'fail')) process.exit(1);

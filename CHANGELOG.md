@@ -4,9 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257.
+Pull requests: #251, #252, #255, #257, #258.
 
 ### Changed
+
+- **A place to try the product** (Phase 27c; lasting-tutorials AC-5, AC-6, AC-8, AC-10, AC-11, AC-13, AC-14). `rfr-process` 2.8.0.
+  - `docs/product/process.yml` accepts a `try:` block: `local` (the command that starts the product in a known state), `preview`, `url`, `staging`, `sign-in` (a path with `{name}`, which the tutorial runner uses for `Sign in as **Name**.` when `--sign-in` is not given), `state`, and `provides` (the services each place really has). The process check fails a `local` that names a package script the project does not have.
+  - A tutorial may list `needs:`. With `--provides <list>` the runner runs it only where every need is provided and reports the others as not run here, which does not fail the run. The process check fails a need no place provides.
+  - The pull request description and the end-of-run report have a "Try it" section: the tutorials the change touches, the preview, and the local command.
+  - The guide has the table of kinds of product and what trying each takes, the four conditions for tutorial sign-in, a recipe for a web app's `try` command, and asks an architecture for a "Trying the product" section. The `setup` and `bootstrap` skills ask how the product will be tried and write the block.
+
+  Adopters: update `rfr-process` to 2.8.0. Nothing is required. To use it, add a `try:` block to `process.yml` (the template has a commented example) and build the command it names.
 
 - **The web tutorial runner acts as several people and starts from another tutorial** (Phase 27b; lasting-tutorials AC-3, AC-4). `rfr-process` 2.7.0.
   - A step that begins `As **Name**:` runs in that person's own browser session, kept for the rest of the tutorial. `Sign in as **Name**.` opens the path given to `--sign-in` (it must contain `{name}`) in that session; with no `--sign-in` the step is done by hand and the run says so. A recording has one video for each named person (`video-<name>.webm`).

@@ -41,6 +41,77 @@ The fixture build must cover **every** content source, not only the ones the cur
 
 Review checks: the approver follows the tutorial on the real product. Did it produce what the stories promised? Was any step surprising?
 
+### A place to try it
+
+A tutorial is only as quick to follow as the place it runs. The project describes once, in the `try:` block of `docs/product/process.yml`, how to get a place, and the tutorials do not mention it:
+
+```yaml
+try:
+  local: npm run try            # starts the product in a fresh, known state and prints its address
+  preview: true                 # each pull request gets a preview deployment
+  url: https://app.example.com  # the deployed product
+  staging: https://staging.example.com
+  sign-in: /try/sign-in?as={name}   # signs a session in as a tutorial's person; local and preview only
+  provides:                     # which services each place really has (see needs: in a tutorial)
+    local: [mail]
+    preview: [mail]
+    staging: [mail, payments]
+```
+
+The runner uses `sign-in` for a `Sign in as **Name**.` step. A tutorial lists `needs: [mail]` in its front matter and runs only where every need is provided; elsewhere it is reported as not run there, never as passed. The first slice of a product with a user interface builds the `try` command, and the first slice with accounts builds tutorial sign-in. `setup` and `bootstrap` ask for the answers and write the block.
+
+**Tutorial sign-in.** It is a deliberate way round authentication, so a product offers it only on four conditions:
+
+1. It exists only in a build started with a setting for trying.
+2. It is refused when the product's production setting is on, whatever else is set.
+3. It lists only the people the tutorials name, with fixture data.
+4. A test proves the path answers 404 without the setting.
+
+A project that cannot meet them leaves `sign-in` out, and its sign-in steps are done by hand. A change adding or altering such a path gets a security review against those four points.
+
+**The `try` command for a `web-app`.** This is a recipe the project implements in its own stack, not a script rfr runs. The command does these in order:
+
+1. Start the data store the product needs.
+2. Apply migrations.
+3. Load fixture data.
+4. Start the product with the trying setting on.
+5. Print the address.
+6. Clean up on exit.
+
+A worked example, kept as scripts/try.sh and run by npm run try, for a Node web app with a PostgreSQL database:
+
+```sh
+set -e
+docker run -d --rm --name try-db -e POSTGRES_PASSWORD=try -p 5433:5432 postgres:16
+trap 'kill $APP_PID 2>/dev/null; docker stop try-db' EXIT
+until docker exec try-db pg_isready -q; do sleep 1; done
+export DATABASE_URL=postgres://postgres:try@localhost:5433/postgres
+npm run db:migrate
+npm run db:seed
+TRYING=1 npm start & APP_PID=$!
+echo "Open http://localhost:3000"
+wait $APP_PID
+```
+
+**Different kinds of product.** What a place to try takes depends on what the product is made of. The tutorial stays the same file; the project decides once what stands behind it in each place.
+
+| Kind | Trying it locally | Trying a pull request | What needs care |
+|---|---|---|---|
+| Static site | The built site, served | The host's preview | Content from a CMS: fixture content |
+| Web app with its own data store | One command: store, migrations, fixture data, the app | A preview with its own store, loaded with fixture data | Accounts and sign-in |
+| System with cloud services (queues, object storage, mail, paid or metered APIs) | Each service has a stand-in: an emulator, a fake, or a sandbox account | A preview that uses stand-ins or sandbox accounts, never production's | What the stand-ins cannot show, and cost |
+| Unreal plugin | The sample project in the editor | The Tier 2 engine run | Engine versions |
+| Android or TV app | A device or emulator | A build to install | A shared device |
+| Command-line tool or library | The built tool | Nothing more | Nothing |
+
+For a product with external services, three rules keep this honest and cheap:
+
+- Every service has a declared stand-in, listed in the architecture's "Trying the product" section.
+- A tutorial says in `needs:` what it needs that a stand-in cannot give.
+- What only the real thing shows is run in one shared staging place before release, not for every pull request.
+
+rfr creates none of this infrastructure. It asks for the declaration, checks the tutorials against it, and reports what ran where.
+
 ### Release and feedback
 
 Before a release, every story in it has an approved tutorial, and nothing it depends on is stale or withdrawn. Release notes are written from the user documentation, in the personas' terms. Feedback from real use is filed as an issue with the `feedback` label and routed to the artifact it affects: a wrong promise goes back to the story, a wrong flow to the design, a wrong explanation to the documentation.

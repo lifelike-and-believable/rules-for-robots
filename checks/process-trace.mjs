@@ -11,7 +11,9 @@
 //   6. a spec `test:` criterion whose Source cell names no approved story or user documentation
 //      section in the spec's derived-from;
 //   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry;
-//   9. a tutorial whose starts-from is not a tutorial's id, or a cycle of starts-from.
+//   9. a tutorial whose starts-from is not a tutorial's id, or a cycle of starts-from;
+//  10. a tutorial whose needs: cannot be read, or names a service no place in try.provides provides;
+//  11. a try.local command that runs a package script the root package.json does not have.
 // It warns when a bold name in a user documentation page appears in no design the page reaches,
 // and prints the rules-for-robots commit it ran from.
 // Staleness is direct only. Before process.yml's adoption-until date, problems with artifacts that
@@ -22,7 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
+import { needsOf, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
 import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
@@ -130,6 +132,19 @@ function analyse(artifacts) {
   }
   const stale = a => isApproved(a) && linkState.get(a).some(s => s.current !== null && s.link.hash !== s.current);
   return { byId, linkState, stale };
+}
+
+// The package script a try.local command runs, or null when it is not a form the check can be sure
+// of. Only "<npm|pnpm|yarn> run <script>" at the start of the command is read, with nothing before
+// the script name and no option that points at another package (-w, --workspace, --filter, -C,
+// --cwd, -r, --prefix, "workspace"): the script would then be in another package.json. "pnpm dev"
+// and "yarn dev" are not read, because the name may be a built-in command or a program, not a script.
+export function localScript(command) {
+  const text = command ?? '';
+  const m = /^\s*(?:npm\s+run(?:-script)?|pnpm\s+run|yarn\s+run)\s+([^\s;&|-][^\s;&|]*)/.exec(text);
+  if (!m) return null;
+  if (/(?:^|\s)(?:-w|--workspace|--workspaces|--filter|-C|--cwd|-r|--recursive|--prefix)(?:[=\s]|$)|\sworkspace\s/.test(text)) return null;
+  return m[1];
 }
 
 export function runProcessTrace(root, { base = null, now = new Date(), lasting = 'fail' } = {}) {
@@ -287,6 +302,27 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
   for (const p of startsFromProblems(tutorials)) {
     errors.push(p.message);
     if (p.id) involved.add(p.id);
+  }
+
+  // A tutorial's needs (lasting-tutorials AC-14) can be read, and, when process.yml says what each
+  // place provides, some place provides each of them.
+  const provided = config?.try?.provides ? new Set(Object.values(config.try.provides).flat()) : null;
+  for (const a of artifacts.filter(x => x.stage === 'tutorials' && x.id)) {
+    const { needs, error } = needsOf(fs.readFileSync(path.join(root, a.file), 'utf8'));
+    if (error) { errors.push(`${a.id}: ${error}`); involved.add(a.id); continue; }
+    const missing = provided ? (needs ?? []).filter(n => !provided.has(n)) : [];
+    if (missing.length) {
+      errors.push(`${a.id}: needs ${missing.join(', ')}, which no place in try.provides in ${CONFIG_PATH} provides; add it to the place that has it (local, preview, or staging), or remove it from needs`);
+      involved.add(a.id);
+    }
+  }
+
+  // try.local (AC-5): a command that runs a package script names one the project has.
+  const script = localScript(config?.try?.local);
+  if (script) {
+    let pkg = null;
+    try { pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')); } catch { /* no package.json, or not JSON: not checked */ }
+    if (pkg && !Object.hasOwn(pkg.scripts ?? {}, script)) errors.push(`process.yml: try.local runs the package script "${script}", which package.json does not have; add a "${script}" script to package.json, or change try.local to the command that starts the product`);
   }
 
   // Rule 7: withdrawals since the base.

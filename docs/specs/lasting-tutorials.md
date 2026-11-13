@@ -164,4 +164,5 @@ Approved by the maintainer on 2026-11-13, each as recommended: "spec approved wi
   - **27c, a place to try it:** AC-5, AC-6, AC-8, AC-10, AC-11, AC-13, AC-14.
   - **27e, organised user documentation:** AC-16 to AC-21. Built before 27d, so that the move below is made once.
   - **27d, XR Studio In A Box:** AC-12, with its user documentation moved into areas under a start page, and the workflow's `lasting-tutorials` default becomes `fail`.
-- Pull requests: none yet.
+- Pull requests: #254 (spec), #255 (27a), #256 (27e spec), #257 (27b), #258 (27c).
+- Left out of 27c, to do later: the `security-reviewer` text in AC-6, which is in rfr-core and changes with its next release (the changelog check ties rfr-core's version to a release); the release-check clause of AC-14, which needs a store of recorded runs that does not exist yet; the faster way to reach a starting state from `try.state` (AC-4), which is parsed only; and each profile's guide part naming its row of the table (AC-13).

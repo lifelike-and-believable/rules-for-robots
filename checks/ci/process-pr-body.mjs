@@ -2,17 +2,17 @@
 // Pull request description (docs/specs/delivery-run.md, AC-7). Under the GitHub gate a workflow
 // opens the pull request, so the agent does not write its description; this builds one from the
 // branch: each changed design that lets a spec skip user documentation, the review packet for the
-// process artifacts the branch changes, the decision files it changes, and, for a gated change,
-// the line the lead can run to approve it.
+// process artifacts the branch changes, the decision files it changes, where to try the change when
+// it adds or changes a tutorial, and, for a gated change, the line the lead can run to approve it.
 // Usage: node checks/ci/process-pr-body.mjs [project root] --base <ref> [--number <n>] [--branch <name>]
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { gateOf, parseArtifact, readConfig, readWorkMode, stageOf } from '../lib/process.mjs';
+import { gateOf, parseArtifact, readConfig, readWorkMode, stageOf, tryItLines, tutorialTitle } from '../lib/process.mjs';
 import { buildPacket, changedArtifacts, formatPacket } from '../process-packet.mjs';
 
-export function prBody({ packet = '', enabling = [], decisions = [], tutorials = [], gated = false, number = null, branch = '' }) {
+export function prBody({ packet = '', enabling = [], decisions = [], tutorials = [], tryIt = null, gated = false, number = null, branch = '' }) {
   const out = [];
   // Accepting a delivery and validating it are two approvals (AC-11). A tutorial that is still a
   // draft means this pull request delivers the feature; one marked approved means it records the
@@ -25,6 +25,9 @@ export function prBody({ packet = '', enabling = [], decisions = [], tutorials =
   if (validated.length) {
     out.push('## Validation', '', `Approving this pull request records that you followed ${validated.map(t => `\`${t.file}\``).join(', ')} against the delivery and the feature does what the user documentation says.`, '');
   }
+  // Where to try it (lasting-tutorials AC-8): only when the pull request adds or changes a tutorial.
+  const tryLines = tryItLines({ ...(tryIt ?? {}), where: 'below' });
+  if (tryLines.length) out.push('## Try it', '', ...tryLines, '');
   if (enabling.length) {
     out.push('## Skips user documentation', '', 'Approving this pull request lets a spec derive from the design below with no user documentation, because the work has nothing a user sees. Check that is true.', '');
     for (const e of enabling) out.push(`- **${e.id}** (\`${e.file}\`): ${e.reason}`);
@@ -53,7 +56,13 @@ export function readPrBody(root, base) {
   const decisions = files.filter(f => /^docs\/decisions\/[^/]+\.md$/.test(f)).map(f => ({ file: f, text: read(f) })).filter(d => d.text.trim());
   const packet = artifacts.length ? formatPacket(buildPacket({ artifacts })) : '';
   const tutorials = artifacts.filter(a => a.stage === 'tutorials').map(a => ({ file: a.file, status: a.status }));
-  return { packet, enabling, decisions, tutorials, gated };
+  const tryIt = {
+    // A tutorial has front matter; a README or a note beside the tutorials is not one to follow.
+    tutorials: files.filter(f => stageOf(f) === 'tutorials' && parseArtifact(read(f)).front).map(f => ({ file: f, title: tutorialTitle(read(f)) ?? f })),
+    preview: config.try?.preview ?? false,
+    local: config.try?.local ?? null,
+  };
+  return { packet, enabling, decisions, tutorials, tryIt, gated };
 }
 
 function main(argv) {
