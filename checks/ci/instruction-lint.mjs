@@ -38,7 +38,14 @@ export function lintInstructions(text, { root = process.cwd() } = {}) {
   const errors = [];
   const warnings = [];
   let entries;
+  // A path the root .gitignore names exactly is made by a command (a cache, a build output),
+  // so a fresh checkout, such as CI's, may not have it yet.
+  const gitignoreFile = path.join(root, '.gitignore');
+  const ignored = new Set(fs.existsSync(gitignoreFile)
+    ? fs.readFileSync(gitignoreFile, 'utf8').split(/\r?\n/).map(l => l.trim().replace(/^\//, '').replace(/\/$/, '')).filter(l => l && !l.startsWith('#'))
+    : []);
   const exists = ref => {
+    if (ignored.has(ref.replace(/^\.\//, '').replace(/\/$/, ''))) return true;
     if (fs.existsSync(path.join(root, ref))) return true;
     entries ??= repoEntries(root);
     const want = ref.replace(/^\.\//, '');

@@ -4,6 +4,12 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+Pull requests: #251.
+
+### Fixed
+
+- The instruction-file lint (`checks/ci/instruction-lint.mjs`) accepts a path that the root `.gitignore` names exactly, such as `.cache/`. This repository's own documents-only pull requests skip the step that creates `.cache/`, so `check:instructions` failed on every one of them. Adopters: nothing to do; the `rfr-guards` workflow's `instruction-lint` job runs the fixed script.
+
 ## [7.4.0] - 2026-11-13
 
 Pull requests: #226, #227, #228, #229, #230, #231, #232, #233, #234, #235, #236, #237, #238, #239, #240, #241, #242, #243, #244, #245, #246, #247, #248, #249.
