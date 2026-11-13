@@ -106,3 +106,29 @@ test('guard-tiers#AC-7: the report counts never-list refusals as refusals', asyn
   const r = summarise([{ time: '2026-11-12T10:00:00Z', session: 's', hook: 'guard-commands', tool: 'Bash', decision: 'never', reason: 'rfr-core (WA-003): force-push rewrites remote history.' }]);
   assert.equal(r.refusals, 1);
 });
+
+test('unattended#AC-2: skipping hooks, reading secrets, and deleting or changing on the remote are refused by every route', () => {
+  const dir = repo();
+  for (const command of ['git commit -n -m x', 'git commit -nm x', 'git -c core.hooksPath=/dev/null commit -m x', 'git config core.hooksPath /dev/null', 'HUSKY=0 git commit -m x', 'SKIP=lint git commit -m x',
+    'cat .env', 'cat .env.local', 'type .env', 'Get-Content .env.production', 'grep KEY .env', 'cat secrets/server.pem', 'printenv', 'env', 'printenv GH_TOKEN', 'echo $GH_TOKEN', 'echo "$OPENAI_API_KEY"', 'Get-ChildItem env:', 'gci env:GH_TOKEN', 'vercel env pull .env.local',
+    'gh api -X DELETE repos/o/r', 'gh api --method DELETE repos/o/r/releases/1', 'gh api -X PATCH repos/o/r/git/refs/heads/main -F force=true -f sha=abc',
+    'vercel remove app --yes', 'vercel rm app', 'vercel project rm app', 'vercel env rm SECRET production -y', 'vercel env add SECRET production', 'vercel --prod=true', 'vercel redeploy https://app.vercel.app']) {
+    assert.equal(decideCommand(command, { cwd: dir })?.decision, 'ask', command);
+  }
+  for (const command of ['git commit -m "fix -n handling"', 'git config --get core.hooksPath', 'git merge -n feature', 'cat .env.example', 'cat README.md', 'env NODE_ENV=test node x.js', 'env | grep -iE "^(PXR|USD)"', 'printenv PATH', 'echo $HOME', 'Get-ChildItem env:QUIET* | Format-Table',
+    'gh api repos/o/r/pulls', 'gh api -X POST repos/o/r/git/refs -f ref=refs/heads/x -f sha=abc', 'vercel redeploy https://x --target preview', 'vercel --prod=false']) {
+    assert.equal(decideCommand(command, { cwd: dir }), null, command);
+  }
+});
+
+test('unattended#AC-2: force-deleting a local branch is allowed with the command that restores it; one the guard cannot resolve is refused', () => {
+  const dir = repo();
+  git(dir, 'branch', 'old');
+  const sha = spawnSync('git', ['rev-parse', 'old'], { cwd: dir, encoding: 'utf8' }).stdout.trim();
+  const d = decideCommand('git branch -D old', { cwd: dir });
+  assert.equal(d?.decision, 'inform');
+  assert.match(d.reason, new RegExp(`git branch old ${sha}`));
+  assert.equal(decideCommand('git branch -d --force old', { cwd: dir })?.decision, 'inform');
+  assert.equal(decideCommand('git branch -D gone', { cwd: dir })?.decision, 'ask');
+  assert.equal(decideCommand('git branch -d old', { cwd: dir }), null);
+});

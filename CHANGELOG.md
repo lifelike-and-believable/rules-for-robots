@@ -4,6 +4,16 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- **The command guard refuses the never list, by every route** (rewrite plan 25e). From the security review of #235. `guard-commands` now also refuses:
+  - skipping hooks by `git commit -n`, `core.hooksPath`, `HUSKY=0`, or `SKIP=`;
+  - reading secrets through the shell: a `.env` or key file, an unfiltered `env` or `printenv`, a secret-named variable printed, or `vercel env pull`;
+  - deleting or changing on the remote by `gh api -X DELETE` or a `gh api` change to `git/refs`;
+  - live Vercel changes by `vercel remove`, `vercel project rm`, `vercel env add/rm`, a `vercel redeploy` not marked preview, or `vercel --prod=<value>`.
+
+  `git branch -D` of a branch the guard can resolve is no longer refused: a local delete is not on the never list, and the guard tells the agent the `git branch <name> <sha>` that restores it. Replayed against 5,870 shell commands in the maintainer's local transcripts: one new refusal there (`env | grep …`) was a misfire, so a listing piped into a filter is allowed. Adopters: nothing to do.
+
 ### Removed
 
 - **The tier check and the approvals job's review check** (#236; rewrite plan 25e; the maintainer's answers to the verify inventory). `rfr-process` 2.1.0.

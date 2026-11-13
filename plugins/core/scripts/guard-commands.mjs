@@ -21,7 +21,7 @@ const CHECKS = [
   [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work', 'discard', 'WA-003', LOCAL_LOSS, 'commit or stash the changes first (git stash push -u), then run it'],
   [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files', 'discard', 'WA-003', 'untracked files are in no commit, so git cannot bring them back', 'list them with git clean -n and delete only the files you made, or move them aside'],
   [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history', null, 'WA-003', 'it replaces history on the remote that others may already have pulled', 'push to a new branch, or bring the remote changes in and push normally'],
-  [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch', null, 'WA-003', 'commits only on that branch then survive only in the reflog', 'use git branch -d, which refuses to delete unmerged work'],
+  [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch', 'branch', 'WA-003', 'commits only on that branch then survive only in the reflog', 'use git branch -d, which refuses to delete unmerged work'],
   [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work', 'stash', 'WA-003', 'a dropped stash is hard to find again', 'apply the stash, or leave it in place'],
   [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history', null, 'WA-003', 'it rewrites every commit, and pushing the result replaces shared history', 'stop and report what you want removed from history'],
   [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)', null, 'WA-003', 'it skips the checks the project set for every commit and push', 'run the hooks and fix what they report'],
@@ -219,8 +219,9 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   }
   const hints = [];
   const snaps = [];
+  const restores = [];
   const asking = r => ({ decision: 'ask', reason: askReason({ source: `rfr-core (${r.rule})`, action: r.action, why: r.why, instead: r.instead }) });
-  const risk = findOtherRisk(command, cwd, hints, snaps);
+  const risk = findOtherRisk(command, cwd, hints, snaps, restores);
   if (risk) return asking(risk);
   // Actions on the never list that reach outside the project: pushing to the default branch,
   // deleting on the remote, and production deploys.
@@ -236,6 +237,7 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
     notes.push(`the guard took a snapshot of what this command removes; to undo it: ${taken.lines.join('; ')}`);
   }
   if (hints.length) notes.push(`the files this command deletes are committed with no changes, so git can restore them: ${hints.join('; ')}`);
+  if (restores.length) notes.push(`the deleted branch's commits stay in the repository; to bring it back: ${restores.join('; ')}`);
   const noted = notes.length ? `rfr-core (WA-003): ${notes.join('. ')}.` : null;
   if (deferred) return { decision: 'defer', reason: noted ? `${deferred} ${noted}` : deferred, snapshots };
   if (noted) return { decision: 'inform', reason: noted, snapshots };
@@ -506,10 +508,33 @@ export function executedText(command) {
 
 // The first risk a person must decide about, or null. Losses a snapshot can undo go to snaps
 // instead (guard tiers AC-11), and tracked, unchanged deletes add their restore command to hints.
-function findOtherRisk(command, cwd, hints = [], snaps = []) {
+// git branch -D (or -d --force): a local branch's commits stay in the repository after the delete,
+// so the command that recreates the branch at its last commit is a way back (rewrite plan 25e: a
+// local delete is not on the never list). A branch the guard cannot resolve is refused as before.
+const BRANCH_DELETE = { rule: 'WA-003', action: 'force-deleting a branch', why: 'the guard could not find the commit it points at, so nothing records how to bring it back', instead: 'use git branch -d, which refuses to delete unmerged work' };
+function branchRestores(entries, restores) {
+  for (const { words, dir } of entries) {
+    const g = gitArgs(words);
+    if (g?.[0] !== 'branch') continue;
+    const args = g.slice(1);
+    const force = args.some(a => /^-[a-zA-Z]*D[a-zA-Z]*$/.test(a)) || (args.some(a => /^(-d|--delete)$/.test(a)) && args.some(a => /^(-f|--force)$/.test(a)));
+    if (!force) continue;
+    if (args.some(a => /^(-r|--remotes)$/.test(a))) continue;
+    for (const name of args.filter(a => !a.startsWith('-'))) {
+      const sha = git(dir, ['rev-parse', '--verify', '--quiet', `refs/heads/${name}`]).out.trim();
+      if (!sha) return BRANCH_DELETE;
+      restores.push(`git branch ${shellPath(name)} ${sha}`);
+    }
+  }
+  return null;
+}
+
+function findOtherRisk(command, cwd, hints = [], snaps = [], restores = []) {
   // With the folder known, discards, stash drops, and rm -rf are checked against what they would remove.
   const entries = cwd ? commandsWithDirs(command, cwd) : null;
   if (entries) {
+    const branch = branchRestores(entries, restores);
+    if (branch) return branch;
     discardRisk(entries, snaps);
     const stash = stashSnaps(entries, snaps);
     if (stash) return stash;
@@ -520,7 +545,7 @@ function findOtherRisk(command, cwd, hints = [], snaps = []) {
   const text = executedText(command) ?? command;
   for (const [pattern, action, kind, rule, why, instead] of CHECKS) {
     if (!pattern.test(text)) continue;
-    if (entries && (kind === 'discard' || kind === 'stash')) continue;
+    if (entries && (kind === 'discard' || kind === 'stash' || kind === 'branch')) continue;
     return { rule, action, why, instead };
   }
   return null;
@@ -568,6 +593,9 @@ const PUSH_DEFAULT = { rule: 'WA-003', action: 'pushing to the default branch', 
 const REMOTE_DELETE = { rule: 'WA-003', action: 'deleting a branch, tag, release, or repository on the remote', why: 'it removes shared work from the remote, outside the project folder', instead: 'leave it in place and report what you would delete' };
 const PROD_DEPLOY = { rule: 'NODE-002', action: 'a production deploy, promotion, alias, or domain change', why: 'it changes what users of the live site see', instead: 'deploy a preview and report its URL' };
 
+const REMOTE_REWRITE = { rule: 'WA-003', action: 'moving a branch or tag on the remote through the API', why: 'it can rewrite shared history on the remote, as a force-push does', instead: 'push a branch and open a pull request' };
+const SKIP_HOOKS = { rule: 'WA-003', action: 'skipping the project\'s commit or push hooks (git commit -n, core.hooksPath, HUSKY=0, SKIP=)', why: 'it skips the checks the project set for every commit and push', instead: 'run the hooks and fix what they report' };
+const READ_SECRET = { rule: 'SEC-001', action: 'reading secret values into the session (a .env or key file, the environment, or vercel env pull)', why: 'a secret read into the session cannot be unread, and it can reach logs, transcripts, and pull requests', instead: 'refer to the variable by name, or read the .env.example file that lists the names' };
 const BYPASS_GATE = { rule: 'WA-003', action: 'bypassing or changing branch protection (gh pr merge --admin, or a change to protection or rulesets)', why: 'branch protection is how the approver\'s review gates a merge, and changing it reaches outside the project', instead: 'leave the pull request for its checks and the approver\'s review, and report what you would change' };
 
 // A gh api call that changes branch protection or rulesets: a method other than GET on a
@@ -575,10 +603,32 @@ const BYPASS_GATE = { rule: 'WA-003', action: 'bypassing or changing branch prot
 function changesProtection(args) {
   const path = args.find(a => /(^|\/)(branches\/[^\s]+\/protection|rulesets)(\/|$|\?)/.test(a));
   if (!path) return false;
+  return apiMethod(args) !== 'GET';
+}
+
+// The HTTP method of a gh api call: -X or --method, else POST when it sends fields or a body, else GET.
+function apiMethod(args) {
   const k = args.findIndex(a => a === '-X' || a === '--method' || /^(-X|--method=)\S+/.test(a));
   const method = k === -1 ? (args.some(a => /^(-f|-F|--field|--raw-field|--input)$/.test(a)) ? 'POST' : 'GET')
     : (args[k] === '-X' || args[k] === '--method' ? args[k + 1] : args[k].replace(/^(-X|--method=)/, ''));
-  return String(method).toUpperCase() !== 'GET';
+  return String(method ?? '').toUpperCase();
+}
+
+// A file that holds secret values: .env and .env.<name> (not the .example, .sample, .template, or
+// .dist copies that hold none), and private keys.
+const SECRET_FILE = /(^|[\\/])(\.env(\.(?!example$|sample$|template$|dist$)[\w.-]+)?|[\w.-]+\.pem|id_(rsa|ed25519|ecdsa))$/i;
+const READERS = /^(cat|type|less|more|head|tail|bat|nl|tac|strings|xxd|od|grep|egrep|rg|awk|sed|cut|sort|source|\.|get-content|gc|select-string|import-csv)$/i;
+const SECRET_NAME = /\$\{?\w*(TOKEN|SECRET|PASSWORD|PASSWD|PRIVATE_KEY|API_KEY|ACCESS_KEY)\w*\}?/i;
+// piped: the whole environment is listed into a filter (env | grep PXR), which the agent uses to find
+// a setting by name; only an unfiltered listing is refused.
+function readsSecret(words, piped = false) {
+  const cmd = (words[0] ?? '').replace(/^.*[\\/]/, '').replace(/\.exe$/i, '');
+  if (READERS.test(cmd) && words.slice(1).some(w => !w.startsWith('-') && SECRET_FILE.test(w))) return true;
+  if (/^(printenv|env)$/i.test(cmd) && words.length === 1 && !piped) return true;
+  if (/^printenv$/i.test(cmd) && words.slice(1).some(w => SECRET_NAME.test(`$${w}`))) return true;
+  if (/^(echo|printf|write-output|write-host)$/i.test(cmd) && words.slice(1).some(w => SECRET_NAME.test(w) || /\$env:\w*(TOKEN|SECRET|PASSWORD|API_KEY)/i.test(w))) return true;
+  if (/^(get-childitem|gci|ls|dir)$/i.test(cmd) && words.slice(1).some(w => /^env:\\?\*?$/i.test(w) || (/^env:/i.test(w) && SECRET_NAME.test(`$${w.slice(4).replace(/^\\/, '').replace(/\*/g, '')}`)))) return true;
+  return false;
 }
 
 // The branches a push must not reach: main, master, and the remote's default branch.
@@ -644,9 +694,34 @@ export function namedAsk(command, cwd) {
     // The gate is branch protection: an agent neither bypasses it nor changes it (github-gate AC-9).
     if (words[0] === 'gh' && words[1] === 'pr' && words[2] === 'merge' && words.includes('--admin')) return BYPASS_GATE;
     if (words[0] === 'gh' && words[1] === 'api' && changesProtection(words.slice(2))) return BYPASS_GATE;
+    // Deleting through the API, or moving a branch or tag on the remote (a PATCH of git/refs can
+    // force it), as git push --delete and a force-push are refused.
+    if (words[0] === 'gh' && words[1] === 'api') {
+      const method = apiMethod(words.slice(2));
+      if (method === 'DELETE') return REMOTE_DELETE;
+      if (method !== 'GET' && method !== 'POST' && words.slice(2).some(a => /(^|\/)git\/refs\//.test(a))) return REMOTE_REWRITE;
+    }
+    // Skipping the project's hooks in any form: git commit -n, a hooks path set for one command or in
+    // the repository's configuration, and the variables Husky and pre-commit read.
+    if (raw.some(w => /^(HUSKY=0|HUSKY_SKIP_HOOKS=1|SKIP=\S+)$/.test(w)) && /^(git|npx|npm|pnpm|yarn)$/.test(words[0] ?? '')) return SKIP_HOOKS;
+    if (words[0] === 'git') {
+      const globals = words.slice(1, words.length - (g?.length ?? 0));
+      if (globals.some((w, k) => (w === '-c' && /^core\.hooksPath=/i.test(globals[k + 1] ?? '')) || /^-ccore\.hooksPath=/i.test(w))) return SKIP_HOOKS;
+      if (g?.[0] === 'config' && g.some(a => /^core\.hooksPath$/i.test(a)) && !g.some(a => /^(--get\S*|--list|-l|--unset\S*)$/.test(a)) && g.filter(a => !a.startsWith('-')).length >= 3) return SKIP_HOOKS;
+      if (g?.[0] === 'commit' && g.slice(1).some(a => /^-[a-zA-Z]*n[a-zA-Z]*$/.test(a))) return SKIP_HOOKS;
+    }
+    // Reading secret values into the session: a secrets file read by a shell command, the whole
+    // environment, a secret-named variable printed, or Vercel's environment pulled to a file.
+    if (readsSecret(words.length ? words : raw, /(^|[;&|(]\s*)(env|printenv)\s*\|(?!\|)/.test(command))) return READ_SECRET;
+    if (words[0] === 'vercel' && words[1] === 'env' && words[2] === 'pull') return READ_SECRET;
     if (words[0] === 'vercel') {
       const rest = words.slice(1);
-      if (rest.some(w => /^(--prod|--production|--target=prod(uction)?)$/i.test(w)) || /^(promote|alias|aliases|domains|rollback)$/i.test(rest[0] ?? '') || rest.some((w, k) => w === '--target' && /^prod/i.test(rest[k + 1] ?? ''))) return PROD_DEPLOY;
+      // Removing a deployment or project, or changing its environment variables, changes the live
+      // account; a redeploy keeps the original's target unless it says preview.
+      if (/^(remove|rm)$/i.test(rest[0] ?? '') || (/^(project|projects)$/i.test(rest[0] ?? '') && /^(rm|remove)$/i.test(rest[1] ?? ''))) return REMOTE_DELETE;
+      if (/^env$/i.test(rest[0] ?? '') && /^(add|rm|remove|update)$/i.test(rest[1] ?? '')) return PROD_DEPLOY;
+      if (/^redeploy$/i.test(rest[0] ?? '') && !rest.some((w, k) => /^--target=preview$/i.test(w) || (w === '--target' && /^preview$/i.test(rest[k + 1] ?? '')))) return PROD_DEPLOY;
+      if (rest.some(w => /^(--prod(=(?!false\b)\S*)?|--production|--target=prod(uction)?)$/i.test(w)) || /^(promote|alias|aliases|domains|rollback)$/i.test(rest[0] ?? '') || rest.some((w, k) => w === '--target' && /^prod/i.test(rest[k + 1] ?? ''))) return PROD_DEPLOY;
     }
   }
   return null;
