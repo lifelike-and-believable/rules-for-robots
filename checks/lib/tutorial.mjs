@@ -78,3 +78,41 @@ export function parseSteps(body) {
   }
   return { steps, errors };
 }
+
+// A lasting tutorial names the product's pages by path and nothing about a machine or a build
+// (docs/specs/lasting-tutorials.md, AC-2). Returns the problems found in a tutorial's body.
+//
+// An "inline shell command" is an inline code span in "Before you start" or "Steps" whose text
+// starts with a known command runner followed by a space (npm, pnpm, yarn, npx, node, docker, git,
+// bun, deno, python, pip, make, curl, cd, sudo, bash), or with a shell prompt ("$ "). Step-grammar
+// code such as Open `/path` and Type `text` into **Label** is not a command, so it passes.
+// A fenced code block in either section is always a problem. A runner: unreal or runner: manual
+// tutorial is exempt from the shell rules only, because it may name a tool the reader installs.
+const SHELL_RUNNER = /^(?:\$\s+|(?:npm|pnpm|yarn|npx|node|docker|git|bun|deno|python3?|pip|make|curl|cd|sudo|bash)\s)/i;
+
+const sectionOf = (body, name) => new RegExp(String.raw`^##\s+${name}\s*\n([\s\S]*?)(?=^##\s|$(?![\s\S]))`, 'im').exec(body)?.[1] ?? '';
+
+export function bodyProblems(body, runner) {
+  const out = [];
+  // "localhost" as a host, not as part of a longer name in a path (`/docs/localhost-setup`).
+  if (/(?<![-\w])localhost(?![-\w])|\b127(?:\.\d{1,3}){3}\b|\b0\.0\.0\.0\b|\[::1\]/i.test(body)) out.push('names a machine (localhost or a loopback address); name pages by path, such as `/dashboard`, because the reader opens the product wherever it runs');
+  const { steps } = parseSteps(body);
+  for (const step of steps) {
+    for (const a of step.actions ?? []) {
+      if (a.type === 'goto' && /^https?:\/\//i.test(a.path)) out.push(`step ${step.n} opens the product by an absolute address (${a.path}); open it by path, such as \`/dashboard\``);
+    }
+  }
+  if (/^#{1,6}\s+run record\s*$/im.test(body)) out.push('has a "Run record" heading; a run record belongs in the delivery record, not in a tutorial the reader follows');
+  if (runner !== 'unreal' && runner !== 'manual') {
+    for (const name of ['Before you start', 'Steps']) {
+      const section = sectionOf(body, name);
+      if (/^\s*(?:```|~~~)/m.test(section)) out.push(`"${name}" has a fenced code block; a tutorial names no command, so move how to start or build the product out of it`);
+      const prose = section.replace(/^\s*(```|~~~)[\s\S]*?^\s*\1.*$/gm, '');
+      // What a step types, chooses, or opens is the reader's input, whatever word it starts with.
+      const outside = prose.replace(/\b(?:Type|Choose|Open)\s+`[^`\n]+`/g, '');
+      const cmd = [...outside.matchAll(/`([^`\n]+)`/g)].map(m => m[1].trim()).find(c => SHELL_RUNNER.test(c));
+      if (cmd) out.push(`"${name}" has a shell command (\`${cmd}\`); a tutorial names no command, so move how to start or build the product out of it`);
+    }
+  }
+  return out;
+}

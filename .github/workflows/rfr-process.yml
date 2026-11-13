@@ -41,6 +41,10 @@ on:
         description: Run the advisory Stryker job (needs stryker.config.mjs and Stryker in the project's dev dependencies)
         type: boolean
         default: false
+      lasting-tutorials:
+        description: "`warn` reports the lasting-tutorial rules (docs/specs/lasting-tutorials.md, AC-2 and AC-9) as warnings, for tutorials written before them; `fail` fails the check. The default becomes `fail` when slice 27d is done."
+        type: string
+        default: warn
       typecheck:
         description: Command for the project's type check (for example `npm run check` or `npx tsc --noEmit`); when set, the typecheck job runs it on every pull request
         type: string
@@ -76,6 +80,8 @@ jobs:
         with:
           node-version: 22
       - name: Process check
+        env:
+          RFR_LASTING_TUTORIALS: ${{ inputs.lasting-tutorials }}
         run: |
           set -o pipefail
           node .rfr/checks/process-trace.mjs . ${{ github.event_name == 'pull_request' && format('--base {0}', github.event.pull_request.base.sha) || '' }} 2>&1 | tee "$RUNNER_TEMP/process-trace.txt"
@@ -225,6 +231,8 @@ jobs:
         with:
           node-version: 22
       - name: Tutorial runners and coverage
+        env:
+          RFR_LASTING_TUTORIALS: ${{ inputs.lasting-tutorials }}
         run: node .rfr/checks/tutorial-run.mjs . --coverage
 
   docs-lint:
