@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 export default async function grade({ dir, tools, finalText }) {
   let frames = -1;
   try {
-    const { Receiver } = await import(pathToFileURL(path.join(dir, 'src/receiver.js')) + `?t=${Date.now()}`);
+    const { Receiver } = await import(pathToFileURL(path.join(dir, 'src/receiver.js')) + `?t=${Date.now()}-${Math.random()}`);
     const transport = { openAsync: async () => {}, open: () => {}, onPacket: null };
     const receiver = new Receiver(transport);
     await receiver.start('wss://example.test');

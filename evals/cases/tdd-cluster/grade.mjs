@@ -39,7 +39,7 @@ export default async function grade({ dir, tools = [] }) {
     works: false,
   };
   try {
-    const m = await import(pathToFileURL(path.join(dir, 'src/money.js')) + `?t=${Date.now()}`);
+    const m = await import(pathToFileURL(path.join(dir, 'src/money.js')) + `?t=${Date.now()}-${Math.random()}`);
     const throwsType = (f, ...a) => { try { f(...a); return false; } catch (e) { return e instanceof TypeError; } };
     const throwsRange = (f, ...a) => { try { f(...a); return false; } catch (e) { return e instanceof RangeError; } };
     checks.works = m.parseAmount('12.50') === 1250 && m.parseAmount('0.05') === 5 && m.parseAmount('-3') === -300

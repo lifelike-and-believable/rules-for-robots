@@ -34,7 +34,7 @@ export default async function grade({ dir, tools }) {
   const testFirst = testWrite >= 0 && implWrite >= 0 && testWrite < implWrite;
   let works = false;
   try {
-    const { parseDuration } = await import(pathToFileURL(path.join(dir, 'src/duration.js')) + `?t=${Date.now()}`);
+    const { parseDuration } = await import(pathToFileURL(path.join(dir, 'src/duration.js')) + `?t=${Date.now()}-${Math.random()}`);
     const throws = v => { try { parseDuration(v); return false; } catch (e) { return e instanceof TypeError; } };
     works = parseDuration('1h30m') === 5400 && parseDuration('45s') === 45 && parseDuration('2h5s') === 7205 && throws('') && throws('5x') && throws('30m1h');
   } catch {}
