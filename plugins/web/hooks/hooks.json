@@ -12,30 +12,6 @@
           }
         ]
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "mcp__.*[Vv][Ee][Rr][Cc][Ee][Ll].*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-outcome.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "mcp__.*[Vv][Ee][Rr][Cc][Ee][Ll].*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-outcome.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
     ]
   }
 }

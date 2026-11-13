@@ -1,6 +1,7 @@
 ---
 status: approved
 unlocks:
+  - test/plugin-split.test.mjs: AC-5's build copies no longer include guard-outcome.mjs, removed with the prompts it logged (rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome); lib.mjs is still checked
   - test/hooks.test.mjs: AC-2 moves the editor -ExecCmds check from guard-commands to rfr-unreal's guard-unreal, so the #56 test calls guard-unreal and asserts guard-commands no longer decides it; AC-1 moves guard-mcp to rfr-web, so its imports change path; nothing else changes
   - test/guard-corpus.test.mjs: AC-1 and AC-2 move guard-mcp and the ExecCmds check to rfr-web and rfr-unreal, so the runner imports them from their new plugins and runs an `unreal` guard; nothing else changes
   - test/fixtures/guard-corpus.json: AC-2 makes the ExecCmds case an `unreal` guard case; its tier and source do not change

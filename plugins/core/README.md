@@ -24,7 +24,7 @@ Nothing in `rfr-core` needs either; agents and skills that mention them say what
 
 Reviewers report every finding in one format (severity, file and line, rule ID, failure scenario, fix) and leave filtering to a separate pass. Model and effort settings are starting points to be tuned by evals. `tech-lead` and `ux-reviewer` are experimental: they were added before any eval showed a benefit (recommendation R18) and will be kept or removed on the results. `software-architect` started the same way and is no longer experimental: in two rounds (October 2026, and the Fable 5.2 round of November 2026) design records written with it weighed alternatives and named what is hard to reverse more reliably than the main session alone, on both Opus and Sonnet main sessions. `tech-lead` showed no difference; see `PLAN.md`, Phase 8.
 
-The three Haiku agents gather or run things and return text copied from tools. They never judge: the calling session decides whether a check is green, a finding is true, or a change can merge. Skills call them (`merge-when-green`, `review-pr`, and `security-audit` here, and the domain plugins' audit, profiling, and packaging skills); the implementation agents cannot, because subagents cannot start subagents. They are pinned to `claude-haiku-5-5`. The reasoning is in [the Haiku 5.5 research note](../../docs/research/notes/haiku_5_5_delegation.md).
+The three Haiku agents gather or run things and return text copied from tools. They never judge: the calling session decides whether a check is green, a finding is true, or a change can merge. Skills call them (`review-pr` and `security-audit` here, and the domain plugins' audit, profiling, and packaging skills); the implementation agents cannot, because subagents cannot start subagents. They are pinned to `claude-haiku-5-5`. The reasoning is in [the Haiku 5.5 research note](../../docs/research/notes/haiku_5_5_delegation.md).
 
 ## Skills
 
@@ -37,7 +37,6 @@ The three Haiku agents gather or run things and return text copied from tools. T
 | `/rfr-core:security-audit` | Scanners, entry points, agent tooling risks | User or Claude |
 | `/rfr-core:write-adr` | One-page architecture decision record | User or Claude |
 | `/rfr-core:release` | Version, changelog, verify, tag after confirmation | User only |
-| `/rfr-core:merge-when-green <pr>` | Wait for CI without polling, confirm checks on the head commit, merge with a head-SHA guard, continue | User only |
 | `/rfr-core:decisions [issue and answer]` | The decision queue: questions agents left for the project lead as `needs-lead` issues, each with options, a default, and the date it takes effect; apply answers and due defaults | User or Claude |
 
 ## Hooks
@@ -54,7 +53,7 @@ A guard asks only about actions that cannot be undone or reach outside the proje
 
 A project sets `testWeakening` in `.claude/rfr.json` to `ask` (the default) or `defer`; see [practices/guards.md](../../practices/guards.md#project-settings).
 
-`guard-commands` also approves the commands of a task the person asked for in their latest input (a release, a push to a named branch, a merge, a preview deploy), so Claude Code does not prompt for each, and never approves a push to the default branch, a force-push, a deletion, or a production deploy. A project turns this off with `"taskApproval": "off"`; see [practices/guards.md](../../practices/guards.md#task-approval).
+No guard approves anything, and nothing said in chat unlocks a refusal. What only the person can authorise is a review in GitHub ([the GitHub gate](../../docs/specs/github-gate.md)). Whether Claude Code prompts for the rest is the session's permission mode; run sessions in auto mode.
 
 Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it (`CLAUDE_PLUGIN_DATA`, or `rfr-core/` in the temp directory): the time, session, hook, tool, decision, and the first 200 characters of the reason, never the command or file contents. When an asked call then runs, `guard-outcome` (PostToolUse and PostToolUseFailure) adds an `approved` line; Claude Code reports nothing when a prompt is declined, so an ask without one was declined or never reached. `node checks/guard-report.mjs <log>...` in a rules-for-robots checkout summarises one or more logs (one per plugin). Set `RFR_GUARD_LOG=0` to turn it off.
 

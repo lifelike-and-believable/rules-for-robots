@@ -90,13 +90,13 @@ So a design-stage pull request usually goes through two steps in the same pull r
 
 An agent writing the pull request may set `status: approved` in it; that is a proposal, and GitHub's review or merge is the approval. In solo mode, propose `approved` from the start, since the merge is the approval; keep `draft` for work that will not merge yet.
 
-### When an agent merges for the approver
+### Approval under the GitHub gate
 
-In solo mode the approver's merge is the approval, so agents do not merge pull requests that touch gated folders. When the plugin is installed, its `guard-merge` hook asks the person to confirm each such merge; when an agent follows the skills as plain files, the hook is not running, and the rule depends on the agent and the project's `AGENTS.md`. If the approver explicitly tells an agent in the session to merge a gated pull request, that instruction is their approval: the agent merges, then comments on the pull request with the instruction quoted and the session it came from, so the record shows who decided. GitHub records the approver's account as the merger either way, so the comment is the only trace that an agent pressed the button.
+Agents push branches; they do not open, approve, or merge pull requests. A workflow opens each pull request as a GitHub App and turns on auto-merge, and branch protection holds one that touches a gated folder until one of that stage's approvers reviews it ([github-gate](../../docs/specs/github-gate.md)). rfr-core refuses an agent approving a pull request.
 
 ### Gate types
 
-Each gated stage has a gate, set per stage with `gates:` in `process.yml`: `approve` (an approver decides, and the merge waits for them), `notify` (no approver; after the merge the approvals job opens a `needs-lead` issue in the decision queue, with "keep them" as the default, and an objection is an ordinary amendment), or `agent` (a comment `<!-- rfr-agent-review head=<sha> -->` from `/rfr-core:review-pr` on the head commit stands in for the approver). Without `gates:`, a supervised project uses `approve` everywhere, as before. A delegated project (`.claude/rfr.json` `"mode": "delegated"`) uses `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories. The merge guard asks only about `approve` stages.
+Each gated stage has a gate, set per stage with `gates:` in `process.yml`: `approve` (an approver decides, and the merge waits for them), `notify` (no approver; after the merge the approvals job opens a `needs-lead` issue in the decision queue, with "keep them" as the default, and an objection is an ordinary amendment), or `agent` (a comment `<!-- rfr-agent-review head=<sha> -->` from `/rfr-core:review-pr` on the head commit stands in for the approver). Without `gates:`, a supervised project uses `approve` everywhere, as before. A delegated project (`.claude/rfr.json` `"mode": "delegated"`) uses `approve` for the concept, design, user documentation, specs, tutorials, and release, and `notify` for discovery, requirements, personas, epics, and stories.
 
 ### Who approved, according to GitHub
 
@@ -108,10 +108,6 @@ Who approved a change is read from GitHub, never from front matter.
 Gated stages are concept to user documentation (including discovery), and tutorials. Specs are gated only when `process.yml` lists spec approvers.
 
 Required reviews and checks need a paid GitHub plan for private repositories. Without them, the jobs still report failures and open issues, but cannot block a merge.
-
-## The merge guard
-
-The plugin's `guard-merge` hook asks the person to confirm `gh pr merge` (with or without `--auto`), `gh api -X PUT .../pulls/N/merge`, turning on auto-merge (the GitHub MCP auto-merge tool, or `.../pulls/N/ccr/auto_merge`), a GraphQL merge or auto-merge mutation, and the GitHub MCP merge tool when the pull request touches a gated folder, because merging it is the approval. The permission prompt is where the approver says yes; the agent should then comment on the pull request with the instruction. If the latest message the person typed in the session already says to merge ("merge", "merge #12", "merge when green", or `/rfr-core:merge-when-green 12`), the hook takes that as the confirmation and approves the merge without a prompt (task approval), so "merge when green" goes through when CI finishes. The person's answer to the agent's own question ("Merge #12 when green?" answered "Yes, merge it") counts the same way. With `"taskApproval": "off"` in `.claude/rfr.json`, the hook still does not ask, but leaves the merge to Claude Code's own permission rules. An instruction that names no pull request covers only pull requests already open when it was given. Anything typed since, a negation ("don't merge yet"), a question, or merge text that reached the session as a tool result or notification does not count, and the hook asks. It lists the pull request's files with `gh`; if it cannot, it asks anyway and says why. Projects without `docs/product/process.yml` are not affected. Users can disable plugin hooks, so the hook is a convenience and the approvals job is the enforcement. Its decisions and their tiers are listed with the rfr-core guards in [practices/guards.md](../../practices/guards.md).
 
 ## Size tiers
 

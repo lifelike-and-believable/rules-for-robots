@@ -26,9 +26,6 @@ export async function readInput() {
 // temp directory. RFR_GUARD_LOG=0 turns it off. A failure to write is ignored.
 export const guardLogEnabled = () => process.env.RFR_GUARD_LOG !== '0';
 export const guardDataDir = () => process.env.CLAUDE_PLUGIN_DATA || nodePath.join(os.tmpdir(), 'rfr-core');
-export const pendingDir = () => nodePath.join(guardDataDir(), 'pending-asks');
-// A tool_use_id as a file name: letters, digits, _ and - only.
-export const safeId = id => String(id).replace(/[^\w-]/g, '_').slice(0, 120);
 
 export function appendGuardLog(entry) {
   const dir = guardDataDir();
@@ -42,13 +39,6 @@ function logDecision(decision, reason) {
     const hook = nodePath.basename(process.argv[1] ?? '', '.mjs') || null;
     const entry = { time: new Date().toISOString(), session: lastInput.session_id ?? null, hook, tool: lastInput.tool_name ?? null, decision, reason: String(reason).slice(0, 200) };
     appendGuardLog(entry);
-    // An ask leaves a pending record keyed by the tool call; guard-outcome turns it into an
-    // `approved` line if the call then runs (guard-tiers AC-6). One record per guard, because two
-    // guards can ask about the same call.
-    if (decision === 'ask' && lastInput.tool_use_id) {
-      fs.mkdirSync(pendingDir(), { recursive: true });
-      fs.writeFileSync(nodePath.join(pendingDir(), `${safeId(lastInput.tool_use_id)}__${safeId(hook)}.json`), JSON.stringify({ hook, tool: entry.tool, reason: entry.reason }));
-    }
   } catch {
     // Logging never blocks a decision.
   }
@@ -71,39 +61,15 @@ export function deny(reason) {
 export const neverReason = reason => `${reason} Claude does not do this here, and nobody will be asked during the run. Do it another way, or, if the task cannot be done without it, set that part aside, record what it needs and why in the pull request's ## Decisions section, and carry on with the rest; the person decides it at review.`;
 
 // An action the guards would once have asked about. The run is unattended (docs/specs/unattended.md,
-// AC-1): it is refused with a reason the agent acts on, never a permission prompt. A project with
-// "permissions": "ask" gets the prompt, as before.
+// AC-1): it is refused with a reason the agent acts on, never a permission prompt, and nothing said
+// in chat unlocks it.
 export function ask(reason) {
-  if (guardSettings(lastInput.cwd ?? process.cwd()).permissions !== 'ask') {
-    logDecision('never', reason);
-    process.stdout.write(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: neverReason(reason),
-      },
-    }));
-    return;
-  }
-  logDecision('ask', reason);
+  logDecision('never', reason);
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
-      permissionDecision: 'ask',
-      permissionDecisionReason: reason,
-    },
-  }));
-}
-
-// A command the person approved by asking for its task (docs/specs/task-approval.md, AC-4): allowed
-// without a prompt, with the reason quoting their words, and logged as approved-by-instruction.
-export function approve(reason) {
-  logDecision('approved-by-instruction', reason);
-  process.stdout.write(JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: 'PreToolUse',
-      permissionDecision: 'allow',
-      permissionDecisionReason: reason,
+      permissionDecision: 'deny',
+      permissionDecisionReason: neverReason(reason),
     },
   }));
 }
@@ -135,23 +101,16 @@ export const refuseReason = ({ source, action, next }) => `${source}: ${action}.
 // wants to be asked sets 'ask'.
 export const DEFAULT_TEST_WEAKENING = 'defer';
 
-// taskApproval: 'on' (the default) or 'off' (task-approval AC-6).
-// permissions: 'default-allow' (the default: rfr-core allows the agent's working tools and asks only
-// for the named asks) or 'ask' (Claude Code's own settings decide, as before; default-allow AC-5).
 export function guardSettings(cwd = process.cwd()) {
-  const settings = { testWeakening: DEFAULT_TEST_WEAKENING, taskApproval: 'on', permissions: 'default-allow' };
+  const settings = { testWeakening: DEFAULT_TEST_WEAKENING };
   const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', timeout: 5000 });
   const root = r.status === 0 ? r.stdout.trim() : (process.env.CLAUDE_PROJECT_DIR ?? cwd);
   try {
     const json = JSON.parse(fs.readFileSync(nodePath.join(root, '.claude', 'rfr.json'), 'utf8'));
     if (json?.testWeakening === 'ask' || json?.testWeakening === 'defer') settings.testWeakening = json.testWeakening;
-    if (json?.taskApproval === 'off') settings.taskApproval = 'off';
-    if (json?.permissions === 'ask') settings.permissions = 'ask';
   } catch {
     // No settings file, or one that cannot be read: the defaults hold.
   }
-  // RFR_PERMISSIONS=ask for one session or run, as a project's setting would.
-  if (process.env.RFR_PERMISSIONS === 'ask') settings.permissions = 'ask';
   return settings;
 }
 

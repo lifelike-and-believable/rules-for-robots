@@ -9,7 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { decideCommand } from '../plugins/core/scripts/guard-commands.mjs';
 import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
-import { vercelToolNeedsApproval } from '../plugins/web/scripts/guard-mcp.mjs';
+import { decideVercel } from '../plugins/web/scripts/guard-mcp.mjs';
 import { decideUnreal } from '../plugins/unreal/scripts/guard-unreal.mjs';
 import { decideAdb } from '../plugins/android/scripts/guard-adb.mjs';
 
@@ -60,7 +60,7 @@ function decide(c) {
     fs.mkdirSync(path.join(scratch, 'wt'));
     return decideCommand(c.command.replace('$TMPCASE', scratch), { cwd: dir });
   }
-  if (c.guard === 'mcp') return vercelToolNeedsApproval(c.tool_name, c.tool_input) ? { decision: 'ask' } : null;
+  if (c.guard === 'mcp') return decideVercel({ tool_name: c.tool_name, tool_input: c.tool_input });
   if (c.guard === 'unreal') return decideUnreal(c.command);
   // android-plugin AC-2: the devices adb would see, and the project's disposable devices and scripts.
   if (c.guard === 'android') return decideAdb(c.command, { env: {}, settings: { disposable: c.disposable ?? [], deviceScripts: c.deviceScripts ?? [] }, listDevices: () => c.devices ?? [] });
@@ -91,7 +91,7 @@ test('guard-tiers#AC-2: every corpus case gets the decision its tier calls for',
     if (c.pending) pending.push(`${c.id} -> ${c.tier} (${c.pending})`);
   }
   // The corpus keeps a dangerous core: these must always ask.
-  for (const id of ['force-push', 'rm-outside', 'rm-root-like', 'drizzle-push', 'prisma-reset', 'vercel-deploy']) {
+  for (const id of ['force-push', 'rm-outside', 'rm-root-like', 'drizzle-push', 'prisma-reset', 'vercel-deploy-prod']) {
     assert.equal(corpus.cases.find(c => c.id === id)?.tier, 4, `${id} stays tier 4`);
   }
   // Weakening an existing test is judged at the pull request by default since test-change-review

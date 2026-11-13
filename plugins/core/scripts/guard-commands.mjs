@@ -8,8 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { appendGuardLog, approve, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
-import { approval, commandTask, defaultBranches } from './task-approval.mjs';
+import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -193,9 +192,9 @@ const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s
 // The decision for a shell command: null to allow, { decision: 'inform', reason } to allow with
 // context for the agent, { decision: 'defer', reason } to allow a test removal for the pull request
 // to judge, { decision: 'deny', reason } for the agent to act on, or
-// { decision: 'ask', reason } for a person (docs/specs/guard-tiers.md), or { decision: 'allow', reason }
-// when the person's latest input asked for the task this command carries out (docs/specs/task-approval.md).
-export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots, transcriptPath = null, describePr } = {}) {
+// { decision: 'ask', reason } for an action on the never list, which is refused (docs/specs/guard-tiers.md,
+// docs/specs/unattended.md).
+export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots } = {}) {
   if (typeof command !== 'string') return null;
   // Approving a pull request is refused before anything else, so no task approval can allow it
   // (github-gate AC-9).
@@ -224,18 +223,10 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   const asking = r => ({ decision: 'ask', reason: askReason({ source: `rfr-core (${r.rule})`, action: r.action, why: r.why, instead: r.instead }) });
   const risk = findOtherRisk(command, cwd, hints, snaps);
   if (risk) return asking(risk);
-  // Named asks that rfr-core allows by default no longer reach Claude Code's own prompt
-  // (default-allow AC-2): publishing a release asks unless the person's instruction approves it;
-  // pushing to the default branch, deleting on the remote, and production deploys always ask.
+  // Actions on the never list that reach outside the project: pushing to the default branch,
+  // deleting on the remote, and production deploys.
   const named = namedAsk(command, cwd);
-  if (named) {
-    if (named.kind === 'publish' && transcriptPath && (settings ?? guardSettings(cwd)).taskApproval !== 'off') {
-      const found = commandTask(command, { cwd: cwd ?? process.cwd() });
-      const approved = approval(found, { transcriptPath, cwd: cwd ?? process.cwd(), ...(describePr ? { describePr } : {}) });
-      if (approved) return { decision: 'allow', reason: approved.reason, task: found.task };
-    }
-    return asking(named);
-  }
+  if (named) return asking(named);
   const notes = [];
   let snapshots = [];
   if (snaps.length) {
@@ -249,13 +240,6 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   const noted = notes.length ? `rfr-core (WA-003): ${notes.join('. ')}.` : null;
   if (deferred) return { decision: 'defer', reason: noted ? `${deferred} ${noted}` : deferred, snapshots };
   if (noted) return { decision: 'inform', reason: noted, snapshots };
-  // Task approval comes last, so a refusal, a question, a deferral, or a snapshot above always wins
-  // over it (task-approval AC-3).
-  if (transcriptPath && (settings ?? guardSettings(cwd)).taskApproval !== 'off') {
-    const found = commandTask(command, { cwd: cwd ?? process.cwd() });
-    const approved = approval(found, { transcriptPath, cwd: cwd ?? process.cwd(), ...(describePr ? { describePr } : {}) });
-    if (approved) return { decision: 'allow', reason: approved.reason, task: found.task };
-  }
   return null;
 }
 
@@ -583,8 +567,13 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
 
 const PUSH_DEFAULT = { rule: 'WA-003', action: 'pushing to the default branch', why: 'it changes the shared branch directly, without a pull request or its checks', instead: 'push a branch and open a pull request' };
 const REMOTE_DELETE = { rule: 'WA-003', action: 'deleting a branch, tag, release, or repository on the remote', why: 'it removes shared work from the remote, outside the project folder', instead: 'leave it in place and report what you would delete' };
-const PUBLISH = { rule: 'WA-003', kind: 'publish', action: 'publishing a release or pushing a tag', why: 'a published release or tag reaches everyone who installs or fetches it', instead: 'stop and report that the release is ready, naming the version' };
 const PROD_DEPLOY = { rule: 'NODE-002', action: 'a production deploy, promotion, alias, or domain change', why: 'it changes what users of the live site see', instead: 'deploy a preview and report its URL' };
+
+// The branches a push must not reach: main, master, and the remote's default branch.
+export function defaultBranches(cwd) {
+  const head = git(cwd, ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD']).out.trim().replace(/^origin\//, '');
+  return new Set(['main', 'master', ...(head ? [head] : [])]);
+}
 
 // The words of a git command from its subcommand on: git -C <dir>, -c <k=v>, and other global
 // options are skipped. null when the words are not a git command.
@@ -595,7 +584,7 @@ function gitArgs(words) {
   return words.slice(k);
 }
 
-// The named ask a command line makes (default-allow AC-2), or null. Pushes are read with the folder
+// The never-list action a command line takes outside the project, or null. Pushes are read with the folder
 // each runs in, so a push of the current branch is checked against the default branch.
 export function namedAsk(command, cwd) {
   const entries = commandsWithDirs(command, cwd ?? process.cwd()) ?? [];
@@ -609,7 +598,7 @@ export function namedAsk(command, cwd) {
       const args = g.slice(1);
       const flags = args.filter(a => a.startsWith('-'));
       if (flags.some(f => /^(-d|--delete|--mirror|--prune)$/.test(f))) return REMOTE_DELETE;
-      if (flags.some(f => /^(--tags|--follow-tags|--all)$/.test(f))) return PUBLISH;
+      if (flags.includes('--all')) return PUSH_DEFAULT;
       const positional = [];
       for (let k = 0; k < args.length; k++) {
         if (/^(-o|--push-option|--repo|--receive-pack|--exec)$/.test(args[k])) { k++; continue; }
@@ -626,12 +615,11 @@ export function namedAsk(command, cwd) {
         if (spec.startsWith(':')) return REMOTE_DELETE;
         const [src, dst = src] = spec.replace(/^\+/, '').split(':');
         const target = dst === 'HEAD' ? git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']).out.trim() : dst.replace(/^refs\/heads\//, '');
-        if (/^refs\/tags\//.test(dst) || git(dir, ['show-ref', '--verify', '--quiet', `refs/tags/${src}`]).status === 0) return PUBLISH;
+        if (/^refs\/tags\//.test(dst) || git(dir, ['show-ref', '--verify', '--quiet', `refs/tags/${src}`]).status === 0) continue;
         if (defaults.has(target)) return PUSH_DEFAULT;
       }
       continue;
     }
-    if (words[0] === 'gh' && words[1] === 'release' && /^(create|upload|edit)$/.test(words[2] ?? '')) return PUBLISH;
     if (words[0] === 'gh' && ((words[1] === 'release' && words[2] === 'delete') || (words[1] === 'repo' && /^(delete|archive|rename)$/.test(words[2] ?? '')))) return REMOTE_DELETE;
     if (words[0] === 'vercel') {
       const rest = words.slice(1);
@@ -649,9 +637,8 @@ export function findRisk(command, options) {
 
 async function main() {
   const input = await readInput();
-  const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd(), transcriptPath: input?.transcript_path ?? null });
+  const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result?.decision === 'deny') deny(result.reason);
-  else if (result?.decision === 'allow') approve(result.reason);
   else if (result?.decision === 'inform' || result?.decision === 'defer') {
     // A snapshot goes in the decision log with its refs, so it can be found again (AC-11).
     if (result.snapshots?.length && guardLogEnabled()) {

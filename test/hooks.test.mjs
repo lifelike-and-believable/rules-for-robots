@@ -138,7 +138,8 @@ test('guard-mcp asks on any form of decrypt, names secrets in its question, and 
 
   const run = input => spawnSync(process.execPath, ['plugins/web/scripts/guard-mcp.mjs'], { input: JSON.stringify(input), encoding: 'utf8' });
   assert.match(run({ tool_name: 'mcp__Vercel__get_project_env', tool_input: { idOrName: 'p', id: 'e' } }).stdout, /returns secret values \(decrypted environment variables or tokens\)/);
-  assert.match(run({ tool_name: 'mcp__Vercel__create_deployment', tool_input: {} }).stdout, /can change or expose your Vercel account/);
+  assert.match(run({ tool_name: 'mcp__Vercel__create_deployment', tool_input: { target: 'production' } }).stdout, /can change or expose your Vercel account/);
+  assert.equal(run({ tool_name: 'mcp__Vercel__create_deployment', tool_input: {} }).stdout, '', 'a preview deploy goes ahead');
 
   const hooks = JSON.parse(fs.readFileSync('plugins/web/hooks/hooks.json', 'utf8'));
   const entry = hooks.hooks.PreToolUse.find(h => h.hooks.some(x => x.command.includes('guard-mcp.mjs')));
