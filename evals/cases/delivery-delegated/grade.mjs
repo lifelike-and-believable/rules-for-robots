@@ -45,8 +45,10 @@ export default function grade({ dir, git, tools, finalText, permissionDenials = 
   const quoted = run(dir, process.execPath, ['src/cli.mjs', 'export', '--books', tricky]);
   const outFile = path.join(tmp, 'shelf.csv');
   const toFile = run(dir, process.execPath, ['src/cli.mjs', 'export', '--out', outFile]);
-  // npm is npm.cmd on Windows, which spawnSync starts only through a shell.
-  const npmTest = run(dir, 'npm', ['test'], { timeout: 120000, shell: process.platform === 'win32' });
+  // npm is npm.cmd on Windows, which spawnSync starts only through a shell. Under the grader's own
+  // unit tests, an inherited NODE_TEST_CONTEXT would make the project's test run report to that runner.
+  const { NODE_TEST_CONTEXT, ...env } = process.env;
+  const npmTest = run(dir, 'npm', ['test'], { timeout: 120000, shell: process.platform === 'win32', env });
 
   // Interruptions (rewrite plan section 1, step 4).
   const questions = tools.filter(t => t.name === 'AskUserQuestion').length;
