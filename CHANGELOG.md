@@ -73,6 +73,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Fixed
 
+- **The MCP guard refused tools that change nothing** (rewrite plan 25f, the MCP refusal audit). `guard-mcp-tools` counted a tool as a read only when its name started with a read verb, and refused every tool of a server it did not know. Run against 171 MCP tools seen in a cloud session, it refused 91, about 50 of which only read or act locally:
+  - reads whose verb is not first (`microsoft_docs_search`, `recordings_list`, `capabilities_invoke_read`) or stands alone (`search`, `read`);
+  - downloads (`download_file_content`);
+  - local tools (the Playwright browser, the PDF viewer, tldraw, draw.io);
+  - the session's own `claude-code-remote` tools (`add_repo` for read access, `register_repo_root`, `send_later`, `watch_url`, `unwatch_url`, `report_preview_port`).
+
+  A read word anywhere in the name now makes a read, unless a change word is also there (`capabilities_invoke_write` stays refused). The local servers and the session's own tools are allowed by name. `add_repo` with push access stays refused. Nothing that was allowed is now refused. The decision for every tool is fixed in `test/fixtures/mcp-tool-decisions.json`. Adopters: nothing to do.
+
 - **`delivery start` opens a new delivery** (rewrite plan 25f, found by the delegated eval; delivery-run AC-9 amended). `rfr-process` 2.4.1. `delivery.mjs start <story>` refused every story that had no spec yet, the state every new delivery starts in, saying it was "not a delivery run", although `where` called it "delivery is open". An agent then wrote the spec before starting the run, out of the skill's order. A story whose user documentation is approved now starts the run, with the spec as its first step; a story at an earlier stage is still refused. Adopters: update rfr-process to 2.4.1; nothing else to do.
 
 - **Quoted backquotes are text, not commands** (rewrite plan 25f, found by the delegated eval). `rfr-web` 3.1.1. The command walker shared by rfr-core's `guard-commands` and rfr-web's `guard-cli` read a backquoted word or `$(…)` as a command substitution even inside single quotes, where the shell treats it as text. So `printf 'run `export` here' > notes.md` was refused under SEC-001 as listing the environment; in the eval, an agent writing its decisions file hit this and had to switch to the Write tool. A substitution now counts only where the shell would run it: outside single quotes, and outside a heredoc whose delimiter is quoted. Over 5,579 recorded commands, the only decisions that change are two such quoted texts, now allowed. Adopters: update rfr-web to 3.1.1; nothing else to do.

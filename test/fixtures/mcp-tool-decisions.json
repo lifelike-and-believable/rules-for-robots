@@ -1,0 +1,693 @@
+{
+ "about": "Every MCP tool name seen in a cloud session on 2026-11-13, with the decision guard-mcp-tools should give it (rewrite plan 25f, the MCP refusal audit). Refused: a change in another service, spending, another session or environment, or asking the user mid-run. Allowed: reads, local tools, and this session's own tools. Vercel tools are rfr-web's guard to decide.",
+ "cases": [
+  {
+   "tool": "mcp__claude-code-remote__add_repo",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__archive_session",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__confirm_repository_trust",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__create_environment",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__create_session",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__create_trigger",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__delete_trigger",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__fire_trigger",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__get_environment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__get_event",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__get_session",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__get_trigger",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__interrupt_session",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__list_computer_folders",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__list_environments",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__list_events",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__list_repos",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__list_sessions",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__list_triggers",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__read_documentation",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__register_repo_root",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__report_preview_port",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__request_computer_folder",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__request_credential",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__send_later",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__send_message",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__set_session_tags",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__set_session_title",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__subscribe_pr_activity",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__switch_environment",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__unarchive_session",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__unsubscribe_pr_activity",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__unwatch_url",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__update_environment",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__update_trigger",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__claude-code-remote__watch_url",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__actions_get",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__actions_list",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__actions_run_trigger",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__add_comment_to_pending_review",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__add_issue_comment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__add_reply_to_pull_request_comment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__create_branch",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__create_or_update_file",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__create_pull_request",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__create_repository",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__github__delete_file",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__github__disable_pr_auto_merge",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__enable_pr_auto_merge",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__fork_repository",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__github__get_check_run",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_commit",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_file_contents",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_job_logs",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_label",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_latest_release",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_me",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_release_by_tag",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_tag",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_team_members",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__get_teams",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__issue_read",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__issue_write",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_branches",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_commits",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_issue_fields",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_issue_types",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_issues",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_pull_requests",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_releases",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_repository_collaborators",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__list_tags",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__merge_pull_request",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__pull_request_read",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__pull_request_review_write",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__push_files",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__request_copilot_review",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__resolve_review_thread",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__run_secret_scanning",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__sub_issue_write",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__unresolve_review_thread",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__update_issue_comment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__update_pull_request",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__github__update_pull_request_branch",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Gmail__create_draft",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Gmail__create_label",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Gmail__download_gmail_attachment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Gmail__get_message",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Gmail__get_thread",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Gmail__label_message",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Gmail__list_drafts",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Gmail__search_threads",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Gmail__trash_message",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Gmail__untrash_message",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Calendar__create_event",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Calendar__delete_event",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Calendar__list_events",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Google_Calendar__respond_to_event",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Calendar__suggest_time",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Google_Drive__copy_file",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Drive__create_file",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Drive__download_file_content",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Google_Drive__get_file_metadata",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Google_Drive__read_file_content",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Google_Drive__search_files",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Google_Drive__share_file",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Google_Drive__trash_file",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__ask",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__capabilities_describe",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__capabilities_discover",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__capabilities_invoke_read",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__capabilities_invoke_write",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__get_meeting_assets",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__hub_get_file_content",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__meeting_create",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__meeting_delete",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__my_notes_get_note_content",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__recordings_list",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__search_describe_capabilities",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Zoom_for_Claude__search_meetings",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Microsoft_Learn__microsoft_code_sample_search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Microsoft_Learn__microsoft_docs_fetch",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Microsoft_Learn__microsoft_docs_search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Spotify__search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Spotify__get_currently_playing",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Spotify__save_to_library",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Uber__get_estimates_between_two_locations_claude",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Booking_com__accommodations_search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Booking_com__attractions_search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Expedia__search_flights",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Claude_Docs__read",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Claude_Docs__query",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Claude_Docs__export",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Claude_Docs__create",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Claude_Docs__delete",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__tldraw__search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__tldraw__exec",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__draw_io__create_diagram",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__draw_io__get_drawio_reference",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__draw_io__search_shapes",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_navigate",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_click",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_snapshot",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_take_screenshot",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_type",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_evaluate",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_console_messages",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_close",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_playwright_playwright__browser_wait_for",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_pdf-viewer_pdf__display_pdf",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_pdf-viewer_pdf__interact",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_pdf-viewer_pdf__list_pdfs",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Higgsfield__balance",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Higgsfield__models_explore",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Higgsfield__gpu_list_gpus",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Higgsfield__generate_image",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Higgsfield__jobs_wait",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Higgsfield__show_generations",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Higgsfield__job_display",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Adobe_for_creativity__adobe_mandatory_init",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Adobe_for_creativity__asset_search",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Adobe_for_creativity__font_recommend",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Adobe_for_creativity__pdf_to_markdown",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Adobe_for_creativity__image_remove_background",
+   "decision": "refuse"
+  },
+  {
+   "tool": "mcp__Adobe_for_creativity__html_export_readiness_skill",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Vercel__get_deployment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__Vercel__create_deployment",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_small-business_google-drive__read_file_content",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__plugin_small-business_gmail__search_threads",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__claude-code-remote__add_repo",
+   "input": {
+    "access": "push"
+   },
+   "decision": "refuse",
+   "note": "push access mints credentials that can change the other repository"
+  }
+ ]
+}
