@@ -60,7 +60,7 @@ export function renderProfile(name, profile, { rulesRoot = RULES, root = ROOT, d
     if (fs.existsSync(dir)) fs.cpSync(dir, dest, { recursive: true });
   }
   // The profile's plugins (rfr-core plus its domain plugin) are what the template enables
-  // (docs/specs/plugin-split.md, AC-7), and its allow rules follow the shared ones (WA-009).
+  // (docs/specs/plugin-split.md, AC-7), and its allow rules follow the shared ones (WA-003).
   const settings = path.join(dest, '.claude', 'settings.json');
   if ((profile.plugins || profile.permissions) && fs.existsSync(settings)) {
     const json = JSON.parse(fs.readFileSync(settings, 'utf8'));
@@ -107,7 +107,7 @@ export function renderPayload({ rulesRoot = RULES, root = ROOT, dest }) {
   // The handoff file (WA-012), which install-rules offers to create.
   const handoff = path.join(root, 'templates', 'repo-files', 'common', 'docs', 'handoff.md');
   if (fs.existsSync(handoff)) fs.copyFileSync(handoff, path.join(dest, 'handoff.md'));
-  // The shared permission rules, which install-rules merges with the profile's (WA-009).
+  // The shared permission rules, which install-rules merges with the profile's (WA-003).
   const shared = path.join(root, 'templates', 'repo-files', 'common', '.claude', 'settings.json');
   if (fs.existsSync(shared)) {
     const { permissions } = JSON.parse(fs.readFileSync(shared, 'utf8'));

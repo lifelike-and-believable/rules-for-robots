@@ -8,7 +8,7 @@ Practice guide for the security rules (`SEC-*`) and the privileged-tool rules (`
 - CI runs a secret scan (gitleaks) on every pull request. A committed secret counts as leaked even after removal: rotate it.
 - Agents should not echo secrets into reports or logs. Mark Vercel variables holding secrets as sensitive so they cannot be read back.
 
-## Untrusted input (SEC-002)
+## Untrusted input
 
 Generated code frequently contains injection and validation flaws; one industry study found flaws in 45% of samples, with newer models no better. Validate input against a schema where it enters the system, use parameterized queries and framework escaping, and check authorization on the server for every protected action. In Unreal plugins, treat data from replicated clients the same way: validate server RPC parameters before acting on them.
 
@@ -51,11 +51,11 @@ rfr's guards are PreToolUse hooks. They run alongside Claude Code's permission s
 | Deny, every profile | Force-pushes, pushes to `main` or `master`, remote deletions, `gh repo delete`, and `vercel --prod` (as `Bash(...)` and `PowerShell(...)`) | Never-list actions; the rule holds even in a session without rfr's hooks, and refuses without a prompt. |
 | Deny, every profile | Reading `.env`, `.env.*`, and `*.pem` | Secrets stay out of the session (SEC-001). |
 
-In default mode, these are left to prompt on purpose: `git push`, which changes a remote; `npm install` with a package name, which adds a dependency (CODE-004); writes to protected paths; and every MCP tool. The Vercel MCP server's tool names depend on how it is connected, so the template cannot name its read tools; `rfr-web`'s guard refuses the write tools R43 lists whatever the server is called. Allow rules for Bash cover only the Bash tool; the PowerShell tool needs its own `PowerShell(...)` rules, which is why the table lists both.
+In default mode, these are left to prompt on purpose: `git push`, which changes a remote; `npm install` with a package name, which adds a dependency (the reviewers check each new one); writes to protected paths; and every MCP tool. The Vercel MCP server's tool names depend on how it is connected, so the template cannot name its read tools; `rfr-web`'s guard refuses the write tools R43 lists whatever the server is called. Allow rules for Bash cover only the Bash tool; the PowerShell tool needs its own `PowerShell(...)` rules, which is why the table lists both.
 
 ### Asking once for a batch
 
-A prompt on every file teaches people to approve without reading ("after the tenth approval you're clicking through rather than reviewing", Claude Code best practices). WA-009 asks the agent to name a batch of actions up front and ask once for the one change that covers it:
+A prompt on every file teaches people to approve without reading ("after the tenth approval you're clicking through rather than reviewing", Claude Code best practices). WA-003 asks the agent to name a batch of actions in the plan, before the run, and ask once for the one change that covers it:
 
 - **Edits in the working folders:** approve the plan with auto-accept edits, or switch to `acceptEdits` (Shift+Tab). It covers file edits and `mkdir`, `touch`, `rm`, `rmdir`, `mv`, `cp`, and `sed` inside the working directory and `additionalDirectories`.
 - **A folder outside the session:** `/add-dir <path>`, or `permissions.additionalDirectories` in settings. A new repository created beside the current one is the common case: each file there prompts even in `acceptEdits`, because accept-edits covers only the working folders. Starting a session in the new folder works too.

@@ -4,10 +4,10 @@ Practice guide for the working agreement (`WA-*`) and the git and documentation 
 
 ## The loop
 
-1. **Explore** with a subagent when the area is unfamiliar, so the main session keeps only the conclusions (WA-007).
+1. **Explore** with a subagent when the area is unfamiliar, so the main session keeps only the conclusions.
 2. **Plan** when the change is bigger than one sentence can describe. Name the files, the interfaces, what is out of scope, the assumptions that could be wrong, the APIs it relies on and where each was checked, and the named test cases that will verify it. Skip the plan for small, obvious changes.
 3. **Implement** in the main session, one writer at a time. Parallel agents are for reading and review.
-4. **Verify** with the project's own command and include its output (WA-001). Ground every claim in this session's evidence (WA-005).
+4. **Verify** with the project's own command and include its output (WA-001). Ground every claim in this session's evidence; `code-reviewer` checks the claims in the pull request against what can be verified.
 5. **Review** in a fresh context: a reviewer sees the diff and the criteria, not the author's reasoning, and reports every finding with its severity (the `code-reviewer` agent uses blocker, major, minor, and nit). Filter findings in a separate pass, because reviewers asked for "only important issues" drop real ones.
 
 ## Spec first, tests first
@@ -39,9 +39,9 @@ When you are working in phases, such as requirements before design, say which ph
 
 ## Evidence for claims
 
-An agent's report is only as good as what it checked this session (WA-005, WA-006).
+An agent's report is only as good as what it checked this session (WA-006, and `code-reviewer`'s check of grounded claims).
 
-- Build on the code the shipped product uses. A prototype, sample, or deprecated class can be a closer name match than the live one; check which is in use and say so if the pattern you followed may be legacy (CODE-001). When a claim turns out wrong, say what was wrong, cite the file and line, and rework from there.
+- Build on the code the shipped product uses. A prototype, sample, or deprecated class can be a closer name match than the live one; check which is in use and say so if the pattern you followed may be legacy (`code-reviewer` checks this). When a claim turns out wrong, say what was wrong, cite the file and line, and rework from there.
 - Examples from blogs, forums, or other versions of a library or engine are leads, not evidence. Confirm against the installed source or version-matched docs, and check experimental or pre-release modules every time, because they change between minor versions.
 - `/rfr-core:lookup-api` does the check in one step: for an npm package it prints the installed version, the lock entry, the symbol's declarations, and the bundled docs lines that mention it, following re-exports into other packages; for Unreal it searches the headers of each engine you name and says which versions lack the symbol. It reads only what is installed, so the answer matches the version you build against.
 - Confirm how a dependency behaves, not only that its API exists: read the code path you rely on. A fake or mock in the tests should follow the real library's contract; a fake that is more forgiving than the library hides exactly the bugs it should catch.
@@ -53,7 +53,7 @@ An agent's report is only as good as what it checked this session (WA-005, WA-00
 
 A subagent starts with none of the main session's context, so the hand-off has to carry it.
 
-- Keep broad searches and sweeps in subagents, so the main session holds conclusions rather than file dumps (WA-007).
+- Keep broad searches and sweeps in subagents, so the main session holds conclusions rather than file dumps.
 - Treat the hand-off as a contract: the files in scope, the APIs already checked and where, the named tests that define done, and what is out of scope. A plan from `/rfr-core:plan-feature` is a good hand-off.
 - State the subagent's authority: the task, its scope, and that the user approved it. Ask it to return new scope, architectural choices, and irreversible actions to you instead of acting on them. Permission prompts and hooks apply inside subagents too, so the prompt cannot grant more than the session has.
 - Ask for a structured result: files changed, test runs, verification output, and what it could not verify. The `rfr-web:web-engineer`, `rfr-unreal:unreal-engineer`, and `rfr-core:code-reviewer` agents already report this way.
@@ -63,7 +63,7 @@ A subagent starts with none of the main session's context, so the hand-off has t
 
 ## Long sessions
 
-Rule adherence declines as a session grows, and a session full of failed attempts steers the agent toward more of the same. After two failed corrections on the same problem, ask for a summary and continue in a fresh session (WA-007). Keep instructions short: always-on text in these template repos stays under 200 lines.
+Rule adherence declines as a session grows, and a session full of failed attempts steers the agent toward more of the same. After two failed corrections on the same problem, ask for a summary and continue in a fresh session (`tech-lead` plans slices this way). Keep instructions short: always-on text in these template repos stays under 200 lines.
 
 ## Work that spans sessions
 

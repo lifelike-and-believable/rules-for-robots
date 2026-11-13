@@ -1,4 +1,4 @@
-// Default permission rules (WA-009, practices/security-for-agentic-projects.md#asking-once-for-a-batch).
+// Default permission rules (WA-003, practices/security-for-agentic-projects.md#asking-once-for-a-batch).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

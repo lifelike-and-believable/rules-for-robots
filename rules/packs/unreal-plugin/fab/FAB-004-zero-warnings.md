@@ -11,4 +11,4 @@ observed-on: []
 rationale: Fab requires no errors or "consequential warnings" and does not define the term, so zero warnings is the safe bar (4.3.6.2.a).
 sources: ["practices/unreal-plugin-development.md", "docs/research/sources/fab-requirements.md"]
 ---
-Fix compiler and UnrealBuildTool warnings you introduce rather than suppressing them. Do not disable warnings with pragmas or build settings unless the user agrees and the reason is recorded next to the suppression.
+Fix compiler and UnrealBuildTool warnings you introduce rather than suppressing them. Do not disable warnings with pragmas or build settings. If a warning cannot be fixed (it comes from engine or third-party code), leave it, write it and the suppression you would add in the pull request's `## Decisions` section, and carry on; the reviewer decides.
