@@ -31,7 +31,7 @@
       "PowerShell(git switch *)",
       "WebSearch"
     ],
-    "ask": [
+    "deny": [
       "Bash(git push --force *)",
       "PowerShell(git push --force *)",
       "Bash(git push -f *)",
@@ -49,9 +49,7 @@
       "Bash(vercel --prod *)",
       "PowerShell(vercel --prod *)",
       "Bash(vercel deploy --prod *)",
-      "PowerShell(vercel deploy --prod *)"
-    ],
-    "deny": [
+      "PowerShell(vercel deploy --prod *)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./**/*.pem)"
