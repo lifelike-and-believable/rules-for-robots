@@ -27,14 +27,14 @@ Claude Code's own prompts (protected paths such as `.claude`, `.git`, and `.mcp.
 |---|---|---|
 | Force-push | `guard-commands` | `force-push` |
 | Push to the default branch | `guard-commands` | `push-default-branch`, `push-head-to-default` |
-| Delete a branch, tag, release, or repository on the remote, by git, `gh`, the API, or the Vercel CLI | `guard-commands` | `remote-branch-delete`, `remote-branch-delete-colon`, `repo-delete`, `api-delete`, `vercel-remove` |
+| Delete a branch, tag, release, or repository on the remote, by git, `gh`, the API, or the Vercel CLI | `guard-commands`; the Vercel CLI, `guard-cli` | `remote-branch-delete`, `remote-branch-delete-colon`, `repo-delete`, `api-delete`, `vercel-remove` |
 | Rewrite history, or move a ref on the remote through the API; force-delete a local branch the guard cannot resolve (one it can is allowed, with the command that restores it) | `guard-commands` | `filter-repo`, `api-ref-patch`, `branch-force-delete-unknown` |
 | Skip hooks (`--no-verify`, `git commit -n`, `core.hooksPath`, `HUSKY=0`, `SKIP=`) | `guard-commands` | `no-verify`, `commit-no-verify-short`, `hooks-path`, `husky-off` |
 | Change machine-wide git configuration | `guard-commands` | `config-global` |
 | Delete files outside the repository, root-like paths, or what no snapshot covers | `guard-commands` | `rm-outside`, `rm-root-like` |
-| Destructive database commands | `guard-commands` | `drizzle-push`, `prisma-reset` |
-| Production deploy, promotion, alias, or domain change; a redeploy not marked preview; changing environment variables | `guard-commands`, `guard-mcp` | `vercel-prod-cli`, `vercel-deploy-prod`, `vercel-redeploy`, `vercel-env-rm` |
-| Read a secret value: a `.env` or key file read by a shell command, an unfiltered listing of the environment, a secret-named variable printed, `vercel env pull`, or a Vercel MCP read that decrypts | `guard-commands`, `guard-mcp` | `vercel-token`, `vercel-decrypted-env`, `read-env-file`, `env-dump`, `vercel-env-pull` |
+| Destructive database commands | `guard-cli` | `drizzle-push`, `prisma-reset` |
+| Production deploy, promotion, alias, or domain change; a redeploy not marked preview; changing environment variables | `guard-cli`, `guard-mcp` | `vercel-prod-cli`, `vercel-deploy-prod`, `vercel-redeploy`, `vercel-env-rm` |
+| Read a secret value: a `.env` or key file read by a shell command, an unfiltered listing of the environment, a secret-named variable printed, `vercel env pull`, or a Vercel MCP read that decrypts | `guard-commands`, `guard-cli`, `guard-mcp` | `vercel-token`, `vercel-decrypted-env`, `read-env-file`, `env-dump`, `vercel-env-pull` |
 
 An agent approving a pull request is refused as well (`guard-commands` and `guard-pr-approval`, [github-gate AC-9](../docs/specs/github-gate.md)), with the next step of giving the approver the review link; `test/refuse-pr-approval.test.mjs` covers it in place of corpus cases. **What the patterns cannot see.** The guard reads command lines, so it catches the usual forms of each action: wrappers (`bash -c`, `$(…)`, `command`, `env`), Windows names (`git.exe`), package runners (`npx -y vercel@latest`), global flags, and the API routes. It does not read what a program does once it runs. A script or one-liner in another language (`node -e`, `python -c`) that reads `.env` or calls the API, a git alias, `GIT_CONFIG_PARAMETERS`, `git update-ref -d`, `gh api` writes to `contents/` or `merges`, and `vercel api` go through. What contains them is the environment: credentials with no production reach, branch protection on the default branch, and a cloud container or sandbox (rewrite plan, section 3).
 
@@ -61,12 +61,11 @@ Publishing a release or pushing a tag is not on the list. A merge is not either:
 | Force-push (`--force`, `--force-with-lease`, `+ref`) | WA-003 | Rewriting shared history | 4 | 4 | It changes a remote |
 | `git branch -D` of a branch the guard can resolve | WA-003 | none | 1 | 1 | The commits stay in the repository, and the guard tells the agent the `git branch <name> <sha>` that restores it (rewrite plan 25e). One it cannot resolve is tier 4 |
 | `git commit -n`, `core.hooksPath` set for a command or in the configuration, `HUSKY=0` or `SKIP=` before a commit | WA-003 | Skipping the project's own checks | 4 | 4 | The same as `--no-verify` (rewrite plan 25e) |
-| A shell read of a `.env` or key file, an unfiltered `env` or `printenv`, a secret-named variable printed, `vercel env pull` | SEC-001 | Secrets entering the session | 4 | 4 | Once read, a secret cannot be un-read. An example file, and a listing piped into a filter (`env \| grep PXR`), are allowed |
-| `gh api -X DELETE`, a `gh api` change to `git/refs`, `vercel remove`, `vercel project rm`, `vercel env add/rm`, `vercel redeploy` without `--target preview`, `vercel --prod=<value>` | WA-003, NODE-002 | Deleting or changing what is on the remote or live | 4 | 4 | The same actions as the named commands above, by another route (rewrite plan 25e) |
+| A shell read of a `.env` or key file, an unfiltered `env` or `printenv`, or a secret-named variable printed | SEC-001 | Secrets entering the session | 4 | 4 | Once read, a secret cannot be un-read. An example file, and a listing piped into a filter (`env \| grep PXR`), are allowed |
+| `gh api -X DELETE`, a `gh api` change to `git/refs` | WA-003 | Deleting or changing what is on the remote | 4 | 4 | The same actions as the named commands above, by another route (rewrite plan 25e) |
 | `git filter-branch`, `git filter-repo` | WA-003 | Rewriting history | 4 | 4 | Hard to undo, and usually pushed |
 | `--no-verify` | WA-003 | Skipping the project's own checks | 4 | 4 | The checks exist for a reason a person set |
 | `git config --global` or `--system` | WA-003 | Changing the machine for every project | 4 | 4 | It reaches outside the project |
-| `drizzle-kit push`, `drizzle-kit --force`, `prisma migrate dev/reset`, `prisma db push/migrate` | PG-001 | Losing data in a database | 4 | 4 | A database is outside the repository, and its data has no snapshot |
 
 ## `guard-test-edits` (rfr-core; Edit, Write, MultiEdit, NotebookEdit)
 
@@ -102,6 +101,18 @@ A device is shared unless the project marks it disposable: emulators (`emulator-
 | An unknown `adb shell` command, an interactive `adb shell`, or a line the guard cannot read that runs `adb`, on a shared device | Device guard | The same, for a change the guard cannot recognise | 4 | 4 | Unknown is treated as a change |
 | A script listed under `android.deviceScripts`, run against a shared device | Device guard | The same, through a script | 4 | 4 | The guard cannot see the `adb` commands inside it |
 | Any of the above on a disposable device | Device guard | none | 1 | 1 | The project said the device may be changed freely |
+
+## `guard-cli` (rfr-web; shell commands)
+
+Moved from `guard-commands` in rewrite plan 25e (verify inventory slice f2), so a project without rfr-web does not carry the web stack's checks. It reads a command line the way `guard-commands` does, with a copy of the same parser (`command-words.mjs` and `shell-writes.mjs`, copied by `npm run build`), so the routes listed under "What the patterns cannot see" above apply to it too.
+
+| Decision | Rule | Failure it prevents | Now | Target | Why |
+|---|---|---|---|---|---|
+| `drizzle-kit push`, `drizzle-kit --force`, `prisma migrate dev/reset`, `prisma db push/migrate` | PG-001 | Losing data in a database | 4 | 4 | A database is outside the repository, and its data has no snapshot |
+| `vercel --prod` (or `--prod=<value>`, `--target production`), `promote`, `alias`, `domains`, `rollback`, a `redeploy` without `--target preview`, `vercel env add/rm` | NODE-002 | Changing what users of the live site see | 4 | 4 | A preview deployment is the way to show the change |
+| `vercel remove`, `vercel project rm`, `vercel dns rm`, `vercel certs rm` | WA-003 | Deleting what the live site depends on | 4 | 4 | It is outside the project folder, and no snapshot covers it |
+| `vercel env pull`, `vercel pull --environment production` | SEC-001 | Secrets entering the session | 4 | 4 | Once read, a secret cannot be un-read |
+| `vercel`, `vercel deploy` (a preview), `vercel env ls`, `vercel logs` | NODE-002 | none | 1 | 1 | Nothing live changes, and no secret is read |
 
 ## `guard-mcp` (rfr-web; Vercel MCP)
 

@@ -8,6 +8,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { decideCommand, findRisk } from '../plugins/core/scripts/guard-commands.mjs';
+import { decideWebCommand } from '../plugins/web/scripts/guard-cli.mjs';
+
+// The database commands are rfr-web's guard-cli since rewrite plan 25e (f2): a web project runs both
+// hooks on a command, and either one refusing is enough.
+const flaggedByCoreOrWeb = command => findRisk(command) ?? decideWebCommand(command)?.reason ?? null;
 
 const SCRIPTS = path.resolve('plugins/core/scripts');
 
@@ -48,7 +53,7 @@ test('flags destructive commands', () => {
     'git commit -m "x" --no-verify', 'npx drizzle-kit push', 'npx drizzle-kit migrate --force',
     'npx prisma migrate dev', 'npx prisma migrate reset', 'npx prisma db push', 'npx prisma db migrate',
   ];
-  for (const command of risky) assert.ok(findRisk(command), `should flag: ${command}`);
+  for (const command of risky) assert.ok(flaggedByCoreOrWeb(command), `should flag: ${command}`);
 });
 
 test('leaves ordinary commands alone', () => {
@@ -57,7 +62,7 @@ test('leaves ordinary commands alone', () => {
     'git checkout main', 'git restore src/a.ts', 'git reset HEAD file', 'git clean -n', 'npx prisma migrate deploy',
     'npx drizzle-kit generate', 'echo "rm -rf is dangerous"', 'git log --format=%H',
   ];
-  for (const command of safe) assert.equal(findRisk(command), null, `should not flag: ${command}`);
+  for (const command of safe) assert.equal(flaggedByCoreOrWeb(command), null, `should not flag: ${command}`);
 });
 
 test('guard-commands prints an ask decision only for risky commands', () => {

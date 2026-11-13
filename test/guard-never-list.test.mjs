@@ -9,6 +9,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { decideCommand, namedAsk } from '../plugins/core/scripts/guard-commands.mjs';
+import { decideWebCommand } from '../plugins/web/scripts/guard-cli.mjs';
+
+// Claude Code runs every enabled plugin's hook on a command, and the strictest decision stands. Since
+// rewrite plan 25e (f2), the Vercel CLI and database cases are rfr-web's guard-cli, so a never-list
+// case is checked against rfr-core and rfr-web together, as a web project runs them.
+function decideAll(command, options) {
+  const core = decideCommand(command, options);
+  if (core?.decision === 'ask' || core?.decision === 'deny') return core;
+  return decideWebCommand(command, options) ?? core;
+}
 
 function git(dir, ...args) {
   const r = spawnSync('git', ['-c', 'user.email=t@example.com', '-c', 'user.name=t', ...args], { cwd: dir, encoding: 'utf8' });
@@ -30,11 +40,11 @@ function repo({ branch = 'feature' } = {}) {
 test('unattended#AC-2: pushes to the default branch, remote deletes, and production deploys are refused; other pushes, releases, and preview deploys are not', () => {
   const dir = repo();
   for (const command of ['git push origin main', 'git push origin HEAD:main', 'git push origin --all', 'git push origin --delete old', 'git push origin :old', 'gh repo delete acme/app --yes', 'gh release delete v1.0.0', 'npx vercel deploy --prod', 'vercel promote dpl_1', 'git -C . push origin main']) {
-    assert.equal(decideCommand(command, { cwd: dir })?.decision, 'ask', command);
+    assert.equal(decideAll(command, { cwd: dir })?.decision, 'ask', command);
   }
   for (const command of ['git push -u origin feature', 'git push origin feature:feature', 'git push origin --tags', 'git push origin v1.0.0', 'gh release create v1.0.1', 'npx vercel deploy', 'git status', 'gh pr create --fill']) {
     assert.equal(namedAsk(command, dir), null, command);
-    assert.equal(decideCommand(command, { cwd: dir }), null, command);
+    assert.equal(decideAll(command, { cwd: dir }), null, command);
   }
   // A bare push is refused only on the default branch.
   assert.equal(namedAsk('git push', dir), null);
@@ -113,11 +123,11 @@ test('unattended#AC-2: skipping hooks, reading secrets, and deleting or changing
     'cat .env', 'cat .env.local', 'type .env', 'Get-Content .env.production', 'grep KEY .env', 'cat secrets/server.pem', 'printenv', 'env', 'printenv GH_TOKEN', 'echo $GH_TOKEN', 'echo "$OPENAI_API_KEY"', 'Get-ChildItem env:', 'gci env:GH_TOKEN', 'vercel env pull .env.local',
     'gh api -X DELETE repos/o/r', 'gh api --method DELETE repos/o/r/releases/1', 'gh api -X PATCH repos/o/r/git/refs/heads/main -F force=true -f sha=abc',
     'vercel remove app --yes', 'vercel rm app', 'vercel project rm app', 'vercel env rm SECRET production -y', 'vercel env add SECRET production', 'vercel --prod=true', 'vercel redeploy https://app.vercel.app']) {
-    assert.equal(decideCommand(command, { cwd: dir })?.decision, 'ask', command);
+    assert.equal(decideAll(command, { cwd: dir })?.decision, 'ask', command);
   }
   for (const command of ['git commit -m "fix -n handling"', 'git config --get core.hooksPath', 'git merge -n feature', 'cat .env.example', 'cat README.md', 'env NODE_ENV=test node x.js', 'env | grep -iE "^(PXR|USD)"', 'printenv PATH', 'echo $HOME', 'Get-ChildItem env:QUIET* | Format-Table',
     'gh api repos/o/r/pulls', 'gh api -X POST repos/o/r/git/refs -f ref=refs/heads/x -f sha=abc', 'vercel redeploy https://x --target preview', 'vercel --prod=false']) {
-    assert.equal(decideCommand(command, { cwd: dir }), null, command);
+    assert.equal(decideAll(command, { cwd: dir }), null, command);
   }
 });
 
@@ -148,12 +158,12 @@ test('unattended#AC-2: the never list is refused through wrappers, Windows names
     "bash -c 'gh api -X DELETE repos/o/r'", "bash -c 'git commit -n -m x'", 'gh api -X=DELETE repos/o/r', 'gh api -X GET -X DELETE repos/o/r', "gh api graphql -f query='mutation { deleteRef(input:{refId:\"x\"}) { clientMutationId } }'", 'gh.exe api -X DELETE repos/o/r',
     'git commit --no-veri -m x', 'git --config-env=core.hooksPath=HP commit -m x', 'git config --unset core.hooksPath', 'export HUSKY=0; git commit -m x', '$env:HUSKY=0; git commit -m x', 'git.exe commit -n -m x',
     'npx --yes vercel remove app', 'npx vercel@latest remove app', 'npx -y vercel --prod', 'pnpm exec vercel remove app', 'vercel --scope acme remove app', 'vercel --token t env rm X production', 'vercel --cwd app env pull', 'vercel pull --environment=production', 'vercel dns rm rec_1', 'vercel certs rm cert_1']) {
-    assert.equal(decideCommand(command, { cwd: dir })?.decision, 'ask', command);
+    assert.equal(decideAll(command, { cwd: dir })?.decision, 'ask', command);
   }
   fs.mkdirSync(path.join(dir, '.githooks'));
   for (const command of ['source .env && npm run dev', 'set -a; . .env; set +a; npx drizzle-kit migrate', 'git commit -uno -m x', 'git commit -m"cleanup"', 'git commit -am"done"', 'git config core.hooksPath .githooks', 'git config get core.hooksPath',
     'cat .env.local.example', 'cat certs/fullchain.pem', 'grep -q DATABASE_URL .env', "sed -i 's/^PORT=.*/PORT=4000/' .env", 'SKIP=1 npm test', "Get-ChildItem env: | Where-Object Name -like 'PXR*'", "$env:TRIPO_API_KEY = [Environment]::GetEnvironmentVariable('TRIPO_API_KEY','User')",
     "cat > /tmp/x.mjs <<'EOF'\nenv\nEOF", 'gh auth status', 'vercel env ls', 'npx vercel deploy']) {
-    assert.equal(decideCommand(command, { cwd: dir }), null, command);
+    assert.equal(decideAll(command, { cwd: dir }), null, command);
   }
 });

@@ -134,6 +134,12 @@ export const LIB_COPIES = [
   // plugin's folder, so each gets copies of the rfr-core hook helpers its guards use.
   // rfr-android's guard also reads command lines with rfr-core's shell parser (android-plugin AC-1).
   { src: path.join(ROOT, 'plugins', 'core', 'scripts', 'shell-writes.mjs'), dest: path.join(ROOT, 'plugins', 'android', 'scripts', 'shell-writes.mjs'), label: 'android plugin shell-writes.mjs' },
+  // rfr-web's guard-cli reads command lines as rfr-core's guard-commands does (rewrite plan 25e, f2).
+  ...['shell-writes.mjs', 'command-words.mjs'].map(file => ({
+    src: path.join(ROOT, 'plugins', 'core', 'scripts', file),
+    dest: path.join(ROOT, 'plugins', 'web', 'scripts', file),
+    label: `web plugin ${file}`,
+  })),
   ...['web', 'unreal', 'android'].flatMap(plugin => ['lib.mjs'].map(file => ({
     src: path.join(ROOT, 'plugins', 'core', 'scripts', file),
     dest: path.join(ROOT, 'plugins', plugin, 'scripts', file),

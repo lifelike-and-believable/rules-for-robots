@@ -10,6 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { decideCommand } from '../plugins/core/scripts/guard-commands.mjs';
 import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
 import { decideVercel } from '../plugins/web/scripts/guard-mcp.mjs';
+import { decideWebCommand } from '../plugins/web/scripts/guard-cli.mjs';
 import { decideUnreal } from '../plugins/unreal/scripts/guard-unreal.mjs';
 import { decideAdb } from '../plugins/android/scripts/guard-adb.mjs';
 
@@ -61,6 +62,8 @@ function decide(c) {
     return decideCommand(c.command.replace('$TMPCASE', scratch), { cwd: dir });
   }
   if (c.guard === 'mcp') return decideVercel({ tool_name: c.tool_name, tool_input: c.tool_input });
+  // rfr-web's guard-cli: Vercel CLI and database commands (rewrite plan 25e, f2).
+  if (c.guard === 'web-cli') return decideWebCommand(c.command, { cwd: fixtureRepo(c.repo) });
   if (c.guard === 'unreal') return decideUnreal(c.command);
   // android-plugin AC-2: the devices adb would see, and the project's disposable devices and scripts.
   if (c.guard === 'android') return decideAdb(c.command, { env: {}, settings: { disposable: c.disposable ?? [], deviceScripts: c.deviceScripts ?? [] }, listDevices: () => c.devices ?? [] });

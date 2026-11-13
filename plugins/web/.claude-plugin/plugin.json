@@ -1,7 +1,7 @@
 {
   "name": "rfr-web",
-  "version": "3.0.0",
-  "description": "Web skills, agents, and hooks from rules-for-robots: the web-engineer agent, accessibility and performance audits, and the Vercel MCP guard. Requires rfr-core.",
+  "version": "3.1.0",
+  "description": "Web skills, agents, and hooks from rules-for-robots: the web-engineer agent, accessibility and performance audits, and guards for Vercel (MCP and CLI) and database commands. Requires rfr-core.",
   "author": {
     "name": "Lifelike & Believable Animation Design"
   },

@@ -22,7 +22,8 @@ Web plugin from [rules-for-robots](../../README.md), for websites and web apps (
 | Event | Hook | What it does | Rule |
 |---|---|---|---|
 | PreToolUse (Vercel MCP tools) | `guard-mcp` | Refuses Vercel MCP tools other than reads and preview deployments (production deploys, environment variables, delete, purchase, and so on), and reads that return tokens or decrypted environment variables (`get_project_env`, `get_shared_env_var`, and any call with `decrypt` set). A deployment whose target is not production goes ahead | NODE-002 |
+| PreToolUse (Bash, PowerShell) | `guard-cli` | Refuses Vercel CLI calls that deploy to production, promote, alias, change domains or environment variables, delete deployments, projects, DNS records, or certificates, or pull secrets; and database commands that apply schema changes without a reviewed migration (`drizzle-kit push`, `prisma migrate dev/reset`, `prisma db push`). Preview deploys and reads go ahead. Moved from rfr-core's `guard-commands` in rewrite plan 25e | NODE-002, WA-003, SEC-001, PG-001 |
 
 The guard asks only about calls that act on the account or read secrets, and each question says what the agent does if not approved; in headless runs (`claude -p`) a request for approval counts as a denial. Its decisions go to `guard-decisions.jsonl` in this plugin's data folder, separate from rfr-core's; `node checks/guard-report.mjs` in a rules-for-robots checkout reports several logs together. The guard's tiers are listed in [practices/guards.md](../../practices/guards.md).
 
-`scripts/lib.mjs` is copied from `plugins/core/scripts/` by `npm run build`; edit it there.
+`scripts/lib.mjs`, `scripts/shell-writes.mjs`, and `scripts/command-words.mjs` are copied from `plugins/core/scripts/` by `npm run build`; edit them there.

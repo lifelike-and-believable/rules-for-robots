@@ -6,6 +6,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
+- **The Vercel CLI and database checks move to rfr-web** (rewrite plan 25e, verify inventory slice f2). `rfr-web` 3.1.0. A new rfr-web hook, `guard-cli`, refuses on Bash and PowerShell what rfr-core's `guard-commands` refused before, with the same rules and the same reading of a command line:
+  - `vercel --prod`, `promote`, `alias`, `domains`, `rollback`, a `redeploy` not marked preview, and `vercel env add/rm` (NODE-002);
+  - `vercel remove`, `project rm`, `dns rm`, and `certs rm` (WA-003);
+  - `vercel env pull` (SEC-001);
+  - `drizzle-kit push` or `--force`, `prisma migrate dev/reset`, and `prisma db push/migrate` (PG-001).
+
+  `guard-commands` no longer checks them. A project with rfr-core alone, such as the general and Android profiles, no longer refuses them. The shared command reading is in rfr-core's `command-words.mjs`, which the build copies into rfr-web. Compared with `main` on 5,372 commands, rfr-core and rfr-web together refuse exactly what rfr-core refused before. Adopters: a project that deploys to Vercel or runs Drizzle or Prisma enables rfr-web, which the `web-app` and `static-site` profiles already do; update rfr-web to 3.1.0. Nothing else to do.
+
 - **The stage-order guard reads approval from the default branch** (rewrite plan 25e; project-process AC-64 amended). `rfr-process` 2.3.0. `guard-stages` used to count an artifact as approved by its status in the working tree, so an agent could mark user documentation `approved` in its own branch and start delivery with a spec. For a spec or a tutorial, it now reads approval as the session-start process state does. An artifact new or changed in this branch counts with the status its default-branch version has: an amendment keeps an approval already given, and a status set only in the branch does not count. Inside a feature packet, the design and user documentation still build on the stages proposed in the same branch. `approvedOnDefaultBranch` is in `checks/lib/process.mjs`. Adopters: nothing to do.
 
 - **No `ask` rules in the settings rfr writes** (rewrite plan 25e). The template repositories and `install-rules` used to write `ask` rules for force-pushes, pushes to `main` or `master`, remote deletes, `gh repo delete`, and `vercel --prod`. An `ask` rule prompts even in auto mode. They are now `deny` rules, which refuse the same commands without a prompt where rfr's hooks are not loaded. `install-rules` offers to move an earlier install's rfr `ask` rules to `deny`. Adopters: run `/rfr-core:install-rules`, or move those entries from `ask` to `deny` in `.claude/settings.json` yourself.

@@ -1,6 +1,7 @@
 ---
 status: draft
 unlocks:
+  - test/guard-never-list.test.mjs: rewrite plan 25e (verify inventory slice f2, the maintainer's choice of 2026-11-13) moves the Vercel CLI and database checks from rfr-core's guard-commands to rfr-web's guard-cli; every never-list case is unchanged and is checked against rfr-core and rfr-web together (decideAll), as a web project runs them
   - test/unattended.test.mjs: AC-1 amended and AC-3 retired (rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome), so its test goes; AC-1 no longer checks the "permissions": "ask" prompt path, which is removed; AC-1's other checks, AC-2, and AC-5 are unchanged
   - test/hooks.test.mjs: AC-2 makes every guard decision that asked a refusal the agent acts on, so the hook-output tests for a force-push, a decrypting Vercel read, and a PowerShell delete expect that refusal; nothing else changes
   - test/default-allow.test.mjs: AC-4 makes a merge that is the person's review a refusal that tells the agent to leave the pull request for them and carry on, so the AC-4 test expects that reason

@@ -1,7 +1,17 @@
 {
-  "description": "rfr-web hooks: refuse Vercel MCP tools that deploy to production, change settings, delete, purchase, or return secrets (NODE-002); reads and preview deployments go ahead.",
+  "description": "rfr-web hooks: refuse Vercel MCP tools that deploy to production, change settings, delete, purchase, or return secrets (NODE-002); refuse the same through the Vercel CLI, and database commands that skip a reviewed migration (PG-001); reads and preview deployments go ahead.",
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-cli.mjs\"",
+            "timeout": 10
+          }
+        ]
+      },
       {
         "matcher": "mcp__.*[Vv][Ee][Rr][Cc][Ee][Ll].*",
         "hooks": [

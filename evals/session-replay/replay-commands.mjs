@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Replays the shell commands of real sessions through guard-commands (docs/specs/unattended.md, AC-7)
+// Replays the shell commands of real sessions through guard-commands and rfr-web's guard-cli, as a
+// web project runs them (docs/specs/unattended.md, AC-7; guard-cli since rewrite plan 25e, f2)
 // and reports every one that is not simply allowed, so a person can check that only actions on the
 // never list are refused. Snapshots are stubbed, so nothing is written; the commands are not run.
 //
@@ -15,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { decideCommand } from '../../plugins/core/scripts/guard-commands.mjs';
+import { decideWebCommand } from '../../plugins/web/scripts/guard-cli.mjs';
 
 function commandsIn(file) {
   const raw = fs.readFileSync(file, 'utf8');
@@ -56,6 +58,8 @@ for (const file of files) {
     let d;
     try {
       d = decideCommand(mapped(command), { cwd: where, snapshot: noSnapshot });
+      // The strictest decision stands, as when Claude Code runs both hooks.
+      if (d?.decision !== 'ask' && d?.decision !== 'deny') d = decideWebCommand(mapped(command), { cwd: where }) ?? d;
     } catch (e) {
       d = { decision: 'error', reason: e.message };
     }
