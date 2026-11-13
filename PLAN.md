@@ -475,8 +475,11 @@ A change to something already built is approved as one packet of documents and c
 - **26d:** the design system, declared or defined, cited by designs and read by mock-ups; then XR Studio In A Box moved onto it.
 - **26e:** mock-up images tracked by the hash of their inputs.
 
-### Phase 27: Lasting tutorials and a place to try them (proposed)
-Spec: [docs/specs/lasting-tutorials.md](docs/specs/lasting-tutorials.md) (a draft, written 2026-11-13 from the maintainer's feedback on the 25f acceptance test; the six changes to what a tutorial is were approved the same day, and its seven decisions are not yet answered).
+### Phase 27: Lasting tutorials and a place to try them (planned)
+Spec: [docs/specs/lasting-tutorials.md](docs/specs/lasting-tutorials.md) (written 2026-11-13 from the maintainer's feedback on the 25f acceptance test; its changes and its seven decisions were approved the same day, each as recommended).
+Pull requests: #254 (spec).
+
+Order, by decisions D5 and D6: this phase comes before Phase 26, and 25f and 8.0.0 wait for it. The acceptance test is run again on the next packet once 27c is in.
 
 A tutorial is user documentation that runs: named for the task, the same on a local build, a preview, and the deployed product, and kept current by later slices. Getting somewhere to follow it is one address or one command, with sign-in as the people the tutorial names.
 

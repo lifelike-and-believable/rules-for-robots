@@ -4,7 +4,7 @@ status: draft
 
 # Lasting tutorials and a place to try them
 
-A tutorial is how the lead validates a feature, and it should also be what a user follows to learn it. This spec makes a tutorial a lasting piece of user documentation that runs wherever the product runs, and makes getting somewhere to follow it one click or one command. It answers the maintainer's feedback on the 25f acceptance test, 2026-11-13: "Tutorials should survive the development process and be usable both during the development process and once the system is deployed", and their question whether the tutorial set-up can be simpler. The maintainer approved the six changes in "The tutorial" below the same day; the seven decisions in the table at the end are new and not yet answered. Proposed as Phase 27 of `PLAN.md`. Nothing here is built. The `status` field stays `draft` until every `test:` criterion has a citing test.
+A tutorial is how the lead validates a feature, and it should also be what a user follows to learn it. This spec makes a tutorial a lasting piece of user documentation that runs wherever the product runs, and makes getting somewhere to follow it one click or one command. It answers the maintainer's feedback on the 25f acceptance test, 2026-11-13: "Tutorials should survive the development process and be usable both during the development process and once the system is deployed", and their question whether the tutorial set-up can be simpler. The maintainer approved the six changes in "The tutorial" below the same day; and the seven decisions in the table at the end later that day, each as recommended. Proposed as Phase 27 of `PLAN.md`. Nothing here is built. The `status` field stays `draft` until every `test:` criterion has a citing test.
 
 ## Problem
 
@@ -90,9 +90,11 @@ Criteria marked D rest on the decision of that number below.
 | AC-13 | The guide's validation part has the table of kinds of product and what trying each takes, and each profile's part names its own row. For a product with external services, the guide asks the architecture for a "Trying the product" section listing each service and its stand-in locally and in a preview, with what the stand-in hides; the persona walkthrough of an architecture reports a service the design names that the section leaves out. | test: the guide and the walkthrough's text. |
 | AC-14 | A tutorial may list services in `needs:`, and `try:` in `process.yml` may list, for `local`, `preview`, and a `staging` address, the services each `provides`. The runner takes `--provides <list>` (the workflows pass the list for where they run), runs a tutorial only where every need is provided, and reports the others as "not run here: needs <service>", apart from passes and failures. The process check fails a need that no place provides. The release check lists a story whose tutorial has needs and has no recorded run where they were met. (D7) | test: a tutorial with a need run with and without it provided; the report; an unprovided need; the release check. |
 
-## Decisions for the maintainer
+## Decisions
 
-| # | Decision | Recommendation | The alternative, and what it costs |
+Approved by the maintainer on 2026-11-13, each as recommended: "yes to all decisions."
+
+| # | Decision | Decided | The alternative, and what it costs |
 |---|---|---|---|
 | D1 | Do web tutorials have to be `runner: web`, with the runner taught to act as several people? | Yes. It is the only way the words stay the test. | Keep `runner: manual` with a separate script: works today, and the script and the words drift, as the original design warned. |
 | D2 | May local and preview builds offer sign-in as a tutorial's people? | Yes, under AC-6's four conditions, with a security review of each one. It removes the mail folder and the five browsers. | No shortcut: every validation needs real mailboxes for every person, or stays as it is now. A middle course is local only, which keeps previews honest and means the lead still installs the project. |
