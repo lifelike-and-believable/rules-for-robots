@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadArtifacts, parseArtifact, readConfig, requiredUpstream, stageOf, workingTree } from './lib/process.mjs';
+import { approvedOnDefaultBranch, loadArtifacts, parseArtifact, readConfig, requiredUpstream, stageOf, workingTree } from './lib/process.mjs';
 
 const NAMES = { stories: 'approved user stories', design: 'an approved design', 'user-docs': 'approved user documentation' };
 
@@ -45,10 +45,16 @@ export function decideStage(input, root) {
   const { artifacts } = loadArtifacts(workingTree(root));
   const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
   const linked = (parsed.links ?? []).map(l => byId.get(l.target)).filter(Boolean);
-  if (linked.some(a => a.stage === need && ['approved', 'implemented'].includes(a.status))) return null;
+  // Delivery (a spec or a tutorial) starts only from what the approver has approved: approval is read
+  // from the default branch, as the process state does (process-state AC-3; rewrite plan 25e), so a
+  // status set to approved only in this branch does not open delivery. Inside a feature packet (stories,
+  // design, and user documentation in one pull request), each stage derives from the one before it as
+  // proposed in the same branch, so a design or user documentation counts the working tree's status.
+  const approved = stage === 'specs' || stage === 'tutorials' ? approvedOnDefaultBranch(root) : a => ['approved', 'implemented'].includes(a.status);
+  if (linked.some(a => a.stage === need && approved(a))) return null;
   // Work with no user-facing behaviour (process-state AC-11): a spec may derive from an approved
   // design that says, with a reason, that what it covers needs no user documentation.
-  if (stage === 'specs' && need === 'user-docs' && linked.some(a => a.stage === 'design' && a.status === 'approved' && typeof a.noUserDocs === 'string' && a.noUserDocs.length >= 10)) return null;
+  if (stage === 'specs' && need === 'user-docs' && linked.some(a => a.stage === 'design' && approved(a) && typeof a.noUserDocs === 'string' && a.noUserDocs.length >= 10)) return null;
   const what = { design: 'a design', 'user-docs': 'user documentation', specs: 'a technical spec', tutorials: 'a tutorial' }[stage];
   return `rfr-process (stage order): ${rel} is ${what}, and every stage is required in this project: it must derive from ${NAMES[need]}, linked in its derived-from, and none is. Write the ${need === 'user-docs' ? 'user documentation' : need} for these stories first, and get it approved, then link it here. A stage is skipped only when docs/product/process.yml waives it, with a reason, before the work starts; do not waive it yourself. Until then, carry on with work that does not depend on it.`;
 }
