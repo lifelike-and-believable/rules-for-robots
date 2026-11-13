@@ -1,6 +1,6 @@
 # Verify suite inventory
 
-The inventory the rewrite plan's phase 25e asks for before any test changes ([rewrite-plan.md](rewrite-plan.md), "Review of the verify suite"). Written 2026-11-12 from `main` at 57e4beb plus pull request #233. Status: **waiting for the maintainer's approval**. Nothing in `test/` changes until it is approved.
+The inventory the rewrite plan's phase 25e asks for before any test changes ([rewrite-plan.md](rewrite-plan.md), "Review of the verify suite"). Written 2026-11-12 from `main` at 57e4beb plus pull request #233. Status: **approved by the maintainer on 2026-11-12**, with the recommended answer to each of the three questions at the end (decisions below).
 
 On that date `npm run verify` has 11 steps and 127 test files (866 tests). CI runs all of it on every pull request, documents included, on Linux and on Windows.
 
@@ -113,11 +113,13 @@ The logic moves with its tests: the PG-001 and production-deploy patterns leave 
 | Merge | 19, into about 12 behaviour-named files |
 | Move | 5 whole, plus parts of `hooks` and `guard-commands` |
 | Keep | 80 |
-| Decided by question 1 (`process-tier`, `process-tier-inference`) | 2 |
+| Removed by decision 1 (`process-tier`, `process-tier-inference`) | 2 |
 
 About 30 fewer files (127 to roughly 95), and the 16 named after a pilot round are gone.
 
 ## Questions for the maintainer
+
+Decided 2026-11-12: (1) retire the tier check; (2) remove the approvals check; (3) keep the deferred components' tests as they are. The questions are kept below as asked.
 
 1. **The tier check.** `process / tier` infers a tier from the changed paths or reads a label; `process / change` (25c) already reads a `Change: fix` or `Change: trivial` claim from the commits. Recommended: retire `process / tier` and its label tests (`process-tier`, `process-tier-inference`, AC-27, AC-39), and have the mutation job read the change check's result instead. The alternative is to keep the tier and change it to read the claim, as 25c planned.
 2. **The approvals check.** Recommended: remove `process / approvals` and its tests, since with D5 every project uses the gate and GitHub's required review holds a gated pull request. The alternative is to keep it, reporting "waiting for review" without failing.

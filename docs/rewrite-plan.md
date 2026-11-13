@@ -160,7 +160,7 @@ The approvals check on gated pull requests (added 2026-11-12, from the first rea
 
 Review of the verify suite (added 2026-11-12, approved by the maintainer). On that date `npm run verify` had 11 steps and 116 test files (about 13,400 lines); 38 files test the process, 16 of them named after a pilot round; 14 touch components this plan removes; and every pull request, documents-only ones included, runs all of it on Linux (about 1 minute) and Windows (6 to 7 minutes).
 
-- **Inventory first.** Each test file and each verify step is classed keep, merge, or remove, with the reason and the spec criteria it cites. The maintainer approves the list before any test changes.
+- **Inventory first.** Each test file and each verify step is classed keep, merge, or remove, with the reason and the spec criteria it cites. The maintainer approves the list before any test changes. Approved 2026-11-12: [verify-inventory.md](verify-inventory.md) (pull request #234), retiring `process / tier` and `process / approvals`, and keeping the deferred components' tests.
 - **Tests of removed components** go with them. A test locked by a spec's `tests-commit` is removed only with that spec retired or the file listed under its `unlocks:`.
 - **Pilot-round files** are folded into files named by the behaviour they cover.
 - **Domain tests move to the plugin they test.** Each of `rfr-unreal`, `rfr-web`, `rfr-android`, and `rfr-feedback` gets its own `test/` folder, and the inventory names each file's owning plugin. CI runs a plugin's tests when that plugin, or shared code it depends on (the libraries the build copies from `checks/lib/`), changes; `npm run verify` still runs everything locally.
