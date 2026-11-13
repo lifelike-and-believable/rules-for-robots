@@ -13,6 +13,7 @@ import { approval, commandTask, defaultBranches } from './task-approval.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
+import { approveReason, commandApprovesPr, unreadReason } from './pr-approval.mjs';
 
 // [pattern, action, kind, rule, why, instead]: why a person must decide, and what the agent can do
 // if the person says no (guard tiers AC-3).
@@ -196,6 +197,10 @@ const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s
 // when the person's latest input asked for the task this command carries out (docs/specs/task-approval.md).
 export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots, transcriptPath = null, describePr } = {}) {
   if (typeof command !== 'string') return null;
+  // Approving a pull request is refused before anything else, so no task approval can allow it
+  // (github-gate AC-9).
+  const approves = commandApprovesPr(command);
+  if (approves) return { decision: 'deny', reason: approves === 'approve' ? approveReason : unreadReason };
   const existed = cwd ? file => existingProjectFile(file, cwd) : undefined;
   const change = testFileChange(command, existed);
   if (change === 'write') {
