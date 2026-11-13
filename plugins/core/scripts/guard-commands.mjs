@@ -21,7 +21,7 @@ const CHECKS = [
   [/\bgit\s+reset\b[^;&|]*--hard/, 'git reset --hard discards uncommitted work', 'discard', 'WA-003', LOCAL_LOSS, 'commit or stash the changes first (git stash push -u), then run it'],
   [/\bgit\s+clean\b[^;&|]*\s-[a-zA-Z]*f/, 'git clean -f deletes untracked files', 'discard', 'WA-003', 'untracked files are in no commit, so git cannot bring them back', 'list them with git clean -n and delete only the files you made, or move them aside'],
   [/\bgit\s+push\b[^;&|]*(\s--force\b|\s--force-with-lease\b|\s-[a-zA-Z]*f\b|\s\+\S)/, 'force-push rewrites remote history', null, 'WA-003', 'it replaces history on the remote that others may already have pulled', 'push to a new branch, or bring the remote changes in and push normally'],
-  [/\bgit\s+branch\b[^;&|]*\s-D\b/, 'force-deleting a branch', 'branch', 'WA-003', 'commits only on that branch then survive only in the reflog', 'use git branch -d, which refuses to delete unmerged work'],
+  [/\bgit(\.exe)?\b[^;&|\n]*\sbranch\b[^;&|\n]*(\s-[a-zA-Z]*D|\s-[a-zA-Z]*(d[a-zA-Z]*f|f[a-zA-Z]*d)\b|\s--del[a-z]*\b[^;&|\n]*\s(-f\b|--fo[a-z]*\b)|\s(-f\b|--fo[a-z]*\b)[^;&|\n]*\s--del[a-z]*\b|\s-d\b[^;&|\n]*\s(-f\b|--fo[a-z]*\b)|\s(-f\b|--fo[a-z]*\b)[^;&|\n]*\s-d\b)/, 'force-deleting a branch', 'branch', 'WA-003', 'commits only on that branch then survive only in the reflog', 'use git branch -d, which refuses to delete unmerged work'],
   [/\bgit\s+stash\s+(drop|clear)\b/, 'dropping stashed work', 'stash', 'WA-003', 'a dropped stash is hard to find again', 'apply the stash, or leave it in place'],
   [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history', null, 'WA-003', 'it rewrites every commit, and pushing the result replaces shared history', 'stop and report what you want removed from history'],
   [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)', null, 'WA-003', 'it skips the checks the project set for every commit and push', 'run the hooks and fix what they report'],
@@ -512,20 +512,26 @@ export function executedText(command) {
 // so the command that recreates the branch at its last commit is a way back (rewrite plan 25e: a
 // local delete is not on the never list). A branch the guard cannot resolve is refused as before.
 const BRANCH_DELETE = { rule: 'WA-003', action: 'force-deleting a branch', why: 'the guard could not find the commit it points at, so nothing records how to bring it back', instead: 'use git branch -d, which refuses to delete unmerged work' };
+// The allowance applies only to the plain form, as the one command on the line: `git branch -D <names>`
+// or `git branch -d -f <names>`, with no wrapper, no global options (-C, --git-dir, -c), and nothing
+// before it that could move the branch. Any other form is left to the refusal in CHECKS, which also
+// catches bundled and abbreviated flags (security review of #237).
 function branchRestores(entries, restores) {
-  for (const { words, dir } of entries) {
-    const g = gitArgs(words);
-    if (g?.[0] !== 'branch') continue;
-    const args = g.slice(1);
-    const force = args.some(a => /^-[a-zA-Z]*D[a-zA-Z]*$/.test(a)) || (args.some(a => /^(-d|--delete)$/.test(a)) && args.some(a => /^(-f|--force)$/.test(a)));
-    if (!force) continue;
-    if (args.some(a => /^(-r|--remotes)$/.test(a))) continue;
-    for (const name of args.filter(a => !a.startsWith('-'))) {
-      const sha = git(dir, ['rev-parse', '--verify', '--quiet', `refs/heads/${name}`]).out.trim();
-      if (!sha) return BRANCH_DELETE;
-      restores.push(`git branch ${shellPath(name)} ${sha}`);
-    }
+  if (entries.length !== 1) return null;
+  const [{ words, dir }] = entries;
+  if (words[0] !== 'git' || words[1] !== 'branch') return null;
+  const args = words.slice(2);
+  const flags = args.filter(a => a.startsWith('-')).map(a => ({ '--delete': '-d', '--force': '-f' }[a] ?? a)).sort().join(' ');
+  if (flags !== '-D' && flags !== '-d -f') return null;
+  const names = args.filter(a => !a.startsWith('-'));
+  if (!names.length) return null;
+  const found = [];
+  for (const name of names) {
+    const sha = git(dir, ['rev-parse', '--verify', '--quiet', `refs/heads/${name}`]).out.trim();
+    if (!sha) return BRANCH_DELETE;
+    found.push(`git branch ${shellPath(name)} ${sha}`);
   }
+  restores.push(...found);
   return null;
 }
 
@@ -545,7 +551,8 @@ function findOtherRisk(command, cwd, hints = [], snaps = [], restores = []) {
   const text = executedText(command) ?? command;
   for (const [pattern, action, kind, rule, why, instead] of CHECKS) {
     if (!pattern.test(text)) continue;
-    if (entries && (kind === 'discard' || kind === 'stash' || kind === 'branch')) continue;
+    if (entries && (kind === 'discard' || kind === 'stash')) continue;
+    if (kind === 'branch' && restores.length) continue;
     return { rule, action, why, instead };
   }
   return null;
@@ -608,26 +615,104 @@ function changesProtection(args) {
 
 // The HTTP method of a gh api call: -X or --method, else POST when it sends fields or a body, else GET.
 function apiMethod(args) {
-  const k = args.findIndex(a => a === '-X' || a === '--method' || /^(-X|--method=)\S+/.test(a));
+  // gh takes the last -X, and accepts -X DELETE, -XDELETE, -X=DELETE, --method DELETE, --method=DELETE.
+  const k = args.findLastIndex(a => a === '-X' || a === '--method' || /^(-X=?|--method=)\S+/.test(a));
   const method = k === -1 ? (args.some(a => /^(-f|-F|--field|--raw-field|--input)$/.test(a)) ? 'POST' : 'GET')
-    : (args[k] === '-X' || args[k] === '--method' ? args[k + 1] : args[k].replace(/^(-X|--method=)/, ''));
+    : (args[k] === '-X' || args[k] === '--method' ? args[k + 1] : args[k].replace(/^(-X=?|--method=)/, ''));
   return String(method ?? '').toUpperCase();
 }
 
-// A file that holds secret values: .env and .env.<name> (not the .example, .sample, .template, or
-// .dist copies that hold none), and private keys.
-const SECRET_FILE = /(^|[\\/])(\.env(\.(?!example$|sample$|template$|dist$)[\w.-]+)?|[\w.-]+\.pem|id_(rsa|ed25519|ecdsa))$/i;
-const READERS = /^(cat|type|less|more|head|tail|bat|nl|tac|strings|xxd|od|grep|egrep|rg|awk|sed|cut|sort|source|\.|get-content|gc|select-string|import-csv)$/i;
-const SECRET_NAME = /\$\{?\w*(TOKEN|SECRET|PASSWORD|PASSWD|PRIVATE_KEY|API_KEY|ACCESS_KEY)\w*\}?/i;
-// piped: the whole environment is listed into a filter (env | grep PXR), which the agent uses to find
-// a setting by name; only an unfiltered listing is refused.
-function readsSecret(words, piped = false) {
+// A gh api graphql call whose mutation deletes something or moves a ref (deleteRef, updateRef,
+// updateRefs, deleteRepository, and other delete mutations).
+const graphqlRewrites = args => args.some(a => /\bmutation\b/.test(a) && /\b(delete\w*|updateRefs?)\s*\(/.test(a));
+
+// A hooks path that runs no hooks: /dev/null, NUL, an empty value, or a folder that is not there.
+function emptyHooksPath(value, dir) {
+  const v = String(value ?? '').replace(/^['"]|['"]$/g, '');
+  if (!v || /^(\/dev\/null|nul)$/i.test(v)) return true;
+  return !fs.existsSync(resolveFromShell(dir, v));
+}
+
+// The letters of a short-option bundle up to the first that takes a value (git commit -uno is
+// --untracked-files=no, -m"x" is a message): -n counts only before them.
+const shortFlags = (word, takesValue) => {
+  if (!/^-[a-zA-Z]/.test(word) || word.startsWith('--')) return '';
+  let out = '';
+  for (const c of word.slice(1)) {
+    if (takesValue.includes(c)) break;
+    out += c;
+  }
+  return out;
+};
+
+// The words of a Vercel CLI call from its subcommand on, with the global options before it removed.
+const VERCEL_VALUE_FLAGS = /^(--scope|-S|--token|-t|--cwd|--team|-T|--local-config|-A|--global-config|-Q)$/;
+function vercelArgs(words) {
+  const rest = words.slice(1);
+  const out = [];
+  let sub = false;
+  for (let k = 0; k < rest.length; k++) {
+    if (!sub && VERCEL_VALUE_FLAGS.test(rest[k])) { k++; continue; }
+    if (!sub && /^--(scope|token|cwd|team|local-config|global-config)=/.test(rest[k])) continue;
+    if (!sub && !rest[k].startsWith('-')) sub = true;
+    out.push(rest[k]);
+  }
+  return out;
+}
+
+// A file that holds secret values: .env and .env.<name> (not a copy with an example, sample, template,
+// or dist part, which holds names only), .envrc, cloud and package-registry credentials, and private
+// keys (a .pem whose name says key, or an SSH key). A leading .\ (PowerShell) reaches the parser as ..
+const SECRET_FILE = /(^\.?|[\\/])(\.env(?![\w.-]*\.(example|sample|template|dist)\b)(\.[\w.-]+)?|\.envrc|\.npmrc|\.netrc|credentials|(?![\w.-]*(cert|chain|ca|pub|public)[\w.-]*\.pem$)[\w.-]+\.pem|id_(rsa|ed25519|ecdsa))$/i;
+// Commands that print a file's contents. source and . load a file into the shell without printing it,
+// so they are not readers (security review of #237: `source .env && npm run dev` is ordinary work).
+const READERS = /^(cat|type|less|more|head|tail|bat|nl|tac|strings|xxd|od|grep|egrep|rg|awk|sed|cut|sort|get-content|gc|select-string|sls|import-csv)$/i;
+const SECRET_WORDS = 'TOKEN|SECRET|PASSWORD|PASSWD|PRIVATE_KEY|API_KEY|ACCESS_KEY|CREDENTIAL|DATABASE_URL|_KEY\\b';
+const SECRET_NAME = new RegExp(`\\$(\\{|env:)?\\w*(${SECRET_WORDS})\\w*\\}?`, 'i');
+const SECRET_PATTERN = new RegExp(SECRET_WORDS, 'i');
+
+// Whether one simple command prints a secret: a secrets file read by a reader (grep -q, -l, -c and
+// sed -i print no values), a secret-named variable printed, gh auth token, or a PowerShell read of a
+// secret-named environment variable.
+function readsSecret(words) {
   const cmd = (words[0] ?? '').replace(/^.*[\\/]/, '').replace(/\.exe$/i, '');
-  if (READERS.test(cmd) && words.slice(1).some(w => !w.startsWith('-') && SECRET_FILE.test(w))) return true;
-  if (/^(printenv|env)$/i.test(cmd) && words.length === 1 && !piped) return true;
-  if (/^printenv$/i.test(cmd) && words.slice(1).some(w => SECRET_NAME.test(`$${w}`))) return true;
-  if (/^(echo|printf|write-output|write-host)$/i.test(cmd) && words.slice(1).some(w => SECRET_NAME.test(w) || /\$env:\w*(TOKEN|SECRET|PASSWORD|API_KEY)/i.test(w))) return true;
-  if (/^(get-childitem|gci|ls|dir)$/i.test(cmd) && words.slice(1).some(w => /^env:\\?\*?$/i.test(w) || (/^env:/i.test(w) && SECRET_NAME.test(`$${w.slice(4).replace(/^\\/, '').replace(/\*/g, '')}`)))) return true;
+  const args = words.slice(1);
+  const quiet = (/^(grep|egrep|rg)$/i.test(cmd) && args.some(a => /^-[a-zA-Z]*[qlLc][a-zA-Z]*$|^--(quiet|files-with-matches|count)$/.test(a))) || (/^sed$/i.test(cmd) && args.some(a => /^-[a-zA-Z]*i|^--in-place/.test(a)));
+  if (READERS.test(cmd) && !quiet && args.some(a => !a.startsWith('-') && SECRET_FILE.test(a.replace(/^-Path:?/i, '')))) return true;
+  if (/^printenv$/i.test(cmd) && args.some(w => !w.startsWith('-') && SECRET_PATTERN.test(w))) return true;
+  if (/^(echo|printf|write-output|write-host)$/i.test(cmd) && args.some(w => SECRET_NAME.test(w))) return true;
+  // A bare $env:NAME prints it in PowerShell; $env:NAME = ... only sets it.
+  if (words.length === 1 && /^\$env:/i.test(words[0] ?? '') && SECRET_PATTERN.test(words[0])) return true;
+  if (/^(get-item|gi|get-content|gc|get-childitem|gci)$/i.test(cmd) && args.some(w => /^env:\\?\w*$/i.test(w) && SECRET_PATTERN.test(w))) return true;
+  if (cmd === 'gh' && args[0] === 'auth' && (args[1] === 'token' || args.includes('--show-token'))) return true;
+  return false;
+}
+
+// Whether the line lists the whole environment where the session sees it: env, printenv, set, export -p,
+// declare -x or -p, [Environment]::GetEnvironmentVariables(), or Get-ChildItem env:, unless that
+// command's output goes straight into a filter by name (env | grep PXR) whose pattern names no secret.
+const FILTERS = /^(grep|egrep|rg|findstr|select-string|sls|where-object|\?)$/i;
+function dumpsEnvironment(command) {
+  const text = command.replace(/'[^']*'/g, m => m.replace(/[;&|\n]/g, ' ')).replace(/"(?:[^"\\]|\\.)*"/g, m => m.replace(/[;&|\n]/g, ' '));
+  const segments = text.split(/(\|\||&&|;|\n|\||&)/);
+  for (let k = 0; k < segments.length; k += 2) {
+    const words = segments[k].trim().split(/\s+/).filter(Boolean);
+    while (words.length && /^(sudo|command|exec|\w+=\S*)$/.test(words[0])) words.shift();
+    const cmd = (words[0] ?? '').replace(/\.exe$/i, '');
+    const rest = words.slice(1);
+    const onlyFlags = rest.every(w => w.startsWith('-'));
+    const dump = (/^(env|printenv)$/i.test(cmd) && onlyFlags)
+      || (cmd === 'set' && rest.length === 0)
+      || (cmd === 'export' && (rest.length === 0 || (rest.length === 1 && rest[0] === '-p')))
+      || (/^(declare|typeset)$/.test(cmd) && rest.length > 0 && onlyFlags && rest.every(w => /^-[px]+$/.test(w)))
+      || /^\[environment\]::getenvironmentvariables\(/i.test(cmd)
+      || (/^(get-childitem|gci|ls|dir)$/i.test(cmd) && rest.some(w => /^env:\\?\*?$/i.test(w)));
+    if (!dump) continue;
+    const piped = segments[k + 1] === '|';
+    const next = piped ? segments[k + 2].trim().split(/\s+/) : [];
+    if (piped && FILTERS.test(next[0] ?? '') && !SECRET_PATTERN.test(next.slice(1).join(' '))) continue;
+    return true;
+  }
   return false;
 }
 
@@ -648,13 +733,46 @@ function gitArgs(words) {
 
 // The never-list action a command line takes outside the project, or null. Pushes are read with the folder
 // each runs in, so a push of the current branch is checked against the default branch.
-export function namedAsk(command, cwd) {
+export function namedAsk(command, cwd, depth = 0) {
+  if (typeof command !== 'string') return null;
+  // Heredoc bodies and quoted strings are text, not commands (a script that mentions env runs no env);
+  // a shell given a script (bash -c '...') is checked below, on that script.
+  if (dumpsEnvironment(unquotedText(command))) return READ_SECRET;
+  // Hooks skipped by a variable exported earlier in the line, then a commit or push.
+  if (/(^|[;&|\n]\s*)(export\s+|\$env:)(HUSKY\s*=\s*['"]?0|HUSKY_SKIP_HOOKS|SKIP\s*=)/i.test(command) && /\bgit(\.exe)?\s+(\S+\s+)*?(commit|push)\b/.test(command)) return SKIP_HOOKS;
+  // A secrets file read by input redirection (cat < .env).
+  for (const { words = [], redirects = [] } of parseCommand(command) ?? []) {
+    if ((!words.length || READERS.test(words[0])) && redirects.some(r => r.op === '<' && SECRET_FILE.test(String(r.target ?? '')))) return READ_SECRET;
+  }
   const entries = commandsWithDirs(command, cwd ?? process.cwd()) ?? [];
   for (const { words: raw, dir } of entries) {
     let words = raw;
     while (words.length && /^(sudo|command|env|exec|\w+=\S*)$/.test(words[0])) words = words.slice(1);
-    if (['npx', 'bunx'].includes(words[0])) words = words.slice(1);
-    else if (words[0] === 'pnpm' && words[1] === 'dlx') words = words.slice(2);
+    // A Windows executable name (git.exe, gh.exe, vercel.exe) is the same command.
+    if (/^(git|gh|vercel|npx|npm|pnpm|yarn|bunx)\.(exe|cmd)$/i.test(words[0] ?? '')) words = [words[0].replace(/\.(exe|cmd)$/i, '').toLowerCase(), ...words.slice(1)];
+    // A command a shell or a substitution runs is checked as a line of its own.
+    if (depth < 3) {
+      if (/^(bash|sh|zsh|dash|ksh|pwsh|powershell)(\.exe)?$/i.test(words[0] ?? '')) {
+        const k = words.findIndex(w => /^(-c|-Command|-command|-EncodedCommand)$/.test(w));
+        const inner = k !== -1 ? namedAsk(words[k + 1] ?? '', dir, depth + 1) : null;
+        if (inner) return inner;
+      }
+      for (const w of words) {
+        for (const m of w.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) {
+          const inner = namedAsk(m[1] ?? m[2] ?? '', dir, depth + 1);
+          if (inner) return inner;
+        }
+      }
+    }
+    // Package runners: npx and bunx with their own flags and a version (npx -y vercel@latest),
+    // pnpm dlx, pnpm exec, npm exec, and yarn.
+    if (['npx', 'bunx'].includes(words[0])) {
+      let k = 1;
+      while (k < words.length && words[k].startsWith('-')) k += /^(-p|--package)$/.test(words[k]) ? 2 : 1;
+      words = words.slice(k);
+    } else if ((words[0] === 'pnpm' && /^(dlx|exec)$/.test(words[1] ?? '')) || (words[0] === 'npm' && words[1] === 'exec')) words = words.slice(2);
+    else if (words[0] === 'yarn' && words[1] && !words[1].startsWith('-') && !/^(install|add|remove|run|test|build|dev|start)$/.test(words[1])) words = words.slice(1);
+    if (words.length) words = [words[0].replace(/@[^/]*$/, ''), ...words.slice(1)];
     const g = gitArgs(words);
     if (g?.[0] === 'push') {
       const args = g.slice(1);
@@ -703,19 +821,32 @@ export function namedAsk(command, cwd) {
     }
     // Skipping the project's hooks in any form: git commit -n, a hooks path set for one command or in
     // the repository's configuration, and the variables Husky and pre-commit read.
-    if (raw.some(w => /^(HUSKY=0|HUSKY_SKIP_HOOKS=1|SKIP=\S+)$/.test(w)) && /^(git|npx|npm|pnpm|yarn)$/.test(words[0] ?? '')) return SKIP_HOOKS;
+    const committing = g && /^(commit|push|merge|am|rebase)$/.test(g[0] ?? '');
+    if (raw.some(w => /^(HUSKY=0|HUSKY_SKIP_HOOKS=1)$/.test(w)) && (committing || /^(npx|npm|pnpm|yarn)$/.test(words[0] ?? ''))) return SKIP_HOOKS;
+    if (raw.some(w => /^SKIP=\S+$/.test(w)) && (committing || words[0] === 'pre-commit')) return SKIP_HOOKS;
     if (words[0] === 'git') {
       const globals = words.slice(1, words.length - (g?.length ?? 0));
-      if (globals.some((w, k) => (w === '-c' && /^core\.hooksPath=/i.test(globals[k + 1] ?? '')) || /^-ccore\.hooksPath=/i.test(w))) return SKIP_HOOKS;
-      if (g?.[0] === 'config' && g.some(a => /^core\.hooksPath$/i.test(a)) && !g.some(a => /^(--get\S*|--list|-l|--unset\S*)$/.test(a)) && g.filter(a => !a.startsWith('-')).length >= 3) return SKIP_HOOKS;
-      if (g?.[0] === 'commit' && g.slice(1).some(a => /^-[a-zA-Z]*n[a-zA-Z]*$/.test(a))) return SKIP_HOOKS;
+      const hooksValue = globals.map((w, k) => (w === '-c' ? globals[k + 1] : /^-c\S/.test(w) ? w.slice(2) : null)).find(v => /^core\.hooksPath=/i.test(v ?? ''));
+      if (hooksValue !== undefined && emptyHooksPath(hooksValue.split('=').slice(1).join('='), dir)) return SKIP_HOOKS;
+      if (globals.some(w => /^--config-env=core\.hooksPath=/i.test(w))) return SKIP_HOOKS;
+      if (g?.[0] === 'config') {
+        const parts = g.slice(1).filter(a => !a.startsWith('-'));
+        const key = parts.findIndex(a => /^core\.hooksPath$/i.test(a));
+        const reading = g.some(a => /^(--get\S*|--list|-l)$/.test(a)) || /^(get|list)$/.test(parts[0] ?? '');
+        if (key !== -1 && !reading && (g.some(a => /^--unset/.test(a)) || /^(unset)$/.test(parts[0] ?? '') || emptyHooksPath(parts[key + 1], dir))) return SKIP_HOOKS;
+      }
+      if (g?.[0] === 'commit' && g.slice(1).some(a => shortFlags(a, 'mcCFuSt').includes('n'))) return SKIP_HOOKS;
+      if (committing && g.slice(1).some(a => /^--no-v(e(r(i(f(y)?)?)?)?)?$/.test(a))) return SKIP_HOOKS;
     }
     // Reading secret values into the session: a secrets file read by a shell command, the whole
     // environment, a secret-named variable printed, or Vercel's environment pulled to a file.
-    if (readsSecret(words.length ? words : raw, /(^|[;&|(]\s*)(env|printenv)\s*\|(?!\|)/.test(command))) return READ_SECRET;
-    if (words[0] === 'vercel' && words[1] === 'env' && words[2] === 'pull') return READ_SECRET;
+    if (readsSecret(words)) return READ_SECRET;
+    if (words[0] === 'gh' && words[1] === 'api' && words[2] === 'graphql' && graphqlRewrites(words.slice(3))) return REMOTE_REWRITE;
     if (words[0] === 'vercel') {
-      const rest = words.slice(1);
+      const rest = vercelArgs(words);
+      // vercel env pull and vercel pull --environment production write the variables' values to a file.
+      if ((/^env$/i.test(rest[0] ?? '') && /^pull$/i.test(rest[1] ?? '')) || (/^pull$/i.test(rest[0] ?? '') && rest.some((w, k) => /^--environment=prod/i.test(w) || (w === '--environment' && /^prod/i.test(rest[k + 1] ?? ''))))) return READ_SECRET;
+      if (/^(dns|certs|cert)$/i.test(rest[0] ?? '') && /^(rm|remove|add|issue)$/i.test(rest[1] ?? '')) return REMOTE_DELETE;
       // Removing a deployment or project, or changing its environment variables, changes the live
       // account; a redeploy keeps the original's target unless it says preview.
       if (/^(remove|rm)$/i.test(rest[0] ?? '') || (/^(project|projects)$/i.test(rest[0] ?? '') && /^(rm|remove)$/i.test(rest[1] ?? ''))) return REMOTE_DELETE;

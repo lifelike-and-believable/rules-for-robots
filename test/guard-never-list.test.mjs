@@ -132,3 +132,28 @@ test('unattended#AC-2: force-deleting a local branch is allowed with the command
   assert.equal(decideCommand('git branch -D gone', { cwd: dir })?.decision, 'ask');
   assert.equal(decideCommand('git branch -d old', { cwd: dir }), null);
 });
+
+test('unattended#AC-2: the branch-delete allowance is only for the plain form; wrapped, bundled, or other-repository deletes are refused', () => {
+  const dir = repo();
+  git(dir, 'branch', 'old');
+  for (const command of ['command git branch -D old', 'env git branch -D old', 'GIT_TRACE=0 git branch -D old', "bash -c 'git branch -D old'", 'git.exe branch -D old', 'git branch -df old', 'git branch -fd old', 'git branch --del --force old', 'git branch --delete --forc old', 'git -C ../x branch -D old', 'git switch old && git commit -am wip && git switch feature && git branch -D old']) {
+    assert.equal(decideCommand(command, { cwd: dir })?.decision, 'ask', command);
+  }
+});
+
+test('unattended#AC-2: the never list is refused through wrappers, Windows names, package runners, global flags, and API variants (security review of #237)', () => {
+  const dir = repo();
+  for (const command of ['env | cat', 'env | grep -i token', 'printenv | grep TOKEN', 'env | head -0; env', 'gh auth token', '$env:GH_TOKEN', 'Get-Item env:GH_TOKEN', '[Environment]::GetEnvironmentVariables()', 'set', 'export -p', 'declare -x', 'env -0',
+    'Get-Content .\\.env', 'Get-Content -Path .\\.env.local', 'cat < .env', 'echo "$(cat .env)"', "bash -c 'cat .env'", 'cat .envrc', 'cat ~/.aws/credentials', 'echo $DATABASE_URL',
+    "bash -c 'gh api -X DELETE repos/o/r'", "bash -c 'git commit -n -m x'", 'gh api -X=DELETE repos/o/r', 'gh api -X GET -X DELETE repos/o/r', "gh api graphql -f query='mutation { deleteRef(input:{refId:\"x\"}) { clientMutationId } }'", 'gh.exe api -X DELETE repos/o/r',
+    'git commit --no-veri -m x', 'git --config-env=core.hooksPath=HP commit -m x', 'git config --unset core.hooksPath', 'export HUSKY=0; git commit -m x', '$env:HUSKY=0; git commit -m x', 'git.exe commit -n -m x',
+    'npx --yes vercel remove app', 'npx vercel@latest remove app', 'npx -y vercel --prod', 'pnpm exec vercel remove app', 'vercel --scope acme remove app', 'vercel --token t env rm X production', 'vercel --cwd app env pull', 'vercel pull --environment=production', 'vercel dns rm rec_1', 'vercel certs rm cert_1']) {
+    assert.equal(decideCommand(command, { cwd: dir })?.decision, 'ask', command);
+  }
+  fs.mkdirSync(path.join(dir, '.githooks'));
+  for (const command of ['source .env && npm run dev', 'set -a; . .env; set +a; npx drizzle-kit migrate', 'git commit -uno -m x', 'git commit -m"cleanup"', 'git commit -am"done"', 'git config core.hooksPath .githooks', 'git config get core.hooksPath',
+    'cat .env.local.example', 'cat certs/fullchain.pem', 'grep -q DATABASE_URL .env', "sed -i 's/^PORT=.*/PORT=4000/' .env", 'SKIP=1 npm test', "Get-ChildItem env: | Where-Object Name -like 'PXR*'", "$env:TRIPO_API_KEY = [Environment]::GetEnvironmentVariable('TRIPO_API_KEY','User')",
+    "cat > /tmp/x.mjs <<'EOF'\nenv\nEOF", 'gh auth status', 'vercel env ls', 'npx vercel deploy']) {
+    assert.equal(decideCommand(command, { cwd: dir }), null, command);
+  }
+});
