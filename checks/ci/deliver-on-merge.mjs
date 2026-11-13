@@ -39,7 +39,7 @@ export const MARKER_MINUTES = 45;
 export const SETUP_STEPS = [
   "In Claude Code, create a routine on this repository whose prompt is /rfr-process:deliver with no feature name, with a cloud environment that can run the project's checks and no connectors the delivery does not need.",
   "In the routine's Edit dialog, add an API trigger and generate its token. The token is shown once.",
-  "Copy the routine's address from its API trigger and store it as the repository variable RFR_DELIVER_ROUTINE (the routine's id on its own, which starts with trig_, also works). In the repository's settings, create an environment named rfr-deliver, limit its deployment branches to the default branch, and store the token there as the environment secret RFR_DELIVER_TOKEN, so that only a run on the default branch can read it.",
+  "Copy the routine's address from its API trigger and store it as the repository variable RFR_DELIVER_ROUTINE. In the repository's settings, create an environment named rfr-deliver, limit its deployment branches to the default branch, and store the token there as the environment secret RFR_DELIVER_TOKEN, so that only a run on the default branch can read it.",
 ];
 
 const TOKEN_REFUSED = "RFR_DELIVER_TOKEN does not look like a routine's token; generate one in the routine's Edit dialog and store it as the environment secret.";
