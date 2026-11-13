@@ -61,6 +61,19 @@ CI changes (not test changes):
 
 ## Merge: files named after a pilot round or slice, folded into files named by behaviour
 
+**Done for the process files and plugin-split (slice e, 2026-11-13).** The names differ from the table below where a better one fitted the behaviour, and where the target did not exist or already had its own fixture server:
+
+- AC-28, AC-32, AC-34, AC-35, AC-38, and AC-43 are in `process-links.test.mjs`.
+- AC-29 is in `process-roles.test.mjs`, AC-30 in `process-design-names.test.mjs`, and AC-41 in `process-stages.test.mjs`.
+- AC-42 and AC-46 are in `process-markers.test.mjs`.
+- AC-31 and AC-40 are in `process-check-messages.test.mjs`.
+- AC-24 and AC-37 are in `process-mutation.test.mjs`, and AC-23 in `process-docs-lint.test.mjs`.
+- AC-33 and AC-36 are in `tutorial-previews.test.mjs`, and AC-49 and AC-50 in `tutorial-controls-viewport.test.mjs`.
+- AC-48, which this table did not list (from `process-xr-round3`), is in `process-github-retry.test.mjs`.
+- AC-44 and AC-45 went into `process-workflow.test.mjs`, AC-51 into `tutorial-first-step-timeout.test.mjs`, and `plugin-split-16b` into `plugin-split.test.mjs`.
+
+**Left for slice f:** `guard-tiers-15b`, `guard-tiers-15c`, `guard-tiers-15d`, `rm-own-scratch`, and `hooks`. They import the web and Unreal guards that slice f moves into their plugins, so they are split once, there, and not moved twice.
+
 | File | Criteria | Into |
 |---|---|---|
 | `process-pilot-fixes.test.mjs` | AC-27 (tier labels), AC-28 (draft links) | tier: see question 1; AC-28 into `process-trace.test.mjs` |
