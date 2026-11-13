@@ -12,6 +12,7 @@
 // An area with no overview has file and title null; the pages directly in docs/user/ come as a last
 // area whose name is null. It reads files only: no network call, and it writes nothing.
 // Usage: node checks/docs-map.mjs [project root] [--json]
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArtifact, tutorialTitle, workingTree } from './lib/process.mjs';
@@ -76,7 +77,9 @@ export function renderMap(map) {
 function main(argv) {
   const args = argv.filter(a => a !== '--json');
   const json = args.length !== argv.length;
-  const map = docsMap(path.resolve(args[0] ?? '.'));
+  const root = path.resolve(args[0] ?? '.');
+  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) { console.error(`${args[0]}: not a folder; give the project's root`); process.exit(1); }
+  const map = docsMap(root);
   console.log(json ? JSON.stringify(map, null, 2) : renderMap(map));
 }
 

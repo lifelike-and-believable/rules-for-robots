@@ -7,6 +7,8 @@ import { markdownLinks, parseArtifact } from './process.mjs';
 
 export const USER_DOCS = 'docs/user';
 export const START_PAGE = `${USER_DOCS}/README.md`;
+// readme.md and Readme.md are the same page to a reader, and the same file on Windows and macOS.
+const isReadme = name => name.toLowerCase() === 'readme.md';
 
 const isApproved = status => status === 'approved' || status === 'implemented';
 
@@ -21,10 +23,10 @@ export function userDocsLayout(files) {
   for (const file of [...files].map(f => f.replace(/\\/g, '/')).sort()) {
     if (!file.startsWith(`${USER_DOCS}/`) || !file.endsWith('.md')) continue;
     const parts = file.slice(USER_DOCS.length + 1).split('/');
-    if (parts.length === 1) { if (parts[0] === 'README.md') start = file; else loose.push(file); continue; }
+    if (parts.length === 1) { if (isReadme(parts[0])) start = file; else loose.push(file); continue; }
     if (!areas.has(parts[0])) areas.set(parts[0], { name: parts[0], overview: null, pages: [] });
     const area = areas.get(parts[0]);
-    if (parts.length === 2 && parts[1] === 'README.md') area.overview = file;
+    if (parts.length === 2 && isReadme(parts[1])) area.overview = file;
     else area.pages.push(file);
   }
   return { start, loose, areas: [...areas.values()] };
@@ -33,7 +35,9 @@ export function userDocsLayout(files) {
 // The repository paths of the .md files a file links to, in the order they first appear. Links are
 // read as for a tutorial's "Try it" link (lasting-tutorials AC-9), from the body after front matter.
 export function linksFrom(text, file) {
-  return [...new Set(markdownLinks(parseArtifact(text ?? '').body ?? '', file).map(l => l.target))];
+  // A link may be written with %20 for a space in a folder or file name; compare the decoded path too.
+  const decoded = t => { try { return decodeURIComponent(t); } catch { return t; } };
+  return [...new Set(markdownLinks(parseArtifact(text ?? '').body ?? '', file).flatMap(l => [l.target, decoded(l.target)]))];
 }
 
 // What a user documentation page covers (AC-18): "covers: [/projects/{id}/board, Export panel]" in
@@ -139,13 +143,13 @@ export function userDocsProblems(files, read) {
     if (!area.overview) continue;
     const overview = info(area.overview);
     if (layout.start && isApproved(overview.status) && !fromStart.has(area.overview)) {
-      shape.push({ id: overview.id, message: `${overview.id ?? area.overview}: the start page, ${START_PAGE}, does not link to ${area.overview}; add the area there with a link to its overview, in the order a user meets it, so readers can reach it` });
+      shape.push({ id: overview.id, message: `${overview.id ?? area.overview}: the start page, ${START_PAGE}, does not link to ${area.overview}; add the area there with a link to its overview file (written inline, like [Board](board/README.md)), in the order a user meets it, so readers can reach it` });
     }
     const listed = new Set(overview.links);
     for (const file of area.pages) {
       const page = info(file);
       if (isApproved(page.status) && !listed.has(file)) {
-        shape.push({ id: page.id, message: `${page.id ?? file}: its area's overview, ${area.overview}, does not link to ${file}; add a link to the page there, with one line saying what it is for, so readers can reach it` });
+        shape.push({ id: page.id, message: `${page.id ?? file}: its area's overview, ${area.overview}, does not link to ${file}; add a link to the page's file there (written inline, like [Move a card](move-card.md)), with one line saying what it is for, so readers can reach it` });
       }
     }
   }
