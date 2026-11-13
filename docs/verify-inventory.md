@@ -26,6 +26,12 @@ CI changes (not test changes):
 
 - **Documents-only pull requests** (only Markdown outside `rules/`, `templates/`, and `plugins/`): run the lint, plan, spec, process, instruction, and build checks; skip `npm test` and the Windows job.
 - **Windows job**: measure which tests take its 6 to 7 minutes before changing it. The likely change is to run only the tests that depend on paths and shells (the guards, owned paths, build) on Windows. It is not a required check today.
+  - **Measured and changed (slice h, 2026-11-13).** On #246 the tests took 329 s of the job's 348 s verify step, against 47 s for the whole Linux step. Most of the time went to tests that start many git processes, which is slow on Windows:
+    - the guard corpus, 66 s;
+    - snapshots, 77 s across two tests;
+    - the eval grader cases, about 250 s together.
+
+    Choosing tests by whether they touch paths would leave most of the suite untested on Windows. So the job runs every test, split into three parts at once with node's `--test-shard`; part 1 also runs the checks that are not tests. Locally the three parts hold 290, 283, and 246 of the 819 tests.
 
 ## Remove: tests of removed components (15 files)
 

@@ -6,6 +6,8 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
+- **A delivery run's decisions file is named after its branch** (rewrite plan 25e, verify inventory slice h; delivery-run AC-3 amended). `rfr-process` 2.4.0. A run records its questions, choices, and set-aside work in `docs/decisions/<branch>.md`, with each `/` written as `-` (`feature/export` writes `docs/decisions/feature-export.md`). `delivery.mjs start` prints the name. Before, every run wrote `docs/decisions/<spec name>.md`, so two runs touching the same spec in parallel conflicted. A file named after the spec is still read, so a run under way keeps working. Adopters: nothing to do; new runs use the new name.
+
 - **Core rules pruned from 22 to 12** (rewrite plan 25e, section 3; verify inventory slice g). Rules that are always on cost context in every session, so only those that change behaviour in their own right stay:
   - **Kept:** WA-001, WA-002, WA-006, WA-012, SEC-001, SEC-003, TEST-001, TEST-003, and DOC-001.
   - **Merged:**

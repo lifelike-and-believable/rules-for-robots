@@ -11,6 +11,8 @@
 // - The Unreal sample check runs when rfr-unreal, checks/unreal/, or examples/unreal/ changes.
 // - A change to the test setup itself (package.json, the lock file, the CI workflow, this script)
 //   runs everything, and so does a run with no base (a push to main).
+// - With RFR_TEST_SHARD=<i>/<n> (the Windows job's matrix), the tests are split into n parts and this
+//   run takes part i; only part 1 runs the checks that are not tests, so each runs once.
 //
 // Usage: node checks/ci/verify-ci.mjs [--base <commit>] [--plan] [--github-output]
 //   --plan             print the plan as JSON and run nothing
@@ -85,9 +87,10 @@ function changedSince(root, base) {
 }
 
 // The steps of `npm run verify`, in its order, each with whether this plan runs it.
-export function steps(p) {
+export function steps(p, { shard = null } = {}) {
   const tests = [...(p.rootTests ? ['test/**/*.test.mjs'] : []), ...p.plugins.map(name => `plugins/${name}/test/**/*.test.mjs`)];
-  return [
+  const part = parseShard(shard);
+  const list = [
     { name: 'lint:rules', cmd: ['npm', 'run', 'lint:rules'] },
     { name: 'setup:vale', cmd: ['npm', 'run', 'setup:vale'], skip: !tests.length && 'no tests run' },
     { name: 'tests', cmd: [process.execPath, '--test', ...tests], skip: !tests.length && 'no tests run' },
@@ -100,6 +103,21 @@ export function steps(p) {
     { name: 'check:unreal-sample', cmd: ['npm', 'run', 'check:unreal-sample'], skip: !p.unrealSample && 'rfr-unreal, checks/unreal/, and examples/unreal/ are unchanged' },
     { name: 'validate:plugins', cmd: ['npm', 'run', 'validate:plugins'] },
   ];
+  if (!part) return list;
+  return list.map(s => {
+    if (s.name === 'tests') return { ...s, cmd: [process.execPath, '--test', `--test-shard=${part.index}/${part.total}`, ...tests] };
+    if (part.index !== 1 && s.name !== 'setup:vale' && !s.skip) return { ...s, skip: `part ${part.index} of ${part.total} runs tests only` };
+    return s;
+  });
+}
+
+// "<i>/<n>" with 1 <= i <= n, or null.
+export function parseShard(value) {
+  const m = /^(\d+)\/(\d+)$/.exec(String(value ?? '').trim());
+  if (!m) return null;
+  const index = Number(m[1]);
+  const total = Number(m[2]);
+  return index >= 1 && index <= total ? { index, total } : null;
 }
 
 function main() {
@@ -113,8 +131,9 @@ function main() {
     if (args.includes('--github-output') && process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `docs-only=${p.docsOnly}\n`);
     return;
   }
-  console.log(`verify plan (${p.reason}): root tests ${p.rootTests ? 'yes' : 'no'}; plugin tests: ${p.plugins.join(', ') || 'none'}; Unreal sample ${p.unrealSample ? 'yes' : 'no'}`);
-  for (const s of steps(p)) {
+  const part = parseShard(process.env.RFR_TEST_SHARD);
+  console.log(`verify plan (${p.reason}${part ? `; part ${part.index} of ${part.total}` : ''}): root tests ${p.rootTests ? 'yes' : 'no'}; plugin tests: ${p.plugins.join(', ') || 'none'}; Unreal sample ${p.unrealSample ? 'yes' : 'no'}`);
+  for (const s of steps(p, { shard: process.env.RFR_TEST_SHARD })) {
     if (s.skip) { console.log(`\n> ${s.name}: skipped (${s.skip})`); continue; }
     console.log(`\n> ${s.name}`);
     // npm is a .cmd on Windows, which spawnSync runs only through a shell.
