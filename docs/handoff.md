@@ -9,6 +9,7 @@ The state of rules-for-robots for a session that has none of the conversation be
 - "Every stage is required unless deliberately waived ahead of time. The development process is what matters most!"
 - "Now that I'm approving the things I care about, I'm good taking the time to actually review."
 - "Finish it" or "finish slice x" should review which stages have been completed and pick it up from there.
+- "The user documentation is unorganized, so it's not always clear, especially as there's more and more of it, which documentation is associated with which component of the system. Like the tutorials, user documentation should survive the development process and be easily navigable by the users of the production system." (2026-11-13; answered in the lasting-tutorials spec, slice 27e.)
 - "Tutorials should survive the development process and be usable both during the development process and once the system is deployed." (2026-11-13, on reading slice 4's tutorial, which starts with a local build and a disposable database.)
 - Approve decisions, never commands. The maintainer approves the product brief, each feature packet (story, design, user documentation), each delivery, and each validation, as reviews in GitHub. Everything between is the agent's to carry out without asking.
 
