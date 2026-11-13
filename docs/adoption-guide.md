@@ -97,7 +97,7 @@ on:
     if: always() && !github.event.pull_request.draft
 ```
 
-The template repos already include it. It never fails the workflow, and pull requests from forks get no comment because their token is read-only. Agents still confirm the checks on the current head commit before merging; `/rfr-core:merge-when-green <pr>` does the whole wait, check, merge, and continue sequence.
+The template repos already include it. It never fails the workflow, and pull requests from forks get no comment because their token is read-only. Under the GitHub gate agents do not merge; the comment tells whoever waits on the pull request that its checks have finished.
 
 ## The GitHub gate (projects that use rfr-process)
 

@@ -15,12 +15,11 @@ Every decision the rfr-core, rfr-web, rfr-unreal, and rfr-process guards make, t
 
 A session runs without the person ([docs/specs/unattended.md](../docs/specs/unattended.md)). Nothing during the run asks them anything, by prompt or in chat.
 
-- **Allowed.** rfr-core allows the agent's working tools: the shell, file edits (tests included), web search and fetch, the GitHub MCP tools, and any MCP tool that only reads ([default allow](../docs/specs/default-allow.md)).
+- **Allowed.** Whatever the guards do not refuse. Whether Claude Code prompts for it is the session's permission mode: run sessions in auto mode, which a project cannot set ([adoption guide](../docs/adoption-guide.md)).
 - **Never.** The actions in the table below are refused, with a reason that names what to do instead. If the task cannot be done without one, the agent sets that part aside, records it in the pull request's `## Decisions` section, and finishes the rest; the person decides it at review. A "yes" in chat does not unlock one.
-- **Decided in the plan.** What only the person can authorise (a release, a production deploy, a shared-database migration, a paid service) is named in the plan before work starts, and their approval in their own words, read by task approval, lets those calls through.
-- **Review stops.** A merge that is the person's review, such as one that approves gated process documents, is refused, and the pull request waits for them.
+- **Approved in GitHub.** What only the person can authorise is a review in GitHub, not something they say in chat. An agent pushes a branch; a workflow opens the pull request, and branch protection holds a gated one until the approver reviews it ([github-gate](../docs/specs/github-gate.md)). Approving a pull request is refused (github-gate AC-9).
 
-The guards' refusals win over the allow on the same call; `evals/results/2026-11-12-hook-combination/` records the check. Claude Code's own prompts (protected paths such as `.claude`, `.git`, and `.mcp.json`, and auto mode's classifier) are outside rfr's control. The only way to remove them is `bypassPermissions` mode, which the person chooses for a session; rfr's refusals still hold there, because a hook's refusal blocks in every mode. A project that wants prompts instead of refusals sets `"permissions": "ask"` in `.claude/rfr.json`, or `RFR_PERMISSIONS=ask` for one session.
+Claude Code's own prompts (protected paths such as `.claude`, `.git`, and `.mcp.json`, and auto mode's classifier) are outside rfr's control; a hook's refusal blocks in every mode. Until rewrite plan 25e, rfr-core allowed the agent's working tools itself (default allow), approved commands the person asked for in chat (task approval), and could prompt instead of refusing (`"permissions": "ask"`); all three were removed with the GitHub gate.
 
 ### Named asks: the never list
 
@@ -34,11 +33,10 @@ The guards' refusals win over the allow on the same call; `evals/results/2026-11
 | Change machine-wide git configuration | `guard-commands` | `config-global` |
 | Delete files outside the repository, root-like paths, or what no snapshot covers | `guard-commands` | `rm-outside`, `rm-root-like` |
 | Destructive database commands | `guard-commands` | `drizzle-push`, `prisma-reset` |
-| Publish a release, or push tags (unless the person's instruction names the version) | `guard-commands` | `push-tags`, `release-create` |
-| Production deploy, promotion, alias, or domain change | `guard-commands`, `guard-mcp` | `vercel-prod-cli`, `vercel-deploy` |
+| Production deploy, promotion, alias, or domain change | `guard-commands`, `guard-mcp` | `vercel-prod-cli`, `vercel-deploy-prod` |
 | Read a secret value | `guard-mcp` | `vercel-token`, `vercel-decrypted-env` |
 
-GitHub MCP tools that delete, change settings or access, or publish a release are left to Claude Code's own prompt. A merge is not a named ask: the agent merges a pull request when its checks pass, and GitHub's required checks enforce that. A merge that is the person's review (in rfr-process, one that approves gated process files with no instruction of theirs covering it) is a review stop: `guard-merge` refuses, and the agent reports that the pull request is waiting for them.
+An agent approving a pull request is refused as well (`guard-commands` and `guard-pr-approval`, [github-gate AC-9](../docs/specs/github-gate.md)), with the next step of giving the approver the review link; `test/refuse-pr-approval.test.mjs` covers it in place of corpus cases. Publishing a release or pushing a tag is not on the list. A merge is not either: under the GitHub gate a workflow turns on auto-merge, and branch protection holds a pull request until its checks pass and, for gated process files, until the approver reviews it. Through MCP, `guard-mcp-tools` refuses a tool that changes something in another service, and a GitHub tool that deletes, changes settings or access, or publishes a release; reads, the GitHub tools for the agent's own work, and subscribing to a pull request go ahead (`test/guard-never-list.test.mjs`). `guard-commands` also refuses bypassing or changing branch protection (`gh pr merge --admin`, or a `gh api` change to protection or rulesets) and replacing a published release's assets (`gh release upload --clobber`).
 
 ## `guard-commands` (rfr-core; shell commands)
 
@@ -106,14 +104,8 @@ A device is shared unless the project marks it disposable: emulators (`emulator-
 |---|---|---|---|---|---|
 | A read (`get_`, `list_`, `search_`, and others) that returns no secrets | NODE-002 | none | 1 | 1 | Nothing changes |
 | A read that returns credentials or decrypted environment variables | NODE-002 | Secrets entering the session | 4 | 4 | Once read, a secret cannot be un-read |
-| Anything else: deploy, promote, roll back, settings, environment variables, delete, purchase | NODE-002 | Acting on the account beyond intent | 4 | 4 | It changes a service outside the project |
-
-## `guard-merge` (rfr-process)
-
-| Decision | Rule | Failure it prevents | Now | Target | Why |
-|---|---|---|---|---|---|
-| A merge or auto-merge of a gated pull request the person has not asked for | Process | Merging without approval | 2, or 4 with `"permissions": "ask"` | 2 | Merging is the approval itself, so it is the person's review: the guard refuses and the agent stops and reports (default-allow AC-4) |
-| A merge the person asked for in their own words | Process | none | 1 | 1 | The instruction is the approval (project-process AC-52) |
+| A deployment whose target is not production | NODE-002 | none | 1 | 1 | A preview is what NODE-002 asks for instead of a production deploy |
+| Anything else: production deploy, promote, roll back, settings, environment variables, delete, purchase | NODE-002 | Acting on the account beyond intent | 4 | 4 | It changes a service outside the project |
 
 ## Reasons
 
@@ -141,55 +133,13 @@ Before a local command that would lose working-tree content, `guard-commands` co
 
 `testWeakening` is `defer` (the default: weakening, moving, or deleting an existing test goes ahead without asking; the guard tells the agent to name it in its report, logs it as `defer`, and the pull request's test-change review decides) or `ask` (each such change asks a person now). Under `defer` the rest of a shell command is still checked, so `git rm` of a test joined to a force-push still asks. The test change check (`rfr-guards.yml`) stays red until `tests-reviewed` is added, and a push after the label makes it red again until the label is re-added for the new commits; `/rfr-core:review-pr` runs `test-change-reviewer`, which runs the changed tests against the old and new code, adds `tests-reviewed` when it can approve every change, and brings you only the changes it cannot approve, with that evidence. The default became `defer` when the reviewer's eval passed (test-change-review AC-11, 2026-11-11: no gaming change approved in 36 runs); a project that wants to keep being asked sets `ask`.
 
-`taskApproval` is `on` (the default) or `off`; see "Task approval" below.
-
-`permissions` is `default-allow` (the default; see "Default allow" above) or `ask`, which leaves every call the guards do not decide to Claude Code's own settings and turns review stops back into prompts.
-
-## Task approval
-
-The person approves tasks, not commands ([spec](../docs/specs/task-approval.md)). When the person's latest input asks for a task, the guards approve the commands that carry out that task, and Claude Code does not prompt for them:
-
-| Task | Asked for with | Commands approved |
-|---|---|---|
-| Release | "release 5.8.2", "publish rfr-v5.8.2" | `git tag -a <tag> [-m ...] [<commit>]`, `git push origin <tag>`, `gh release create <tag> ...`, where the tag is the one named, with or without a `v` and a prefix such as `rfr-` |
-| Push | "push phase-15/task-approval" | `git push [-u] origin <branch>` for the branch named |
-| Merge | "merge 190 when green", "merge when green" | `gh pr merge <n>` for the pull request named, or, when none is named, one opened before the message or one the session itself opened after it; and, in rfr-process projects, the GitHub MCP merge tools |
-| Preview deploy | "deploy a preview", "preview deploy" | `vercel` or `vercel deploy` (directly or through `npx`) without `--prod`, and a Vercel MCP deployment whose target is not production |
-
-- **What counts as the person's input.** Their latest typed message, or their answer to the agent's own question (`AskUserQuestion`) when that came later and the question and chosen option together name the task. A "no", "not yet", or "other" answer approves nothing. Tool results, notifications, other sessions, and subagents never count, so text the agent reads cannot approve anything. The approval lasts until the person types or answers again.
-- **What it never approves.** A push to the default branch, a force-push, deleting a tag or branch, `--no-verify`, a production deploy, promotions and alias or domain changes, `gh pr merge --admin` or `--delete-branch`, and a command chained with anything else, that redirects output, or that substitutes another command. A guard's own refusal or question, and a deny rule, always win.
-- **Standing instructions for a long task.** "Merge each PR when green", "merge PRs as you go", or "push each branch as you go" stays in force after later messages, so a multi-PR implementation does not prompt at every pull request. It covers only the pull requests the session opened and the branches it created (the transcript shows the call that made each one), never the default branch, and ends when the person says not to merge or push, or says stop, pause, hold, or wait.
-- **What it records.** The approval's reason quotes the person's words, and the decision log records it as `approved-by-instruction`; `checks/guard-report.mjs` counts them.
-
-### Merge instructions, and how each is read
-
-Say the one that matches what you want. The agent merges only when the pull request's checks allow it; "when green" is how the agent waits, not something the guard checks. `test/merge-instruction-phrasings.test.mjs` checks this table against the code.
-
-| You say | Covers | Until |
-|---|---|---|
-| "merge 301", "merge #301 when green", "squash merge 301" | Pull request 301 only | Your next message or answer |
-| "merge 301 and 302" | Those two | Your next message or answer |
-| "merge when green", "merge it once CI passes", "go ahead and merge" | Any pull request open when you said it, and one the session opens after it ("fix it, open a PR, and merge when green") | Your next message or answer |
-| "merge 301, then release 5.11.0", "merge and release 5.11.0" | The merge as above, and the release of that version (tag, tag push, `gh release create`) | Your next message or answer |
-| "merge each PR when green", "merge PRs as you go", "keep merging" | Every pull request this session opens, however many | You withdraw it, however many other messages you send |
-| "push each branch as you go" | Pushes of every branch this session creates, never the default branch | You withdraw it |
-| "publish the release", "then release", "publish a release when you're done" | The release of the version the project has prepared: the newest released section of `CHANGELOG.md`, or `package.json`'s version | You withdraw it ("don't release yet", or stop, pause, hold, wait) |
-| "don't merge yet", "hold off on merging" | Nothing; withdraws a standing merge instruction | |
-| "stop", "pause", "hold on", "wait" (at the start of a message) | Nothing; withdraws standing merge, push, and release instructions | |
-| "should we merge?" (any question) | Nothing | |
-| An answer "Yes, merge it" to the agent's own question "Merge #301?" | Pull request 301 | Your next message or answer |
-
-Never covered, whatever you say: a pull request named by node ID, `gh pr merge --admin` or `--delete-branch`, a merge chained to another command, and a pull request from another session that was opened after a single instruction. A release needs its version named: "then release" alone approves no tag. In an rfr-process project, merging a pull request that changes gated files is the approval of those files, so say "merge" only for changes you have reviewed or delegated.
-
-Allow rules give standing permission for routine commands; task approval covers the outward-facing commands of one task the person named, for as long as that is their latest word, or, for a standing instruction, until they withdraw it. WA-009 asks the agent to ask for the task once, in chat, naming what it covers.
-
 ## Prompts rfr does not control
 
-Under default allow, Claude Code still prompts for writes to protected paths (`.claude`, `.git`, `.mcp.json`), for MCP servers other than GitHub, and for tools other than the working tools above. With `"permissions": "ask"` it also prompts for everything its settings do not allow, such as pushing and posting pull request comments, and task approval (above) removes those prompts only for the commands of a task the person asked for. [security-for-agentic-projects.md](security-for-agentic-projects.md#the-guards-and-claude-codes-own-protections) explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, and sandbox, and which rules a project can set for these prompts.
+Claude Code still prompts for writes to protected paths (`.claude`, `.git`, `.mcp.json`) and for whatever the session's permission mode does not allow. Run sessions in auto mode, which a project cannot set for itself. [security-for-agentic-projects.md](security-for-agentic-projects.md#the-guards-and-claude-codes-own-protections) explains how the guards sit with Claude Code's permission modes, protected paths, permission rules, and sandbox.
 
 ## Measuring
 
-Each ask or refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it, and an asked call that then runs adds an `approved` line. `node checks/guard-report.mjs <log>...` summarises one or more logs: asks per hour by guard and reason, and the share of asks that were approved. A reason approved in at least 95% of 20 or more asks is a candidate to move down a tier. Claude Code reports no hook event when a person declines a prompt, so an ask with no `approved` line was declined, or the session ended first.
+Each refusal is appended to `guard-decisions.jsonl` in the data folder of the plugin whose guard made it. `node checks/guard-report.mjs <log>...` summarises one or more logs by guard and reason; it still reads the `ask` and `approved` lines that logs from before rewrite plan 25e hold.
 
 The guard log sees only the guards' own asks. `node checks/attention-report.mjs <transcripts folder> --repo <owner/name>` reads a project's Claude Code transcripts (under `~/.claude/projects/`) and counts every wait on a person: permission prompts from any source, questions, and replies after the agent ended its turn, with their durations and the figures per merged pull request. It prints counts and durations only.
 

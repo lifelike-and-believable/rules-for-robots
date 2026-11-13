@@ -1,6 +1,5 @@
 // Unattended runs (docs/specs/unattended.md): no guard prompts or asks during the run; the never list
-// is refused with a reason the agent acts on; what the person approved in their own words goes ahead;
-// test edits never interrupt.
+// is refused with a reason the agent acts on; test edits never interrupt.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -48,8 +47,6 @@ test('unattended#AC-1: no guard prompts for any action the corpus once asked abo
     const out = hook('plugins/web/scripts/guard-mcp.mjs', { session_id: 's', tool_name: c.tool_name, tool_input: c.tool_input, cwd: dir });
     assert.equal(out?.permissionDecision, 'deny', c.id);
   }
-  // A project that asks for prompts gets them.
-  assert.equal(hook('plugins/core/scripts/guard-commands.mjs', { tool_name: 'Bash', cwd: dir, tool_input: { command: 'git push --force origin feature' } }, { RFR_PERMISSIONS: 'ask' }).permissionDecision, 'ask');
 });
 
 test('unattended#AC-2: a never-list action is refused with what to do instead, and a yes in chat does not unlock it', () => {
@@ -62,16 +59,6 @@ test('unattended#AC-2: a never-list action is refused with what to do instead, a
   assert.match(first.permissionDecisionReason, /set that part aside, record what it needs and why in the pull request's ## Decisions section, and carry on/);
   fs.appendFileSync(file, `${JSON.stringify({ type: 'user', origin: { kind: 'human' }, timestamp: '2026-11-12T04:00:00Z', message: { content: 'yes, go ahead' } })}\n`);
   assert.equal(hook('plugins/core/scripts/guard-commands.mjs', input).permissionDecision, 'deny');
-});
-
-test("unattended#AC-3: what the person approved in their own words goes ahead without a prompt or a refusal", () => {
-  const dir = repo();
-  spawnSync('git', ['-c', 'user.email=t@example.com', '-c', 'user.name=t', 'tag', '-a', 'v1.0.0', '-m', 'v1.0.0'], { cwd: dir });
-  const release = transcript('implement the plan, merge each PR when green, then publish the release');
-  for (const command of ['gh release create v1.0.0 --generate-notes', 'git push origin v1.0.0']) {
-    assert.equal(decideCommand(command, { cwd: dir, transcriptPath: release })?.decision, 'allow', command);
-  }
-  assert.equal(decideCommand('gh release create v1.0.0', { cwd: dir, transcriptPath: transcript('implement the plan') })?.decision, 'ask', 'without the release in the plan, it is on the never list');
 });
 
 test('unattended#AC-5: test edits never interrupt the person', () => {

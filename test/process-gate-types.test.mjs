@@ -8,7 +8,6 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { DELEGATED_GATES, gateOf, parseProcessConfig, readWorkMode, stagesWithGate } from '../checks/lib/process.mjs';
 import { runApprovals } from '../checks/ci/process-approvals.mjs';
-import { decideMerge } from '../plugins/process/scripts/guard-merge.mjs';
 
 const parse = text => parseProcessConfig(text);
 
@@ -165,18 +164,4 @@ test('project-process#AC-57: a merged notify stage opens one decision-queue issu
   gh2.fetch.merge = supervised.merge;
   await runApprovals({ root: supervised.root, env: env({ GITHUB_EVENT_NAME: 'push', GITHUB_SHA: supervised.merge }), fetch: gh2.fetch, log: () => {} });
   assert.equal(gh2.issues.length, 0, 'no notify stage, no queue issue');
-});
-
-test('project-process#AC-58: the merge guard asks only for approve stages', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-guard-gates-'));
-  write(root, 'docs/product/process.yml', 'mode: solo\ndefault: [lead]\n');
-  write(root, '.claude/rfr.json', '{ "mode": "delegated" }');
-  const input = { tool_name: 'Bash', tool_input: { command: 'gh pr merge 9 --merge' } };
-  const decide = files => decideMerge({ input, root, listFiles: () => files, describePr: () => ({}) });
-  assert.equal(decide(['docs/product/stories/a.md', 'docs/product/requirements/r.md']).ask, false, 'notify stages only');
-  assert.equal(decide(['docs/design/home.md']).ask, true, 'design is approve in delegated mode');
-  fs.writeFileSync(path.join(root, '.claude', 'rfr.json'), '{}');
-  assert.equal(decide(['docs/product/stories/a.md']).ask, true, 'supervised: every stage still asks');
-  write(root, 'docs/product/process.yml', 'mode: solo\ndefault: [lead]\ngates:\n  stories: agent\n');
-  assert.equal(decide(['docs/product/stories/a.md']).ask, false, 'an agent gate does not ask');
 });

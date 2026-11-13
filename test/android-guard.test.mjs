@@ -12,7 +12,7 @@ const settings = { disposable: ['TESTDEV'], deviceScripts: ['scripts/device-setu
 const decide = (command, { devices = [TV], env = {} } = {}) => decideAdb(command, { env, settings, listDevices: () => devices })?.decision ?? 'allow';
 const bs = String.fromCharCode(92);
 
-test('android-plugin#AC-1: rfr-android is a plugin in the marketplace, registering guard-adb and its own guard-outcome', () => {
+test('android-plugin#AC-1: rfr-android is a plugin in the marketplace, registering guard-adb', () => {
   const manifest = JSON.parse(fs.readFileSync('plugins/android/.claude-plugin/plugin.json', 'utf8'));
   assert.equal(manifest.name, 'rfr-android');
   const market = JSON.parse(fs.readFileSync('.claude-plugin/marketplace.json', 'utf8'));
@@ -20,9 +20,7 @@ test('android-plugin#AC-1: rfr-android is a plugin in the marketplace, registeri
   const hooks = JSON.parse(fs.readFileSync('plugins/android/hooks/hooks.json', 'utf8')).hooks;
   const commands = event => hooks[event].flatMap(h => h.hooks.map(x => `${h.matcher} ${x.command}`));
   assert.ok(commands('PreToolUse').some(c => /^Bash\|PowerShell .*guard-adb\.mjs/.test(c)));
-  assert.ok(commands('PostToolUse').some(c => /guard-outcome\.mjs/.test(c)));
-  assert.ok(commands('PostToolUseFailure').some(c => /guard-outcome\.mjs/.test(c)));
-  for (const f of ['lib.mjs', 'guard-outcome.mjs', 'shell-writes.mjs']) assert.ok(fs.existsSync(path.join('plugins/android/scripts', f)), `build copy ${f}`);
+  for (const f of ['lib.mjs', 'shell-writes.mjs']) assert.ok(fs.existsSync(path.join('plugins/android/scripts', f)), `build copy ${f}`);
   assert.match(fs.readFileSync('package.json', 'utf8'), /claude plugin validate --strict plugins\/android/);
 });
 

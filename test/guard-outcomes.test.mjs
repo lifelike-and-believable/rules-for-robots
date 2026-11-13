@@ -1,4 +1,5 @@
-// Guard outcome logging and the report (docs/specs/guard-tiers.md, AC-6 and AC-7).
+// The guard decision report (docs/specs/guard-tiers.md, AC-7). Outcome logging (AC-6) was removed
+// with the prompts it recorded (rewrite plan 25e).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -6,63 +7,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { summarise, formatReport, reasonKey } from '../checks/guard-report.mjs';
-
-const REPO = path.resolve('.');
-const run = (script, input, data) => spawnSync(process.execPath, [`plugins/core/scripts/${script}`], {
-  input: JSON.stringify(input),
-  encoding: 'utf8',
-  // The prompt path, which a project keeps with "permissions": "ask" (default-allow AC-10).
-  env: { ...process.env, CLAUDE_PLUGIN_DATA: data, RFR_PERMISSIONS: 'ask' },
-});
-const lines = data => fs.readFileSync(path.join(data, 'guard-decisions.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
-
-test('guard-tiers#AC-6: an asked call that then runs, or fails while running, is logged as approved', () => {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-outcome-'));
-  for (const [id, event] of [['toolu_1', 'PostToolUse'], ['toolu_2', 'PostToolUseFailure']]) {
-    const asked = run('guard-commands.mjs', { session_id: 's', tool_use_id: id, tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force origin main' } }, data);
-    assert.match(asked.stdout, /"permissionDecision":"ask"/);
-    const after = run('guard-outcome.mjs', { session_id: 's', hook_event_name: event, tool_use_id: id, tool_name: 'Bash', tool_input: { command: 'git push --force origin main' } }, data);
-    assert.equal(after.status, 0);
-    assert.equal(after.stdout, '');
-  }
-  const log = lines(data);
-  assert.deepEqual(log.map(l => l.decision), ['ask', 'approved', 'ask', 'approved']);
-  assert.equal(log[1].hook, 'guard-commands');
-  assert.equal(log[1].reason, log[0].reason);
-  assert.deepEqual(Object.keys(log[1]).sort(), ['decision', 'hook', 'reason', 'session', 'time', 'tool']);
-  assert.doesNotMatch(JSON.stringify(log), /origin main/);
-});
-
-test('guard-tiers#AC-6: a call that was not asked about, or was asked and never ran, gets no approved line', () => {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-outcome-'));
-  run('guard-commands.mjs', { session_id: 's', tool_use_id: 'toolu_9', tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force' } }, data);
-  // A different call runs; the asked one (declined, or the session ended) never does.
-  run('guard-outcome.mjs', { session_id: 's', hook_event_name: 'PostToolUse', tool_use_id: 'toolu_10', tool_name: 'Bash', tool_input: { command: 'ls' } }, data);
-  assert.deepEqual(lines(data).map(l => l.decision), ['ask']);
-  // With logging off, no pending record is left behind either.
-  const off = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-outcome-'));
-  spawnSync(process.execPath, ['plugins/core/scripts/guard-commands.mjs'], { input: JSON.stringify({ tool_use_id: 'toolu_x', tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force' } }), env: { ...process.env, CLAUDE_PLUGIN_DATA: off, RFR_GUARD_LOG: '0', RFR_PERMISSIONS: 'ask' } });
-  assert.deepEqual(fs.readdirSync(off), []);
-});
-
-test('guard-tiers#AC-6: the outcome hook is registered for the tools the guards cover, after success and failure', () => {
-  // plugin-split AC-1 and AC-2: each plugin with guards carries the outcome hook for the tools its own guards cover.
-  const covers = {
-    core: [['Bash', 'PowerShell', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit'], ['mcp__Vercel__create_deployment']],
-    web: [['mcp__Vercel__create_deployment', 'mcp__claude_ai_VERCEL__get_project_env'], ['Bash', 'Edit']],
-    unreal: [['Bash', 'PowerShell'], ['Edit', 'mcp__Vercel__create_deployment']],
-  };
-  for (const [plugin, [yes, no]] of Object.entries(covers)) {
-    const hooks = JSON.parse(fs.readFileSync(`plugins/${plugin}/hooks/hooks.json`, 'utf8')).hooks;
-    for (const event of ['PostToolUse', 'PostToolUseFailure']) {
-      const entry = hooks[event]?.find(h => h.hooks.some(x => x.command.includes('guard-outcome.mjs')));
-      assert.ok(entry, `${plugin} ${event}`);
-      const matcher = new RegExp(`^(?:${entry.matcher})$`);
-      for (const tool of yes) assert.match(tool, matcher, `${plugin} ${event} ${tool}`);
-      for (const tool of no) assert.doesNotMatch(tool, matcher, `${plugin} ${event} ${tool}`);
-    }
-  }
-});
 
 test('plugin-split#AC-6: the report reads several plugins\' logs together', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-report-'));

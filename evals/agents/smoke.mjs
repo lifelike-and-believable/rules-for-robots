@@ -19,19 +19,6 @@ const FINDING = /\[(blocker|major|minor|nit)\][^\n]*?[\w./-]+\.\w+:\d+/i;
 const write = (dir, rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text); };
 
 
-// A pull request for the merge-when-green skill: a local bare remote, a branch with one
-// commit pushed to it, and the scenario the fake gh (evals/agents/fake-gh) answers from.
-function pullRequest(dir, checks, failedLog, extra = {}) {
-  const g = (...a) => spawnSync('git', ['-c', 'user.email=s@example.com', '-c', 'user.name=smoke', ...a], { cwd: dir, encoding: 'utf8' });
-  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-smoke-remote-'));
-  spawnSync('git', ['init', '-q', '--bare', '-b', 'main', remote]);
-  g('remote', 'add', 'origin', remote); g('push', '-q', 'origin', 'main');
-  g('switch', '-q', '-c', 'add-shout');
-  write(dir, 'src/text.js', fs.readFileSync(path.join(dir, 'src/text.js'), 'utf8') + '\n/** Returns the text in upper case. */\nexport function shout(text) {\n  return text.toUpperCase();\n}\n');
-  g('commit', '-qam', 'Add shout'); g('push', '-q', 'origin', 'add-shout');
-  const head = g('rev-parse', 'HEAD').stdout.trim();
-  fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ number: 21, title: 'Add shout', branch: 'add-shout', head, runId: 4242, checks, failedLog, ...extra }));
-}
 // The decision queue for the decisions skill (improvement plan 19c), as issues the fake gh serves.
 function decisionQueue(dir) {
   const body = (question, def) => [
@@ -45,11 +32,6 @@ function decisionQueue(dir) {
   ];
   fs.writeFileSync(path.join(dir, '.git', 'fake-gh.json'), JSON.stringify({ issues }));
 }
-
-// A gh call that waits on CI (pr checks --watch, run watch); merge-when-green never makes one.
-const waits = a => a.includes('--watch') || (a[0] === 'run' && a[1] === 'watch');
-const ghCalls = dir => { try { return fs.readFileSync(path.join(dir, '.git', 'gh-calls.log'), 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; } };
-const headOf = dir => JSON.parse(fs.readFileSync(path.join(dir, '.git', 'fake-gh.json'), 'utf8')).head;
 
 // Each case: fixture to copy, optional change applied after the initial commit, prompt, and a check.
 export const CASES = [
@@ -214,45 +196,6 @@ export const CASES = [
     name: 'skill perf-audit: bundle question', fixture: 'scoped-fix',
     prompt: '/rfr-web:perf-audit src/price.js is imported on every page; is there anything heavy here? No server or deployment exists.',
     check: t => /(budget|size|LCP|Lighthouse|measure)/i.test(t),
-  },
-  {
-    name: 'skill merge-when-green: green pull request', fixture: 'verify-and-report', fakeGh: true,
-    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }]),
-    prompt: '/rfr-core:merge-when-green 21',
-    check: (t, d) => {
-      const calls = ghCalls(d);
-      const merge = calls.findIndex(a => a[0] === 'pr' && a[1] === 'merge');
-      const checked = calls.slice(0, merge).some(a => a[0] === 'pr' && (a[1] === 'checks' || (a[1] === 'view' && a.some(x => /headRefOid|statusCheckRollup/.test(x)))));
-      const guarded = merge !== -1 && calls[merge].includes('--match-head-commit') && calls[merge].includes(headOf(d));
-      const baseUpdated = spawnSync('git', ['merge-base', '--is-ancestor', headOf(d), 'main'], { cwd: d }).status === 0;
-      return checked && guarded && baseUpdated && !calls.some(a => a.includes('--admin')) && !calls.some(waits);
-    },
-  },
-  {
-    name: 'skill merge-when-green: checks still running', fixture: 'verify-and-report', fakeGh: true,
-    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'SUCCESS' }, { name: 'secret-scan', conclusion: 'SUCCESS' }], undefined, { pending: true }),
-    prompt: '/rfr-core:merge-when-green 21',
-    // With no pull request events in a plain session, the skill checks once, says what is still
-    // running, and stops: no waiting command, no repeated checks, no merge.
-    check: (t, d) => {
-      const calls = ghCalls(d);
-      const merged = calls.some(a => a[0] === 'pr' && a[1] === 'merge');
-      const checks = calls.filter(a => a[0] === 'pr' && a[1] === 'checks').length;
-      return !merged && !calls.some(waits) && checks <= 2 && /(pending|running|in progress|not finished|not yet)/i.test(t);
-    },
-  },
-  {
-    name: 'skill merge-when-green: red head commit', fixture: 'verify-and-report', fakeGh: true,
-    change: d => pullRequest(d, [{ name: 'verify', conclusion: 'FAILURE' }, { name: 'secret-scan', conclusion: 'SUCCESS' }],
-      'verify\tRun npm run verify\tnot ok 3 - shout returns upper case\nverify\tRun npm run verify\t  expected: HELLO, actual: hello'),
-    prompt: '/rfr-core:merge-when-green 21',
-    check: (t, d) => {
-      const calls = ghCalls(d);
-      const merged = calls.some(a => a[0] === 'pr' && a[1] === 'merge' && !a.includes('--help'));
-      // The skill reads the failing job's log, so the report names the cause, not just the check.
-      const namedCause = /(upper ?case|HELLO|lower ?case|not ok 3)/i.test(t);
-      return !merged && /verify/.test(t) && /(fail|red|not pass)/i.test(t) && namedCause && !calls.some(a => a.includes('--admin')) && !calls.some(waits);
-    },
   },
   {
     // Improvement plan 19c: one question whose default fell due, one the lead answered with the

@@ -12,6 +12,8 @@ unlocks:
 
 # Default allow
 
+> Retired on 2026-11-12 by [rewrite plan 25e](../../rewrite-plan.md): whether Claude Code prompts is the session's permission mode (auto mode), and rfr's hooks only refuse the never list. Kept as a record; its tests and code are removed.
+
 rfr flips its permission model. Today Claude Code asks about everything not allowed, rfr adds exceptions to stop the asks it can anticipate, and every unanticipated case becomes another prompt. Under this spec rfr allows the agent's working tools by default and asks only for a short, named list of actions that cannot be undone or reach outside the project. When work reaches something the person must review, the agent stops and reports; it does not raise a prompt. Proposed 2026-11-12 by the maintainer: "I want to be able to delegate the implementation of a designed feature or application to an agent or agents, and review the results, not become the bottleneck clicking on prompts that are mostly meaningless." Approved the same day, with the five open questions decided below. The `status` field stays `draft` until every `test:` criterion has a citing test, because `spec-trace` treats every uncited criterion of an approved spec as an error.
 
 ## Problem

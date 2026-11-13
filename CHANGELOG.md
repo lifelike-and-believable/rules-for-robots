@@ -6,11 +6,22 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Removed
 
-- **The tier check and the approvals job's review check** (#236; rewrite plan 25e; the maintainer's answers to the verify inventory). `rfr-process` 1.9.0.
+- **The tier check and the approvals job's review check** (#236; rewrite plan 25e; the maintainer's answers to the verify inventory). `rfr-process` 2.1.0.
   - **Tier.** `process / tier` no longer infers a tier or reads `tier:` labels. The change check already holds a source change to a `Change: fix` or `Change: trivial` claim in a commit message. The advisory mutation job now runs on feature pull requests, by the change job's new `kind` output. Project-process AC-10, AC-27, AC-39 and AC-54 are retired, and AC-24 is amended.
   - **Approvals.** `process / approvals` no longer checks the approver's review of `approve` stages, which branch protection requires under the GitHub gate, or audits solo-mode merges. That check was the red mark on every gated pull request. It still requires the recorded review for `agent` stages, on the pull request and after the merge, and still opens the decision-queue issue for `notify` stages. Project-process AC-5, AC-6 and AC-47 are retired, and AC-56 is amended.
 
   Adopters: remove `process / tier` from your required checks. Until 8.0.0 the job remains as a stub that passes, so a repository that still requires it is not blocked. Delete any `tier:` labels if you like. Nothing else to do.
+
+- **In-session approval** (rewrite plan 25e). With the GitHub gate, the approver's review in GitHub is the approval, so nothing is approved from chat any more:
+  - task approval and its copies in rfr-web and rfr-process, with its specs retired to `docs/specs/retired/`;
+  - rfr-process's merge guard (`guard-merge`), and project-process AC-7, AC-52, AC-53, and AC-58;
+  - rfr-core's default-allow hook (`allow-default`) and its `"permissions": "ask"` setting; its refusals of MCP tools are kept in a new refusal-only hook, `guard-mcp-tools`;
+  - the `merge-when-green` skill;
+  - `guard-outcome`, which logged the prompts that no longer happen.
+
+  rfr-core's guards now only refuse. Whether Claude Code prompts for the rest is the session's permission mode: run sessions in auto mode. Publishing a release or pushing a tag is no longer refused, since it is not on the never list. A Vercel preview deploy through MCP goes ahead without an instruction, as the CLI one already did, but only a plain new deployment: a redeploy, a settings change, a custom environment, or a production target is refused. Newly refused: pushing a tag or a glob to the default branch, `git push --branches`, `gh pr merge --admin`, a `gh api` change to branch protection or rulesets, and `gh release upload --clobber`. Versions: rfr-process 2.0.0, rfr-web 3.0.0, rfr-unreal 3.1.0, rfr-android 0.4.0; rfr-core's version goes up with the next release.
+
+  Adopters: remove `taskApproval` and `permissions` from `.claude/rfr.json` (they are ignored), and start sessions in auto mode. A project without the GitHub gate no longer has anything stopping an agent from merging a gated pull request: set up the gate (`docs/adoption-guide.md`).
 
 ### Added
 

@@ -116,19 +116,18 @@ test('after an approved weakening, later edits that add nothing new to it do not
   assert.match(edit(dir, file, "test('adds', () => {", "test.skip('adds', () => {")?.reason ?? '', /existing test/);
 });
 
-test('each ask is written to the decision log, without the command or file contents', () => {
+test('each refusal of a never-list action is written to the decision log, without the command or file contents', () => {
   const data = scratch();
   const r = spawnSync(process.execPath, ['plugins/core/scripts/guard-commands.mjs'], {
     input: JSON.stringify({ session_id: 's1', tool_name: 'Bash', cwd: REPO, tool_input: { command: 'git push --force origin main' } }),
     encoding: 'utf8',
-    // The prompt path, which a project keeps with "permissions": "ask" (default-allow AC-10).
-    env: { ...process.env, CLAUDE_PLUGIN_DATA: data, RFR_PERMISSIONS: 'ask' },
+    env: { ...process.env, CLAUDE_PLUGIN_DATA: data },
   });
-  assert.match(r.stdout, /"permissionDecision":"ask"/);
+  assert.match(r.stdout, /"permissionDecision":"deny"/);
   const lines = fs.readFileSync(path.join(data, 'guard-decisions.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
   assert.equal(lines.length, 1);
   assert.deepEqual(Object.keys(lines[0]).sort(), ['decision', 'hook', 'reason', 'session', 'time', 'tool']);
-  assert.deepEqual([lines[0].hook, lines[0].tool, lines[0].decision, lines[0].session], ['guard-commands', 'Bash', 'ask', 's1']);
+  assert.deepEqual([lines[0].hook, lines[0].tool, lines[0].decision, lines[0].session], ['guard-commands', 'Bash', 'never', 's1']);
   assert.doesNotMatch(JSON.stringify(lines[0]), /origin main/);
 
   // RFR_GUARD_LOG=0 turns it off.
