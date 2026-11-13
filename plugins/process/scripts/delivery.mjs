@@ -64,10 +64,19 @@ export function resolveSpecs(root, name) {
   return story ? downstream(artifacts, story).filter(a => a.stage === 'specs').map(specName).sort() : [];
 }
 
-// What was set aside for a spec: the tokens in docs/decisions/<spec name>.md (AC-3).
-function setAside(root, name) {
+// The run's decisions file, named after its branch so that runs on different branches never write
+// the same file (AC-3, rewrite plan 25e): docs/decisions/<branch>.md, with each / written as -.
+export function decisionsFile(branch) {
+  return `docs/decisions/${String(branch).replace(/[\\/]+/g, '-')}.md`;
+}
+
+// What was set aside for a spec (AC-3): the tokens in the run's decisions file, which cover every spec
+// the branch delivers, or in docs/decisions/<spec name>.md, where runs before 25e wrote them.
+function setAside(root, name, branch) {
   let text = '';
-  try { text = fs.readFileSync(path.join(root, 'docs', 'decisions', `${name}.md`), 'utf8'); } catch { /* none */ }
+  for (const file of [decisionsFile(branch), `docs/decisions/${name}.md`]) {
+    try { text += fs.readFileSync(path.join(root, file), 'utf8'); } catch { /* none */ }
+  }
   return new Set(SET_ASIDE.filter(token => text.includes(`[set aside: ${token}]`)));
 }
 
@@ -89,7 +98,7 @@ export function deliveryMissing(root, scope = []) {
   if (!specs.length) missing.push('no spec in this branch yet: write docs/specs/<feature>.md from the approved user documentation, with an id and derived-from');
   for (const spec of specs) {
     const name = specName(spec);
-    const aside = setAside(root, name);
+    const aside = setAside(root, name, currentBranch(root));
     if (!['approved', 'implemented'].includes(spec.status)) missing.push(`${spec.file}: the spec is a draft; check it against the approved documents it derives from, then set status: approved`);
     if (!tests.some(text => text.includes(`${name}#AC-`)) && !citedInRepo(name) && !aside.has('tests')) missing.push(`tests that cite ${name}#AC-n, written and seen to fail before the implementation`);
     const userDocs = [...new Set(spec.links.map(l => byId.get(l.target)).filter(a => a?.stage === 'user-docs').map(a => a.id))];
@@ -119,7 +128,7 @@ export function gateText({ remote, branch }) {
 const gateFor = root => gateText({ remote: git(root, ['remote', 'get-url', 'origin']), branch: currentBranch(root) });
 
 const listed = missing => missing.map(m => `- ${m}`).join('\n');
-const CARRY_ON = 'Carry on without asking the lead, and do not end your turn to wait for them. If something cannot be done, set it aside in docs/decisions/<spec name>.md with `[set aside: tests]` or `[set aside: tutorial]` and the reason, and finish the rest.';
+const CARRY_ON = 'Carry on without asking the lead, and do not end your turn to wait for them. If something cannot be done, set it aside in docs/decisions/<branch>.md (the branch name with each / written as -) with `[set aside: tests]` or `[set aside: tutorial]` and the reason, and finish the rest.';
 
 // How far a feature has got (AC-10): the process state for the stories a name stands for, and what
 // a delivery of their specs would still lack. With no name, the state of every feature.
@@ -160,7 +169,7 @@ function start(root, name) {
     }
   }
   writeMarker(root, { branch, started: new Date().toISOString(), specs });
-  console.log(`Delivery run started on ${branch}${specs.length ? ` for ${specs.join(', ')}` : ''}. Still to do:\n${listed(deliveryMissing(root, specs))}\n\n${CARRY_ON}`);
+  console.log(`Delivery run started on ${branch}${specs.length ? ` for ${specs.join(', ')}` : ''}. Still to do:\n${listed(deliveryMissing(root, specs))}\n\nThis run's decisions file is ${decisionsFile(branch)}.\n\n${CARRY_ON}`);
   return 0;
 }
 

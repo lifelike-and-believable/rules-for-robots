@@ -51,11 +51,17 @@ jobs:
 
   # The same chain on Windows (improvement plan 18b). A separate job, so the required "verify" check
   # keeps its name. Not yet a required check: add it to branch protection once it has stayed green.
-  # Skipped for a documents-only pull request.
+  # Skipped for a documents-only pull request. The tests run in three parts at once: on Windows most of
+  # the time goes to the many git processes the guard and eval tests start (rewrite plan 25e, slice h:
+  # 329 s of 972 s of test time in one job). Part 1 also runs the checks that are not tests.
   verify-windows:
     needs: plan
     if: needs.plan.outputs.docs-only != 'true'
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
     steps:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@v5
@@ -70,6 +76,7 @@ jobs:
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
       - env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          RFR_TEST_SHARD: ${{ matrix.part }}/3
         run: node checks/ci/verify-ci.mjs
 
   secret-scan:

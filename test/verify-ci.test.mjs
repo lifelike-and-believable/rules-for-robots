@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import YAML from 'yaml';
-import { dependencies, isDocsOnly, plan, steps } from '../checks/ci/verify-ci.mjs';
+import { dependencies, isDocsOnly, parseShard, plan, steps } from '../checks/ci/verify-ci.mjs';
 
 const root = process.cwd();
 const run = changed => plan(root, changed);
@@ -69,4 +69,27 @@ test('CI runs the plan, and skips the Windows job for a documents-only pull requ
   }
   assert.match(wf.jobs['verify-windows'].if, /docs-only != 'true'/);
   assert.equal(wf.jobs.verify.if, undefined, 'the required verify check always reports');
+});
+
+test('a part of the Windows run takes its share of the tests; only part 1 runs the other checks', () => {
+  assert.deepEqual(parseShard('2/3'), { index: 2, total: 3 });
+  for (const bad of [undefined, '', '0/3', '4/3', 'two', '1/']) assert.equal(parseShard(bad), null, String(bad));
+  const p = plan(root, null);
+  const whole = steps(p);
+  const first = steps(p, { shard: '1/3' });
+  const second = steps(p, { shard: '2/3' });
+  assert.deepEqual(whole.find(s => s.name === 'tests').cmd.filter(a => a.startsWith('--test-shard')), [], 'no part, no shard');
+  assert.ok(first.find(s => s.name === 'tests').cmd.includes('--test-shard=1/3'));
+  assert.ok(second.find(s => s.name === 'tests').cmd.includes('--test-shard=2/3'));
+  assert.deepEqual(first.filter(s => s.skip).map(s => s.name), [], 'part 1 runs everything');
+  assert.deepEqual(second.filter(s => !s.skip).map(s => s.name), ['setup:vale', 'tests'], 'part 2 runs only the tests and their setup');
+});
+
+test('the Windows job runs the tests in three parts, each with its part named', () => {
+  const wf = YAML.parse(fs.readFileSync('.github/workflows/verify.yml', 'utf8'));
+  const job = wf.jobs['verify-windows'];
+  assert.deepEqual(job.strategy.matrix.part, [1, 2, 3]);
+  assert.equal(job.strategy['fail-fast'], false, 'one part failing does not cancel the others');
+  assert.equal(job.steps.at(-1).env.RFR_TEST_SHARD, '${{ matrix.part }}/3');
+  assert.equal(wf.jobs.verify.strategy, undefined, 'the required Linux job runs whole');
 });
