@@ -118,9 +118,9 @@ Three steps involve a credential, so only you can do them:
 The rest an agent can do, in a repository where `/rfr-process:setup` has written `docs/product/process.yml`:
 
 5. **Get the script.** Clone rules-for-robots into `.rfr` at the repository's root (`git clone https://github.com/lifelike-and-believable/rules-for-robots .rfr`; keep `.rfr` out of your commits), or run the script from any other checkout and pass your repository's folder as its first argument.
-6. **Set `mode: team` in `docs/product/process.yml`**, even when you work alone. In solo mode the approvals check expects the approver to be the one who merged; with the gate the App merges, so that check would fail on every gated merge. In team mode it looks for the approver's review, which is what the gate asks for.
+6. **Set `mode: team` in `docs/product/process.yml`**, even when you work alone. Team mode is what the gate is: approval is the approver's review, which CODEOWNERS and branch protection require, not who merged.
 7. **Replace the merge rule in `AGENTS.md`**, if the project was set up before the gate: agents push their branch and do not open, approve, or merge pull requests; the workflow opens the pull request, and GitHub merges it when the checks pass and, for a gated folder, the approver has reviewed it.
-8. **Run the setup script.** For `--checks`, give the names of the checks every pull request must pass, exactly as GitHub shows them on a pull request: the project's own verify check, and `process / process-trace`, `process / tier`, and `process / change` from the process workflow.
+8. **Run the setup script.** For `--checks`, give the names of the checks every pull request must pass, exactly as GitHub shows them on a pull request: the project's own verify check, and `process / process-trace` and `process / change` from the process workflow. (`process / tier` was retired in rewrite plan 25e; a repository that requires it should remove it.)
 
 ```
 node .rfr/checks/process-github-setup.mjs --app-id <the App ID> --checks <your required check names, comma-separated>
@@ -130,7 +130,6 @@ It prints what it would change and changes nothing. Add `--apply` to copy the wo
 
 Start a new session after it merges: a session that began earlier still has the old merge rule in its context.
 
-Expect one red check on a gated pull request until you approve it: `process / approvals` fails while the review is missing and passes when it reruns on your review. It is not a required check, and the pull request is held by the code-owner rule, not by it. (It is due to be removed for projects with the gate.)
 
 Then check it once: push a branch that changes only code, and it should become a pull request by the App and merge itself; push one that changes a file under `docs/design/`, and it should wait until you approve it.
 

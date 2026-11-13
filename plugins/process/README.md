@@ -4,7 +4,7 @@ A staged project development process for products built with agents, from [rules
 
 Install it from this marketplace with `/plugin install rfr-process@rules-for-robots`. It declares `rfr-core` as a dependency, so Claude Code installs that too.
 
-Slices 11a to 11c, 11e, and 11g are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, size tiers, CODEOWNERS, issue sync, runnable and recorded tutorials, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, advisory docs-lint (Vale) and mutation (Stryker) jobs, a workflow that runs tutorials against preview deployments, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md), split by stage so an agent reads only the part for its work.
+Slices 11a to 11c, 11e, and 11g are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, the change check, CODEOWNERS, issue sync, runnable and recorded tutorials, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, advisory docs-lint (Vale) and mutation (Stryker) jobs, a workflow that runs tutorials against preview deployments, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md), split by stage so an agent reads only the part for its work.
 
 Team mode, CODEOWNERS, per-stage approvers, and the Project board are built and tested, and no pilot has used them yet; they are marked below. Work on them waits until a team adopts the process (process plan P5). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
 
@@ -31,8 +31,8 @@ Run `/rfr-process:setup`, which does steps 1, 2, and 5 for your project type and
 
 1. Copy `templates/process.yml` to `docs/product/process.yml` and name the approvers.
 2. Copy `templates/workflows/rfr-process.yml` to `.github/workflows/`. It runs the jobs below on pull requests, reviews, and pushes to the default branch. It follows rules-for-robots `main`, so fixes arrive at once, and so do changes that could turn your CI red. For stable CI, pin both the `uses:` line (`...rfr-process.yml@<tag or commit>`) and the `rules-ref` input to the same release tag or commit, and update them on purpose.
-3. In team mode (not yet exercised by a pilot), run `node .rfr/checks/process-codeowners.mjs` to write the CODEOWNERS block, and make the `process / approvals` and `process / tier` checks required in branch protection.
-4. Nothing to do for labels: the tier job creates `tier:trivial`, `tier:fix`, `tier:story`, and `tier:epic` on its first run.
+3. Set up the GitHub gate (`docs/adoption-guide.md`, "The GitHub gate"): its script writes the CODEOWNERS block and branch protection, which requires `process / process-trace` and `process / change`, and the approvers' reviews on the gated folders.
+4. Nothing to do for labels.
 5. Start each artifact from `templates/artifacts/` (including `decision.md` for a choice that spans epics, and `discovery.md` when requirements need use cases and decisions written down first), and use the persona starters and the user documentation and tutorial templates for your project type in `templates/profiles/<unreal-plugin | web-app | static-site | general>/` (`general` for anything that is neither a website nor an Unreal plugin, with manual tutorials). A repository with several kinds of sub-project keeps one set of artifacts and one `process.yml`, and each sub-project uses its own profile's templates; `/rfr-process:setup mixed` records which folder uses which profile in `AGENTS.md`. A static site has a visitor-facing page (`user-doc.md`) and an editor guide for content in files (`user-doc-editor.md`) or in a CMS (`user-doc-editor-cms.md`). The templates link to sections (`concept#audience`, `epic-<name>#outcome`), so an edit elsewhere in an upstream artifact does not make everything below it stale.
 
 ## Links and staleness
@@ -102,16 +102,17 @@ Each gated stage has a gate, set per stage with `gates:` in `process.yml`: `appr
 
 Who approved a change is read from GitHub, never from front matter.
 
-- **Team mode** (`mode: team`) (Not yet exercised by a pilot: every pilot so far has used solo mode. Built and tested, with no further work until a team adopts the process.): each gated stage a pull request changes needs an approving review, on the current head commit, from one of that stage's approvers. A member of a listed team counts if the workflow's token can read team membership. A reviewer's latest review is the one that counts.
-- **Solo mode** (`mode: solo`): GitHub does not let you approve your own pull request, so the approval is you merging it. After each merge, the job checks that an approver merged it and opens a `process-approval` issue if not, or if a gated change was pushed without a pull request.
+- **`approve` stages:** an approving review from one of the stage's approvers, which branch protection requires on the gated folders ([the GitHub gate](../../docs/specs/github-gate.md)). A workflow opens each pull request as a GitHub App, so the approver can review it in solo mode as well as team mode, and a new push dismisses an earlier approval.
+- **`agent` stages:** the `process / approvals` job requires the recorded review on the head commit.
+- **`notify` stages:** after the merge, the `process / approvals` job opens the decision-queue issue.
 
 Gated stages are concept to user documentation (including discovery), and tutorials. Specs are gated only when `process.yml` lists spec approvers.
 
-Required reviews and checks need a paid GitHub plan for private repositories. Without them, the jobs still report failures and open issues, but cannot block a merge.
+Required reviews and checks need a paid GitHub plan for private repositories; without them nothing blocks a merge (rewrite plan D7).
 
 ## Size tiers
 
-The tier job infers each pull request's tier from the paths it changes: `tier:story` for `docs/product/`, `docs/design/`, or `docs/user/`; `tier:fix` for another process artifact folder or a `public-api` path; `tier:trivial` otherwise. A label (`tier:trivial`, `tier:fix`, `tier:story`, `tier:epic`) can raise the tier, usually to `tier:epic`, and the job fails a label lower than the paths imply. The mutation job uses the tier the job settled on. The pull request that adds `process.yml` needs no tier.
+The size tier (trivial, fix, story, epic) decides where a change starts ([guide/start.md](guide/start.md)). There are no tier labels, and the tier check is retired: A pull request that changes source must belong to a feature with an approved spec, or say `Change: fix` or `Change: trivial` at the end of a commit message; the `process / change` check holds it to that claim (a fix changes a test and adds no source file; a trivial change adds no source file and touches no `public-api` path). The `process / tier` job is a stub that passes, kept so a repository that still requires it is not blocked; remove it from the required checks.
 
 ## Issue sync
 
@@ -132,7 +133,7 @@ The `tutorials` job checks, without a browser or the engine, that every tutorial
 These report in the job summary and never fail the build.
 
 - **`docs-lint`**: Vale on `docs/user/`, `docs/tutorials/`, and `docs/releases/`, with the RFR writing style and a vocabulary of persona names and glossary terms (`docs/product/glossary.md`). See the guide's recommended tools.
-- **`mutation`** (with `mutation: true` in the caller, for `web-app` and `static-site`): Stryker on `tier:story` and `tier:epic` pull requests, using the project's `stryker.config.mjs` (start from `templates/profiles/<profile>/`). Later pushes to a pull request only retest the mutants their changes affect; a change to a test file reruns everything. The score appears as a check annotation, and the summary lists the surviving mutants.
+- **`mutation`** (with `mutation: true` in the caller, for `web-app` and `static-site`): Stryker on feature pull requests (a source change with an approved spec, from the `change` job), using the project's `stryker.config.mjs` (start from `templates/profiles/<profile>/`). Later pushes to a pull request only retest the mutants their changes affect; a change to a test file reruns everything. The score appears as a check annotation, and the summary lists the surviving mutants.
 - **`typecheck`** (with `typecheck: <command>` in the caller, such as `npm run check`): the project's type check on every pull request. A test runner such as Vitest runs code whose types are wrong, so a type error in a test otherwise shows only when someone runs the type check locally.
 - **`install-dirs`**: the `mutation` and `typecheck` jobs run `npm ci` in the repository root only, unless the caller lists other folders with their own `package.json` (`install-dirs: sanity-studio`). A unit test that imports code from a nested package needs that package's dependencies, or the job fails with "Cannot find package".
 

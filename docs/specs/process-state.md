@@ -42,7 +42,7 @@ Under the GitHub gate ([github-gate](github-gate.md)) the agent does not write t
 ## Scope
 
 - In: `featureSteps`, `processNext`, and `renderNext` in `checks/lib/process.mjs` (copied into the plugin by the build); `checks/process-next.mjs`; the plugin's `SessionStart` hook; `checks/ci/process-change.mjs`; the `change` job in `.github/workflows/rfr-process.yml`; the guide and the `setup` skill; tests.
-- Out: the tier check, which keeps inferring a tier for the mutation job until the verify suite review in 25e; `guard-stages`, which still reads `status` from the working tree (25e moves it to the default branch, as AC-2 does here); the stop check and the trigger (25d).
+- Out: the tier check, which kept inferring a tier for the mutation job until rewrite plan 25e retired it (the mutation job now reads the change job's kind); `guard-stages`, which still reads `status` from the working tree (25e moves it to the default branch, as AC-2 does here); the stop check and the trigger (25d).
 
 ## APIs and assumptions
 

@@ -6,6 +6,12 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Removed
 
+- **The tier check and the approvals job's review check** (#236; rewrite plan 25e; the maintainer's answers to the verify inventory). `rfr-process` 2.1.0.
+  - **Tier.** `process / tier` no longer infers a tier or reads `tier:` labels. The change check already holds a source change to a `Change: fix` or `Change: trivial` claim in a commit message. The advisory mutation job now runs on feature pull requests, by the change job's new `kind` output. Project-process AC-10, AC-27, AC-39 and AC-54 are retired, and AC-24 is amended.
+  - **Approvals.** `process / approvals` no longer checks the approver's review of `approve` stages, which branch protection requires under the GitHub gate, or audits solo-mode merges. That check was the red mark on every gated pull request. It still requires the recorded review for `agent` stages, on the pull request and after the merge, and still opens the decision-queue issue for `notify` stages. Project-process AC-5, AC-6 and AC-47 are retired, and AC-56 is amended.
+
+  Adopters: remove `process / tier` from your required checks. Until 8.0.0 the job remains as a stub that passes, so a repository that still requires it is not blocked. Delete any `tier:` labels if you like. Nothing else to do.
+
 - **In-session approval** (rewrite plan 25e). With the GitHub gate, the approver's review in GitHub is the approval, so nothing is approved from chat any more:
   - task approval and its copies in rfr-web and rfr-process, with its specs retired to `docs/specs/retired/`;
   - rfr-process's merge guard (`guard-merge`), and project-process AC-7, AC-52, AC-53, and AC-58;

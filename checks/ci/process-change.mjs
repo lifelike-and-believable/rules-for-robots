@@ -14,9 +14,24 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { CONFIG_PATH, hasId, loadArtifacts, parseArtifact, readConfig, workingTree } from '../lib/process.mjs';
 import { isTestOrBaseline } from '../lib/test-paths.mjs';
-import { matchGlob } from './process-tier.mjs';
 
 const NOT_SOURCE = ['docs/', '.github/', '.claude/', '.rfr/'];
+
+// A glob from process.yml's publicApi: ** across folders, * and ? within one. Moved here from the
+// tier check when that was retired (rewrite plan 25e).
+export function matchGlob(glob, file) {
+  let re = '';
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === '*' && glob[i + 1] === '*') {
+      i++;
+      if (glob[i + 1] === '/') { i++; re += '(?:.*/)?'; } else re += '.*';
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^${re}$`).test(file);
+}
 const KINDS = ['fix', 'trivial'];
 
 export function isSource(file) {
@@ -121,6 +136,8 @@ function main(argv) {
   const { BASE_SHA: base, HEAD_SHA: head } = process.env;
   if (!base || !head) { console.error('BASE_SHA and HEAD_SHA are required'); process.exit(1); }
   const r = checkChange(readChange(root, base, head));
+  // The kind is a job output: the advisory mutation job runs on feature pull requests.
+  if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `kind=${r.kind}\n`);
   for (const w of r.warnings) console.log(`::warning::${w}`);
   for (const p of r.problems) console.error(`::error::${p}`);
   if (!r.ok) process.exit(1);
