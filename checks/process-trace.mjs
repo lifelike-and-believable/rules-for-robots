@@ -204,7 +204,9 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
 
     // An approved tutorial ships with the documentation that ships (lasting-tutorials AC-9): some
     // approved user documentation page must link to its file. A draft tutorial is not checked.
-    if (a.stage === 'tutorials' && isApproved(a)) {
+    // One that derives from no user documentation (the stage is waived, or its design is marked
+    // no-user-docs) has none to be linked from.
+    if (a.stage === 'tutorials' && isApproved(a) && (a.links ?? []).some(l => byId.get(l.target)?.stage === 'user-docs')) {
       const file = a.file.replace(/\\/g, '/');
       const linked = artifacts.some(u => u.stage === 'user-docs' && isApproved(u) && u.file.replace(/\\/g, '/').startsWith('docs/user/')
         && markdownLinks(u.body ?? '', u.file, u.bodyLine).some(l => l.target === file));

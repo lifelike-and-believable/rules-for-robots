@@ -94,7 +94,8 @@ const sectionOf = (body, name) => new RegExp(String.raw`^##\s+${name}\s*\n([\s\S
 
 export function bodyProblems(body, runner) {
   const out = [];
-  if (/\blocalhost\b|\b127\.0\.0\.1\b|\[::1\]/i.test(body)) out.push('names a machine (localhost or a loopback address); name pages by path, such as `/dashboard`, because the reader opens the product wherever it runs');
+  // "localhost" as a host, not as part of a longer name in a path (`/docs/localhost-setup`).
+  if (/(?<![-\w])localhost(?![-\w])|\b127(?:\.\d{1,3}){3}\b|\b0\.0\.0\.0\b|\[::1\]/i.test(body)) out.push('names a machine (localhost or a loopback address); name pages by path, such as `/dashboard`, because the reader opens the product wherever it runs');
   const { steps } = parseSteps(body);
   for (const step of steps) {
     for (const a of step.actions ?? []) {
@@ -107,7 +108,9 @@ export function bodyProblems(body, runner) {
       const section = sectionOf(body, name);
       if (/^\s*(?:```|~~~)/m.test(section)) out.push(`"${name}" has a fenced code block; a tutorial names no command, so move how to start or build the product out of it`);
       const prose = section.replace(/^\s*(```|~~~)[\s\S]*?^\s*\1.*$/gm, '');
-      const cmd = [...prose.matchAll(/`([^`\n]+)`/g)].map(m => m[1].trim()).find(c => SHELL_RUNNER.test(c));
+      // What a step types, chooses, or opens is the reader's input, whatever word it starts with.
+      const outside = prose.replace(/\b(?:Type|Choose|Open)\s+`[^`\n]+`/g, '');
+      const cmd = [...outside.matchAll(/`([^`\n]+)`/g)].map(m => m[1].trim()).find(c => SHELL_RUNNER.test(c));
       if (cmd) out.push(`"${name}" has a shell command (\`${cmd}\`); a tutorial names no command, so move how to start or build the product out of it`);
     }
   }
