@@ -34,10 +34,12 @@ The trials of phase 25a showed the way out on a real repository ([trial 1](../..
 | AC-6 | The `setup` skill has a step that runs the script, first without `--apply` to show the plan, and names the three manual steps. The "Development process" section it writes into `AGENTS.md` says that agents push branches and do not open, approve, or merge pull requests where the gate is set up. | test: the skill names the script, `--apply`, the template, the secret, and the agent rule. |
 | AC-7 | `docs/adoption-guide.md` has a section on the gate: what it is for, the manual steps in order, the command, choosing auto mode (which a project cannot set), and the plan limit. | review: the guide. |
 | AC-8 | Branch protection is set so that a new push dismisses an earlier approval. What an agent pushes after the approver has reviewed, in answer to a review or otherwise, cannot merge until they approve again. A repository set up before this, or with the setting off, gets it in the plan. (Added 2026-11-12: without it an approval stood across later pushes, so commits the approver never saw could merge; trial 1 had listed this as not tested.) | test: no protection, the setting off, the setting absent, and the setting on. |
+| AC-9 | rfr-core refuses an agent approving a pull request, whatever the session was told: `gh pr review` with `--approve` or `-a`, a request to a pull request's reviews endpoint or the GraphQL review mutations with the `APPROVE` event, a review sent from a file with `gh api --input`, and a GitHub MCP review tool called with `event: APPROVE`. The refusal comes before task approval, so no instruction allows it, and its reason gives the next step: tell the approver once, with the review link and the line they run themselves. A review that comments or requests changes, and the approve line quoted as text, are not refused. (Added 2026-11-12, rewrite plan 25e: the session holds the approver's token, so it could otherwise give the approval in their name.) | test: each form refused, the forms allowed, the order against task approval, and the hook for MCP tools. |
 
 ## Scope
 
 - In: `plugins/process/templates/workflows/rfr-open-pr.yml`; `checks/process-github-setup.mjs` and its tests; the `setup` skill; `docs/adoption-guide.md`; the plugin's README and version.
+- In (25e): the refusal in AC-9, in rfr-core's `guard-commands` and a hook for the GitHub MCP tools.
 - Out: removing the merge guard, task approval, and the solo approvals job (25e); the stop check and the trigger (25d); the rule that a source change cites an approved spec (25c); private repositories on GitHub's free plan (rewrite plan D7).
 
 ## APIs and assumptions
@@ -45,10 +47,10 @@ The trials of phase 25a showed the way out on a real repository ([trial 1](../..
 - Confirmed in trial 1 on `lifelike-and-believable/rfr-trial`: an App with Contents and Pull requests read and write can open a pull request and turn on auto-merge; CI runs on a pull request opened with the App's token; with zero required approvals and code-owner review required, a pull request touching no owned path merges with no review and one touching an owned path waits for the owner.
 - GitHub REST endpoints used: `GET` and `PATCH /repos/{repo}`; `GET` and `PUT /repos/{repo}/branches/{branch}/protection`; `GET`, `POST`, and `PATCH /repos/{repo}/actions/variables`; `GET /repos/{repo}/actions/secrets/{name}`.
 - Assumption: `PUT` on branch protection replaces the whole object, so the script reads the current protection and sends it back with its changes. The test for AC-3 fixes the shape; the first run on a repository with existing protection confirms it.
-- The session holds the lead's token, so it could approve an App-authored pull request as the lead. Refusing that one action is 25e's, with the other guard changes.
+- The session holds the lead's token, so it could approve an App-authored pull request as the lead. AC-9 refuses that one action. A program the agent writes and runs could still call the API in a way the guard does not read; branch protection cannot tell that review from the lead's.
 
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25b.
-- Pull requests: #218, #230 (AC-8).
+- Pull requests: #218, #230 (AC-8), #233 (AC-9).
 - Not done in this slice: the guide's pass condition (a second repository set up from the guide alone), which needs the maintainer to install the App on it.
