@@ -376,7 +376,8 @@ export async function prepareWorkspace(testCase, arm) {
 // the main session to use it. Every other arm sends the case's prompts unchanged.
 export function armPrompts(arm, meta, prompts) {
   const plugin = arm === 'rules+hooks' || arm === 'rules+agents';
-  if (plugin && meta.skill) return prompts.map(p => `/rfr-core:${meta.skill} ${p}`);
+  // A skill named with its plugin (rfr-process:deliver) is used as it is; a bare name is rfr-core's.
+  if (plugin && meta.skill) return prompts.map(p => `/${meta.skill.includes(':') ? meta.skill : `rfr-core:${meta.skill}`} ${p}`);
   if (arm !== 'rules+agents' || !meta.agent) return prompts;
   return prompts.map(p => `Use the ${meta.agent} agent for this.\n\n${p}`);
 }
@@ -442,6 +443,8 @@ function runClaude({ dir, prompts: casePrompts, model, arm, meta, effort, adviso
     '--allowedTools', [...(meta.allowedTools ?? ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep']), ...(arm === 'rules+agents' ? ['Agent', 'Task'] : [])].join(','),
   ];
   args.push(...sessionFlags({ effort, advisor }));
+  // A case can run in a permission mode ("permissionMode": "auto" for a delivery run, rewrite plan D3).
+  if (meta.permissionMode) args.push('--permission-mode', meta.permissionMode);
   if (arm === 'rules+hooks' || arm === 'rules+agents') args.push(...pluginArgs(meta));
   if (multi) {
     return (async () => {
@@ -517,6 +520,8 @@ async function gradeRun(testCase, dir, run, arm) {
     tools: transcriptTools(run.events),
     finalText: finalText(run.events),
     turns: turnsOf(run.events),
+    // Every call Claude Code did not run: a permission the mode refused, or a hook's refusal.
+    permissionDenials: results.flatMap(r => r.permission_denials ?? []),
   };
   const graded = await grade(context);
   return {

@@ -59,16 +59,54 @@ export function commandWords(raw) {
   return words;
 }
 
+// The command substitutions the shell would run in a command line: $(...) and backquotes outside
+// single quotes and outside a heredoc whose delimiter is quoted (<<'EOF'), where they are only text.
+// A backquoted word in a quoted message (printf 'run `export` here') is not run (found by the
+// delegated eval, rewrite plan 25f).
+export function liveSubstitutions(command) {
+  const text = String(command).replace(/<<-?\s*(['"])(\w+)\1[^\n]*\n[\s\S]*?\n\s*\2[ \t]*(?=\n|$)/g, ' ');
+  const found = new Set();
+  let quote = null;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quote === "'") { if (c === "'") quote = null; continue; }
+    if (c === '\\') { i++; continue; }
+    if (c === '"') { quote = quote === '"' ? null : '"'; continue; }
+    if (c === "'" && quote !== '"') { quote = "'"; continue; }
+    if (c === '$' && text[i + 1] === '(') {
+      let depth = 0;
+      let j = i + 1;
+      for (; j < text.length; j++) {
+        if (text[j] === '(') depth++;
+        else if (text[j] === ')' && --depth === 0) break;
+      }
+      found.add(text.slice(i + 2, j));
+      i = j;
+    } else if (c === '`') {
+      const j = text.indexOf('`', i + 1);
+      if (j === -1) break;
+      found.add(text.slice(i + 1, j));
+      i = j;
+    }
+  }
+  return found;
+}
+
 // The command lines a simple command runs inside it, to be checked as lines of their own: a shell's
 // script (bash -c '...', pwsh -Command ...) and each command substitution ($(...) or backquotes).
-export function innerScripts(words) {
+// With the whole command line, a substitution counts only where the shell would run it.
+export function innerScripts(words, line = null) {
   const out = [];
   if (/^(bash|sh|zsh|dash|ksh|pwsh|powershell)(\.exe)?$/i.test(words[0] ?? '')) {
     const k = words.findIndex(w => /^(-c|-Command|-command|-EncodedCommand)$/.test(w));
     if (k !== -1) out.push(words[k + 1] ?? '');
   }
+  const live = line === null ? null : liveSubstitutions(line);
   for (const w of words) {
-    for (const m of w.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) out.push(m[1] ?? m[2] ?? '');
+    for (const m of w.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) {
+      const inner = m[1] ?? m[2] ?? '';
+      if (!live || live.has(inner)) out.push(inner);
+    }
   }
   return out;
 }

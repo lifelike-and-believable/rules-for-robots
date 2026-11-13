@@ -688,7 +688,7 @@ export function namedAsk(command, cwd, depth = 0) {
     let words = commandWords(raw);
     // A command a shell or a substitution runs is checked as a line of its own.
     if (depth < 3) {
-      for (const inner of innerScripts(words)) {
+      for (const inner of innerScripts(words, command)) {
         const found = namedAsk(inner, dir, depth + 1);
         if (found) return found;
       }

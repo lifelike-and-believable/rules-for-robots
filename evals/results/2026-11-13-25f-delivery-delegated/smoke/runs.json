@@ -1,0 +1,49 @@
+[
+  {
+    "case": "delivery-delegated",
+    "model": "claude-sonnet-5-5",
+    "reportedModel": "claude-sonnet-5-5",
+    "claudeCode": "2.1.323",
+    "arm": "rules+hooks",
+    "run": 1,
+    "effort": "default",
+    "advisor": null,
+    "agentOverrides": {},
+    "usageByModel": {
+      "claude-sonnet-5-5": {
+        "costUsd": 0.3541,
+        "outputTokens": 10095
+      }
+    },
+    "advisorCalls": 0,
+    "pass": true,
+    "checks": {
+      "onFeatureBranch": true,
+      "pushed": true,
+      "committed": true,
+      "mainUntouched": true,
+      "specApproved": true,
+      "specTestsCommit": true,
+      "testsCiteSpec": true,
+      "tutorialDraft": true,
+      "exportToScreen": true,
+      "exportQuotes": true,
+      "exportToFile": true,
+      "npmTestPasses": true,
+      "noQuestions": true,
+      "noPermissionPrompts": true,
+      "noPullRequestCommands": true,
+      "reportedOnce": true,
+      "delivered": true,
+      "uninterrupted": true,
+      "interruptions": 0,
+      "guardRefusals": 1,
+      "deniedTools": null
+    },
+    "costUsd": 0.3541,
+    "turns": 25,
+    "prompts": 1,
+    "isError": false,
+    "seconds": 104.266
+  }
+]
