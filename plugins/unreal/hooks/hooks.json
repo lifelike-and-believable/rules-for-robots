@@ -1,5 +1,5 @@
 {
-  "description": "rfr-unreal hooks: ask when an Unreal editor run's -ExecCmds list does not end with Quit (#56), and log whether each ask was approved (guard tiers AC-6).",
+  "description": "rfr-unreal hooks: refuse an Unreal editor run whose -ExecCmds list does not end with Quit (#56).",
   "hooks": {
     "PreToolUse": [
       {

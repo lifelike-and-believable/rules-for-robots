@@ -1,5 +1,5 @@
 {
-  "description": "rfr-core default hooks: allow the agent's working tools without a prompt (default allow; \"permissions\": \"ask\" in .claude/rfr.json turns it off); refuse an agent approving a pull request (github-gate AC-9); ask before destructive or outward commands (WA-003, PG-001), edits to existing tests (TEST-001), and edits outside the owned paths listed in AGENTS.md (#47); log whether each ask was approved (guard tiers AC-6); at the end of each turn, format the files edited in it with the project's own formatter. The Vercel MCP guard is in rfr-web and the Unreal editor check in rfr-unreal.",
+  "description": "rfr-core default hooks: refuse the never list (destructive or outward commands, WA-003 and PG-001) with what to do instead, and an agent approving a pull request (github-gate AC-9); check edits to existing tests (TEST-001) and edits outside the owned paths listed in AGENTS.md (#47); at the end of each turn, format the files edited in it with the project's own formatter. The hooks only refuse: whether Claude Code prompts for anything else is the session's permission mode. The Vercel MCP guard is in rfr-web and the Unreal editor check in rfr-unreal.",
   "hooks": {
     "PreToolUse": [
       {

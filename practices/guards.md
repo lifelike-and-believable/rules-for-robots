@@ -36,7 +36,7 @@ Claude Code's own prompts (protected paths such as `.claude`, `.git`, and `.mcp.
 | Production deploy, promotion, alias, or domain change | `guard-commands`, `guard-mcp` | `vercel-prod-cli`, `vercel-deploy-prod` |
 | Read a secret value | `guard-mcp` | `vercel-token`, `vercel-decrypted-env` |
 
-Publishing a release or pushing a tag is not on the list. A merge is not either: under the GitHub gate a workflow turns on auto-merge, and branch protection holds a pull request until its checks pass and, for gated process files, until the approver reviews it. GitHub MCP tools that delete, change settings or access, or publish a release are left to Claude Code's own prompt.
+An agent approving a pull request is refused as well (`guard-commands` and `guard-pr-approval`, [github-gate AC-9](../docs/specs/github-gate.md)), with the next step of giving the approver the review link; `test/refuse-pr-approval.test.mjs` covers it in place of corpus cases. Publishing a release or pushing a tag is not on the list. A merge is not either: under the GitHub gate a workflow turns on auto-merge, and branch protection holds a pull request until its checks pass and, for gated process files, until the approver reviews it. GitHub MCP tools that delete, change settings or access, or publish a release are left to Claude Code's own prompt.
 
 ## `guard-commands` (rfr-core; shell commands)
 

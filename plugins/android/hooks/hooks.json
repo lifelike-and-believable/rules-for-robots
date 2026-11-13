@@ -1,5 +1,5 @@
 {
-  "description": "rfr-android hooks: ask before an adb command changes a shared Android device, and nowhere else (docs/specs/android-plugin.md, AC-2), and log whether each ask was approved (guard tiers AC-6).",
+  "description": "rfr-android hooks: refuse an adb command that changes a shared Android device, and nowhere else (docs/specs/android-plugin.md, AC-2).",
   "hooks": {
     "PreToolUse": [
       {

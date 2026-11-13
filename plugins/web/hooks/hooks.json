@@ -1,5 +1,5 @@
 {
-  "description": "rfr-web hooks: ask before Vercel MCP tools that deploy, change settings, delete, purchase, or return secrets (NODE-002), and log whether each ask was approved (guard tiers AC-6).",
+  "description": "rfr-web hooks: refuse Vercel MCP tools that deploy to production, change settings, delete, purchase, or return secrets (NODE-002); reads and preview deployments go ahead.",
   "hooks": {
     "PreToolUse": [
       {
