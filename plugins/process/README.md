@@ -6,7 +6,7 @@ Install it from this marketplace with `/plugin install rfr-process@rules-for-rob
 
 Slices 11a to 11c, 11e, and 11g are in: templates for each artifact and each project type, links between artifacts, the CI checks, approvals, the change check, CODEOWNERS, issue sync, runnable and recorded tutorials, the `persona-walkthrough` agent, the `setup` and `bootstrap` skills, advisory docs-lint (Vale) and mutation (Stryker) jobs, a workflow that runs tutorials against preview deployments, and a guide to recommended tools and installing them safely. How to write each artifact and what each review checks is in the [guide](GUIDE.md), split by stage so an agent reads only the part for its work.
 
-Team mode, CODEOWNERS, per-stage approvers, and the Project board are built and tested, and no pilot has used them yet; they are marked below. Work on them waits until a team adopts the process (process plan P5). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
+Per-stage approvers and the Project board are built and tested, and no pilot has used them yet; they are marked below. There is one mode: the `mode: solo | team` field in `process.yml` is ignored since rewrite plan 25e (decision D5). Work on them waits until a team adopts the process (process plan P5). The spec template, release readiness, feedback triage, and the eval round follow in 11d.
 
 ## The process
 
@@ -82,13 +82,13 @@ Existing projects can set `adoption-until: <date>` in `process.yml`. Until that 
 
 ### How an artifact becomes approved
 
-An artifact is approved by the pull request that says so. That pull request sets the artifact's `status: approved` and records its link hashes (`node .rfr/checks/process-relink.mjs <id>`), and the stage's approver approves the pull request: in team mode with an approving review, in solo mode by merging it. Merging a pull request whose artifacts still say `draft` approves nothing: they stay drafts, and nothing can build on them.
+An artifact is approved by the pull request that says so. That pull request sets the artifact's `status: approved` and records its link hashes (`node .rfr/checks/process-relink.mjs <id>`), and the stage's approver approves the pull request with a review: approval is an approving review in GitHub, which the GitHub gate lets the approver give whoever opened the work. Merging a pull request whose artifacts still say `draft` approves nothing: they stay drafts, and nothing can build on them.
 
 So a design-stage pull request usually goes through two steps in the same pull request:
 1. Open it with the artifacts as `draft` while the approver reads and asks for changes.
 2. When the approver says they are ready, set them to `approved`, record the hashes, and push. The approver then merges (or approves) that commit.
 
-An agent writing the pull request may set `status: approved` in it; that is a proposal, and GitHub's review or merge is the approval. In solo mode, propose `approved` from the start, since the merge is the approval; keep `draft` for work that will not merge yet.
+An agent writing the pull request may set `status: approved` in it; that is a proposal, and the approver's review is the approval. Propose `approved` from the start; keep `draft` for work that will not merge yet.
 
 ### Approval under the GitHub gate
 

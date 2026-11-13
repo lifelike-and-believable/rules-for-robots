@@ -123,6 +123,8 @@ export function parseProcessConfig(text) {
   const { data, errors } = parseYamlSubset(text);
   const config = { mode: 'team', default: [], stages: {}, gates: {}, publicApi: [], adoptionUntil: null, project: null, waived: {} };
   for (const key of Object.keys(data)) if (!CONFIG_KEYS.has(key)) errors.push(`process.yml: unknown key "${key}"`);
+  // mode: solo | team is accepted and ignored since rewrite plan 25e (decision D5: one path). With the
+  // GitHub gate the approval is always the approver's review, so existing files keep working.
   if (data.mode !== undefined && data.mode !== null) {
     if (data.mode === 'team' || data.mode === 'solo') config.mode = data.mode;
     else errors.push(`process.yml: mode must be team or solo, not "${data.mode}"`);
