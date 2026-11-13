@@ -1,6 +1,6 @@
 ## What and why
 
-<!-- One logical change (GIT-001). What changed and why. -->
+<!-- One logical change (WA-004). What changed and why. -->
 
 ## Decisions
 
@@ -8,7 +8,7 @@
 
 ## Verification
 
-<!-- Paste the verify command's output, or say what you could not run (WA-001, WA-005). -->
+<!-- Paste the verify command's output, or say what you could not run (WA-001). -->
 
 ## Checklist
 

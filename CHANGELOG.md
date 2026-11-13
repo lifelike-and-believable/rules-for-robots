@@ -6,6 +6,18 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
+- **Core rules pruned from 22 to 12** (rewrite plan 25e, section 3; verify inventory slice g). Rules that are always on cost context in every session, so only those that change behaviour in their own right stay:
+  - **Kept:** WA-001, WA-002, WA-006, WA-012, SEC-001, SEC-003, TEST-001, TEST-003, and DOC-001.
+  - **Merged:**
+    - WA-009 into WA-003, now the run contract: decide, record in `## Decisions`, and continue, never asking during the run.
+    - TEST-002 into TEST-004: reproduce a bug with a failing test, within test-driven work.
+    - GIT-001 into WA-004: one logical change per commit and pull request.
+  - **Moved to agents:** CODE-001 to CODE-004 and WA-005 are checks in `code-reviewer`; SEC-002 and CODE-004 in `security-reviewer`; WA-007 in `tech-lead`'s planning, since no reviewer can see a session. Findings from these checks cite "no rule".
+  - **Pack rules that still asked the user now record the decision instead:** NODE-002, PG-001 (both name rfr-web's guards), NEXT-004 (visual baselines), and FAB-004 (warning suppressions).
+  - WA-003's file is now `WA-003-decide-record-and-continue.md`. `rfr-process` 2.3.1 (its setup skill cites WA-003).
+
+  Adopters: run `/rfr-core:install-rules` to take the new set, and delete the old copies of the removed rules from `.claude/rules/core/`: CODE-001 to CODE-004, GIT-001, SEC-002, TEST-002, WA-005, WA-007, WA-009, and `WA-003-ask-before-irreversible-or-out-of-scope-actions.md`. Update `rfr-process` to 2.3.1.
+
 - **The Vercel CLI and database checks move to rfr-web** (rewrite plan 25e, verify inventory slice f2). `rfr-web` 3.1.0. A new rfr-web hook, `guard-cli`, refuses on Bash and PowerShell what rfr-core's `guard-commands` refused before, with the same rules and the same reading of a command line:
   - `vercel --prod`, `promote`, `alias`, `domains`, `rollback`, a `redeploy` not marked preview, and `vercel env add/rm` (NODE-002);
   - `vercel remove`, `project rm`, `dns rm`, and `certs rm` (WA-003);

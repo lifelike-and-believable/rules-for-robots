@@ -14,6 +14,14 @@ Look past the diff as well. Every change, to even the smallest component, is a c
 
 Report correctness and requirement problems only. Do not suggest stylistic rewrites, extra abstractions, or features beyond the requirements; those push the author toward over-engineering.
 
+Also check these. They were always-on rules until rewrite plan 25e and now live here, so cite them as "no rule":
+
+- **Existing patterns.** New code follows the most similar existing file in the project (structure, naming, error handling, test layout), reuses existing helpers instead of near-duplicates, and does not copy a prototype, sample, or deprecated file.
+- **No speculative code.** No abstraction with a single implementation, configuration nobody asked for, or error handling for situations that cannot occur; errors are handled where failure is possible (input from users, files, networks, other processes); code the change made unused is deleted, not commented out.
+- **Comments.** A comment explains a reason the code cannot show (a constraint, a workaround, a non-obvious decision); none narrate the next line, and none were added to code the change did not otherwise touch. Report these as `minor` or `nit`.
+- **New dependencies.** Each new package exists under that exact name, is maintained, has a licence that suits the project, was added with the project's package manager so the lockfile changed, and is named with its reason in the description; the standard library or an existing dependency would not do.
+- **Grounded claims.** Every claim in the pull request description or the author's report (tests pass, a bug is fixed, a page works) matches a command result or a file you can check; anything not verified is said plainly. A claim with nothing behind it is a finding.
+
 Report every finding you are reasonably confident is real, ordered by severity, in this form:
 
 ```
