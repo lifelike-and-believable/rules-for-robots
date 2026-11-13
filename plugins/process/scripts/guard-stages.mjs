@@ -56,7 +56,12 @@ export function decideStage(input, root) {
   // design that says, with a reason, that what it covers needs no user documentation.
   if (stage === 'specs' && need === 'user-docs' && linked.some(a => a.stage === 'design' && approved(a) && typeof a.noUserDocs === 'string' && a.noUserDocs.length >= 10)) return null;
   const what = { design: 'a design', 'user-docs': 'user documentation', specs: 'a technical spec', tutorials: 'a tutorial' }[stage];
-  return `rfr-process (stage order): ${rel} is ${what}, and every stage is required in this project: it must derive from ${NAMES[need]}, linked in its derived-from, and none is. Write the ${need === 'user-docs' ? 'user documentation' : need} for these stories first, and get it approved, then link it here. A stage is skipped only when docs/product/process.yml waives it, with a reason, before the work starts; do not waive it yourself. Until then, carry on with work that does not depend on it.`;
+  // Inside a feature packet the stage before is in the same branch, and its approval is the
+  // approver's review of the packet (delivery-run AC-15).
+  const packet = stage === 'design' || stage === 'user-docs'
+    ? ` Inside a feature packet, where it is in this same branch, set its status: approved there, with its hashes, and link it; the approver's review of the pull request is the approval, and the default branch gets that status only through it.`
+    : '';
+  return `rfr-process (stage order): ${rel} is ${what}, and every stage is required in this project: it must derive from ${NAMES[need]}, linked in its derived-from, and none is. Write the ${need === 'user-docs' ? 'user documentation' : need} for these stories first, and get it approved, then link it here.${packet} A stage is skipped only when docs/product/process.yml waives it, with a reason, before the work starts; do not waive it yourself. Until then, carry on with work that does not depend on it.`;
 }
 
 async function main() {

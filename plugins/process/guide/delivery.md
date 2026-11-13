@@ -4,6 +4,14 @@ Part of the [rfr-process guide](../GUIDE.md).
 
 ## Delivery stages
 
+### Starting a delivery when a packet merges
+
+Once the approver's review merges a feature packet, the delivery runs without them: the spec, the tests, the implementation, and the tutorial, on one branch (the `deliver` skill, rules-for-robots `docs/specs/delivery-run.md`). Nothing has to be waiting for that merge. Set up a Claude Code routine on the repository, fired by GitHub whenever a pull request merges into the default branch, whose prompt is `/rfr-process:deliver` with no feature name. The skill runs `delivery.mjs open`, which lists the features whose user documentation is approved and which have no spec yet, and leaves out any whose spec is already on another branch; it delivers the first, or says in one line that none is open and stops. A delivery's own merge fires the routine again, which picks up the next open feature, so packets the approver has approved are built one after another.
+
+Create the routine once, in Claude Code (a session can do it with its routines tool when the lead asks): the repository as its source, a cloud environment that can run the project's checks, no connectors the delivery does not need, and the GitHub trigger on merged pull requests for that repository. A session that wrote a packet may also still be subscribed to its pull request; the run it starts and the routine's both check `delivery open` first, so a feature is not delivered twice once its spec is pushed.
+
+### What each stage holds
+
 These follow `rfr-core` and Phase 10: a spec whose criteria cite the stories and documentation sections they come from, tests written first and locked, implementation that makes them pass, and regression tests promoted from the stories and documentation. See [working with agents](../../../practices/working-with-agents.md) and [testing and code quality](../../../practices/testing-and-code-quality.md).
 
 Acceptance and end-to-end tests can be drafted as soon as the user documentation is approved. Write them against the documented behaviour, not the planned implementation.
