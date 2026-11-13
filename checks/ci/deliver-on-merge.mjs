@@ -18,6 +18,16 @@ import { openDeliveries } from '../../plugins/process/scripts/delivery.mjs';
 const API = 'https://api.anthropic.com';
 const API_VERSION = '2026-10-21';
 const ROUTINE_ID = /^trig_[A-Za-z0-9]+$/;
+// RFR_DELIVER_ROUTINE holds the routine's address as its page gives it to copy
+// (https://api.anthropic.com/v1/claude_code/routines/trig_.../fire) or the bare id. Only the id is
+// taken from it, and only from an address of exactly that shape on that host: the request is always
+// built from the constant host below, so no value can send the token anywhere else.
+const ROUTINE_ADDRESS = /^https:\/\/api\.anthropic\.com\/v1\/claude_code\/routines\/(trig_[A-Za-z0-9]+)(?:\/fire)?\/?$/;
+export function routineIdOf(value) {
+  const text = String(value ?? '').trim();
+  if (ROUTINE_ID.test(text)) return text;
+  return ROUTINE_ADDRESS.exec(text)?.[1] ?? null;
+}
 const TIMEOUT_MS = 30_000;
 // Ids from front matter can be any single-line text; only these are sent or printed.
 const PLAIN_ID = /^[A-Za-z0-9._-]{1,100}$/;
@@ -29,7 +39,7 @@ export const MARKER_MINUTES = 45;
 export const SETUP_STEPS = [
   "In Claude Code, create a routine on this repository whose prompt is /rfr-process:deliver with no feature name, with a cloud environment that can run the project's checks and no connectors the delivery does not need.",
   "In the routine's Edit dialog, add an API trigger and generate its token. The token is shown once.",
-  "Store the routine's id (it starts with trig_) as the repository variable RFR_DELIVER_ROUTINE. In the repository's settings, create an environment named rfr-deliver, limit its deployment branches to the default branch, and store the token there as the environment secret RFR_DELIVER_TOKEN, so that only a run on the default branch can read it.",
+  "Copy the routine's address from its API trigger and store it as the repository variable RFR_DELIVER_ROUTINE (the routine's id on its own, which starts with trig_, also works). In the repository's settings, create an environment named rfr-deliver, limit its deployment branches to the default branch, and store the token there as the environment secret RFR_DELIVER_TOKEN, so that only a run on the default branch can read it.",
 ];
 
 const TOKEN_REFUSED = "RFR_DELIVER_TOKEN does not look like a routine's token; generate one in the routine's Edit dialog and store it as the environment secret.";
@@ -76,7 +86,7 @@ function recentStart(last, feature, now) {
 function refusal(status, retryAfter, body) {
   const head = `The routines API refused the request to start a delivery (HTTP ${status}). No delivery was started.`;
   if (status === 401 || status === 403) return [head, "The token is wrong or has been revoked. Generate a new one in the routine's Edit dialog (its API trigger), store it as the environment secret RFR_DELIVER_TOKEN in the rfr-deliver environment, and re-run this job."];
-  if (status === 404) return [head, 'There is no such routine. Check that the repository variable RFR_DELIVER_ROUTINE holds the id shown with the routine\'s API trigger, and re-run this job.'];
+  if (status === 404) return [head, 'There is no such routine. Check that the repository variable RFR_DELIVER_ROUTINE holds the address or id shown with the routine\'s API trigger, and re-run this job.'];
   if (status === 429) {
     const wait = retryAfter && /^[\w ,:+-]{1,64}$/.test(retryAfter) ? ` The API asks to wait before trying again (Retry-After: ${retryAfter}).` : '';
     return [head, `The hourly limit for starting routines was reached.${wait} The next merge, or a re-run of this job, starts it.`];
@@ -101,8 +111,9 @@ export async function deliverOnMerge({ open, routine, token, fetch, last = null,
   }
   // The id goes into the request's path, so anything but a routine id is refused. The value is not
   // printed: a token stored in the wrong place would otherwise appear in the log.
-  if (!ROUTINE_ID.test(routine)) {
-    return finish(1, ['RFR_DELIVER_ROUTINE should hold the routine\'s id: trig_ followed by letters and digits, as shown with the routine\'s API trigger. Its value is not that, so no delivery was started. Correct the repository variable and re-run this job.']);
+  const id = routineIdOf(routine);
+  if (!id) {
+    return finish(1, ['RFR_DELIVER_ROUTINE should hold the routine\'s address as copied from its API trigger (https://api.anthropic.com/v1/claude_code/routines/trig_.../fire), or its id: trig_ followed by letters and digits. Its value is not that, so no delivery was started. Correct the repository variable and re-run this job.']);
   }
   const first = open[0];
   const feature = plain(first.stories).sort();
@@ -116,7 +127,7 @@ export async function deliverOnMerge({ open, routine, token, fetch, last = null,
   const text = `Deliver the open feature ${describe(first)}.`;
   let response;
   try {
-    response = await fetch(`${API}/v1/claude_code/routines/${routine}/fire`, {
+    response = await fetch(`${API}/v1/claude_code/routines/${id}/fire`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'anthropic-version': API_VERSION, 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
