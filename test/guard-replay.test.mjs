@@ -1,5 +1,6 @@
-// Guard tiers, slice 15d (docs/specs/guard-tiers.md, AC-8): the replay of recorded sessions through
-// rfr-core 3.1.1 and the tiered guards. Each test title cites the criterion it covers.
+// Guard replay (docs/specs/guard-tiers.md, AC-8): the replay of recorded sessions through rfr-core
+// 3.1.1 and the tiered guards. Each test title cites the criterion it covers. Was
+// guard-tiers-15d.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import YAML from 'yaml';
-import { checkCoverage } from '../checks/tutorial-run.mjs';
+import { checkCoverage } from '../../../checks/tutorial-run.mjs';
 
 // The first Python 3 that runs: `python3` (Linux, macOS, CI), then `python` and `py -3` (a python.org
 // install on Windows has no python3.exe, and the name falls through to the Microsoft Store stub, which

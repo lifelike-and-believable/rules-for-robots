@@ -100,6 +100,21 @@ All the `process-*` files above are locked by project-process: each is listed un
 
 ## Move: domain tests to their plugin's `test/` folder
 
+**Done for the test files and CI (slice f1, 2026-11-13).**
+
+- Moved into the plugins' `test/` folders: `android-guard` (now `plugins/android/test/guard-adb.test.mjs`), `feedback`, `feedback-area`, `unreal-tier1`, and `unreal-tutorial-demo`. Only their import paths changed. The feedback, android-plugin, and project-process specs name the plugin folder in `tests:`, so the trace and lock checks find them.
+- The guard files slice e left behind are split by behaviour:
+  - `hooks` became `guard-commands`, `guard-test-edits`, `format-on-edit`, and `guard-owned-paths` in `test/`, plus `plugins/web/test/guard-mcp.test.mjs` and `plugins/unreal/test/guard-unreal.test.mjs`.
+  - `rm-own-scratch` went into `guard-commands`.
+  - `guard-tiers-15b`, `15c`, and `15d` are now `guard-tiers`, `guard-snapshots`, and `guard-replay`. `guard-tiers` stays in `test/`: its corpus cases run every plugin's guard.
+- CI runs `checks/ci/verify-ci.mjs` in place of `npm run verify`, with these effects:
+  - A documents-only pull request runs no tests, and the Windows job is skipped.
+  - A plugin's tests run when anything they import, or any path they name, changes.
+  - The Unreal sample check runs when rfr-unreal, `checks/unreal/`, or `examples/unreal/` changes.
+  - A push to `main`, or a change to the test setup, runs everything.
+
+**Left for slice f2:** the PG-001 and production-deploy patterns, which leave `guard-commands.mjs` for an rfr-web hook, with their tests. Also the `mutation` and `tutorials` jobs, which run only for the profiles that use them. The first is a guard change, replayed against the maintainer's transcripts before it merges. The second changes what adopters' CI runs.
+
 | File | Plugin |
 |---|---|
 | `android-guard.test.mjs` | rfr-android |

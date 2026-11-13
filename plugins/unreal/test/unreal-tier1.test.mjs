@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { checkPlugin, unreflectedObjectPtrs } from '../checks/unreal/tier1.mjs';
+import { checkPlugin, unreflectedObjectPtrs } from '../../../checks/unreal/tier1.mjs';
 
 const SAMPLE = path.resolve('examples/unreal/RfrSample');
 const HOLDER = 'Lifelike & Believable Animation Design';
@@ -105,7 +105,7 @@ test('Target.cs files in the example project need BuildSettingsVersion.V6', () =
 });
 
 test('automation report summary uses index.json counts', async () => {
-  const { summarize } = await import('../checks/unreal/ci/read-automation-report.mjs');
+  const { summarize } = await import('../../../checks/unreal/ci/read-automation-report.mjs');
   assert.deepEqual(summarize({ succeeded: 2, succeededWithWarnings: 0, failed: 1, notRun: 0, tests: [{}, {}, {}] }),
     { succeeded: 2, succeededWithWarnings: 0, failed: 1, notRun: 0, total: 3 });
   assert.equal(summarize({ tests: [{ state: 'Success' }, { state: 'Fail' }] }).failed, 1);

@@ -1,5 +1,6 @@
 ---
 status: draft
+tests: [test, plugins/android/test]
 unlocks:
   - test/android-guard.test.mjs: AC-1 amended: it no longer expects guard-outcome hooks or its build copy, removed with the prompts it logged (rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome); the plugin, guard-adb, and the other copies are still checked
 ---

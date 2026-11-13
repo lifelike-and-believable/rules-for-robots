@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { androidSettings, decideAdb, shellVerdict } from '../plugins/android/scripts/guard-adb.mjs';
+import { androidSettings, decideAdb, shellVerdict } from '../scripts/guard-adb.mjs';
 
 const TV = '10.0.0.202:34447';
 const settings = { disposable: ['TESTDEV'], deviceScripts: ['scripts/device-setup.ps1'] };
