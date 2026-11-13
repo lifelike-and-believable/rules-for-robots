@@ -52,5 +52,5 @@ The trials of phase 25a showed the way out on a real repository ([trial 1](../..
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 25, slice 25b.
-- Pull requests: #218, #230 (AC-8).
+- Pull requests: #218, #230 (AC-8), #233 (AC-9).
 - Not done in this slice: the guide's pass condition (a second repository set up from the guide alone), which needs the maintainer to install the App on it.
