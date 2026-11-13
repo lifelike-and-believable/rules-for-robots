@@ -61,3 +61,10 @@ each control exactly as the user documentation will use it.>
 ## Accessibility
 
 - <Keyboard, screen reader, colour, and motion notes.>
+
+## Notes for delivery
+
+<!-- What the run that builds this must know and the documents do not say. Leave out if empty. -->
+
+- <A follow-up this packet could not make, or an order the work has to be built in.>
+- <A check only a person can do (a first-use test with someone new, a manual accessibility pass); the delivery lists it for the approver's validation.>

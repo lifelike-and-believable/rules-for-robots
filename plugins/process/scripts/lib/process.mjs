@@ -445,20 +445,42 @@ export function markdownLinks(body, file, firstLine = 1) {
 const approvedNow = a => (a.status === 'approved' || a.status === 'implemented') && !a.inBranch;
 const STAGE_WORDS = { stories: 'the story', design: 'the design', 'user-docs': 'the user documentation', specs: 'the spec', tutorials: 'the tutorial' };
 
+// A story's feature (AC-13): the story and the artifacts that reach it along the stage chain. An
+// artifact joins when it derives from a member of the stage it must derive from, or, for a spec or
+// tutorial, from a member design marked no-user-docs. A link to a member of another stage (a decision
+// note under docs/design that several features cite) does not bring an artifact in. Returns the
+// artifacts; `story` is an id or an artifact.
+export function featureFamily(artifacts, story, config) {
+  const waived = config?.waived ?? {};
+  const start = typeof story === 'string' ? artifacts.find(a => a.id === story) : story;
+  if (!start) return [];
+  const members = new Map([[start.id, start]]);
+  // Stages in chain order, so one pass sees each member before what derives from it.
+  for (const stage of ['design', 'user-docs', 'specs', 'tutorials']) {
+    if (waived[stage]) continue;
+    const need = requiredUpstream(stage, waived);
+    for (const a of artifacts) {
+      if (a.stage !== stage || !a.id || members.has(a.id)) continue;
+      const joins = (a.links ?? []).some(l => {
+        const t = members.get(l.target);
+        return t && (t.stage === need || (['specs', 'tutorials'].includes(stage) && t.stage === 'design' && typeof t.noUserDocs === 'string' && t.noUserDocs.length >= 10));
+      });
+      if (joins) members.set(a.id, a);
+    }
+  }
+  return [...members.values()];
+}
+
 // The first thing still to do for each story, in stage order (AC-1): { story, step, stage, files,
 // inBranch }, where step is approve, write, deliver, delivering, validate, or done. Artifacts
-// belong to a story when they derive from it, directly or through others.
+// belong to a story when they are in its feature (AC-13).
 export function featureSteps(artifacts, config) {
   const waived = config?.waived ?? {};
-  const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
-  const below = new Map([...byId.values()].map(a => [a, []]));
-  for (const a of byId.values()) for (const l of a.links ?? []) { const t = byId.get(l.target); if (t && t !== a) below.get(t).push(a); }
+  const withId = artifacts.filter(a => a.id);
   const steps = [];
-  for (const story of byId.values()) {
+  for (const story of withId) {
     if (story.stage !== 'stories') continue;
-    const seen = new Set([story]);
-    const queue = [story];
-    while (queue.length) for (const d of below.get(queue.shift())) if (!seen.has(d)) { seen.add(d); queue.push(d); }
+    const seen = new Set(featureFamily(withId, story, config));
     const at = stage => [...seen].filter(a => a.stage === stage);
     const make = (step, stage, items = []) => {
       const pending = items.filter(a => !approvedNow(a));
@@ -473,11 +495,33 @@ export function featureSteps(artifacts, config) {
       if (items.some(a => !approvedNow(a))) { found = make('approve', stage, items); break; }
     }
     if (found) { steps.push(found); continue; }
-    const tutorials = at('tutorials');
-    const specs = at('specs');
-    if (tutorials.length && tutorials.every(approvedNow)) steps.push(make('done', 'tutorials', tutorials));
-    else if (tutorials.length) steps.push(make('validate', 'tutorials', tutorials));
-    else steps.push(make(specs.length ? 'delivering' : 'deliver', 'specs', specs));
+    // Delivery is judged for each piece of what a spec derives from (AC-13): a story's feature often
+    // holds the user documentation of an earlier slice as well as a new one, and the new one is open
+    // while the earlier one is built. The earliest state wins: deliver, delivering, validate, done.
+    const need = requiredUpstream('specs', waived);
+    const units = need === 'stories' ? [story]
+      : at(need).concat(need === 'user-docs' ? at('design').filter(d => typeof d.noUserDocs === 'string' && d.noUserDocs.length >= 10) : []);
+    const from = (stage, unit) => at(stage).filter(a => (a.links ?? []).some(l => l.target === unit.id));
+    const ORDER = ['deliver', 'delivering', 'validate', 'done'];
+    const stateOf = unit => {
+      const specs = from('specs', unit);
+      // One tutorial covers everything its spec delivers: a tutorial that links any piece a spec of
+      // this one links counts for this one too, as the delivery run's own check accepts.
+      const group = new Set([unit.id, ...specs.flatMap(sp => (sp.links ?? []).map(l => l.target))]);
+      const tutorials = at('tutorials').filter(a => (a.links ?? []).some(l => group.has(l.target) && units.some(u => u.id === l.target)));
+      if (tutorials.length) return tutorials.every(approvedNow) ? { step: 'done', stage: 'tutorials', items: tutorials } : { step: 'validate', stage: 'tutorials', items: tutorials };
+      return specs.length ? { step: 'delivering', stage: 'specs', items: specs } : { step: 'deliver', stage: 'specs', items: [] };
+    };
+    // A design marked no-user-docs needs no tutorial, so once it has a spec it does not hold back a
+    // feature that also has user documentation; on its own it reads as before.
+    const all = units.map(u => ({ unit: u, ...stateOf(u) }));
+    const enabling = s => s.unit.stage === 'design' && s.step === 'delivering';
+    const states = all.some(s => !enabling(s)) ? all.filter(s => !enabling(s)) : all;
+    if (!states.length) { steps.push({ ...make('deliver', 'specs'), units: [] }); continue; }
+    const first = Math.min(...states.map(s => ORDER.indexOf(s.step)));
+    const at_ = states.filter(s => ORDER.indexOf(s.step) === first);
+    const items = [...new Set(at_.flatMap(s => s.items))];
+    steps.push({ ...make(ORDER[first], at_[0].stage, items), units: at_.map(s => s.unit.id).sort() });
   }
   return steps.sort((p, q) => p.story.localeCompare(q.story));
 }

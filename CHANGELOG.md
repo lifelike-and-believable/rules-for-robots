@@ -4,7 +4,16 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251.
+Pull requests: #251, #252.
+
+### Changed
+
+- **A merge starts the next delivery, and a packet hands the delivery everything it needs** (rewrite plan 25f, after the acceptance test's packet; delivery-run AC-13 to AC-15, process-state AC-13). `rfr-process` 2.5.0.
+  - `delivery.mjs open` lists the features whose delivery is open and not already under way on another branch. The `deliver` skill run with no name delivers the first, or says in one line that none is open, and pushes as soon as the spec is committed. The guide describes the Claude Code routine, fired by GitHub on each merge into the default branch, that runs it; the `setup` skill offers it.
+  - The guide's feature packet says to set the packet's artifacts `approved` in the packet's branch (the approver's review of the merge is the approval), to change existing user documentation the feature makes wrong in the same packet, and to write what the delivery must know, including checks only a person can do, under "Notes for delivery" in the design. The design template has that section; the `deliver` skill reads it and reports those checks for validation. The stage-order refusal for a design or user documentation says the same; what it refuses is unchanged.
+  - A story's feature now follows the stage chain, and delivery is judged for each user documentation. A decision note several features cite no longer joins their specs, and a slice that extends an earlier slice's design shows as open, not built. On XR Studio In A Box the process state had called slice 4 built and `delivery start` scoped its run to slices 1 to 3's specs.
+
+  Adopters: update `rfr-process` to 2.5.0. To have merges start deliveries, create the routine the guide describes. Packets written from now on add "Notes for delivery" to their designs.
 
 ### Fixed
 

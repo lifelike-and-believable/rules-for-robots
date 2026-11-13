@@ -12,6 +12,8 @@ A delivery run takes a feature from approved user documentation to a pushed bran
 
 "Deliver it", "finish it", and "finish slice 2" all mean the same thing: find out how far the feature has got, and pick it up from there. Do not assume it starts at the spec.
 
+**With no feature name**, as when the routine a merge fires runs this skill: run `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" open`. It lists the features whose delivery is open and not already under way on another branch. If it prints `No delivery is open.`, say so in one line and stop. Otherwise deliver the first feature it lists, using the first story id on its line as the name below. Deliver one feature; the merge of its pull request runs the routine again for the next.
+
 1. **Find where it stands.** `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" where <story id or spec file name>` prints the feature's stage and, once it has a spec, what its delivery still lacks. With no name it lists every feature; use that to turn what the lead called it ("slice 2") into a story or spec name.
 2. **If it is at an earlier stage, this is not a delivery.** A story, design, or user documentation that is still to be written: write that one stage from the plugin's template and the guide, push the branch, tell the lead once that it is waiting for their approval, with the review link, and stop. Do not start a run, and do not write the stages after it. If it is already written and waiting for the lead's approval, tell them once and stop.
 3. **Otherwise create the feature's branch** from the up-to-date default branch: `feature/<name>`, or the `claude/` branch the session was given.
@@ -23,7 +25,7 @@ Do only the steps on that list. Skip any step below that is already done and app
 
 One branch, a commit for each step, in this order:
 
-1. **The spec**, `docs/specs/<feature>.md`, from the plugin's spec template: an `id`, `derived-from` linking the approved user documentation it comes from, and acceptance criteria that each name their source section. Take every criterion from the approved documents. Where they do not say, do not invent behaviour: see "When something is open". Check the finished spec against those documents, then set `status: approved`.
+1. **The spec**, `docs/specs/<feature>.md`, from the plugin's spec template: an `id`, `derived-from` linking the approved user documentation it comes from, and acceptance criteria that each name their source section. Take every criterion from the approved documents, and read the "Notes for delivery" section of each design they derive from: what the packet's author left for this run. Where they do not say, do not invent behaviour: see "When something is open". Check the finished spec against those documents, then set `status: approved`. Push the branch as soon as the spec is committed, so that other sessions see this delivery under way and do not start it again.
 2. **The tests**, before any implementation, each citing its criterion (`<spec name>#AC-n`). Run them and see them fail for the right reason. Commit them on their own, and record that commit as the spec's `tests-commit`.
 3. **The implementation**, until the project's verify command passes. Change the code, not the tests.
 4. **The tutorial**, `docs/tutorials/<feature>.md`, deriving from the user documentation: the steps a person follows to try the feature. Run every step yourself against the built feature and record what happened. Leave it `status: draft`: the lead's approval of the tutorial is their validation, and it comes after they have followed it. A spec for work with nothing a user sees (its design says `no-user-docs`) needs no tutorial.
@@ -45,7 +47,7 @@ One branch, a commit for each step, in this order:
 
 ## When the run ends
 
-When everything is committed and pushed, the check asks you to report once. Tell the lead: what was built, anything in `docs/decisions/`, and how to review it. `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" gate` prints the review link and the line the lead can run to approve from the Claude Code prompt. Then stop.
+When everything is committed and pushed, the check asks you to report once. Tell the lead: what was built, anything in `docs/decisions/`, the checks only a person can do (from the designs' "Notes for delivery", such as a first-use test with someone new or a manual accessibility pass), which belong to their validation, and how to review it. `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" gate` prints the review link and the line the lead can run to approve from the Claude Code prompt. Then stop.
 
 Say plainly that the feature is built and not yet validated. The lead gives two approvals, and they mean different things:
 
