@@ -156,7 +156,21 @@ const describe = a => ({
 // The video file for a person's session: video.webm for the one unnamed session of a tutorial that
 // names nobody (as before people existed), video-<name>.webm for each named person ("Morgan Lee" is
 // video-morgan-lee.webm).
-const videoName = person => (person === null ? 'video.webm' : `video-${person.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '')}.webm`);
+// Names are cut to 60 characters, a name with no letter or digit is "person", and a second person
+// whose name comes to the same file gets -2, so no video overwrites another.
+export function videoNames(people) {
+  const names = new Map();
+  const used = new Set();
+  for (const person of people) {
+    if (person === null) { names.set(null, 'video.webm'); continue; }
+    const slug = person.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '') || 'person';
+    let file = `video-${slug}.webm`;
+    for (let n = 2; used.has(file); n += 1) file = `video-${slug}-${n}.webm`;
+    used.add(file);
+    names.set(person, file);
+  }
+  return names;
+}
 
 function loadPlaywright(root) {
   for (const from of [path.join(root, 'package.json'), fileURLToPath(import.meta.url)]) {
@@ -225,8 +239,10 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
         return same ? route.continue({ headers: { ...request.headers(), ...headers } }) : route.continue();
       });
     }
-    const session = { context, page: await context.newPage() };
+    // Registered before its page opens, so the context is closed with the others if that throws.
+    const session = { context, page: null };
     sessions.set(person, session);
+    session.page = await context.newPage();
     return session;
   };
   let opened = false;
@@ -276,15 +292,19 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
       end = { first: firstPerson, states };
     }
   } finally {
+    const files = videoNames(sessions.keys());
     for (const [person, { context, page }] of sessions) {
-      const video = out ? page.video() : null;
-      await context.close();
-      if (video) {
-        const target = path.join(out, videoName(person));
-        await video.saveAs(target);
-        await video.delete().catch(() => {});
-        artifacts.push(target);
-      }
+      // One session that cannot be closed or saved does not stop the others from closing.
+      try {
+        const video = out && page ? page.video() : null;
+        await context.close();
+        if (video) {
+          const target = path.join(out, files.get(person));
+          await video.saveAs(target);
+          await video.delete().catch(() => {});
+          artifacts.push(target);
+        }
+      } catch { /* the run's result stands; this session's video is missing */ }
     }
     if (own) await b.close();
   }
@@ -306,7 +326,8 @@ export async function runTutorials({ tutorials, baseUrl, root = process.cwd(), t
   const own = !browser;
   const b = browser ?? await loadPlaywright(root).chromium.launch();
   const run = async t => {
-    const key = t.id ?? t.file;
+    // Two tutorials with one id both run, each under its file (the process check reports the duplicate).
+    const key = t.id && byId.get(t.id) === t ? t.id : t.file;
     if (done.has(key)) return done.get(key);
     running.add(key);
     let r = null;

@@ -90,19 +90,36 @@ export function parseSteps(body) {
   const errors = [];
   if (!steps.length) errors.push('the "## Steps" section has no numbered steps');
   for (const step of steps) {
-    const at = `step ${step.n} ("${step.text}")`;
     const as = AS.exec(step.text);
-    const text = as ? step.text.slice(as[0].length) : step.text;
+    step.rest = as ? step.text.slice(as[0].length) : step.text;
     step.as = as ? as[1].trim() : null;
-    step.manual = /\(manual\)\s*$/i.test(text);
-    step.actions = step.manual ? [] : parseStep(text);
-    if (!as && (AS_BOLD.test(step.text) || AS_PLAIN.test(step.text))) {
+    step.manual = /\(manual\)\s*$/i.test(step.rest);
+    step.actions = step.manual ? [] : parseStep(step.rest);
+  }
+  // The people this tutorial uses: named by a well-formed "As **Name**:" or a sign-in sentence.
+  const people = new Set(steps.flatMap(s => [s.as, ...s.actions.filter(a => a.type === 'signin').map(a => a.name)]).filter(Boolean).map(n => n.toLowerCase()));
+  for (const step of steps) {
+    const at = `step ${step.n} ("${step.text}")`;
+    const text = step.rest;
+    delete step.rest;
+    // A step the runner can do nothing with gets the most specific message that fits. A near miss of
+    // the person forms is otherwise an error only when it names a person this tutorial uses: prose
+    // that ran before people existed ("As **bold** text shows, you see **Done**.") still runs.
+    const idle = !step.manual && !step.actions.length;
+    const named = /^as\s+\*\*([^*]+?)\*\*/i.exec(step.text)?.[1]?.trim().toLowerCase();
+    if (!step.as && ((AS_BOLD.test(step.text) && (idle || people.has(named))) || (AS_PLAIN.test(step.text) && idle))) {
       errors.push(`${at} names a person but not in the form "As **Name**: <step>"; write the name in bold, then a colon, then the step`);
       continue;
     }
-    if (AS_INSIDE.test(text)) errors.push(`${at} names a person after its start; "As **Name**:" goes only at the start of a step, so make it a step of its own`);
-    if (SIGN_IN_PLAIN.test(text)) errors.push(`${at} signs in without a name in bold; write "Sign in as **Name**."`);
-    else if (!step.manual && !step.actions.length) {
+    const inside = /(?:^|\s)as\s+\*\*([^*]+?)\*\*:/i.exec(text)?.[1]?.trim().toLowerCase();
+    // "... . As **Name**:" as a new sentence is the person form in the wrong place, whoever it names.
+    const sentence = /[.!?]\s+As\s+\*\*[^*]+?\*\*:/.test(text);
+    if (AS_INSIDE.test(text) && (idle || sentence || people.has(inside))) {
+      errors.push(`${at} names a person after its start; "As **Name**:" goes only at the start of a step, so make it a step of its own`);
+      continue;
+    }
+    if (idle && SIGN_IN_PLAIN.test(text)) errors.push(`${at} signs in without a name in bold; write "Sign in as **Name**."`);
+    else if (idle) {
       errors.push(`${at} has no action or check the runner can perform; write it as "Click **Name**", "Type \`text\` into **Label**", "You see **Text**", and so on, or end it with "(manual)"`);
     }
   }
@@ -123,7 +140,8 @@ export function parseSteps(body) {
 // its front matter. Read here with a small regular expression, as the runner reads "runner:".
 export function startsFromOf(text) {
   const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? '';
-  return /^starts-from:[ \t]*(.*?)\s*$/m.exec(front)?.[1] || null;
+  // null when the line is absent; '' when it is there and names nothing, which is a mistake to report.
+  return /^starts-from:[ \t]*(.*?)\s*$/m.exec(front)?.[1] ?? null;
 }
 
 // Problems with the starts-from names of a set of tutorials, given as [{ id, startsFrom }]: a name
@@ -133,6 +151,7 @@ export function startsFromProblems(tutorials) {
   const next = new Map(tutorials.filter(t => t.id).map(t => [t.id, t.startsFrom ?? null]));
   const out = [];
   for (const [id, target] of next) {
+    if (target === '') out.push({ id, message: `${id}: starts-from names no tutorial; give the id of the tutorial it starts from, or remove the line` });
     if (target && !next.has(target)) out.push({ id, message: `${id}: starts-from names ${target}, which is not the id of a tutorial` });
   }
   const reported = new Set();
