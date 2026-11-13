@@ -130,7 +130,7 @@ function analyse(artifacts) {
   return { byId, linkState, stale };
 }
 
-export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
+export function runProcessTrace(root, { base = null, now = new Date(), lasting = 'fail' } = {}) {
   const { config, artifacts, errors: loadErrors } = load(root);
   const errors = [...loadErrors];
   const warnings = [];
@@ -200,6 +200,16 @@ export function runProcessTrace(root, { base = null, now = new Date() } = {}) {
         if (artifactFiles.has(link.target) || !fs.existsSync(path.join(root, link.target))) continue;
         warnings.push(`${name}: ${a.file}:${link.line} links to ${link.target}, which is not a process artifact, so approving ${a.id} does not cover what it says; move the content into ${a.id}, or make the file an artifact (a discovery file, for example) and link its section in derived-from`);
       }
+    }
+
+    // An approved tutorial ships with the documentation that ships (lasting-tutorials AC-9): some
+    // approved user documentation page must link to its file. A draft tutorial is not checked.
+    if (a.stage === 'tutorials' && isApproved(a)) {
+      const file = a.file.replace(/\\/g, '/');
+      const linked = artifacts.some(u => u.stage === 'user-docs' && isApproved(u) && u.file.replace(/\\/g, '/').startsWith('docs/user/')
+        && markdownLinks(u.body ?? '', u.file, u.bodyLine).some(l => l.target === file));
+      // With lasting: 'warn' this is a warning, for tutorials written before the rule (AC-15).
+      if (!linked) (lasting === 'warn' ? warnings : problems).push(`${name}: no approved user documentation links to ${a.file}; add a "Try it" link to it in the page under docs/user/ that covers the task, so the tutorial ships with the documentation`);
     }
 
     if (a.stage === 'stories') {
@@ -349,7 +359,7 @@ function main(argv) {
     return;
   }
 
-  const r = runProcessTrace(root, { base });
+  const r = runProcessTrace(root, { base, lasting: process.env.RFR_LASTING_TUTORIALS === 'warn' ? 'warn' : 'fail' });
   if (!json) console.log(`Checked with rules-for-robots ${checkoutCommit()}.`);
   if (json) console.log(JSON.stringify(r, null, 2));
   for (const w of r.warnings) console.warn(`warning: ${w}`);

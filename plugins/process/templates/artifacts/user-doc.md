@@ -19,6 +19,8 @@ docs-<feature>#<heading-slug>. -->
 
 <What they see when it worked.>
 
+Try it: [<Tutorial title>](../tutorials/<tutorial-file>.md)
+
 ## If something goes wrong
 
 - <Message they might see, and what to do.>

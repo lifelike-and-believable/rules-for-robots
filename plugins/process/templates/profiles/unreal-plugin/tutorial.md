@@ -1,22 +1,25 @@
 ---
-id: tutorial-<feature>
+id: tutorial-<task>
 status: draft
 runner: unreal
 derived-from:
-  - docs-<feature>:
+  - docs-<user-doc-id>:
 ---
 
-# Tutorial: <what the reader will have made>
+# <task the reader does, as they would say it>
 
-<!-- docs/tutorials/<feature>.md. An automation or functional test in the sample project follows
-these steps and names tutorial-<feature> in a comment; the process check fails if no test cites it,
-and the Tier 2 workflow runs the test on the engine runner. Record a short walkthrough video from
-the same steps for the Fab listing. -->
+For **<persona>**.
+
+<!-- docs/tutorials/<task>.md. Named for the task and written for the persona; later work that changes the
+task edits this file. An automation or functional test in the sample project follows these steps and names
+tutorial-<task> in a comment; the process check fails if no test cites it, and the Tier 2 workflow runs the
+test on the engine runner. Record a short walkthrough video from the same steps for the Fab listing. A run's
+record goes with the run, never here. -->
 
 ## Before you start
 
 - Unreal Engine 5.6 or later, with the plugin enabled.
-- <Sample assets or project the reader needs.>
+- <Sample assets or the sample project the reader needs.>
 
 ## Steps
 

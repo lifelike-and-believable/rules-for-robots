@@ -1,23 +1,27 @@
 ---
-id: tutorial-<feature>
+id: tutorial-<task>
 status: draft
 derived-from:
-  - docs-<feature>:
+  - docs-<user-doc-id>:
 ---
 
-# Tutorial: <outcome>
+# <task the reader does, as they would say it>
 
-<!-- docs/tutorials/. Follows the user documentation step by step. Its runnable script cites
-tutorial-<feature> in a comment, so a tutorial that no longer matches the product fails. -->
+For **<persona>**.
+
+<!-- docs/tutorials/<task>.md. User documentation that runs: named for the task, not for a feature, slice,
+or spec, and written for the persona. Later work that changes the task edits this file; it does not add a
+tutorial for each slice. It names no machine and no build, so the same file is followed on a local build, a
+pull request's preview, and the deployed product. A run's record goes with the run, never here. A check only
+a person can do goes in the design's "Notes for delivery". -->
 
 ## Before you start
 
-- <What the reader needs.>
-- <For each server the tutorial uses: the command that starts it and the address to open, for example "Site: `npm run dev`, then http://localhost:4321; editor: `npm run studio`, then http://localhost:3333". A step that names a page names which server it is on.>
+- <What the reader needs in the product's terms only: an account, a role, or a finished earlier tutorial.>
 
 ## Steps
 
-<!-- A runner: manual tutorial is walked once by its author before the pull request is ready, or the pull request says it has not been. -->
+<!-- Steps name pages by path and controls by name. A runner: manual tutorial is walked once by its author before the pull request is ready, or the pull request says it has not been. -->
 
 1. <Step, with the expected result.>
 

@@ -17,7 +17,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { parseArtifact } from './lib/process.mjs';
-import { parseSteps } from './lib/tutorial.mjs';
+import { bodyProblems, parseSteps } from './lib/tutorial.mjs';
 
 const RUNNERS = new Set(['web', 'unreal', 'manual']);
 const TUTORIALS = 'docs/tutorials';
@@ -65,21 +65,32 @@ function citations(root, ids) {
   return found;
 }
 
-export function checkCoverage(root) {
+export function checkCoverage(root, { lasting = 'fail' } = {}) {
   const errors = [];
+  const warnings = [];
   const tutorials = listTutorials(root);
   for (const t of tutorials) {
     const name = t.id ?? t.file;
     if (!t.runner) { errors.push(`${name}: no runner in front matter (runner: web, unreal, or manual)`); continue; }
     if (!RUNNERS.has(t.runner)) { errors.push(`${name}: unknown runner "${t.runner}" (web, unreal, or manual)`); continue; }
     if (t.runner === 'web') for (const e of parseSteps(t.body).errors) errors.push(`${name}: ${e}`);
+    // What a lasting tutorial may not hold (lasting-tutorials AC-2). With lasting: 'warn' these are
+    // warnings, for a project whose tutorials were written before the rule (AC-15).
+    for (const p of bodyProblems(t.body, t.runner)) (lasting === 'warn' ? warnings : errors).push(`${name}: ${p}`);
+  }
+  // A tutorial named like a spec is probably a spec in the wrong place (AC-2): a warning only.
+  let specs = [];
+  try { specs = fs.readdirSync(path.join(root, 'docs/specs')).filter(f => f.endsWith('.md')); } catch { /* no specs */ }
+  for (const t of tutorials) {
+    const base = path.posix.basename(t.file, '.md');
+    if (specs.includes(`${base}.md`)) warnings.push(`${t.id ?? t.file}: ${t.file} has the same file name as the spec docs/specs/${base}.md; name a tutorial for the task the reader does, not for the feature it came from`);
   }
   const unreal = tutorials.filter(t => t.runner === 'unreal' && t.id);
   const cited = citations(root, unreal.map(t => t.id));
   for (const t of unreal) {
     if (!cited.has(t.id)) errors.push(`${t.id}: no automation test cites it; add a test that follows the tutorial and names ${t.id} in a comment`);
   }
-  return { errors, tutorials };
+  return { errors, warnings, tutorials };
 }
 
 // The first page can hit a cold deployment, so it, and the rest of the step that opens it, wait
@@ -226,7 +237,8 @@ async function main(argv) {
   const record = j === -1 ? null : path.resolve(args.splice(j, 2)[1]);
   const coverageOnly = args.includes('--coverage');
   const root = path.resolve(args.find(a => !a.startsWith('--')) ?? '.');
-  const { errors, tutorials } = checkCoverage(root);
+  const { errors, warnings, tutorials } = checkCoverage(root, { lasting: process.env.RFR_LASTING_TUTORIALS === 'warn' ? 'warn' : 'fail' });
+  for (const w of warnings) console.warn(`warning: ${w}`);
   for (const e of errors) console.error(e);
   if (errors.length) process.exit(1);
   const web = tutorials.filter(t => t.runner === 'web');

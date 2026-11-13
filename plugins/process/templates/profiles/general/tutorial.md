@@ -1,21 +1,24 @@
 ---
-id: tutorial-<feature>
+id: tutorial-<task>
 status: draft
 runner: manual
 derived-from:
-  - docs-<feature>:
+  - docs-<user-doc-id>:
 ---
 
-# Tutorial: <what the reader will have done>
+# <task the reader does, as they would say it>
 
-<!-- docs/tutorials/<feature>.md. No runner drives this kind of product yet, so a person follows the
-steps before release and records the result. Keep each step one action and one thing to see, so a
-runner can take it over later. If a test in the project follows these steps, name tutorial-<feature>
-in a comment there. -->
+For **<persona>**.
+
+<!-- docs/tutorials/<task>.md. Named for the task and written for the persona; later work that changes the
+task edits this file. No runner drives this kind of product yet, so a person follows the steps before
+release and records the result with the run, not here. Keep each step one action and one thing to see, so a
+runner can take it over later. If a test in the project follows these steps, name tutorial-<task> in a
+comment there. -->
 
 ## Before you start
 
-- <What the reader needs installed, connected, or set up.>
+- <What the reader needs in the product's terms: an account, a role, or a finished earlier tutorial.>
 
 ## Steps
 

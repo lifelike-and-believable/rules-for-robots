@@ -1,16 +1,19 @@
 ---
-id: tutorial-<feature>
+id: tutorial-<task>
 status: draft
 runner: web
 derived-from:
-  - docs-<feature>:
+  - docs-<user-doc-id>:
 ---
 
-# Tutorial: <what the visitor or editor will have done>
+# <task the visitor or editor does, as they would say it>
 
-<!-- docs/tutorials/<feature>.md. Runs in a browser against a preview build
-(node .rfr/checks/tutorial-run.mjs --base-url <preview url>). Use "Open `/path`", "Click **Name**",
-and "You see **Text**" sentences; end a step with (manual) if a person has to do it. -->
+For **<persona>**.
+
+<!-- docs/tutorials/<task>.md. Named for the task and written for the persona; later work that changes the
+task edits this file. Runs in a browser against a build or preview
+(node .rfr/checks/tutorial-run.mjs --base-url <url>), and names no machine and no build. Use "Open `/path`",
+"Click **Name**", and "You see **Text**" sentences; end a step with (manual) if a person has to do it. -->
 
 ## Steps
 

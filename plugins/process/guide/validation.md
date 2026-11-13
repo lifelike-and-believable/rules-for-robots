@@ -6,7 +6,13 @@ Part of the [rfr-process guide](../GUIDE.md).
 
 ### Tutorials and demos
 
-A tutorial follows the user documentation step by step to a result the persona cares about. It is the main expectation check: the approver follows it, and any gap between what users expect and what the product does shows up here, before production use.
+A tutorial is user documentation that runs. It follows the user documentation step by step to a result the persona cares about, and it is the main expectation check: the approver follows it, and any gap between what users expect and what the product does shows up here, before production use.
+
+- A tutorial is named for the task ("Give feedback and compare versions"), not for a feature, slice, or spec, and its file name says the same. It is written for the persona who does the task, and starts where that person starts, signed in to the product.
+- "Before you start" lists only what the product asks of the reader: an account, a role, or a finished earlier tutorial. Steps name pages by path and controls by name.
+- The same file is followed on a local build, a pull request's preview, and the deployed product, so it names no machine and no build: no address, no command that starts a server. How to get a place to try the product is described once for the project, outside the tutorials.
+- The record of a run goes with the run (the recording and the pull request's description), never in the tutorial. A check only a person can do goes in the design's "Notes for delivery", and from there to the lead's validation.
+- Later slices extend the tutorial for a task instead of adding one for each slice. A new tutorial is for a new task.
 
 Every tutorial names its runner in front matter:
 

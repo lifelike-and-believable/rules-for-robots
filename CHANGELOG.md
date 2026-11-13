@@ -4,9 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252.
+Pull requests: #251, #252, #255.
 
 ### Changed
+
+- **A tutorial is user documentation that runs** (Phase 27a; lasting-tutorials AC-1, AC-2, AC-7, AC-9, AC-15). `rfr-process` 2.6.0. From the maintainer's feedback on the 25f acceptance test: "Tutorials should survive the development process and be usable both during the development process and once the system is deployed."
+  - The tutorial templates, the guide, and the `deliver` skill describe a tutorial named for the task and written for the persona, which names no machine and no build, holds no run record, and is extended by later slices. For a web product the delivery writes it as `runner: web` with no second script.
+  - `tutorial-run --coverage` reports a tutorial that names `localhost` or a loopback address, opens the product by an absolute address, has a shell command or a fenced block in "Before you start" or "Steps" (web tutorials), or has a "Run record" heading; it warns when a tutorial has a spec's file name.
+  - The process check reports an approved tutorial that no approved user documentation links to. The user documentation template has a "Try it" line.
+  - The reusable process workflow has a `lasting-tutorials` input, `warn` by default, so these are warnings for now; the default becomes `fail` when Phase 27d is done.
+
+  Adopters: update `rfr-process` to 2.6.0. Nothing fails yet. To be ready: name tutorials for tasks, take set-up commands and run records out of them, and link each from its user documentation. Set `lasting-tutorials: fail` in the process workflow's caller to hold new tutorials to it now.
 
 - **A merge starts the next delivery, and a packet hands the delivery everything it needs** (rewrite plan 25f, after the acceptance test's packet; delivery-run AC-13 to AC-15, process-state AC-13). `rfr-process` 2.5.0.
   - `delivery.mjs open` lists the features whose delivery is open and not already under way on another branch. The `deliver` skill run with no name delivers the first, or says in one line that none is open, and pushes as soon as the spec is committed. The guide describes the Claude Code routine, fired by GitHub on each merge into the default branch, that runs it; the `setup` skill offers it.
