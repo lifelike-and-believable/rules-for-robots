@@ -6,10 +6,16 @@
 //   runner: unreal  an automation test follows it and cites its id in a comment (checked here,
 //                   run by the engine in Tier 2 CI);
 //   runner: manual  a person follows it before release.
+// A web tutorial can be done by several people, each in a browser session of their own ("As **Name**:"),
+// and can start where another tutorial ends ("starts-from: <id>" in front matter); see runTutorial
+// and runTutorials below (docs/specs/lasting-tutorials.md, AC-3 and AC-4).
 // Usage:
 //   node checks/tutorial-run.mjs [root] --coverage            check runners and step grammar only
 //   node checks/tutorial-run.mjs [root] --base-url <url>      also run every web tutorial
-//   ... --record <dir>   save a screenshot per step, failure.png, and video.webm per tutorial
+//   ... --record <dir>   save a screenshot per step, failure.png, and a video per tutorial (video.webm,
+//                        or video-<person>.webm for each person a tutorial names)
+//   ... --sign-in <path> the path that signs a session in as a named person, with {name} in it
+//                        (for example /try/sign-in?as={name}); without it, sign-in steps are manual
 // Playwright is loaded from the project being checked (its own dependency), so this script works
 // from an .rfr checkout.
 import fs from 'node:fs';
@@ -17,7 +23,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { parseArtifact } from './lib/process.mjs';
-import { bodyProblems, parseSteps } from './lib/tutorial.mjs';
+import { bodyProblems, parseSteps, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
 
 const RUNNERS = new Set(['web', 'unreal', 'manual']);
 const TUTORIALS = 'docs/tutorials';
@@ -40,7 +46,7 @@ function listTutorials(root) {
   return out.map(file => {
     const text = fs.readFileSync(path.join(root, file), 'utf8');
     const parsed = parseArtifact(text);
-    return { file, text, id: parsed.front?.id ?? null, runner: runnerOf(text), body: parsed.body };
+    return { file, text, id: parsed.front?.id ?? null, runner: runnerOf(text), startsFrom: startsFromOf(text), body: parsed.body };
   });
 }
 
@@ -85,6 +91,8 @@ export function checkCoverage(root, { lasting = 'fail' } = {}) {
     const base = path.posix.basename(t.file, '.md');
     if (specs.includes(`${base}.md`)) warnings.push(`${t.id ?? t.file}: ${t.file} has the same file name as the spec docs/specs/${base}.md; name a tutorial for the task the reader does, not for the feature it came from`);
   }
+  // starts-from names a tutorial, and the chain ends (AC-4), or the runner could not order them.
+  for (const p of startsFromProblems(tutorials)) errors.push(p.message);
   const unreal = tutorials.filter(t => t.runner === 'unreal' && t.id);
   const cited = citations(root, unreal.map(t => t.id));
   for (const t of unreal) {
@@ -101,6 +109,8 @@ const PROTECTED = 'the deployment is protected; give the runner its bypass token
 async function perform(page, action, timeout, baseUrl, first = false) {
   const exact = { exact: true };
   switch (action.type) {
+    // A sign-in opens the project's sign-in path for the person (runTutorial fills in action.path).
+    case 'signin':
     case 'goto': {
       const response = await page.goto(action.path, { timeout: first ? Math.max(timeout, FIRST_LOAD_TIMEOUT) : timeout });
       const status = response?.status();
@@ -140,7 +150,27 @@ const describe = a => ({
   uncheck: `uncheck "${a.label}"`,
   click: `find a button, link, tab, or text named "${a.label}"`,
   see: `see "${a.text}"`,
+  signin: `sign in as ${a.name} (open ${a.path})`,
 }[a.type]);
+
+// The video file for a person's session: video.webm for the one unnamed session of a tutorial that
+// names nobody (as before people existed), video-<name>.webm for each named person ("Morgan Lee" is
+// video-morgan-lee.webm).
+// Names are cut to 60 characters, a name with no letter or digit is "person", and a second person
+// whose name comes to the same file gets -2, so no video overwrites another.
+export function videoNames(people) {
+  const names = new Map();
+  const used = new Set();
+  for (const person of people) {
+    if (person === null) { names.set(null, 'video.webm'); continue; }
+    const slug = person.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '') || 'person';
+    let file = `video-${slug}.webm`;
+    for (let n = 2; used.has(file); n += 1) file = `video-${slug}-${n}.webm`;
+    used.add(file);
+    names.set(person, file);
+  }
+  return names;
+}
 
 function loadPlaywright(root) {
   for (const from of [path.join(root, 'package.json'), fileURLToPath(import.meta.url)]) {
@@ -149,12 +179,28 @@ function loadPlaywright(root) {
   throw new Error('playwright is not installed in this project; add it as a dev dependency to run web tutorials');
 }
 
-// Runs one web tutorial. Returns { ok, steps, failure: { step, text, message } | null, artifacts }.
-// With `record`, writes <record>/<tutorial id>/step-NN.png after each step, failure.png at a failing
-// step, and video.webm of the whole run, so a passing run is also the stage 12 demo.
+// Runs one web tutorial. Returns { ok, steps, failure: { step, text, message } | null, artifacts,
+// manual, end }.
+// With `record`, writes <record>/<tutorial id>/step-NN.png after each step (of the page of the person
+// who did it), failure.png at a failing step, and a video of each session (videoName above), so a
+// passing run is also the stage 12 demo.
 // `headers` are added only to requests to baseUrl's origin (for example a preview deployment's
 // protection bypass), so a page that loads other hosts never sends them the secret.
-export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout = 5000, browser = null, record = null, headers = null }) {
+//
+// People (lasting-tutorials AC-3). Each person gets a browser context of their own, created when
+// they first do a step and kept to the end of the tutorial, so what one person did reaches another
+// only through the product. Steps with no name are done by the tutorial's first person (parseSteps),
+// or, in a tutorial that names nobody, by the first person of the tutorial it starts from, or else
+// by one unnamed session. `signIn` is the project's sign-in path with {name} in it; a "Sign in as"
+// step opens it on the base URL in that person's session, with the name URL-encoded. Without it,
+// a step that signs in is manual: it is skipped like a "(manual)" step, and listed in `manual` as
+// { step, person }. A failing step stops the whole tutorial, whoever did it.
+//
+// Starting from another tutorial (AC-4). `from` is the `end` of the tutorial this one starts from:
+// { first, states }, its first person and each person's cookies and storage when it finished. Each
+// person here whose session ended there begins a fresh context with that saved state, so they are
+// still signed in. `end` is returned for passing runs only.
+export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout = 5000, browser = null, record = null, headers = null, signIn = null, from = null }) {
   const parsed = parseArtifact(text);
   const { steps, errors } = parseSteps(parsed.body);
   if (errors.length) return { ok: false, steps: steps.length, failure: { step: null, text: '', message: errors.join('\n') }, artifacts: [] };
@@ -169,31 +215,56 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
   const out = record ? path.join(record, parsed.front?.id ?? 'tutorial') : null;
   if (out) fs.mkdirSync(out, { recursive: true });
   const artifacts = [];
+  const manual = [];
   const own = !browser;
   const b = browser ?? await loadPlaywright(root).chromium.launch();
-  const context = await b.newContext({ baseURL: baseUrl, ...(viewport ? { viewport } : {}), ...(out ? { recordVideo: { dir: out, ...(viewport ? { size: viewport } : {}) } } : {}) });
-  if (headers && Object.keys(headers).length) {
-    const origin = new URL(baseUrl).origin;
-    await context.route('**/*', route => {
-      const request = route.request();
-      let same = false;
-      try { same = new URL(request.url()).origin === origin; } catch { /* data: and other non-URL requests */ }
-      return same ? route.continue({ headers: { ...request.headers(), ...headers } }) : route.continue();
+  // Who does the steps that name nobody: null is the single unnamed session.
+  const firstPerson = steps[0]?.person ?? from?.first ?? null;
+  const sessions = new Map(); // person (null for the unnamed session) -> { context, page }
+  const sessionFor = async person => {
+    if (sessions.has(person)) return sessions.get(person);
+    const state = from?.states?.get(person);
+    const context = await b.newContext({
+      baseURL: baseUrl,
+      ...(viewport ? { viewport } : {}),
+      ...(out ? { recordVideo: { dir: out, ...(viewport ? { size: viewport } : {}) } } : {}),
+      ...(state ? { storageState: state } : {}),
     });
-  }
-  const page = await context.newPage();
+    if (headers && Object.keys(headers).length) {
+      const origin = new URL(baseUrl).origin;
+      await context.route('**/*', route => {
+        const request = route.request();
+        let same = false;
+        try { same = new URL(request.url()).origin === origin; } catch { /* data: and other non-URL requests */ }
+        return same ? route.continue({ headers: { ...request.headers(), ...headers } }) : route.continue();
+      });
+    }
+    // Registered before its page opens, so the context is closed with the others if that throws.
+    const session = { context, page: null };
+    sessions.set(person, session);
+    session.page = await context.newPage();
+    return session;
+  };
   let opened = false;
   let cold = false;
   let result;
+  let end;
   try {
     run: {
       for (const step of steps) {
-        for (const action of step.actions) {
+        const person = step.person ?? firstPerson;
+        const { page } = await sessionFor(person);
+        // With no sign-in path, a step that signs in is a manual step (AC-3).
+        const signsIn = step.actions.some(a => a.type === 'signin');
+        if (signsIn && !signIn) manual.push({ step: step.n, person });
+        for (const written of signsIn && !signIn ? [] : step.actions) {
+          const action = written.type === 'signin' ? { ...written, path: signIn.replaceAll('{name}', encodeURIComponent(written.name)) } : written;
           try {
-            const first = action.type === 'goto' && !opened;
+            const opens = action.type === 'goto' || action.type === 'signin';
+            const first = opens && !opened;
             if (first) cold = true;
             await perform(page, action, cold ? Math.max(timeout, FIRST_LOAD_TIMEOUT) : timeout, baseUrl, first);
-            if (action.type === 'goto') opened = true;
+            if (opens) opened = true;
           } catch (e) {
             const why = (e.message ?? String(e)).split('\n')[0];
             let message = `step ${step.n} ("${step.text}"): could not ${describe(action)} (${why})`;
@@ -214,19 +285,83 @@ export async function runTutorial({ text, baseUrl, root = process.cwd(), timeout
         }
       }
       result = { ok: true, steps: steps.length, failure: null };
+      // What a tutorial that starts from this one begins with: the saved state of every person who
+      // had a session here or in the tutorials before it.
+      const states = new Map(from?.states ?? []);
+      for (const [person, { context }] of sessions) states.set(person, await context.storageState({ indexedDB: true }));
+      end = { first: firstPerson, states };
     }
   } finally {
-    const video = out ? page.video() : null;
-    await context.close();
-    if (video) {
-      const target = path.join(out, 'video.webm');
-      await video.saveAs(target);
-      await video.delete().catch(() => {});
-      artifacts.push(target);
+    const files = videoNames(sessions.keys());
+    for (const [person, { context, page }] of sessions) {
+      // One session that cannot be closed or saved does not stop the others from closing.
+      try {
+        const video = out && page ? page.video() : null;
+        await context.close();
+        if (video) {
+          const target = path.join(out, files.get(person));
+          await video.saveAs(target);
+          await video.delete().catch(() => {});
+          artifacts.push(target);
+        }
+      } catch { /* the run's result stands; this session's video is missing */ }
     }
     if (own) await b.close();
   }
-  return { ...result, artifacts };
+  return { ...result, artifacts, manual, ...(end ? { end } : {}) };
+}
+
+// Runs web tutorials, each after the tutorial it starts from (lasting-tutorials AC-4), and returns
+// one result for each, in the order they ran: { id, status: 'ok' | 'fail' | 'skip', reason, ... }.
+// A tutorial that several start from runs once. One whose starting tutorial failed, was skipped, or
+// cannot be run here (it is not a web tutorial) is skipped, with the reason. Each tutorial that
+// starts from another begins with that tutorial's people still signed in (runTutorial's `from`),
+// against whatever the product holds by then, which includes what earlier tutorials in the run did.
+// `report` is called with each result as it is known, so a long run prints as it goes.
+export async function runTutorials({ tutorials, baseUrl, root = process.cwd(), timeout, browser = null, record = null, headers = null, signIn = null, report = () => {} }) {
+  const byId = new Map(tutorials.filter(t => t.id).map(t => [t.id, t]));
+  const done = new Map();
+  const running = new Set();
+  const results = [];
+  const own = !browser;
+  const b = browser ?? await loadPlaywright(root).chromium.launch();
+  const run = async t => {
+    // Two tutorials with one id both run, each under its file (the process check reports the duplicate).
+    const key = t.id && byId.get(t.id) === t ? t.id : t.file;
+    if (done.has(key)) return done.get(key);
+    running.add(key);
+    let r = null;
+    let from = null;
+    if (t.startsFrom) {
+      const start = byId.get(t.startsFrom);
+      let why = null;
+      if (!start) why = 'is not a tutorial';
+      else if (start.runner !== 'web') why = `is runner: ${start.runner}, so the runner cannot reach the state it leaves`;
+      else if (running.has(start.id)) why = 'starts from it in turn';
+      else {
+        const before = await run(start);
+        if (before.status === 'fail') why = 'failed';
+        else if (before.status === 'skip') why = 'was skipped';
+        else from = before.end;
+      }
+      if (why) r = { id: key, status: 'skip', reason: `starts from ${t.startsFrom}, which ${why}` };
+    }
+    if (!r) {
+      const x = await runTutorial({ text: t.text, baseUrl, root, browser: b, record, headers, signIn, from, ...(timeout ? { timeout } : {}) });
+      r = { id: key, status: x.ok ? 'ok' : 'fail', ...x };
+    }
+    running.delete(key);
+    done.set(key, r);
+    results.push(r);
+    report(r);
+    return r;
+  };
+  try {
+    for (const t of tutorials.filter(x => x.runner === 'web')) await run(t);
+  } finally {
+    if (own) await b.close();
+  }
+  return results;
 }
 
 async function main(argv) {
@@ -235,6 +370,9 @@ async function main(argv) {
   const baseUrl = i === -1 ? null : args.splice(i, 2)[1];
   const j = args.indexOf('--record');
   const record = j === -1 ? null : path.resolve(args.splice(j, 2)[1]);
+  const k = args.indexOf('--sign-in');
+  const signIn = k === -1 ? null : args.splice(k, 2)[1] ?? '';
+  if (signIn !== null && !signIn.includes('{name}')) { console.error('--sign-in must contain {name}, for example /try/sign-in?as={name}'); process.exit(2); }
   const coverageOnly = args.includes('--coverage');
   const root = path.resolve(args.find(a => !a.startsWith('--')) ?? '.');
   const { errors, warnings, tutorials } = checkCoverage(root, { lasting: process.env.RFR_LASTING_TUTORIALS === 'warn' ? 'warn' : 'fail' });
@@ -251,17 +389,21 @@ async function main(argv) {
   const headers = sep > 0 ? { [raw.slice(0, sep).trim().toLowerCase()]: raw.slice(sep + 1).trim() } : null;
   const { chromium } = loadPlaywright(root);
   const browser = await chromium.launch();
-  let failed = 0;
+  const report = r => {
+    if (r.status === 'ok') console.log(`ok   ${r.id} (${r.steps} steps)`);
+    else if (r.status === 'fail') console.error(`FAIL ${r.id}: ${r.failure.message}`);
+    else console.error(`SKIP ${r.id}: not run, because it ${r.reason}`);
+    for (const m of r.manual ?? []) console.log(`note ${r.id}: step ${m.step} signs in as ${m.person} by hand: no --sign-in was given, so the runner skipped it`);
+  };
+  let results;
   try {
-    for (const t of web) {
-      const r = await runTutorial({ text: t.text, baseUrl, root, browser, record, headers });
-      if (r.ok) console.log(`ok   ${t.id} (${r.steps} steps)`);
-      else { failed++; console.error(`FAIL ${t.id}: ${r.failure.message}`); }
-    }
+    results = await runTutorials({ tutorials, baseUrl, root, browser, record, headers, signIn, report });
   } finally {
     await browser.close();
   }
-  if (failed) process.exit(1);
+  const skipped = results.filter(r => r.status === 'skip').length;
+  if (skipped) console.error(`${skipped} tutorial(s) skipped because a tutorial they start from did not pass.`);
+  if (skipped || results.some(r => r.status === 'fail')) process.exit(1);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2)).catch(e => { console.error(e.message); process.exit(1); });

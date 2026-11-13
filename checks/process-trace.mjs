@@ -10,7 +10,8 @@
 //      acceptance criteria (an error when approved, a warning when draft);
 //   6. a spec `test:` criterion whose Source cell names no approved story or user documentation
 //      section in the spec's derived-from;
-//   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry.
+//   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry;
+//   9. a tutorial whose starts-from is not a tutorial's id, or a cycle of starts-from.
 // It warns when a bold name in a user documentation page appears in no design the page reaches,
 // and prints the rules-for-robots commit it ran from.
 // Staleness is direct only. Before process.yml's adoption-until date, problems with artifacts that
@@ -21,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
 import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
@@ -277,6 +279,15 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
     state.set(a, 'done');
   };
   for (const a of byId.values()) if (!state.has(a)) visit(a, [a.id]);
+
+  // A tutorial's starts-from (lasting-tutorials AC-4) names another tutorial, and the chain ends.
+  // It is read from the file the same small way the runner reads it.
+  const tutorials = artifacts.filter(a => a.stage === 'tutorials' && a.id)
+    .map(a => ({ id: a.id, startsFrom: startsFromOf(fs.readFileSync(path.join(root, a.file), 'utf8')) }));
+  for (const p of startsFromProblems(tutorials)) {
+    errors.push(p.message);
+    if (p.id) involved.add(p.id);
+  }
 
   // Rule 7: withdrawals since the base.
   if (base) {
