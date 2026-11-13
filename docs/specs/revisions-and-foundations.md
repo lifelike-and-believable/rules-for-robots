@@ -4,7 +4,7 @@ status: draft
 
 # Revisions and shared foundations
 
-A project changes its mind after things are built: a new colour palette, a renamed role, a different navigation. This spec says how such a change is made once and carried through everything that depends on it. It has two parts. A **foundation** is one approved document for something many features share, with the design system as the first kind. A **revision packet** is the pull request that changes an approved document: it shows what the change reaches, deals with every document that cites it, and leaves the built features that are now behind as open deliveries. The lead approves the packet once; agents carry the rest. This is proposed as Phase 26 of `PLAN.md`, after the 25f acceptance test. Nothing here is built. The `status` field stays `draft` until every `test:` criterion has a citing test.
+A project changes its mind after things are built: a new colour palette, a renamed role, a different navigation. This spec says how such a change is made once and carried through everything that depends on it. It has two parts. A **foundation** is one approved document for something many features share, with the design system as the first kind. A **revision packet** is the pull request that changes an approved document: it shows what the change reaches, deals with every document that cites it, and leaves the built features that are now behind as open deliveries. The lead approves the packet once; agents carry the rest. This is proposed as Phase 26 of `PLAN.md`, after the 25f acceptance test. The maintainer approved its six decisions on 2026-11-13. Nothing here is built. The `status` field stays `draft` until every `test:` criterion has a citing test.
 
 ## Problem
 
@@ -66,7 +66,7 @@ It is optional. Setup and bootstrap ask the question in the batched interview, w
 
 ## Acceptance criteria
 
-Slices are in "Delivery". Criteria marked D are subject to the decision of that number below.
+Slices are in "Delivery". Criteria marked D rest on the decision of that number below.
 
 | # | Criterion | Verified by |
 |---|---|---|
@@ -87,9 +87,11 @@ Slices are in "Delivery". Criteria marked D are subject to the decision of that 
 | AC-15 | The `setup` and `bootstrap` skills ask about the design system in the batched interview with a proposed answer: for `unreal-plugin`, adopt the Unreal Editor's style; for `web-app` and `static-site`, adopt the component library the project already depends on, or define one; for `general`, none unless the project has screens. Adopt or define writes the foundation as a draft in the product brief. "None yet" writes nothing, and the skill says it can be added later as a revision. | test: both skills' text, and the three proposed answers. |
 | AC-16 | `checks/mockup-render.mjs` renders each mock-up HTML file under a design's folder to a PNG beside it and records, in `.rendered.json` in that folder, the hash of the HTML and of each local stylesheet it references. The process check fails a PNG whose recorded hash differs from the current one, or that has an HTML source and no record. A mock-up with no HTML source (a linked design tool, a hand-made image) is not checked. (D5) | test: a fresh render, a changed stylesheet, a PNG with no record, and an image with no HTML. |
 
-## Decisions for the maintainer
+## Decisions
 
-| # | Decision | Recommendation | The alternative, and what it costs |
+Approved by the maintainer on 2026-11-13, each as recommended: "I'm good with the decisions."
+
+| # | Decision | Decided | The alternative, and what it costs |
 |---|---|---|---|
 | D1 | Is a stale spec or tutorial a failure or open work? | Open work (AC-3 to AC-5). It is what lets a revision be approved as documents first. | Keep failing: every revision carries its code in the same pull request, or re-records specs it has not brought up to date, as happened on 2026-11-13. |
 | D2 | Must existing designs cite a design system introduced later? | Yes, all of them. The pull request that introduces it adds the link to each, which is mechanical and is one review. The rule then has no date in it. | Only designs written afterwards: older designs are never made stale by a style change, which is the gap this closes. |
