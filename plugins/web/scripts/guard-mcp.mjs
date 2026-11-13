@@ -1,11 +1,10 @@
 #!/usr/bin/env node
-// PreToolUse (Vercel MCP tools): ask before tools that deploy, change settings or
-// environment variables, decrypt, delete, or purchase (rule NODE-002). Read-only tools
-// pass through, except those that return credentials or decrypted environment variables,
-// and filter_project_envs when it is asked to decrypt.
+// PreToolUse (Vercel MCP tools): refuse tools that deploy to production, change settings or
+// environment variables, decrypt, delete, or purchase (rule NODE-002). Read-only tools and
+// preview deployments pass through, except reads that return credentials or decrypted
+// environment variables, and filter_project_envs when it is asked to decrypt.
 import { fileURLToPath } from 'node:url';
-import { approve, ask, askReason, guardSettings, readInput } from './lib.mjs';
-import { approval, mcpTask } from './task-approval.mjs';
+import { ask, askReason, readInput } from './lib.mjs';
 
 const READ_PREFIXES = ['get_', 'list_', 'search_', 'read_', 'count_', 'aggregate_', 'filter_', 'status', 'web_fetch', 'artifact_query'];
 // get_project_env and get_shared_env_var return decrypted values (Vercel's tool schemas:
@@ -48,24 +47,40 @@ export function vercelAskReason(toolName, toolInput) {
   return null;
 }
 
-// The decision for a Vercel MCP call: { decision: 'ask', reason }, { decision: 'allow', reason } for a
-// preview deployment the person's latest input asked for (docs/specs/task-approval.md), or null.
-export function decideVercel(input, { settings, describePr } = {}) {
-  const reason = vercelAskReason(input?.tool_name, input?.tool_input);
-  if (!reason) return null;
-  const cwd = input?.cwd ?? process.cwd();
-  if (input?.transcript_path && (settings ?? guardSettings(cwd)).taskApproval !== 'off') {
-    const approved = approval(mcpTask(input.tool_name, input.tool_input), { transcriptPath: input.transcript_path, cwd, ...(describePr ? { describePr } : {}) });
-    if (approved) return { decision: 'allow', reason: approved.reason.replace('rfr-core', 'rfr-web') };
+// A new preview deployment: what NODE-002 tells the agent to do instead of a production deploy, so it
+// goes ahead. Only a plain new deployment counts: no target, or target "preview"; no redeploy of an
+// existing deployment, no change to the project's settings, and no custom environment, any of which
+// can reach production. Anything the guard cannot read is not a preview.
+const PREVIEW_UNSAFE_KEYS = /^(deploymentid|projectsettings|customenvironmentslugorid|customenvironment|environment|production|prod|withlatestcommit)$/i;
+export function isPreviewDeploy(toolName, toolInput) {
+  if (typeof toolName !== 'string' || !/^mcp__.*vercel/i.test(toolName)) return false;
+  const action = toolName.slice(toolName.lastIndexOf('__') + 2).toLowerCase();
+  if (!/^(create_deployment|deploy(_to_vercel|_project)?)$/.test(action)) return false;
+  let input = toolInput ?? {};
+  if (typeof input === 'string') {
+    try { input = JSON.parse(input); } catch { return false; }
   }
-  return { decision: 'ask', reason };
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return false;
+  if (/--prod\b|"production"/i.test(JSON.stringify(input))) return false;
+  for (const [key, value] of Object.entries(input)) {
+    if (PREVIEW_UNSAFE_KEYS.test(key)) return false;
+    if (/^target$/i.test(key) && value !== 'preview') return false;
+  }
+  return true;
+}
+
+// The decision for a Vercel MCP call: { decision: 'ask', reason }, refused as a never-list action, or
+// null to let it run.
+export function decideVercel(input) {
+  if (isPreviewDeploy(input?.tool_name, input?.tool_input)) return null;
+  const reason = vercelAskReason(input?.tool_name, input?.tool_input);
+  return reason ? { decision: 'ask', reason } : null;
 }
 
 async function main() {
   const input = await readInput();
   const result = decideVercel(input);
-  if (result?.decision === 'allow') approve(result.reason);
-  else if (result) ask(result.reason);
+  if (result) ask(result.reason);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

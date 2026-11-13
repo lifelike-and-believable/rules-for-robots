@@ -4,6 +4,19 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Removed
+
+- **In-session approval** (rewrite plan 25e). With the GitHub gate, the approver's review in GitHub is the approval, so nothing is approved from chat any more:
+  - task approval and its copies in rfr-web and rfr-process, with its specs retired to `docs/specs/retired/`;
+  - rfr-process's merge guard (`guard-merge`), and project-process AC-7, AC-52, AC-53, and AC-58;
+  - rfr-core's default-allow hook (`allow-default`) and its `"permissions": "ask"` setting; its refusals of MCP tools are kept in a new refusal-only hook, `guard-mcp-tools`;
+  - the `merge-when-green` skill;
+  - `guard-outcome`, which logged the prompts that no longer happen.
+
+  rfr-core's guards now only refuse. Whether Claude Code prompts for the rest is the session's permission mode: run sessions in auto mode. Publishing a release or pushing a tag is no longer refused, since it is not on the never list. A Vercel preview deploy through MCP goes ahead without an instruction, as the CLI one already did, but only a plain new deployment: a redeploy, a settings change, a custom environment, or a production target is refused. Newly refused: pushing a tag or a glob to the default branch, `git push --branches`, `gh pr merge --admin`, a `gh api` change to branch protection or rulesets, and `gh release upload --clobber`. Versions: rfr-process 2.0.0, rfr-web 3.0.0, rfr-unreal 3.1.0, rfr-android 0.4.0; rfr-core's version goes up with the next release.
+
+  Adopters: remove `taskApproval` and `permissions` from `.claude/rfr.json` (they are ignored), and start sessions in auto mode. A project without the GitHub gate no longer has anything stopping an agent from merging a gated pull request: set up the gate (`docs/adoption-guide.md`).
+
 ### Added
 
 - **Agents do not approve pull requests** (#233; github-gate AC-9, rewrite plan 25e). rfr-core refuses `gh pr review --approve`, a review with the `APPROVE` event sent to the GitHub API (REST or GraphQL, by `gh api` or `curl`), and a GitHub MCP review tool called with `event: APPROVE`; the new `guard-pr-approval` hook covers the MCP tools. The refusal comes before task approval, so no instruction in chat allows it, and it tells the agent to give the approver the review link and the line they run themselves. Under the GitHub gate the approver's review is the approval, and the session holds the approver's token, so nothing else stopped an agent giving it in their name. Comments and requests for changes are not affected. rfr-core's version goes up with the next release. Adopters: nothing to do.

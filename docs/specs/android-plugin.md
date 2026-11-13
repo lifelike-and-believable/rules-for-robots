@@ -1,5 +1,7 @@
 ---
 status: draft
+unlocks:
+  - test/android-guard.test.mjs: AC-1 amended: it no longer expects guard-outcome hooks or its build copy, removed with the prompts it logged (rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome); the plugin, guard-adb, and the other copies are still checked
 ---
 
 # Android plugin and a core-only profile
@@ -73,7 +75,7 @@ With `--record <dir>`, the runner keeps a screenshot after each step and a `fail
 
 | ID | Criterion | Verification |
 |---|---|---|
-| AC-1 | `plugins/android/` is the `rfr-android` plugin, listed in the marketplace, with the `guard-adb` hook for Bash and PowerShell and its own `guard-outcome` hook. | test: the plugin validates; its hooks file registers both. |
+| AC-1 | `plugins/android/` is the `rfr-android` plugin, listed in the marketplace, with the `guard-adb` hook for Bash and PowerShell (amended 2026-11-12, rewrite plan 25e: guard-outcome was removed with the prompts it logged). | test: the plugin validates; its hooks file registers guard-adb. |
 | AC-2 | `guard-adb` decides each row of the device guard table: tier 1 for reads, connection commands, and user-interface input; an ask for each change, unknown `adb shell` command, unreadable command, and listed device script on a shared device; nothing on a disposable device. The ask names the device and the change and says what to do if not approved. | test: one guard corpus case per row on a shared and on a disposable device; the reason's wording. |
 | AC-3 | The target device is the one `-s` names, else `ANDROID_SERIAL` set in the same command, else the environment's; `emulator-NNNN` serials and serials listed under `android.disposable` are disposable; with no device named and more than one possible, a change asks. | test: each source of the serial, and the ambiguous case. |
 | AC-4 | `checks/tutorial-run.mjs` accepts `runner: adb`, checks the step grammar in its coverage mode, wakes the device before the first step, and runs an `adb` tutorial through the commands in the runner table only, recording a screenshot per step with `--record`. It reads the dump with the trailing "UI hierchary dumped to" line removed, and reports an empty dump as the screen being off or locked. | test: the grammar; a run against a fake `adb` that serves `uiautomator` dumps, passing and failing at the right step; the wake key first; the trailing line; an empty dump; every command it sent is tier 1 in `guard-adb`. |
@@ -93,7 +95,7 @@ With `--record <dir>`, the runner keeps a screenshot after each step and a `fail
 
 - `adb exec-out uiautomator dump /dev/tty` prints the view hierarchy as XML without writing a file on the device. Checked on the quiet-launcher reference device (Chromecast with Google TV, Android 14, API 34) on 2026-11-11, with the lead's agreement: while the screen was asleep it printed "null root node returned by UiTestAutomationBridge" and no XML; after `input keyevent KEYCODE_WAKEUP` it returned 75 nodes in about five seconds, each with `text`, `content-desc`, `resource-id`, `class`, `package`, `focusable`, `focused`, `selected`, and `bounds`, with exactly one focused node (a layout with a content description and no text), followed by the line "UI hierchary dumped to: /dev/tty". The dump itself was deleted after the check.
 - Key codes come from `android.view.KeyEvent` (`KEYCODE_WAKEUP` 224, `KEYCODE_HOME` 3, `KEYCODE_BACK` 4, `KEYCODE_DPAD_UP` 19 to `KEYCODE_DPAD_RIGHT` 22, `KEYCODE_DPAD_CENTER` 23, `KEYCODE_MENU` 82, `KEYCODE_SEARCH` 84, `KEYCODE_MEDIA_PLAY` 126, `KEYCODE_MEDIA_PAUSE` 127).
-- A plugin's hooks cannot import from another plugin, so `rfr-android` gets build copies of `lib.mjs` and `guard-outcome.mjs`, as `rfr-web` and `rfr-unreal` do.
+- A plugin's hooks cannot import from another plugin, so `rfr-android` gets a build copy of `lib.mjs`, as `rfr-web` and `rfr-unreal` do.
 
 ## Delivery
 

@@ -7,7 +7,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { runApprovals } from '../checks/ci/process-approvals.mjs';
-import { decideMerge } from '../plugins/process/scripts/guard-merge.mjs';
 
 const CONFIG = 'mode: team\ndefault: [lead]\nstages:\n  specs: [spec-lead]\n';
 const PLAIN = '---\nstatus: draft\n---\n\n# Plain spec\n';
@@ -42,10 +41,4 @@ test('project-process#AC-5: with spec approvers configured, a plain spec change 
   const r = await runApprovals({ root, env, fetch, log: () => {} });
   assert.equal(r.ok, true, r.problems.join('\n'));
   assert.deepEqual(calls, []);
-});
-
-test('project-process#AC-7: with spec approvers configured, merging a plain spec change is allowed', () => {
-  const root = project();
-  const input = { tool_name: 'Bash', tool_input: { command: 'gh pr merge 3' } };
-  assert.equal(decideMerge({ input, root, listFiles: () => ['docs/specs/plain.md'] }).ask, false);
 });

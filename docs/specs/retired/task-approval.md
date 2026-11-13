@@ -4,6 +4,8 @@ status: implemented
 
 # Task approval
 
+> Retired on 2026-11-12 by [rewrite plan 25e](../../rewrite-plan.md): approval is a review in GitHub ([github-gate](../github-gate.md)), and nothing is approved from chat. Kept as a record; its tests and code are removed.
+
 The person approves tasks, not commands. When the person's latest input in the session asks for a task (a release, a push to a named branch, a merge, a preview deploy), the guards approve the commands that carry out that task, so Claude Code does not prompt for each one. Everything else still prompts or asks as before. Proposed 2026-11-11 by the maintainer, who found long sessions here prompting for routine commands after the task had been approved in chat. The maintainer answered the open questions the same day (see "Decisions"), and the slice that implements it followed (#192).
 
 ## Problem

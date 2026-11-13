@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Fake gh for the merge-when-green and decisions smoke tests. Reads the scenario from .git/fake-gh.json in
+// Fake gh for the decisions smoke tests. Reads the scenario from .git/fake-gh.json in
 // the current repository, logs every call to .git/gh-calls.log, and answers the pull request
 // commands the skill uses: pr checks, pr view --json, pr merge, run view --log-failed, and run
 // list, and for the decision queue issue list, issue comment, issue close, and label create. Waiting commands (pr checks --watch, run watch) are logged and refused, as the skill
