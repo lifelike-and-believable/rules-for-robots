@@ -366,7 +366,7 @@ test('delivery-run#AC-17: the job reads the token from the rfr-deliver environme
   assert.match(header, /environment named `rfr-deliver`/);
   assert.match(header, /deployment branches to the default branch/);
   assert.match(header, /environment secret RFR_DELIVER_TOKEN/);
-  assert.match(header, /repository variable RFR_DELIVER_ROUTINE/);
+  assert.match(header, /environment secret RFR_DELIVER_ROUTINE/);
   assert.ok(!/repository secret/i.test(text));
   assert.match(SETUP_STEPS[2], /environment named rfr-deliver/);
   assert.match(SETUP_STEPS[2], /environment secret RFR_DELIVER_TOKEN/);
@@ -399,7 +399,8 @@ test('delivery-run#AC-17: the workflow passes the id and token as environment va
   assert.equal(runs.length, 1);
   const [run] = runs;
   assert.match(run.run, /^node \.rfr\/checks\/ci\/deliver-on-merge\.mjs \. --marker \.rfr-deliver\/last\.json\s*$/);
-  assert.equal(run.env.RFR_DELIVER_ROUTINE, '${{ vars.RFR_DELIVER_ROUTINE }}');
+  // Both values are kept in the environment; a project that set the routine as a variable still works.
+  assert.equal(run.env.RFR_DELIVER_ROUTINE, '${{ secrets.RFR_DELIVER_ROUTINE || vars.RFR_DELIVER_ROUTINE }}');
   assert.equal(run.env.RFR_DELIVER_TOKEN, '${{ secrets.RFR_DELIVER_TOKEN }}');
   for (const s of runs) assert.ok(!s.run.includes('${{'), 'no expression text inside a script');
   for (const s of steps.filter(x => x !== run)) assert.ok(!JSON.stringify(s).includes('RFR_DELIVER_TOKEN'), 'only the one step sees the token');
@@ -419,7 +420,7 @@ test('delivery-run#AC-17: the guide says what the workflow does and the three st
   assert.match(section, /delivery's own merge/i);
   assert.match(section, /API trigger/);
   assert.match(section, /shown once/i);
-  assert.match(section, /repository variable `RFR_DELIVER_ROUTINE`/);
+  assert.match(section, /environment secret `RFR_DELIVER_ROUTINE`/);
   assert.match(section, /environment named `rfr-deliver`/);
   assert.match(section, /deployment branches to the default branch/);
   assert.match(section, /environment secret `RFR_DELIVER_TOKEN`/);
