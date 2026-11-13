@@ -38,6 +38,8 @@ Also note where the page would trigger one of the persona's listed frustrations,
 
 **For an architecture**, also report, as a finding, any external service the design names that the "Trying the product" section leaves out, and any service listed there with no stand-in locally or in a preview.
 
+**For a packet**, when it adds or changes user documentation, start each persona at the start page (`docs/user/README.md`), not at the page the packet changed. Report, as a finding, a task whose page the persona would not find within three selections, or would look for in another area.
+
 **For a decision note**, there are no steps to follow. Instead, for each persona, walk the tasks the decision affects (sharing a link, finding a page again, publishing a new item) under the chosen option, and ask the same four questions of each task. Also check each consequence the note lists against the persona's goals and frustrations, and note any consequence it does not list.
 
 **Report.** Mismatches first. Then findings, grouped by persona and ordered by severity within each group: `blocks` (they cannot finish the task), then `misleads` (they finish with the wrong result or belief), then `slows` (they finish, with effort). For each finding:
