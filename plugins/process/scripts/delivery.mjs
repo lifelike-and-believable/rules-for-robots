@@ -8,6 +8,8 @@
 //                                    folder). With a name, the run is for that feature's spec, which
 //                                    may already be on the default branch: it is finished from
 //                                    where it stands.
+//   node delivery.mjs open           The features whose delivery is open and not under way on
+//                                    another branch: what a merge-triggered run picks from.
 //   node delivery.mjs status         What the run still lacks.
 //   node delivery.mjs gate           The link to review this branch's pull request, and the approve line.
 //   node delivery.mjs                The Stop hook (reads the hook input on stdin).
@@ -17,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { defaultBranchRef, loadArtifacts, processNext, readConfig, renderNext, workingTree } from './lib/process.mjs';
+import { defaultBranchRef, featureFamily, loadArtifacts, parseArtifact, processNext, readConfig, renderNext, workingTree } from './lib/process.mjs';
 import { isTestOrBaseline } from './lib/test-paths.mjs';
 
 const MAX_BLOCKS = 3;
@@ -42,16 +44,10 @@ function clearMarker(root) { try { fs.rmSync(markerFile(root)); } catch { /* non
 const currentBranch = root => git(root, ['rev-parse', '--abbrev-ref', 'HEAD']);
 const specName = a => path.basename(a.file, '.md');
 
-// Everything that derives from an artifact, directly or through others.
-function downstream(artifacts, from) {
-  const withId = artifacts.filter(a => a.id);
-  const seen = new Set([from]);
-  const queue = [from];
-  while (queue.length) {
-    const at = queue.shift();
-    for (const a of withId) if (!seen.has(a) && a.links.some(l => l.target === at.id)) { seen.add(a); queue.push(a); }
-  }
-  return [...seen];
+// A story's feature: the artifacts that reach it along the stage chain (process-state AC-13), so a
+// decision note several features cite does not join their specs.
+function downstream(root, artifacts, from) {
+  return featureFamily(artifacts.filter(a => a.id), from, readConfig(root)?.config ?? {});
 }
 
 // The specs a name stands for (AC-9): a spec's file name or id, or a story's id, whose specs are
@@ -61,7 +57,7 @@ export function resolveSpecs(root, name) {
   const spec = artifacts.find(a => a.stage === 'specs' && (specName(a) === name || a.id === name));
   if (spec) return [specName(spec)];
   const story = artifacts.find(a => a.stage === 'stories' && a.id === name);
-  return story ? downstream(artifacts, story).filter(a => a.stage === 'specs').map(specName).sort() : [];
+  return story ? downstream(root, artifacts, story).filter(a => a.stage === 'specs').map(specName).sort() : [];
 }
 
 // The run's decisions file, named after its branch so that runs on different branches never write
@@ -139,7 +135,7 @@ function where(root, name) {
   const { artifacts } = loadArtifacts(workingTree(root));
   const specs = resolveSpecs(root, name);
   const stories = artifacts
-    .filter(a => a.stage === 'stories' && (a.id === name || downstream(artifacts, a).some(d => d.stage === 'specs' && specs.includes(specName(d)))))
+    .filter(a => a.stage === 'stories' && (a.id === name || downstream(root, artifacts, a).some(d => d.stage === 'specs' && specs.includes(specName(d)))))
     .map(a => a.id);
   const steps = next.steps.filter(s => stories.includes(s.story));
   if (!steps.length) return `nothing in the process is called ${name}: use a story id or a spec's file name (\`where\` with no name lists every feature)`;
@@ -149,6 +145,55 @@ function where(root, name) {
     out.push('', `Delivery of ${specs.join(', ')}: ${missing.length ? `still to do:\n${listed(missing)}` : 'nothing is missing.'}`);
   }
   return out.join('\n');
+}
+
+// The features whose delivery is open and not under way (AC-13). Open is the process state's
+// `deliver` step; stories that share user documentation are one feature. A feature is under way when
+// a branch on the origin remote, other than the default branch, adds or changes a spec that derives
+// from its story, design, or user documentation: the default branch does not show a delivery until
+// it merges. Returns [{ stories, docs }], in the process state's order.
+export function openDeliveries(root) {
+  git(root, ['fetch', '-q', '--prune', 'origin']);
+  const next = processNext(root);
+  if (!next) return [];
+  // Stories whose open work shares any user documentation are one feature: a packet's documents are
+  // delivered together.
+  let features = [];
+  for (const step of next.steps.filter(s => s.step === 'deliver')) {
+    const docs = step.units ?? [];
+    const overlapping = features.filter(f => f.docs.some(d => docs.includes(d)));
+    features = features.filter(f => !overlapping.includes(f));
+    features.push({
+      stories: [...overlapping.flatMap(f => f.stories), step.story].sort(),
+      docs: [...new Set([...overlapping.flatMap(f => f.docs), ...docs])].sort(),
+    });
+  }
+  if (!features.length) return [];
+  // The specs every other remote branch adds or changes. One of them puts a feature under way when it
+  // would join that feature along the stage chain (process-state AC-13), so an edit to another
+  // feature's spec that cites a shared decision note does not.
+  const ref = defaultBranchRef(root);
+  const branches = lines(git(root, ['for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin']))
+    .filter(b => b !== ref && b !== 'origin/HEAD' && b !== 'origin');
+  const elsewhere = [];
+  for (const branch of branches) {
+    const specs = lines(git(root, ['diff', '--name-only', `${ref ?? 'HEAD'}...${branch}`, '--', 'docs/specs'])).filter(f => f.endsWith('.md'));
+    for (const file of specs) {
+      const text = git(root, ['show', `${branch}:${file}`]);
+      const parsed = text ? parseArtifact(text) : null;
+      if (parsed?.front) elsewhere.push({ id: parsed.front.id ?? `${branch}:${file}`, stage: 'specs', status: parsed.front.status, file, links: parsed.links ?? [] });
+    }
+  }
+  // A spec on another branch that derives from the feature's open user documentation (or what stands
+  // in for it) is its delivery under way.
+  const underWay = f => elsewhere.some(spec => spec.links.some(l => f.docs.includes(l.target)));
+  return features.filter(f => !underWay(f));
+}
+
+function open(root) {
+  const features = openDeliveries(root);
+  if (!features.length) return 'No delivery is open.';
+  return features.map(f => `${f.stories.join(', ')}${f.docs.length ? ` (user documentation: ${f.docs.join(', ')})` : ''}`).join('\n');
 }
 
 function start(root, name) {
@@ -161,11 +206,12 @@ function start(root, name) {
   }
   let specs = [];
   if (name) {
-    specs = resolveSpecs(root, name);
-    // A story whose user documentation is approved and which has no spec yet is where a delivery
+    // A story whose delivery is open (approved user documentation with no spec) is where a delivery
     // starts: the run begins, and its first step is the spec (AC-9, amended in rewrite plan 25f after
-    // the delegated eval found every new delivery refused here).
-    const opens = !specs.length && processNext(root)?.steps.some(s => s.story === name && s.step === 'deliver');
+    // the delegated eval found every new delivery refused here). Its feature may also hold an earlier
+    // slice's built spec (process-state AC-13), which this run is not for.
+    const opens = processNext(root)?.steps.some(s => s.story === name && s.step === 'deliver');
+    specs = opens ? [] : resolveSpecs(root, name);
     if (!specs.length && !opens) {
       // Nothing to deliver yet: the feature is at an earlier stage, which is written and approved first.
       console.error(`${where(root, name)}\n\n${name} has no spec yet, so this is not a delivery run. Write the stage it is at, push the branch, and tell the lead once that it is waiting for their approval.`);
@@ -217,11 +263,12 @@ function stop(root) {
 
 async function main(argv) {
   const command = argv[0];
-  if (['where', 'start', 'status', 'gate'].includes(command)) {
+  if (['where', 'start', 'status', 'gate', 'open'].includes(command)) {
     const at = argv.indexOf('--root');
     const root = path.resolve(at === -1 ? process.env.CLAUDE_PROJECT_DIR ?? '.' : argv[at + 1]);
     const name = argv[1] && argv[1] !== '--root' ? argv[1] : null;
     if (command === 'gate') { console.log(gateFor(root)); return; }
+    if (command === 'open') { console.log(open(root)); return; }
     if (command === 'where') { console.log(where(root, name)); return; }
     process.exitCode = command === 'start' ? start(root, name) : status(root);
     return;

@@ -36,6 +36,15 @@ test('process-state#AC-13: a decision note two features cite does not join their
   assert.deepEqual(steps, { 'story-new': 'deliver', 'story-old': 'validate' });
 });
 
+test('process-state#AC-13: delivery is open while any of a feature\'s user documentation has no spec, even when earlier documentation is built', () => {
+  // A later slice extends the old feature's design: new user documentation derives from it and from
+  // the old story, beside the old user documentation that is built.
+  const extended = [...ARTIFACTS, art('user-old-more', 'user-docs', 'approved', ['design-old'])];
+  const [old] = featureSteps(extended, config).filter(s => s.story === 'story-old');
+  assert.equal(old.step, 'deliver');
+  assert.deepEqual(old.units, ['user-old-more']);
+});
+
 test('process-state#AC-13: a spec joins through a design marked no-user-docs', () => {
   const artifacts = [
     art('story-skel', 'stories', 'approved'),
@@ -70,9 +79,26 @@ test('process-state#AC-13: the delivery commands scope a story to its own featur
   git('remote', 'add', 'origin', path.join(base, 'remote.git')); git('push', '-q', '-u', 'origin', 'main');
   const run = (...args) => spawnSync(process.execPath, [path.resolve('plugins/process/scripts/delivery.mjs'), ...args], { cwd: root, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: root } });
   assert.match(run('open').stdout, /^story-new \(user documentation: user-new\)$/m);
+  // A branch that changes the old feature's spec, which cites the shared decision, leaves the new
+  // feature open: that spec is not in the new feature.
+  git('switch', '-q', '-c', 'claude/old-spec-edit');
+  fs.appendFileSync(path.join(root, 'docs/specs/old.md'), '\nAn edit.\n');
+  git('commit', '-q', '-am', 'edit the old spec'); git('push', '-q', '-u', 'origin', 'claude/old-spec-edit');
+  git('switch', '-q', 'main');
+  assert.match(run('open').stdout, /^story-new \(user documentation: user-new\)$/m);
   git('switch', '-q', '-c', 'feature/new');
   const started = run('start', 'story-new');
   assert.equal(started.status, 0, started.stderr);
   assert.deepEqual(readMarker(root).specs, []);
   assert.doesNotMatch(started.stdout, /spec-old|docs\/specs\/old/);
+  // A later slice adds user documentation to the old feature: its delivery is open, and a run started
+  // for the old story is for the new spec, not the built one.
+  git('switch', '-q', 'main');
+  fs.writeFileSync(path.join(root, 'docs/user/old-more.md'), front('user-old-more', 'approved', ['design-old']));
+  git('add', '-A'); git('commit', '-q', '-m', 'more'); git('push', '-q');
+  git('switch', '-q', '-c', 'feature/old-more');
+  const again = run('start', 'story-old');
+  assert.equal(again.status, 0, again.stderr);
+  assert.deepEqual(readMarker(root).specs, []);
+  assert.match(again.stdout, /no spec in this branch yet/);
 });
