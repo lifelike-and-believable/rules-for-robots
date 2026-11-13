@@ -47,6 +47,12 @@ test('ignores placeholders, globs, URLs, generated folders, identifiers, and fen
   assert.deepEqual(lintInstructions(text, { root }).errors, []);
 });
 
+test('accepts a missing path that .gitignore lists, since a command creates it', () => {
+  const root = repo({ 'package.json': PKG, '.gitignore': 'node_modules/\n/.cache/\nout\n' });
+  assert.deepEqual(lintInstructions('Vale is pinned into `.cache/`; builds go to `out/`.', { root }).errors, []);
+  assert.equal(lintInstructions('See `.cache/vale/config.ini`.', { root }).errors.length, 1);
+});
+
 test('warns about absolute paths and MCP tool names it cannot check', () => {
   const root = repo({ 'package.json': PKG });
   const { errors, warnings } = lintInstructions('Source at `E:\\OtherProjects\\lib` and `/opt/lib/x.h`; search with `mcp__exa__web_search_exa`.', { root });
