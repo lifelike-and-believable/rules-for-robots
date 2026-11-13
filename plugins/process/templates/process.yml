@@ -15,5 +15,15 @@ default: [your-login]      # required; used for every stage without its own entr
 # waived:
 #   design: a command-line library with no screens
 # public-api: [src/api/**]          # paths a `Change: trivial` pull request may not change
+# try:                              # how to get a place to try the product; tutorials never mention it
+#   local: npm run try              # starts the product in a fresh, known state and prints its address
+#   preview: true                   # each pull request gets a preview deployment
+#   url: https://app.example.com    # the deployed product
+#   staging: https://staging.example.com   # one shared place with real services, run before a release
+#   sign-in: /try/sign-in?as={name} # signs a session in as a tutorial's person; local and preview only
+#   provides:                       # which services each place really has (see needs: in a tutorial)
+#     local: [mail]
+#     preview: [mail]
+#     staging: [mail, payments]
 # adoption-until: 2027-03-31        # existing projects: unlinked artifacts only warn until this date
 # project: https://github.com/orgs/<org>/projects/<number>   # board to place personas, epics, and stories on; needs the RFR_PROJECT_TOKEN secret

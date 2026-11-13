@@ -36,6 +36,8 @@ Also note where the page would trigger one of the persona's listed frustrations,
 
 **For requirements**, there are no stories yet, so use every approved persona. For each requirement and each persona, ask whether the requirement can hold in that persona's real situation (who is present, what equipment, what skills, what time and connection), starting with the smallest team the personas describe. A requirement that assumes someone or something the persona does not have (a separate operator, a second screen, a stable network) is a finding: `blocks` if the persona cannot use the product at all, `misleads` if it works only with help they do not have. Also report a persona goal that no requirement serves.
 
+**For an architecture**, also report, as a finding, any external service the design names that the "Trying the product" section leaves out, and any service listed there with no stand-in locally or in a preview.
+
 **For a decision note**, there are no steps to follow. Instead, for each persona, walk the tasks the decision affects (sharing a link, finding a page again, publishing a new item) under the chosen option, and ask the same four questions of each task. Also check each consequence the note lists against the persona's goals and frustrations, and note any consequence it does not list.
 
 **Report.** Mismatches first. Then findings, grouped by persona and ordered by severity within each group: `blocks` (they cannot finish the task), then `misleads` (they finish with the wrong result or belief), then `slows` (they finish, with effort). For each finding:

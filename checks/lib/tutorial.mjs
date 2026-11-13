@@ -144,6 +144,36 @@ export function startsFromOf(text) {
   return /^starts-from:[ \t]*(.*?)\s*$/m.exec(front)?.[1] ?? null;
 }
 
+// What a tutorial needs that a stand-in cannot give (lasting-tutorials AC-14): "needs: [mail, tripo]"
+// in its front matter, or "needs:" followed by "  - mail" lines. Returns { needs, error }: needs is
+// null when the line is absent, and error says what is wrong with a value that cannot be read.
+const SERVICE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+export function needsOf(text) {
+  const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? '';
+  const lines = front.split(/\r?\n/);
+  const at = lines.findIndex(l => /^needs:/.test(l));
+  if (at === -1) return { needs: null, error: null };
+  const how = 'list the services, like needs: [mail, tripo]';
+  const value = lines[at].slice('needs:'.length).trim();
+  let needs;
+  if (!value) {
+    needs = [];
+    for (const l of lines.slice(at + 1)) {
+      const item = /^\s+-\s+(.*?)\s*$/.exec(l);
+      if (!item) break;
+      needs.push(item[1].replace(/^(['"])(.*)\1$/, '$2'));
+    }
+    if (!needs.length) return { needs: null, error: `needs: names no service; ${how}, or remove the line` };
+  } else if (value.startsWith('[') && value.endsWith(']')) {
+    needs = value.slice(1, -1).split(',').map(s => s.trim().replace(/^(['"])(.*)\1$/, '$2')).filter(Boolean);
+  } else {
+    return { needs: null, error: `needs: "${value}" is not a list; ${how}` };
+  }
+  const bad = needs.find(n => !SERVICE.test(n));
+  if (bad !== undefined) return { needs: null, error: `needs: "${bad}" is not a service name (letters, digits, -, and _); ${how}` };
+  return { needs, error: null };
+}
+
 // Problems with the starts-from names of a set of tutorials, given as [{ id, startsFrom }]: a name
 // that is not one of their ids, and each cycle once (a tutorial that names itself is a cycle).
 // Returns [{ id, message }], where id is null for a cycle.
