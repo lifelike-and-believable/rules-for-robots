@@ -463,6 +463,17 @@ The lead approves a feature packet, and agents carry the feature unsupervised to
 - **25e:** removal of the replaced guards, and the rules pruned and re-evaluated. Done (#233, #235, #236, #237, #239, #240, #242 to #247; [verify inventory](docs/verify-inventory.md)): agents cannot approve a pull request; approval in chat, the merge guard, default allow, the tier check, and the modes are gone; the command guard refuses the never list by every route, and the web stack's commands moved to rfr-web; the verify suite is folded by behaviour, with domain tests in their plugins and CI running what a change can affect; the core rules went from 22 to 12, and TEST-001 and WA-002 kept their measured effect.
 - **25f:** the acceptance test on a real feature, and 8.0.0. The delegated eval (19i-4) passed 20 of 20 on Sonnet 5.5 and Opus 5.5 with no interruption, after its smoke run found two faults that were fixed first ([report](evals/results/2026-11-13-25f-delivery-delegated/report.md)). Next: the acceptance test on one feature in XR Studio In A Box, then 8.0.0.
 
+### Phase 26: Revisions and shared foundations (proposed)
+Spec: [docs/specs/revisions-and-foundations.md](docs/specs/revisions-and-foundations.md) (a draft, written 2026-11-13 at the maintainer's request; its six decisions are not yet answered).
+
+A change to something already built is approved as one packet of documents and carried to the built features as open deliveries; and what many features share, starting with the design system, has one approved document that designs cite. Starts after 25f passes, because two slices change the stage guard.
+
+- **26a:** a stale spec or tutorial is open work, not a failure: the `revise` step, `delivery open`, and the run.
+- **26b:** the impact report, the Revision section of the pull request description, and the `revise` skill.
+- **26c:** foundations: the folder, their place in stage order, `implemented-by`, and the change check.
+- **26d:** the design system, declared or defined, cited by designs and read by mock-ups; then XR Studio In A Box moved onto it.
+- **26e:** mock-up images tracked by the hash of their inputs.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
