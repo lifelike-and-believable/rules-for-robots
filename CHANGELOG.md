@@ -10,6 +10,10 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ### Changed
 
+- **No `ask` rules in the settings rfr writes** (rewrite plan 25e). The template repositories and `install-rules` used to write `ask` rules for force-pushes, pushes to `main` or `master`, remote deletes, `gh repo delete`, and `vercel --prod`. An `ask` rule prompts even in auto mode. They are now `deny` rules, which refuse the same commands without a prompt where rfr's hooks are not loaded. `install-rules` offers to move an earlier install's rfr `ask` rules to `deny`. Adopters: run `/rfr-core:install-rules`, or move those entries from `ask` to `deny` in `.claude/settings.json` yourself.
+
+### Changed
+
 - **The command guard refuses the never list, by every route** (rewrite plan 25e). From the security review of #235. `guard-commands` now also refuses:
   - skipping hooks by `git commit -n`, `core.hooksPath`, `HUSKY=0`, or `SKIP=`;
   - reading secrets through the shell: a `.env` or key file, an unfiltered `env` or `printenv`, a secret-named variable printed, or `vercel env pull`;
