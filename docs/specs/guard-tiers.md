@@ -1,6 +1,7 @@
 ---
 status: draft
 unlocks:
+  - test/fixtures/guard-corpus.json: rewrite plan 25e (2026-11-12) reduces guard-commands to the never list in docs/specs/unattended.md: branch-force-delete deletes a branch the guard can resolve and is tier 1 with the restore command, and branch-force-delete-unknown keeps the refusal at tier 4; cases are added for the never-list routes the security review found unrefused (skipping hooks, reading secrets, deleting or changing on the remote) and for two near-misses that stay allowed
   - test/guard-outcomes.test.mjs: AC-6 retired (rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome), so its three tests go; the AC-7 report tests are unchanged
   - test/guard-calibration.test.mjs: rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome, so the decision-log test runs the refusal path a project now gets (deny, logged as never) instead of the prompt path; the fields checked and the logging-off case are unchanged
   - test/fixtures/guard-corpus.json: rewrite plan 25e (2026-11-12) removes task approval, default allow, "permissions": "ask", and guard-outcome; publishing is not on the never list, so push-tags and release-create are tier 1, and a Vercel preview deploy through MCP is tier 1 as vercel-preview-cli already was, with vercel-deploy-prod added at tier 4
