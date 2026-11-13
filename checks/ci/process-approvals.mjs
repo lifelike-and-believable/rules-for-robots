@@ -6,6 +6,8 @@
 //   - agent, on pull_request and pull_request_review events: an independent reviewer's recorded
 //     review on the head commit, a pull request comment with <!-- rfr-agent-review head=<sha> -->
 //     (review-pr posts it), stands in for the approver.
+//   - agent, on push to the default branch: the merged pull request must have that review on its
+//     head; if not, an issue labelled process-approval is opened.
 //   - notify, on push to the default branch: one decision-queue issue (label needs-lead) tells the
 //     person what merged, with "keep it" as the default, so an objection is an ordinary amendment.
 // Without docs/product/process.yml nothing runs.
@@ -98,6 +100,20 @@ export function subjectPull(subject) {
   return m ? Number(m[1]) : null;
 }
 
+// An issue for an agent-gated change merged without its recorded review.
+async function openIssue({ call, repo, sha, pr, problem, runUrl }) {
+  await call('POST', `/repos/${repo}/labels`, { name: 'process-approval', color: 'D93F0B', description: 'An agent-gated process change merged without its recorded review' });
+  const body = [
+    `The change in ${sha}${pr ? ` (#${pr})` : ''} touched agent-gated process stages without the independent review that stands in for the approver:`,
+    '',
+    `- ${problem}`,
+    '',
+    'Run /rfr-core:review-pr on the change and record the review, then close this issue, or revert it (docs/specs/project-process.md in rules-for-robots, AC-56).',
+    ...(runUrl ? ['', `[Run](${runUrl})`] : []),
+  ].join('\n');
+  return call('POST', `/repos/${repo}/issues`, { title: `Agent-gated change merged without a recorded review: ${sha.slice(0, 12)}`, body, labels: ['process-approval'] });
+}
+
 export async function runApprovals({ root = '.', env = process.env, fetch = globalThis.fetch, log = console.log, sleep = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
   const result = { ok: true, problems: [], notes: [] };
   const loaded = readConfig(root);
@@ -128,12 +144,27 @@ export async function runApprovals({ root = '.', env = process.env, fetch = glob
     const files = [];
     const stages = changedStages(root, parent.out.trim(), sha, config, files);
     const notify = byGate(stages, 'notify');
-    if (!notify.length) { result.notes.push('no notify-gated stage changed'); return result; }
+    const agent = byGate(stages, 'agent');
+    if (!notify.length && !agent.length) { result.notes.push('no agent- or notify-gated stage changed'); return result; }
     const subject = git(root, ['log', '-1', '--format=%s', sha]).out.trim();
     const pr = (await call('GET', `/repos/${repo}/commits/${sha}/pulls`)).data?.find?.(p => p.merged_at)?.number ?? subjectPull(subject);
-    const notifyFiles = files.filter(file => notify.includes(stageOf(file)));
-    await notifyLead({ call, repo, sha, pr, stages: notify, files: notifyFiles });
-    result.notes.push(`${notify.join(', ')}: notify gate; the lead was told in the decision queue`);
+    // An agent stage merged with no recorded review on its head: nothing required the check on the
+    // pull request (it is not a required check, and the marker comment does not re-run it), so the
+    // merge is checked too, and a missing review opens an issue.
+    if (agent.length) {
+      const head = pr ? (await call('GET', `/repos/${repo}/pulls/${pr}`)).data?.head?.sha ?? '' : '';
+      const problem = !pr ? `${sha.slice(0, 12)} changed ${agent.join(', ')} without a pull request; an agent-gated change needs one, with a recorded review`
+        : !head || !(await hasAgentReview({ call, repo, pr, head })) ? `${agent.join(', ')}: #${pr} merged with no independent review recorded on its head commit` : null;
+      if (problem) {
+        result.problems.push(problem);
+        await openIssue({ call, repo, sha, pr, problem, runUrl: env.RUN_URL });
+      }
+    }
+    if (notify.length) {
+      const notifyFiles = files.filter(file => notify.includes(stageOf(file)));
+      await notifyLead({ call, repo, sha, pr, stages: notify, files: notifyFiles });
+      result.notes.push(`${notify.join(', ')}: notify gate; the lead was told in the decision queue`);
+    }
   } else {
     result.notes.push(`nothing to check on ${event ?? 'this event'}`);
   }

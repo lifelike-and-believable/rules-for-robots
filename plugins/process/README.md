@@ -116,7 +116,7 @@ The plugin's `guard-merge` hook asks the person to confirm `gh pr merge` (with o
 
 ## Size tiers
 
-The size tier (trivial, fix, story, epic) decides where a change starts ([guide/start.md](guide/start.md)). There are no tier labels or tier job: A pull request that changes source must belong to a feature with an approved spec, or say `Change: fix` or `Change: trivial` at the end of a commit message; the `process / change` check holds it to that claim (a fix changes a test and adds no source file; a trivial change adds no source file and touches no `public-api` path). The `process / tier` job is a stub that passes, kept so a repository that still requires it is not blocked; remove it from the required checks.
+The size tier (trivial, fix, story, epic) decides where a change starts ([guide/start.md](guide/start.md)). There are no tier labels, and the tier check is retired: A pull request that changes source must belong to a feature with an approved spec, or say `Change: fix` or `Change: trivial` at the end of a commit message; the `process / change` check holds it to that claim (a fix changes a test and adds no source file; a trivial change adds no source file and touches no `public-api` path). The `process / tier` job is a stub that passes, kept so a repository that still requires it is not blocked; remove it from the required checks.
 
 ## Issue sync
 

@@ -267,7 +267,7 @@ jobs:
     # The kind comes from the change job: a source change that belongs to a feature (rewrite plan 25e).
     needs: change
     if: >-
-      inputs.mutation && github.event_name == 'pull_request' &&
+      !cancelled() && inputs.mutation && github.event_name == 'pull_request' &&
       needs.change.outputs.kind == 'feature'
     runs-on: ubuntu-latest
     continue-on-error: true

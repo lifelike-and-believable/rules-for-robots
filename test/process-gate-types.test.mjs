@@ -98,7 +98,7 @@ function fakeGitHub({ reviews = [], comments = [], mergedBy = 'lead', head = '' 
 const env = (extra) => ({ GITHUB_REPOSITORY: 'acme/app', GITHUB_TOKEN: 't', GITHUB_API_URL: 'https://api.github.test', ...extra });
 const marker = sha => ({ body: `<!-- rfr-agent-review head=${sha} -->\nReviewers: code-reviewer. No findings.` });
 
-test('project-process#AC-56: team mode: an approve stage needs its approver, an agent stage the marker on the head, a notify stage neither', async () => {
+test('project-process#AC-56: team mode: an agent stage needs the marker on the head; an approve or notify stage is not checked by the job', async () => {
   const TEAM = 'mode: team\ndefault: [lead]\ngates:\n  stories: agent\n  requirements: notify\n';
   const r = repo(TEAM, ['docs/product/stories/a.md', 'docs/product/requirements/r.md']);
   const pr = { GITHUB_EVENT_NAME: 'pull_request', PR_NUMBER: '9', BASE_SHA: r.base, HEAD_SHA: r.branchHead };
@@ -111,11 +111,18 @@ test('project-process#AC-56: team mode: an approve stage needs its approver, an 
   // An approve stage is the approver's review in GitHub (branch protection), so the job passes it
   // without calling the reviews API (amended 2026-11-12, rewrite plan 25e).
   const withConcept = repo(TEAM, ['docs/product/concept.md']);
-  const concept = await runApprovals({ root: withConcept.root, env: env({ GITHUB_EVENT_NAME: 'pull_request', PR_NUMBER: '9', BASE_SHA: withConcept.base, HEAD_SHA: withConcept.branchHead }), fetch: fakeGitHub().fetch, log: () => {} });
+  const calls = [];
+  const inner = fakeGitHub().fetch;
+  const counting = async (url, init) => { calls.push(String(url)); return inner(url, init); };
+  const concept = await runApprovals({ root: withConcept.root, env: env({ GITHUB_EVENT_NAME: 'pull_request', PR_NUMBER: '9', BASE_SHA: withConcept.base, HEAD_SHA: withConcept.branchHead }), fetch: counting, log: () => {} });
   assert.equal(concept.ok, true, concept.problems.join('\n'));
+  assert.deepEqual(calls, [], 'no reviews or other API call for an approve stage');
+  // A pull_request_review event is checked like a pull_request event: the agent gate's re-run path.
+  const review = await runApprovals({ root: r.root, env: env({ ...pr, GITHUB_EVENT_NAME: 'pull_request_review' }), fetch: fakeGitHub().fetch, log: () => {} });
+  assert.match(review.problems.join('\n'), /stories: needs an independent review recorded/);
 });
 
-test('project-process#AC-56: solo mode checks an agent stage on the pull request, as team mode does, and nothing after the merge but notify stages', async () => {
+test('project-process#AC-56: solo mode checks an agent stage on the pull request, as team mode does, and again after the merge', async () => {
   const SOLO = 'mode: solo\ndefault: [lead]\ngates:\n  stories: agent\n';
   const r = repo(SOLO, ['docs/product/stories/a.md']);
   const pr = { GITHUB_EVENT_NAME: 'pull_request', PR_NUMBER: '9', BASE_SHA: r.base, HEAD_SHA: r.branchHead };
@@ -123,11 +130,18 @@ test('project-process#AC-56: solo mode checks an agent stage on the pull request
   assert.equal(ok.ok, true, ok.problems.join('\n'));
   const missing = await runApprovals({ root: r.root, env: env(pr), fetch: fakeGitHub().fetch, log: () => {} });
   assert.match(missing.problems.join('\n'), /stories: needs an independent review recorded/);
-  const merged = fakeGitHub({ mergedBy: 'agent-bot', head: r.branchHead });
-  merged.fetch.merge = r.merge;
-  const after = await runApprovals({ root: r.root, env: env({ GITHUB_EVENT_NAME: 'push', GITHUB_SHA: r.merge }), fetch: merged.fetch, log: () => {} });
+  const push = env({ GITHUB_EVENT_NAME: 'push', GITHUB_SHA: r.merge });
+  const reviewed = fakeGitHub({ comments: [marker(r.branchHead)], mergedBy: 'agent-bot', head: r.branchHead });
+  reviewed.fetch.merge = r.merge;
+  const after = await runApprovals({ root: r.root, env: push, fetch: reviewed.fetch, log: () => {} });
   assert.equal(after.ok, true, after.problems.join('\n'));
-  assert.equal(merged.issues.length, 0, 'no process-approval issue');
+  assert.equal(reviewed.issues.length, 0, 'no process-approval issue');
+  const unreviewed = fakeGitHub({ mergedBy: 'agent-bot', head: r.branchHead });
+  unreviewed.fetch.merge = r.merge;
+  const missed = await runApprovals({ root: r.root, env: push, fetch: unreviewed.fetch, log: () => {} });
+  assert.match(missed.problems.join('\n'), /stories: #9 merged with no independent review/);
+  assert.equal(unreviewed.issues.length, 1, 'a process-approval issue is opened');
+  assert.deepEqual(unreviewed.issues[0].labels, ['process-approval']);
 });
 
 test('project-process#AC-57: a merged notify stage opens one decision-queue issue with the files and a default', async () => {

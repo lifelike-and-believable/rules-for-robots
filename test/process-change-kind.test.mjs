@@ -41,3 +41,28 @@ test('project-process#AC-24: the change check writes its kind to the job output'
   assert.equal(r.status, 0, r.stderr);
   assert.equal(fs.readFileSync(output, 'utf8'), 'kind=no-source\n');
 });
+
+test('process-state#AC-6: a * inside a path with ** after it matches one folder, as an Unreal public-api glob needs', () => {
+  assert.equal(matchGlob('Source/*/Public/**', 'Source/MyPlugin/Public/A/B.h'), true);
+  assert.equal(matchGlob('Source/*/Public/**', 'Source/MyPlugin/Private/A.cpp'), false);
+});
+
+test('project-process#AC-57: the notify path reads the pull request number from a merge or squash subject', async () => {
+  const { subjectPull } = await import('../checks/ci/process-approvals.mjs');
+  assert.equal(subjectPull('Merge pull request #12 from acme/feature'), 12);
+  assert.equal(subjectPull('Update the concept (#5)'), 5);
+  assert.equal(subjectPull('Update the concept'), null);
+  assert.equal(subjectPull('Fix #5 in the concept'), null);
+});
+
+test('project-process#AC-24: the retired tier job is a stub that passes on pull requests and runs no check', async () => {
+  const { parse } = await import('yaml');
+  const wf = parse(fs.readFileSync('.github/workflows/rfr-process.yml', 'utf8'));
+  const job = wf.jobs.tier;
+  assert.ok(job, 'a repository that still requires process / tier gets a result');
+  assert.match(job.if, /pull_request/);
+  assert.deepEqual(job.permissions, {});
+  assert.equal(job.steps.length, 1);
+  assert.doesNotMatch(job.steps[0].run, /node |exit 1/);
+  assert.match(job.steps[0].run, /::notice::/);
+});
