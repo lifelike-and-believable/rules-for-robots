@@ -7,11 +7,20 @@
 //   Check **Label**.  Tick **Label**.  Uncheck **Label**.       -> set a checkbox
 //   Click **Name**.  Select **Name**.  Press **Name**.  Choose **Name**. -> press a button, link, tab, or text
 //   ... you see **Text**.  **Text** appears.          -> the text is on the page
+//   Sign in as **Name**.                              -> sign the step's session in as that person
 // Other sentences are narration. A step needs at least one action or check, unless it ends with
 // "(manual)", which the runner skips. Labels and names match exactly; seen text matches a part.
+//
+// People (docs/specs/lasting-tutorials.md, AC-3). A step that begins "As **Name**:" is done by that
+// person, in a browser session of their own. A step with no name is done by the tutorial's first
+// person: the first name in the tutorial, in step order, from "As **Name**:" or "Sign in as
+// **Name**.". A tutorial that names nobody has no person, and runs in one unnamed session as before.
+// A session signs in as its own person only, so "Sign in as **Name**." in a step done by someone
+// else is an error.
 // Dependency-free.
 
 const ACTIONS = [
+  [/^sign in as\s+\*\*(.+?)\*\*/i, m => ({ type: 'signin', name: m[1].trim() })],
   [/^(?:open|go to)\s+`([^`]+)`/i, m => ({ type: 'goto', path: m[1] })],
   [/^(?:type|enter)\s+`([^`]*)`\s+(?:into|in)\s+(?:the\s+)?\*\*(.+?)\*\*/i, m => ({ type: 'fill', label: m[2], value: m[1] })],
   [/^(?:choose|select|pick)\s+`([^`]+)`\s+(?:from|in)\s+(?:the\s+)?\*\*(.+?)\*\*/i, m => ({ type: 'select', label: m[2], value: m[1] })],
@@ -57,7 +66,18 @@ export function parseStep(text) {
   return actions;
 }
 
+// "As **Name**:" at the start of a step, and the forms of it that are probably mistakes: a bold name
+// without the colon, a name of one to three capitalised words with a colon but no bold ("As Jordan:"),
+// and a person named after the start. "As before, ..." stays narration.
+const AS = /^as\s+\*\*([^*]+?)\*\*:\s*/i;
+const AS_BOLD = /^as\s+\*\*/i;
+const AS_PLAIN = /^As\s+[A-Z][\w'.-]*(?:\s+[A-Z][\w'.-]*){0,2}:/;
+const AS_INSIDE = /(?:^|\s)as\s+\*\*[^*]+?\*\*:/i;
+const SIGN_IN_PLAIN = /(?:^|[.!?]\s+)sign in as\s+(?!\*\*)\S/i;
+
 // Reads the numbered list under "## Steps". Continuation lines (indented) join their step.
+// Each step gets n, text, manual, actions, as (its own "As **Name**:", or null), and person (who
+// does it, or null when the tutorial names nobody).
 export function parseSteps(body) {
   const section = /^##\s+Steps\s*\n([\s\S]*?)(?=^##\s|$(?![\s\S]))/m.exec(body)?.[1];
   if (section === undefined) return { steps: [], errors: ['no "## Steps" section'] };
@@ -70,13 +90,67 @@ export function parseSteps(body) {
   const errors = [];
   if (!steps.length) errors.push('the "## Steps" section has no numbered steps');
   for (const step of steps) {
-    step.manual = /\(manual\)\s*$/i.test(step.text);
-    step.actions = step.manual ? [] : parseStep(step.text);
-    if (!step.manual && !step.actions.length) {
-      errors.push(`step ${step.n} ("${step.text}") has no action or check the runner can perform; write it as "Click **Name**", "Type \`text\` into **Label**", "You see **Text**", and so on, or end it with "(manual)"`);
+    const at = `step ${step.n} ("${step.text}")`;
+    const as = AS.exec(step.text);
+    const text = as ? step.text.slice(as[0].length) : step.text;
+    step.as = as ? as[1].trim() : null;
+    step.manual = /\(manual\)\s*$/i.test(text);
+    step.actions = step.manual ? [] : parseStep(text);
+    if (!as && (AS_BOLD.test(step.text) || AS_PLAIN.test(step.text))) {
+      errors.push(`${at} names a person but not in the form "As **Name**: <step>"; write the name in bold, then a colon, then the step`);
+      continue;
+    }
+    if (AS_INSIDE.test(text)) errors.push(`${at} names a person after its start; "As **Name**:" goes only at the start of a step, so make it a step of its own`);
+    if (SIGN_IN_PLAIN.test(text)) errors.push(`${at} signs in without a name in bold; write "Sign in as **Name**."`);
+    else if (!step.manual && !step.actions.length) {
+      errors.push(`${at} has no action or check the runner can perform; write it as "Click **Name**", "Type \`text\` into **Label**", "You see **Text**", and so on, or end it with "(manual)"`);
+    }
+  }
+  // Who does each step: its own "As **Name**:", or else the first person named in the tutorial.
+  const first = steps.map(s => s.as ?? s.actions?.find(a => a.type === 'signin')?.name).find(Boolean) ?? null;
+  for (const step of steps) {
+    step.person = step.as ?? first;
+    for (const a of step.actions) {
+      if (a.type === 'signin' && step.person && a.name !== step.person) {
+        errors.push(`step ${step.n} ("${step.text}") signs in as **${a.name}**, but is done by **${step.person}**; begin it with "As **${a.name}**:" so the sign-in happens in ${a.name}'s own session`);
+      }
     }
   }
   return { steps, errors };
+}
+
+// A tutorial can start where another ends (lasting-tutorials AC-4): "starts-from: <tutorial id>" in
+// its front matter. Read here with a small regular expression, as the runner reads "runner:".
+export function startsFromOf(text) {
+  const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? '';
+  return /^starts-from:[ \t]*(.*?)\s*$/m.exec(front)?.[1] || null;
+}
+
+// Problems with the starts-from names of a set of tutorials, given as [{ id, startsFrom }]: a name
+// that is not one of their ids, and each cycle once (a tutorial that names itself is a cycle).
+// Returns [{ id, message }], where id is null for a cycle.
+export function startsFromProblems(tutorials) {
+  const next = new Map(tutorials.filter(t => t.id).map(t => [t.id, t.startsFrom ?? null]));
+  const out = [];
+  for (const [id, target] of next) {
+    if (target && !next.has(target)) out.push({ id, message: `${id}: starts-from names ${target}, which is not the id of a tutorial` });
+  }
+  const reported = new Set();
+  for (const start of next.keys()) {
+    const trail = [];
+    let id = start;
+    while (id && next.has(id) && !trail.includes(id)) { trail.push(id); id = next.get(id); }
+    if (!id || !trail.includes(id)) continue;
+    const cycle = trail.slice(trail.indexOf(id));
+    const key = [...cycle].sort().join(',');
+    if (reported.has(key)) continue;
+    reported.add(key);
+    // Start the cycle at its first id in sort order, so the message is the same whatever the file order.
+    const lowest = cycle.indexOf([...cycle].sort()[0]);
+    const ordered = [...cycle.slice(lowest), ...cycle.slice(0, lowest)];
+    out.push({ id: null, message: `starts-from cycle: ${[...ordered, ordered[0]].join(' -> ')}` });
+  }
+  return out;
 }
 
 // A lasting tutorial names the product's pages by path and nothing about a machine or a build

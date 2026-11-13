@@ -113,7 +113,8 @@ Approved by the maintainer on 2026-11-13, each as recommended: "yes to all decis
 
 ## APIs and assumptions
 
-- The web runner uses Playwright from the project. A browser context for each person is ordinary Playwright; one video for each context is how it records. To be confirmed in 27b.
+- The web runner uses Playwright from the project. A browser context for each person is ordinary Playwright; one video for each context is how it records. Confirmed in 27b.
+- Choices made in 27b: a tutorial's first person is the first name in its steps, or the first person of the tutorial it starts from; a tutorial that starts from another opens fresh sessions loaded with the cookies and storage the earlier one left, so two tutorials that start from the same one both begin signed in; session storage is not carried; and a web tutorial that starts from a `runner: manual` one is skipped until 27c gives a faster way to reach its state.
 - `rfr-tutorials-preview.yml` passes the preview's address as the base URL. Tutorial sign-in on a protected preview goes through the same origin, so the existing bypass secret covers it.
 - Assumption: XR Studio In A Box can have preview deployments with their own data store. Its architecture places everything in Canada (Aurora in ca-central-1, Vercel functions in `yul1`); a preview holding only fixture data may not need that, which is the lead's decision when 27d starts.
 - A tutorial sign-in path is a deliberate way round authentication. AC-6 keeps it out of production by construction and by test, and D2 gives the option of having none.

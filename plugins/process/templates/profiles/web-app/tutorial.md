@@ -4,6 +4,7 @@ status: draft
 runner: web
 derived-from:
   - docs-<user-doc-id>:
+# starts-from: tutorial-<earlier task>   (optional: begin where that tutorial ends; it runs first)
 ---
 
 # <task the reader does, as they would say it>
@@ -17,6 +18,8 @@ fails. It names no machine and no build: the same file is followed on a local bu
 deployed product. Each step needs at least one sentence the runner understands:
   Open `/path`.  Type `text` into **Label**.  Choose `option` from **Label**.  Check **Label**.
   Click **Name**.  You see **Text**.
+Where the task takes more than one person, begin a step with As **Name**: to do it as that person,
+in a session of their own, and sign each person in with Sign in as **Name**.
 Anything else is narration. End a step with (manual) if a person has to do it. -->
 
 ## Before you start

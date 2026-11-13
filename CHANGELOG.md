@@ -4,9 +4,16 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255.
+Pull requests: #251, #252, #255, #257.
 
 ### Changed
+
+- **The web tutorial runner acts as several people and starts from another tutorial** (Phase 27b; lasting-tutorials AC-3, AC-4). `rfr-process` 2.7.0.
+  - A step that begins `As **Name**:` runs in that person's own browser session, kept for the rest of the tutorial. `Sign in as **Name**.` opens the path given to `--sign-in` (it must contain `{name}`) in that session; with no `--sign-in` the step is done by hand and the run says so. A recording has one video for each named person (`video-<name>.webm`).
+  - `starts-from: <tutorial id>` in a tutorial's front matter runs that tutorial first, once in a run. Each tutorial that starts from it begins with the sessions it left (cookies and storage), so nobody signs in twice. A tutorial whose starting tutorial failed, was skipped, or is `runner: manual` is reported as `SKIP`, and the run exits 1. The process check and `--coverage` fail an unknown name and a cycle.
+  - A tutorial with no named people and no `starts-from` runs as before.
+
+  Adopters: update `rfr-process` to 2.7.0. Nothing to do; the new sentences are there to use.
 
 - **A tutorial is user documentation that runs** (Phase 27a; lasting-tutorials AC-1, AC-2, AC-7, AC-9, AC-15). `rfr-process` 2.6.0. From the maintainer's feedback on the 25f acceptance test: "Tutorials should survive the development process and be usable both during the development process and once the system is deployed."
   - The tutorial templates, the guide, and the `deliver` skill describe a tutorial named for the task and written for the persona, which names no machine and no build, holds no run record, and is extended by later slices. For a web product the delivery writes it as `runner: web` with no second script.
