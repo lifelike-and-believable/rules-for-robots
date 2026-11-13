@@ -6,8 +6,8 @@
 # open delivery; that delivery's own merge runs this again for the next.
 # Needs three steps only a person can do: create a routine in Claude Code on this repository whose
 # prompt is /rfr-process:deliver with no feature name; add an API trigger to it and generate its
-# token, which is shown once; and store the routine's id as the repository variable
-# RFR_DELIVER_ROUTINE, then create an environment named `rfr-deliver` in the repository's settings,
+# token, which is shown once; and copy the routine's address from its API trigger into the
+# repository variable RFR_DELIVER_ROUTINE (the routine's id on its own also works), then create an environment named `rfr-deliver` in the repository's settings,
 # limit its deployment branches to the default branch, and store the token there as the environment
 # secret RFR_DELIVER_TOKEN. Only a run on the default branch can then read the token, so a workflow
 # added on another branch cannot. Until then the job says what is open and succeeds.
