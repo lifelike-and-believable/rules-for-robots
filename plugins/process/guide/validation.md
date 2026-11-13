@@ -112,6 +112,23 @@ For a product with external services, three rules keep this honest and cheap:
 
 rfr creates none of this infrastructure. It asks for the declaration, checks the tutorials against it, and reports what ran where.
 
+### Publishing the help
+
+The user documentation in `docs/user/` and the tutorials in `docs/tutorials/` are the product's help, published from the same files and linked from the product. How depends on the kind of product:
+
+- A web app serves it under one address and has a Help link.
+- A plugin ships it in its documentation folder and names the address in its descriptor.
+- A command-line tool exposes it as help topics.
+
+**The help for a `web-app`.** This is a recipe the project implements in its own stack:
+
+1. Build the help from the Markdown at each deployment.
+2. Serve it under one address.
+3. Have the product's Help link open the page whose `covers` matches the current address, or else the area's overview, or else the start page.
+4. Include the help in the `try` command's product, so the tutorials and the lead see it as a user will.
+
+`node .rfr/checks/docs-map.mjs --json` gives the documentation as data (the start page, the areas, and the pages with their `covers` and tutorials) for the help to be built from. rfr ships no help site and hosts nothing.
+
 ### Release and feedback
 
 Before a release, every story in it has an approved tutorial, and nothing it depends on is stale or withdrawn. Release notes are written from the user documentation, in the personas' terms. Feedback from real use is filed as an issue with the `feedback` label and routed to the artifact it affects: a wrong promise goes back to the story, a wrong flow to the design, a wrong explanation to the documentation.

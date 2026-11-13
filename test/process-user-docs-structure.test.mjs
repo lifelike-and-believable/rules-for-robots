@@ -50,14 +50,21 @@ test('lasting-tutorials#AC-16: a page directly in docs/user/ is reported once, w
   assert.match(found[0], /move it into the folder of the area it belongs to/);
 });
 
-test('lasting-tutorials#AC-16: a flat folder reports each page and the missing start page', () => {
-  const r = runProcessTrace(project({
+// A flat docs/user/ is how user documentation was kept before AC-16, and many existing projects and
+// fixtures have one; the shape is checked once a project has a start page or an area's overview.
+test('lasting-tutorials#AC-16: a flat folder is checked once the project has a start page or an area overview', () => {
+  const flat = {
     'docs/user/export.md': page('docs-export', 'Export'),
     'docs/user/import.md': page('docs-import', 'Import'),
-  }));
-  assert.equal(matching(r.errors, /docs\/user\/export\.md is directly in docs\/user\//).length, 1, r.errors.join('\n'));
-  assert.equal(matching(r.errors, /docs\/user\/import\.md is directly in docs\/user\//).length, 1, r.errors.join('\n'));
-  assert.equal(matching(r.errors, /docs\/user\/README\.md is missing/).length, 1, r.errors.join('\n'));
+  };
+  assert.deepEqual(userDocs(runProcessTrace(project(flat)).errors), []);
+  assert.deepEqual(userDocs(runProcessTrace(project({ ...flat, 'docs/user/guide/retarget.md': page('docs-retarget', 'Retarget') })).errors), []);
+  for (const started of [{ 'docs/user/README.md': page('docs-start', 'Product help') }, { 'docs/user/board/README.md': page('docs-board', 'Board') }]) {
+    const r = runProcessTrace(project({ ...flat, ...started }));
+    assert.equal(matching(r.errors, /docs\/user\/export\.md is directly in docs\/user\//).length, 1, r.errors.join('\n'));
+    assert.equal(matching(r.errors, /docs\/user\/import\.md is directly in docs\/user\//).length, 1, r.errors.join('\n'));
+  }
+  assert.equal(matching(runProcessTrace(project({ ...flat, 'docs/user/board/README.md': page('docs-board', 'Board') })).errors, /docs\/user\/README\.md is missing/).length, 1);
 });
 
 test('lasting-tutorials#AC-16: a missing start page is reported once, however many pages there are', () => {
@@ -96,13 +103,14 @@ test('lasting-tutorials#AC-16: a project with no user documentation is not asked
 test('lasting-tutorials#AC-16: with lasting warn the structure problems are warnings', () => {
   const root = project({
     'docs/user/export.md': page('docs-export', 'Export'),
-    'docs/user/board/move-card.md': page('docs-move-card', 'Move a card'),
+    'docs/user/board/README.md': page('docs-board', 'Board'),
+    'docs/user/people/invite.md': page('docs-invite', 'Invite someone'),
   });
   const r = runProcessTrace(root, { lasting: 'warn' });
   assert.deepEqual(matching(r.errors, /docs\/user/), []);
   assert.equal(matching(r.warnings, /docs\/user\/README\.md is missing/).length, 1, r.warnings.join('\n'));
   assert.equal(matching(r.warnings, /docs\/user\/export\.md is directly in docs\/user\//).length, 1, r.warnings.join('\n'));
-  assert.equal(matching(r.warnings, /docs\/user\/board\/ has no README\.md/).length, 1, r.warnings.join('\n'));
+  assert.equal(matching(r.warnings, /docs\/user\/people\/ has no README\.md/).length, 1, r.warnings.join('\n'));
   // The default still fails them.
   assert.equal(matching(runProcessTrace(root).errors, /docs\/user\/README\.md is missing/).length, 1);
 });

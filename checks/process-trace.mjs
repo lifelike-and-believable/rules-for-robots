@@ -13,7 +13,12 @@
 //   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry;
 //   9. a tutorial whose starts-from is not a tutorial's id, or a cycle of starts-from;
 //  10. a tutorial whose needs: cannot be read, or names a service no place in try.provides provides;
-//  11. a try.local command that runs a package script the root package.json does not have.
+//  11. a try.local command that runs a package script the root package.json does not have;
+//  12. once docs/user/ has a start page or an area overview, user documentation that is not organised
+//      by area: no start page, a page directly in docs/user/, an area folder with no overview, or an
+//      approved page or overview that the start page and its area's overview do not reach
+//      (warnings with lasting: 'warn');
+//  13. a covers: line that cannot be read, or the same covers: entry in two pages.
 // It warns when a bold name in a user documentation page appears in no design the page reaches,
 // and prints the rules-for-robots commit it ran from.
 // Staleness is direct only. Before process.yml's adoption-until date, problems with artifacts that
@@ -25,6 +30,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { needsOf, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
+import { USER_DOCS, userDocsProblems } from './lib/user-docs.mjs';
 import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
@@ -315,6 +321,21 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
       errors.push(`${a.id}: needs ${missing.join(', ')}, which no place in try.provides in ${CONFIG_PATH} provides; add it to the place that has it (local, preview, or staging), or remove it from needs`);
       involved.add(a.id);
     }
+  }
+
+  // Organised user documentation (lasting-tutorials AC-16 to AC-18), in a project that has any: a
+  // start page, a folder with an overview for each area, links that reach every approved page, and
+  // each covers: entry in one page. The shape is checked once docs/user/ has a start page or an area
+  // overview, and follows the lasting setting (AC-15); covers: is new and opt-in, so its problems are
+  // always errors.
+  if (artifacts.some(a => a.stage === 'user-docs')) {
+    const tree = workingTree(root);
+    const { shape, covers } = userDocsProblems(tree.listDir(USER_DOCS), tree.read);
+    for (const p of shape) {
+      if (lasting === 'warn') warnings.push(p.message);
+      else { errors.push(p.message); if (p.id) involved.add(p.id); }
+    }
+    for (const p of covers) { errors.push(p.message); if (p.id) involved.add(p.id); }
   }
 
   // try.local (AC-5): a command that runs a package script names one the project has.

@@ -4,9 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258.
+Pull requests: #251, #252, #255, #257, #258, #259.
 
 ### Changed
+
+- **Organised user documentation** (Phase 27e; lasting-tutorials AC-16 to AC-21). `rfr-process` 2.9.0. From the maintainer's feedback: "user documentation should survive the development process and be easily navigable by the users of the production system."
+  - User documentation has a shape: a start page, `docs/user/README.md`; a folder for each area of the product, with an overview, `docs/user/<area>/README.md`; and every other page in an area's folder. Templates for the start page and an overview are new, and `setup` and `bootstrap` write the start page with the product brief.
+  - Once a project has a start page or an overview, the process check reports a page left directly in `docs/user/`, an area with no overview, a missing start page, an approved page its overview does not link to, and an area the start page does not link to. Through the reusable workflow these are warnings for now, like the tutorial rules (`lasting-tutorials: warn`).
+  - A page may list where in the product it applies in `covers:`; the same entry in two pages fails the check. `checks/docs-map.mjs` prints the documentation as a tree, and as data with `--json`, for a project's help to be built from.
+  - The guide says how each kind of product publishes its help and links to it, and the persona walkthrough reports a task whose page a persona would not find from the start page.
+
+  Adopters: update `rfr-process` to 2.9.0. Nothing changes for a project whose `docs/user/` is flat until it adds a start page. To adopt the shape: add `docs/user/README.md`, move each page into its area's folder (ids stay the same, so no link breaks), and add an overview to each area.
 
 - **A place to try the product** (Phase 27c; lasting-tutorials AC-5, AC-6, AC-8, AC-10, AC-11, AC-13, AC-14). `rfr-process` 2.8.0.
   - `docs/product/process.yml` accepts a `try:` block: `local` (the command that starts the product in a known state), `preview`, `url`, `staging`, `sign-in` (a path with `{name}`, which the tutorial runner uses for `Sign in as **Name**.` when `--sign-in` is not given), `state`, and `provides` (the services each place really has). The process check fails a `local` that names a package script the project does not have.
