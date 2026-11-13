@@ -21,7 +21,7 @@ Start the process in a git repository, before the first artifact is written. App
 
 ## Before you start: the size tier
 
-Pick the tier before writing anything: it decides where you start. The tier job infers it from the paths the pull request changes, so a label is needed only to raise it, usually to `tier:epic`.
+Pick the tier before writing anything: it decides where you start. A pull request that changes source must belong to a feature with an approved spec, or say `Change: fix` or `Change: trivial` at the end of a commit message; the `process / change` check holds it to that claim (a fix changes a test and adds no source file; a trivial change adds no source file and touches no `public-api` path).
 
 | Tier | Use it when | Start at |
 |---|---|---|

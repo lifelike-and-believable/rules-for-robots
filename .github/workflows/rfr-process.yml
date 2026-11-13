@@ -8,11 +8,11 @@ name: rules-for-robots process check
 # issue labelled `stale`, or comments on the open one, because two pull requests that each pass
 # can leave the branch stale once both merge; the issue is assigned to the approvers of the stages
 # involved. The other jobs:
-#   approvals   team mode: an approving review from each touched stage's approvers on the head;
-#               solo mode: after a merge, that the merge was by an approver (opens an issue if not).
-#   tier        infers the pull request's tier from its paths (a tier: label can raise it), and trivial or fix pull requests stay out of
-#               the folders their tier may not change. Creates the four labels if missing; the pull
-#               request that adds process.yml needs no tier.
+#   approvals   agent-gated stages need a recorded independent review on the head; after a merge,
+#               notify-gated stages open a decision-queue issue. The approver's review of an approve
+#               stage is GitHub's (branch protection; docs/specs/github-gate.md).
+#   change      a pull request that changes source belongs to a feature with an approved spec, or
+#               declares a fix or a trivial change in a commit message; reports its kind as an output.
 #   codeowners  the rfr-process block in .github/CODEOWNERS matches process.yml (team mode).
 #   sync        after a merge, personas, epics, and stories are mirrored to issues, and, with
 #               `project` in process.yml and the RFR_PROJECT_TOKEN secret, placed on that Project.
@@ -23,8 +23,8 @@ name: rules-for-robots process check
 #               rfr-tutorials-preview.yml workflow against a preview deployment.
 #   docs-lint   advisory: Vale with the RFR style and the project's persona and glossary terms on
 #               docs/user, docs/tutorials, and docs/releases; alerts go to the job summary.
-#   mutation    advisory, with `mutation: true` (web-app and static-site): Stryker on tier:story
-#               and tier:epic pull requests, incremental from the pull request's earlier runs, in full
+#   mutation    advisory, with `mutation: true` (web-app and static-site): Stryker on feature
+#               pull requests (the change job's kind), incremental from the pull request's earlier runs, in full
 #               when test files change; the score and surviving mutants go to the job summary.
 #   typecheck   with `typecheck: <command>`: the project's type check on every pull request, so a
 #               type error in a test shows before review, not only in a later local run.
@@ -134,50 +134,24 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node .rfr/checks/ci/process-approvals.mjs .
 
+  # Retired in rewrite plan 25e: the change job reads a fix or trivial claim from the commits. This
+  # stub passes so that a repository that still requires `process / tier` is not blocked; remove it
+  # from the required checks, and the stub goes in 8.0.0.
   tier:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    outputs:
-      tier: ${{ steps.tier.outputs.tier }}
-    permissions:
-      contents: read
-      pull-requests: read
-      issues: write
+    permissions: {}
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: actions/checkout@v5
-        with:
-          repository: lifelike-and-believable/rules-for-robots
-          ref: ${{ inputs.rules-ref }}
-          path: .rfr
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-      - name: Create the tier labels if they are missing
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh label create tier:trivial --color C2E0C6 --description "No user-visible change: refactor, dependency bump, typo" 2>/dev/null || true
-          gh label create tier:fix --color FBCA04 --description "Behaviour differs from approved stories or docs" 2>/dev/null || true
-          gh label create tier:story --color 0E8A16 --description "A new story in an approved epic" 2>/dev/null || true
-          gh label create tier:epic --color 5319E7 --description "A new area of capability" 2>/dev/null || true
-      - name: Size tier
-        id: tier
-        env:
-          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: node .rfr/checks/ci/process-tier.mjs .
+      - name: Tier check retired
+        run: echo "::notice::process / tier is retired (rules-for-robots rewrite plan 25e); the change job checks fix and trivial claims. Remove process / tier from this repository's required checks."
 
   # A pull request that changes source belongs to a feature with an approved spec, or declares
   # itself a fix or a trivial change in a commit message (docs/specs/process-state.md).
   change:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    outputs:
+      kind: ${{ steps.change.outputs.kind }}
     permissions:
       contents: read
     steps:
@@ -193,6 +167,7 @@ jobs:
         with:
           node-version: 22
       - name: Change check
+        id: change
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -289,11 +264,11 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   mutation:
-    # The tier comes from the tier job, which infers it from the changed paths (AC-54).
-    needs: tier
+    # The kind comes from the change job: a source change that belongs to a feature (rewrite plan 25e).
+    needs: change
     if: >-
       inputs.mutation && github.event_name == 'pull_request' &&
-      (needs.tier.outputs.tier == 'story' || needs.tier.outputs.tier == 'epic')
+      needs.change.outputs.kind == 'feature'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

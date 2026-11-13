@@ -57,10 +57,10 @@ test('project-process#AC-46: the warning for [assumed] does not suggest rewordin
 const SOLO = 'mode: solo\ndefault: [lead]\n';
 const artifact = (id, body = '# Title\n') => `---\nid: ${id}\nstatus: draft\n---\n\n${body}`;
 
-function soloRepo({ squashSubject = null } = {}) {
+function soloRepo({ squashSubject = null, gates = '' } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rfr-xr3-approvals-'));
   git(root, 'init', '-q', '-b', 'main');
-  write(root, 'docs/product/process.yml', SOLO);
+  write(root, 'docs/product/process.yml', SOLO + gates);
   write(root, 'docs/product/concept.md', artifact('concept'));
   git(root, 'add', '-A');
   git(root, 'commit', '-q', '-m', 'base');
@@ -106,35 +106,16 @@ const pushEnv = r => ({ GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'acme/app'
 const approve = (r, gh) => runApprovals({ root: r.root, env: pushEnv(r), fetch: gh.fetch, log: () => {}, sleep: async () => {} });
 const mergedPr = (number, sha, login = 'lead') => ({ number, merged: true, merged_at: '2026-11-05T12:00:00Z', merge_commit_sha: sha, merged_by: { login } });
 
-test('project-process#AC-47: an empty lookup falls back to the merge commit subject and passes', async () => {
-  const r = soloRepo();
-  const gh = fakeGitHub({ prs: { 2: mergedPr(2, r.head) } });
-  const result = await approve(r, gh);
-  assert.equal(result.ok, true, result.problems.join('\n'));
-  assert.deepEqual(gh.issues, []);
-});
-
-test('project-process#AC-47: a squash commit subject ending in (#N) is found too', async () => {
-  const r = soloRepo({ squashSubject: 'Update the concept (#5)' });
-  const gh = fakeGitHub({ prs: { 5: mergedPr(5, r.head) } });
-  const result = await approve(r, gh);
-  assert.equal(result.ok, true, result.problems.join('\n'));
-});
-
-test('project-process#AC-47: a subject naming a pull request merged as another commit still fails', async () => {
-  const r = soloRepo();
-  const gh = fakeGitHub({ prs: { 2: mergedPr(2, 'f'.repeat(40)) } });
-  const result = await approve(r, gh);
-  assert.equal(result.ok, false);
-  assert.match(result.problems.join('\n'), /without a pull request/);
-  assert.equal(gh.issues.length, 1);
-});
-
 test('project-process#AC-48: approvals retries a server error and then passes', async () => {
-  const r = soloRepo();
-  const gh = fakeGitHub({ prs: { 2: mergedPr(2, r.head) }, fail: (key, n) => (/pulls\/2$/.test(key) && n === 1 ? 502 : null) });
+  // Since rewrite plan 25e the job calls GitHub after a merge only for a notify stage: the lookup of
+  // the merge's pull request fails once with a 502, is retried, and the decision-queue issue opens.
+  const r = soloRepo({ gates: 'gates:\n  concept: notify\n' });
+  const gh = fakeGitHub({ fail: (key, n) => (/commits\/[0-9a-f]+\/pulls$/.test(key) && n === 1 ? 502 : null) });
   const result = await approve(r, gh);
   assert.equal(result.ok, true, result.problems.join('\n'));
+  assert.equal(gh.counts.get(`GET /repos/acme/app/commits/${r.head}/pulls`), 2);
+  assert.equal(gh.issues.length, 1);
+  assert.match(gh.issues[0].title, /#2/, 'the pull request number comes from the merge subject when the lookup is empty');
 });
 
 // ---- AC-48: issue sync -------------------------------------------------------------------------

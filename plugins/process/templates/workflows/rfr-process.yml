@@ -1,7 +1,8 @@
 # Copy to .github/workflows/rfr-process.yml in a repository that uses the rfr-process plugin
-# (docs/specs/project-process.md in rules-for-robots). Runs the process check, approvals, tier,
-# CODEOWNERS, and issue sync jobs. Change `main` if your default branch has another name. In team
-# mode, make the `process / approvals` and `process / tier` checks required in branch protection.
+# (docs/specs/project-process.md in rules-for-robots). Runs the process check, approvals, change,
+# CODEOWNERS, and issue sync jobs. Change `main` if your default branch has another name. Require the
+# `process / process-trace` and `process / change` checks in branch protection (the GitHub gate's
+# setup script does this).
 name: process
 
 on:

@@ -73,15 +73,18 @@ test('project-process#AC-24: the web-app and static-site profiles ship an increm
   }
 });
 
-test('project-process#AC-24: the mutation job is advisory, runs on story and epic pull requests, and runs in full when tests change', () => {
+test('project-process#AC-24: the mutation job is advisory, runs on feature pull requests, and runs in full when tests change', () => {
   const wf = workflow('.github/workflows/rfr-process.yml');
   assert.equal(wf.on.workflow_call.inputs.mutation.default, false);
   const job = wf.jobs.mutation;
   assert.ok(job, 'mutation job');
   assert.equal(job['continue-on-error'], true);
   assert.match(job.if, /inputs\.mutation/);
-  assert.match(job.if, /tier == 'story'/);
-  assert.match(job.if, /tier == 'epic'/);
+  assert.equal(job.needs, 'change');
+  assert.match(job.if, /needs\.change\.outputs\.kind == 'feature'/);
+  assert.match(wf.jobs.change.outputs.kind, /steps\.change\.outputs\.kind/);
+  // The tier job is retired (rewrite plan 25e): a stub that only passes is left for required checks.
+  assert.ok(!JSON.stringify(wf.jobs.tier ?? {}).includes('process-tier'), 'the tier job no longer runs the tier check');
   const run = job.steps.map(s => s.run ?? '').join('\n');
   assert.match(run, /stryker run/);
   assert.match(run, /--incremental/);

@@ -10,7 +10,7 @@ The guide is split by stage, so read only the part you need. Each part stands on
 
 | Part | Read it when |
 |---|---|
-| [Before you start](guide/start.md) | Before any work: what a change reopens, the repository, and choosing the size tier. |
+| [Before you start](guide/start.md) | Before any work: what a change reopens, the repository, and choosing the size tier (fix and trivial changes are claimed in a commit). |
 | [Design stages](guide/design.md) | Writing or reviewing the concept, discovery, requirements, personas, epics, stories, design, or user documentation. |
 | [Delivery stages](guide/delivery.md) | Writing the technical specification, tests, and implementation. |
 | [Validation stages](guide/validation.md) | Writing tutorials and demos, and releasing. |

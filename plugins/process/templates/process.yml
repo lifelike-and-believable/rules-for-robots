@@ -15,6 +15,6 @@ default: [your-login]      # required; used for every stage without its own entr
 # tutorials from user docs. Waive a stage only here, before the work starts, with the reason:
 # waived:
 #   design: a command-line library with no screens
-# public-api: [src/api/**]          # paths a tier:trivial pull request may not change
+# public-api: [src/api/**]          # paths a `Change: trivial` pull request may not change
 # adoption-until: 2027-03-31        # existing projects: unlinked artifacts only warn until this date
 # project: https://github.com/orgs/<org>/projects/<number>   # board to place personas, epics, and stories on; needs the RFR_PROJECT_TOKEN secret

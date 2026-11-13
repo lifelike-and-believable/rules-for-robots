@@ -7,7 +7,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { relink } from '../checks/process-relink.mjs';
 import { runProcessTrace } from '../checks/process-trace.mjs';
-import { readLabels } from '../checks/ci/process-tier.mjs';
 
 // ---- AC-38: stale whole-artifact links suggest sections ------------------------------------------
 
@@ -40,18 +39,4 @@ test('project-process#AC-38: a stale whole-artifact link lists the sections to l
 test('project-process#AC-38: a section link is not stale when another section changes, and gets no suggestion', () => {
   const errors = project('design-reader#flow');
   assert.doesNotMatch(errors, /docs-reading/);
-});
-
-// ---- AC-39: current labels ------------------------------------------------------------------------
-
-test('project-process#AC-39: the current labels from GitHub win over the event\'s', async () => {
-  const fetch = async () => ({ ok: true, json: async () => [{ name: 'tier:story' }, { name: 'docs' }] });
-  const labels = await readLabels({ eventLabels: ['tier:fix'], fetch, api: 'https://api.example', token: 't', repo: 'acme/app', pr: '7' });
-  assert.deepEqual(labels, ['tier:story', 'docs']);
-});
-
-test('project-process#AC-39: when GitHub cannot be read, the event\'s labels are used', async () => {
-  const failing = async () => ({ ok: false, status: 502, json: async () => ({}) });
-  assert.deepEqual(await readLabels({ eventLabels: ['tier:fix'], fetch: failing, api: 'https://api.example', token: 't', repo: 'acme/app', pr: '7' }), ['tier:fix']);
-  assert.deepEqual(await readLabels({ eventLabels: ['tier:fix'], fetch: failing, api: 'https://api.example', token: '', repo: 'acme/app', pr: '7' }), ['tier:fix']);
 });

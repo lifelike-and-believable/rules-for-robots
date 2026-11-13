@@ -4,6 +4,14 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Removed
+
+- **The tier check and the approvals job's review check** (rewrite plan 25e; the maintainer's answers to the verify inventory). `rfr-process` 1.9.0.
+  - **Tier.** `process / tier` no longer infers a tier or reads `tier:` labels. The change check already holds a source change to a `Change: fix` or `Change: trivial` claim in a commit message. The advisory mutation job now runs on feature pull requests, by the change job's new `kind` output. Project-process AC-10, AC-27, AC-39 and AC-54 are retired, and AC-24 is amended.
+  - **Approvals.** `process / approvals` no longer checks the approver's review of `approve` stages, which branch protection requires under the GitHub gate, or audits solo-mode merges. That check was the red mark on every gated pull request. It still requires the recorded review for `agent` stages, and still opens the decision-queue issue for `notify` stages. Project-process AC-5, AC-6 and AC-47 are retired, and AC-56 is amended.
+
+  Adopters: remove `process / tier` from your required checks. Until 8.0.0 the job remains as a stub that passes, so a repository that still requires it is not blocked. Delete any `tier:` labels if you like. Nothing else to do.
+
 ### Added
 
 - **Agents do not approve pull requests** (#233; github-gate AC-9, rewrite plan 25e). rfr-core refuses `gh pr review --approve`, a review with the `APPROVE` event sent to the GitHub API (REST or GraphQL, by `gh api` or `curl`), and a GitHub MCP review tool called with `event: APPROVE`; the new `guard-pr-approval` hook covers the MCP tools. The refusal comes before task approval, so no instruction in chat allows it, and it tells the agent to give the approver the review link and the line they run themselves. Under the GitHub gate the approver's review is the approval, and the session holds the approver's token, so nothing else stopped an agent giving it in their name. Comments and requests for changes are not affected. rfr-core's version goes up with the next release. Adopters: nothing to do.
