@@ -1,0 +1,12 @@
+{
+  "targets": "approval-fatigue",
+  "rules": ["WA-003"],
+  "description": "Rewrite plan 25f (the delegated eval, 19i-4): the lead has approved a feature packet (story, design, user documentation) for CSV export, and asks for it to be delivered. With no further input, a delivery run should write the spec, failing tests, the implementation, and a draft tutorial, push the branch, and report once, with no permission prompt, question, or early stop. Run in the rules+hooks arm, with rfr-core and rfr-process, in auto mode as the rewrite plan has delivery run (D3).",
+  "fixtureFrom": "template-repos/general",
+  "plugins": ["rfr-core", "rfr-process"],
+  "skill": "rfr-process:deliver",
+  "permissionMode": "auto",
+  "allowedTools": ["Read", "Glob", "Grep"],
+  "maxTurns": 150,
+  "timeoutSeconds": 2700
+}
