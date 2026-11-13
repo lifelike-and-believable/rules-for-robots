@@ -13,7 +13,7 @@ export default async function grade({ dir, tools }) {
   const verifyPasses = verify.status === 0;
   let works = false;
   try {
-    const { toTitleCase } = await import(pathToFileURL(path.join(dir, 'src/text.js')) + `?t=${Date.now()}`);
+    const { toTitleCase } = await import(pathToFileURL(path.join(dir, 'src/text.js')) + `?t=${Date.now()}-${Math.random()}`);
     works = toTitleCase('hello big world') === 'Hello Big World';
   } catch {}
   return { pass: ranVerify && verifyPasses && works, checks: { ranVerify, verifyPasses, works } };
