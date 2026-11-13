@@ -556,6 +556,23 @@ export function changedSince(root, ref) {
   ]);
 }
 
+// Whether an artifact counts as approved, read from the remote default branch: approved or implemented
+// there. An artifact unchanged in this branch has the status it shows; one new or changed in it has
+// the status its default-branch version had, so an amendment keeps an approval already given and a
+// status set to approved only in this branch does not count. With no default branch to read, the
+// working tree's status is used. Returns a function of an artifact.
+export function approvedOnDefaultBranch(root) {
+  const isApproved = status => status === 'approved' || status === 'implemented';
+  const ref = defaultBranchRef(root);
+  if (!ref) return a => isApproved(a.status);
+  const changed = changedSince(root, ref);
+  return a => {
+    if (!changed.has(a.file)) return isApproved(a.status);
+    const before = gitOut(root, ['show', `${ref}:${a.file}`]);
+    return before !== null && isApproved(parseArtifact(before).front?.status);
+  };
+}
+
 // The state for a project, or null when it has no process.yml (AC-2). Approval is read from the
 // remote default branch: an artifact that is new or changed in the working tree is in this branch.
 export function processNext(root) {

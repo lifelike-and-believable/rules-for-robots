@@ -4,6 +4,20 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
+### Changed
+
+- **The stage-order guard reads approval from the default branch** (rewrite plan 25e; project-process AC-64 amended). `rfr-process` 2.3.0. `guard-stages` used to count an artifact as approved by its status in the working tree, so an agent could mark a story `approved` in its own branch and write the design next. It now reads approval as the session-start process state does. An artifact new or changed in this branch counts with the status its default-branch version has: an amendment keeps an approval already given, and a status set only in the branch does not count. `approvedOnDefaultBranch` is in `checks/lib/process.mjs`. Adopters: nothing to do.
+
+- **No `ask` rules in the settings rfr writes** (rewrite plan 25e). The template repositories and `install-rules` used to write `ask` rules for force-pushes, pushes to `main` or `master`, remote deletes, `gh repo delete`, and `vercel --prod`. An `ask` rule prompts even in auto mode. They are now `deny` rules, which refuse the same commands without a prompt where rfr's hooks are not loaded. `install-rules` offers to move an earlier install's rfr `ask` rules to `deny`. Adopters: run `/rfr-core:install-rules`, or move those entries from `ask` to `deny` in `.claude/settings.json` yourself.
+
+- **The command guard refuses the never list, by every route** (rewrite plan 25e). From the security review of #235. `guard-commands` now also refuses:
+  - skipping hooks by `git commit -n`, `core.hooksPath`, `HUSKY=0`, or `SKIP=`;
+  - reading secrets through the shell: a `.env` or key file, an unfiltered `env` or `printenv`, a secret-named variable printed, or `vercel env pull`;
+  - deleting or changing on the remote by `gh api -X DELETE` or a `gh api` change to `git/refs`;
+  - live Vercel changes by `vercel remove`, `vercel project rm`, `vercel env add/rm`, a `vercel redeploy` not marked preview, or `vercel --prod=<value>`.
+
+  `git branch -D` of a branch the guard can resolve is no longer refused: a local delete is not on the never list, and the guard tells the agent the `git branch <name> <sha>` that restores it. A security review of the first version found variants that still got through, and some false positives. The variants are now refused too: wrappers (`bash -c`, `$(…)`, `command`), Windows names, package-runner flags, Vercel global flags, `-X=DELETE`, `gh api graphql` delete and ref mutations, `gh auth token`, and PowerShell environment reads. The false positives are allowed again: `source .env`, `git commit -m"…"`, a hooks path set to a real folder, `.env.*.example`, `grep -q` and `sed -i` on `.env`, and a certificate `.pem`. The `git branch -D` allowance covers only the plain form: one command, no wrapper, no `-C`. The guide lists what the patterns cannot see. Replayed against 5,914 shell commands in the maintainer's local transcripts: the misfires found (`env | grep …`, `$env:X = …`, a heredoc that mentions `env`) are fixed, and the refusals left are the never-list actions `main` already refused, plus one real `git branch -df`. Adopters: nothing to do.
+
 ### Removed
 
 - **Solo and team mode** (rewrite plan 25e; decision D5). `rfr-process` 2.2.0. There is one path: approval is the approver's review in GitHub, which the GitHub gate lets them give whoever opened the pull request. The `mode:` line in `process.yml` is ignored, and the template drops it. The CODEOWNERS check now writes and checks the block in solo mode too. It renders the same block as the gate's setup script: each `approve` stage with approvers. Before, the two disagreed about `agent` and `notify` stages, so a project with those gates failed the drift check under the gate. Adopters: delete `mode:` from `process.yml` if you like. Run `node .rfr/checks/process-codeowners.mjs` once if the `process / codeowners` check fails.
@@ -24,18 +38,6 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
   rfr-core's guards now only refuse. Whether Claude Code prompts for the rest is the session's permission mode: run sessions in auto mode. Publishing a release or pushing a tag is no longer refused, since it is not on the never list. A Vercel preview deploy through MCP goes ahead without an instruction, as the CLI one already did, but only a plain new deployment: a redeploy, a settings change, a custom environment, or a production target is refused. Newly refused: pushing a tag or a glob to the default branch, `git push --branches`, `gh pr merge --admin`, a `gh api` change to branch protection or rulesets, and `gh release upload --clobber`. Versions: rfr-process 2.0.0, rfr-web 3.0.0, rfr-unreal 3.1.0, rfr-android 0.4.0; rfr-core's version goes up with the next release.
 
   Adopters: remove `taskApproval` and `permissions` from `.claude/rfr.json` (they are ignored), and start sessions in auto mode. A project without the GitHub gate no longer has anything stopping an agent from merging a gated pull request: set up the gate (`docs/adoption-guide.md`).
-
-### Changed
-
-- **No `ask` rules in the settings rfr writes** (rewrite plan 25e). The template repositories and `install-rules` used to write `ask` rules for force-pushes, pushes to `main` or `master`, remote deletes, `gh repo delete`, and `vercel --prod`. An `ask` rule prompts even in auto mode. They are now `deny` rules, which refuse the same commands without a prompt where rfr's hooks are not loaded. `install-rules` offers to move an earlier install's rfr `ask` rules to `deny`. Adopters: run `/rfr-core:install-rules`, or move those entries from `ask` to `deny` in `.claude/settings.json` yourself.
-
-- **The command guard refuses the never list, by every route** (rewrite plan 25e). From the security review of #235. `guard-commands` now also refuses:
-  - skipping hooks by `git commit -n`, `core.hooksPath`, `HUSKY=0`, or `SKIP=`;
-  - reading secrets through the shell: a `.env` or key file, an unfiltered `env` or `printenv`, a secret-named variable printed, or `vercel env pull`;
-  - deleting or changing on the remote by `gh api -X DELETE` or a `gh api` change to `git/refs`;
-  - live Vercel changes by `vercel remove`, `vercel project rm`, `vercel env add/rm`, a `vercel redeploy` not marked preview, or `vercel --prod=<value>`.
-
-  `git branch -D` of a branch the guard can resolve is no longer refused: a local delete is not on the never list, and the guard tells the agent the `git branch <name> <sha>` that restores it. A security review of the first version found variants that still got through, and some false positives. The variants are now refused too: wrappers (`bash -c`, `$(…)`, `command`), Windows names, package-runner flags, Vercel global flags, `-X=DELETE`, `gh api graphql` delete and ref mutations, `gh auth token`, and PowerShell environment reads. The false positives are allowed again: `source .env`, `git commit -m"…"`, a hooks path set to a real folder, `.env.*.example`, `grep -q` and `sed -i` on `.env`, and a certificate `.pem`. The `git branch -D` allowance covers only the plain form: one command, no wrapper, no `-C`. The guide lists what the patterns cannot see. Replayed against 5,914 shell commands in the maintainer's local transcripts: the misfires found (`env | grep …`, `$env:X = …`, a heredoc that mentions `env`) are fixed, and the refusals left are the never-list actions `main` already refused, plus one real `git branch -df`. Adopters: nothing to do.
 
 ### Added
 
