@@ -15,7 +15,7 @@
     {
       "name": "rfr-web",
       "source": "./plugins/web",
-      "description": "For websites and web apps: the web-engineer agent, accessibility and performance audits, and the Vercel MCP guard. Requires rfr-core."
+      "description": "For websites and web apps: the web-engineer agent, accessibility and performance audits, and guards for Vercel (MCP and CLI) and database commands. Requires rfr-core."
     },
     {
       "name": "rfr-unreal",

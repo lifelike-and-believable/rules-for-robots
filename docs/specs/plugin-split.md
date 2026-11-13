@@ -26,7 +26,7 @@ Split the domain-specific parts of `rfr-core` into two new plugins, `rfr-web` an
 | Plugin | For | Holds |
 |---|---|---|
 | `rfr-core` | Every project | The guards (`guard-commands`, `guard-test-edits`, `guard-owned-paths`, `guard-outcome`, `format-on-edit`); the agents `code-reviewer`, `security-reviewer`, `accessibility-reviewer`, `performance-reviewer`, `ux-reviewer`, `citation-checker`, `check-runner`, `software-architect`, `tech-lead`, `test-change-reviewer`; the skills `review-pr`, `plan-feature`, `write-adr`, `security-audit`, `release`, `merge-when-green`, `install-rules`, `lookup-api` |
-| `rfr-web` | Websites and web apps | The agent `web-engineer`; the skills `a11y-audit` and `perf-audit`; the Vercel MCP guard `guard-mcp` (NODE-002) |
+| `rfr-web` | Websites and web apps | The agent `web-engineer`; the skills `a11y-audit` and `perf-audit`; the Vercel MCP guard `guard-mcp` (NODE-002); since rewrite plan 25e, the Vercel CLI and database command guard `guard-cli` |
 | `rfr-unreal` | Unreal Engine plugins | The agent `unreal-engineer`; the skills `package-unreal-plugin` and `profile-unreal-plugin`; the editor check that an `-ExecCmds` list ends with `Quit`, moved out of `guard-commands` into its own hook |
 
 `rfr-process` and `rfr-feedback` do not change, apart from names they mention.

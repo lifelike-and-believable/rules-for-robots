@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// PreToolUse (Bash, PowerShell): ask the user before destructive git, file, and database commands
-// (rules WA-003 and, for databases, the node-services pack). Asking keeps the user in
-// control without blocking legitimate use; headless runs treat "ask" as a denial. The Unreal
-// editor -ExecCmds check moved to rfr-unreal's guard-unreal (docs/specs/plugin-split.md, AC-2).
+// PreToolUse (Bash, PowerShell): refuse destructive git and file commands and the never list (rule
+// WA-003); "ask" is a refusal the agent acts on, with no prompt. Database and Vercel CLI commands are
+// rfr-web's guard-cli (rewrite plan 25e), and the Unreal editor -ExecCmds check is rfr-unreal's
+// guard-unreal (docs/specs/plugin-split.md, AC-2).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -12,6 +12,9 @@ import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, 
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
+import { commandWords, commandsWithDirs, executedText, innerScripts, resolveFromShell, runnerTarget } from './command-words.mjs';
+
+export { commandsWithDirs, executedText, resolveFromShell };
 import { approveReason, commandApprovesPr, unreadReason } from './pr-approval.mjs';
 
 // [pattern, action, kind, rule, why, instead]: why a person must decide, and what the agent can do
@@ -26,10 +29,6 @@ const CHECKS = [
   [/\bgit\s+(filter-branch|filter-repo)\b/, 'rewriting repository history', null, 'WA-003', 'it rewrites every commit, and pushing the result replaces shared history', 'stop and report what you want removed from history'],
   [/\bgit\b[^;&|]*\s--no-verify\b/, 'skipping commit or push hooks (--no-verify)', null, 'WA-003', 'it skips the checks the project set for every commit and push', 'run the hooks and fix what they report'],
   [/\bgit\s+config\b(?![^;&|\n]*\s(--get\S*|--list|-l)\b)[^;&|\n]*\s--(global|system)\b/, 'changing machine-wide git configuration', null, 'WA-003', 'it changes git for every repository on this machine, outside the project', 'pass the setting for one command with git -c instead'],
-  [/\bdrizzle-kit\s+push\b/, 'drizzle-kit push applies schema changes directly to a database', null, 'PG-001', 'it changes a database outside the repository, and data it drops has no snapshot', "generate a migration and apply it through the project's reviewed migration step"],
-  [/\bdrizzle-kit\b[^;&|]*\s--force\b/, 'drizzle-kit --force accepts data-loss statements', null, 'PG-001', 'it applies statements that drop data, without review', 'run it without --force and report the statements it wants to run'],
-  [/\bprisma\s+migrate\s+(dev|reset)\b/, 'prisma migrate dev/reset can reset or alter a database', null, 'PG-001', 'it can reset a database outside the repository, losing its data', 'create the migration with --create-only and report it for review, or run it against a disposable database'],
-  [/\bprisma\s+db\s+(push|migrate)\b/, 'prisma db push/migrate applies changes, including destructive ones, without review', null, 'PG-001', 'it changes a database outside the repository, and data it drops has no snapshot', 'create a reviewed migration instead'],
 ];
 
 // rm with both recursive and force flags, in any order or form (-rf, -r -f, --recursive --force).
@@ -159,18 +158,6 @@ export function discardsWorkingTree(command) {
   return false;
 }
 
-// The folder a path written in a shell command names, resolved against base. On Windows, Git Bash
-// writes drive C: as /c/ and the user's temp folder as /tmp, which Node's path module would read as
-// folders on the current drive; they are mapped first. Native paths (C:\x, C:/x) need nothing.
-export function resolveFromShell(base, p, platform = process.platform) {
-  if (platform === 'win32') {
-    const drive = /^\/([a-zA-Z])(?=\/|$)/.exec(p);
-    if (drive) p = `${drive[1].toUpperCase()}:/${p.slice(3)}`;
-    else if (p === '/tmp' || p.startsWith('/tmp/')) p = os.tmpdir() + p.slice(4);
-  }
-  return path.resolve(base, p);
-}
-
 // The hook's decision: { decision: 'deny' | 'ask', reason } or null to let the command run.
 // A shell write to an existing test is refused with a pointer to the Edit tool, whose input shows
 // the change so guard-test-edits can check it (test-change-review AC-6); deleting or moving an
@@ -224,7 +211,7 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   const risk = findOtherRisk(command, cwd, hints, snaps, restores);
   if (risk) return asking(risk);
   // Actions on the never list that reach outside the project: pushing to the default branch,
-  // deleting on the remote, and production deploys.
+  // deleting on the remote, reading secrets, and skipping hooks.
   const named = namedAsk(command, cwd);
   if (named) return asking(named);
   const notes = [];
@@ -242,18 +229,6 @@ export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots
   if (deferred) return { decision: 'defer', reason: noted ? `${deferred} ${noted}` : deferred, snapshots };
   if (noted) return { decision: 'inform', reason: noted, snapshots };
   return null;
-}
-
-// The simple commands of a command line, each with the folder it runs in: the starting folder,
-// changed by any cd (or pushd) before it, and by git -C. null when the line cannot be read.
-export function commandsWithDirs(command, cwd) {
-  const commands = parseCommand(command);
-  if (!commands) return null;
-  let dir = cwd;
-  return commands.map(({ words }) => {
-    if ((words[0] === 'cd' || words[0] === 'pushd') && words[1] && !words[1].startsWith('-')) dir = resolveFromShell(dir, words[1].replace(/^~(?=\/|$)/, os.homedir()));
-    return { words, dir };
-  });
 }
 
 const git = (dir, args) => {
@@ -486,26 +461,6 @@ function stashSnaps(entries, snaps) {
   return null;
 }
 
-// What a command line runs, for the pattern checks: each simple command's words, and a heredoc's
-// body only when a shell reads it (bash <<EOF). A script that only mentions git push --force in a
-// heredoc, such as Python that edits a file, runs nothing (guard tiers replay, 15d). null when the
-// line cannot be parsed, so the caller falls back to the whole text.
-const SHELLS = /^(?:.*\/)?(bash|sh|zsh|dash|ksh|ssh|pwsh|powershell)$/;
-export function executedText(command) {
-  const commands = parseCommand(command);
-  if (!commands) return null;
-  return commands.map(({ words, scripts = [] }) => {
-    let k = 0;
-    while (k < words.length && /^(sudo|command|env|exec|\w+=\S*)$/.test(words[k])) k++;
-    // A word with spaces in it is one quoted argument, such as a commit message that mentions
-    // --no-verify: its spaces are joined so the patterns do not read it as separate arguments. A script
-    // a shell runs is matched as its own text (unattended AC-7, found replaying a real session).
-    const shell = SHELLS.test(words[k] ?? '');
-    const joined = words.map((w, i) => (/\s/.test(w) && !(shell && /^-\w*c$/.test(words[i - 1] ?? '')) ? w.replace(/\s+/g, '_') : w)).join(' ');
-    return [joined, ...(SHELLS.test(words[k] ?? '') ? scripts : [])].join(' ; ');
-  }).join(' ; ');
-}
-
 // The first risk a person must decide about, or null. Losses a snapshot can undo go to snaps
 // instead (guard tiers AC-11), and tracked, unchanged deletes add their restore command to hints.
 // git branch -D (or -d --force): a local branch's commits stay in the repository after the delete,
@@ -598,11 +553,10 @@ export function takeSnapshots(snaps, command, { now = new Date(), deadline = Dat
 
 const PUSH_DEFAULT = { rule: 'WA-003', action: 'pushing to the default branch', why: 'it changes the shared branch directly, without a pull request or its checks', instead: 'push a branch and open a pull request' };
 const REMOTE_DELETE = { rule: 'WA-003', action: 'deleting a branch, tag, release, or repository on the remote', why: 'it removes shared work from the remote, outside the project folder', instead: 'leave it in place and report what you would delete' };
-const PROD_DEPLOY = { rule: 'NODE-002', action: 'a production deploy, promotion, alias, or domain change', why: 'it changes what users of the live site see', instead: 'deploy a preview and report its URL' };
 
 const REMOTE_REWRITE = { rule: 'WA-003', action: 'moving a branch or tag on the remote through the API', why: 'it can rewrite shared history on the remote, as a force-push does', instead: 'push a branch and open a pull request' };
 const SKIP_HOOKS = { rule: 'WA-003', action: 'skipping the project\'s commit or push hooks (git commit -n, core.hooksPath, HUSKY=0, SKIP=)', why: 'it skips the checks the project set for every commit and push', instead: 'run the hooks and fix what they report' };
-const READ_SECRET = { rule: 'SEC-001', action: 'reading secret values into the session (a .env or key file, the environment, or vercel env pull)', why: 'a secret read into the session cannot be unread, and it can reach logs, transcripts, and pull requests', instead: 'refer to the variable by name, or read the .env.example file that lists the names' };
+const READ_SECRET = { rule: 'SEC-001', action: 'reading secret values into the session (a .env or key file, or the environment)', why: 'a secret read into the session cannot be unread, and it can reach logs, transcripts, and pull requests', instead: 'refer to the variable by name, or read the .env.example file that lists the names' };
 const BYPASS_GATE = { rule: 'WA-003', action: 'bypassing or changing branch protection (gh pr merge --admin, or a change to protection or rulesets)', why: 'branch protection is how the approver\'s review gates a merge, and changing it reaches outside the project', instead: 'leave the pull request for its checks and the approver\'s review, and report what you would change' };
 
 // A gh api call that changes branch protection or rulesets: a method other than GET on a
@@ -644,21 +598,6 @@ const shortFlags = (word, takesValue) => {
   }
   return out;
 };
-
-// The words of a Vercel CLI call from its subcommand on, with the global options before it removed.
-const VERCEL_VALUE_FLAGS = /^(--scope|-S|--token|-t|--cwd|--team|-T|--local-config|-A|--global-config|-Q)$/;
-function vercelArgs(words) {
-  const rest = words.slice(1);
-  const out = [];
-  let sub = false;
-  for (let k = 0; k < rest.length; k++) {
-    if (!sub && VERCEL_VALUE_FLAGS.test(rest[k])) { k++; continue; }
-    if (!sub && /^--(scope|token|cwd|team|local-config|global-config)=/.test(rest[k])) continue;
-    if (!sub && !rest[k].startsWith('-')) sub = true;
-    out.push(rest[k]);
-  }
-  return out;
-}
 
 // A file that holds secret values: .env and .env.<name> (not a copy with an example, sample, template,
 // or dist part, which holds names only), .envrc, cloud and package-registry credentials, and private
@@ -746,33 +685,15 @@ export function namedAsk(command, cwd, depth = 0) {
   }
   const entries = commandsWithDirs(command, cwd ?? process.cwd()) ?? [];
   for (const { words: raw, dir } of entries) {
-    let words = raw;
-    while (words.length && /^(sudo|command|env|exec|\w+=\S*)$/.test(words[0])) words = words.slice(1);
-    // A Windows executable name (git.exe, gh.exe, vercel.exe) is the same command.
-    if (/^(git|gh|vercel|npx|npm|pnpm|yarn|bunx)\.(exe|cmd)$/i.test(words[0] ?? '')) words = [words[0].replace(/\.(exe|cmd)$/i, '').toLowerCase(), ...words.slice(1)];
+    let words = commandWords(raw);
     // A command a shell or a substitution runs is checked as a line of its own.
     if (depth < 3) {
-      if (/^(bash|sh|zsh|dash|ksh|pwsh|powershell)(\.exe)?$/i.test(words[0] ?? '')) {
-        const k = words.findIndex(w => /^(-c|-Command|-command|-EncodedCommand)$/.test(w));
-        const inner = k !== -1 ? namedAsk(words[k + 1] ?? '', dir, depth + 1) : null;
-        if (inner) return inner;
-      }
-      for (const w of words) {
-        for (const m of w.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) {
-          const inner = namedAsk(m[1] ?? m[2] ?? '', dir, depth + 1);
-          if (inner) return inner;
-        }
+      for (const inner of innerScripts(words)) {
+        const found = namedAsk(inner, dir, depth + 1);
+        if (found) return found;
       }
     }
-    // Package runners: npx and bunx with their own flags and a version (npx -y vercel@latest),
-    // pnpm dlx, pnpm exec, npm exec, and yarn.
-    if (['npx', 'bunx'].includes(words[0])) {
-      let k = 1;
-      while (k < words.length && words[k].startsWith('-')) k += /^(-p|--package)$/.test(words[k]) ? 2 : 1;
-      words = words.slice(k);
-    } else if ((words[0] === 'pnpm' && /^(dlx|exec)$/.test(words[1] ?? '')) || (words[0] === 'npm' && words[1] === 'exec')) words = words.slice(2);
-    else if (words[0] === 'yarn' && words[1] && !words[1].startsWith('-') && !/^(install|add|remove|run|test|build|dev|start)$/.test(words[1])) words = words.slice(1);
-    if (words.length) words = [words[0].replace(/@[^/]*$/, ''), ...words.slice(1)];
+    words = runnerTarget(words);
     const g = gitArgs(words);
     if (g?.[0] === 'push') {
       const args = g.slice(1);
@@ -839,21 +760,9 @@ export function namedAsk(command, cwd, depth = 0) {
       if (committing && g.slice(1).some(a => /^--no-v(e(r(i(f(y)?)?)?)?)?$/.test(a))) return SKIP_HOOKS;
     }
     // Reading secret values into the session: a secrets file read by a shell command, the whole
-    // environment, a secret-named variable printed, or Vercel's environment pulled to a file.
+    // environment, or a secret-named variable printed (vercel env pull is rfr-web's guard-cli).
     if (readsSecret(words)) return READ_SECRET;
     if (words[0] === 'gh' && words[1] === 'api' && words[2] === 'graphql' && graphqlRewrites(words.slice(3))) return REMOTE_REWRITE;
-    if (words[0] === 'vercel') {
-      const rest = vercelArgs(words);
-      // vercel env pull and vercel pull --environment production write the variables' values to a file.
-      if ((/^env$/i.test(rest[0] ?? '') && /^pull$/i.test(rest[1] ?? '')) || (/^pull$/i.test(rest[0] ?? '') && rest.some((w, k) => /^--environment=prod/i.test(w) || (w === '--environment' && /^prod/i.test(rest[k + 1] ?? ''))))) return READ_SECRET;
-      if (/^(dns|certs|cert)$/i.test(rest[0] ?? '') && /^(rm|remove|add|issue)$/i.test(rest[1] ?? '')) return REMOTE_DELETE;
-      // Removing a deployment or project, or changing its environment variables, changes the live
-      // account; a redeploy keeps the original's target unless it says preview.
-      if (/^(remove|rm)$/i.test(rest[0] ?? '') || (/^(project|projects)$/i.test(rest[0] ?? '') && /^(rm|remove)$/i.test(rest[1] ?? ''))) return REMOTE_DELETE;
-      if (/^env$/i.test(rest[0] ?? '') && /^(add|rm|remove|update)$/i.test(rest[1] ?? '')) return PROD_DEPLOY;
-      if (/^redeploy$/i.test(rest[0] ?? '') && !rest.some((w, k) => /^--target=preview$/i.test(w) || (w === '--target' && /^preview$/i.test(rest[k + 1] ?? '')))) return PROD_DEPLOY;
-      if (rest.some(w => /^(--prod(=(?!false\b)\S*)?|--production|--target=prod(uction)?)$/i.test(w)) || /^(promote|alias|aliases|domains|rollback)$/i.test(rest[0] ?? '') || rest.some((w, k) => w === '--target' && /^prod/i.test(rest[k + 1] ?? ''))) return PROD_DEPLOY;
-    }
   }
   return null;
 }

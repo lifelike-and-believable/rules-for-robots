@@ -28,7 +28,7 @@ test('a plugin\'s tests run when the plugin, a file its tests import, or a path 
   assert.deepEqual(run(['plugins/web/README.md']).plugins, ['web']);
   assert.deepEqual(run(['checks/ci/feedback-intake.mjs']).plugins, ['feedback'], 'imported from outside the plugin');
   assert.deepEqual(run(['.github/ISSUE_TEMPLATE/feedback.yml']).plugins, ['feedback'], 'a path the test names');
-  assert.deepEqual(run(['plugins/core/scripts/guard-commands.mjs']).plugins, ['unreal'], 'guard-unreal tests import the core guard');
+  assert.deepEqual(run(['plugins/core/scripts/guard-commands.mjs']).plugins, ['unreal', 'web'], 'the guard-unreal and guard-cli tests import the core guard');
   assert.deepEqual(run(['src/unrelated.mjs', 'test/plan.test.mjs']).plugins, []);
   assert.equal(run(['test/plan.test.mjs']).rootTests, true, 'the root tests always run');
 });

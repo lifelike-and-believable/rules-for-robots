@@ -113,7 +113,20 @@ All the `process-*` files above are locked by project-process: each is listed un
   - The Unreal sample check runs when rfr-unreal, `checks/unreal/`, or `examples/unreal/` changes.
   - A push to `main`, or a change to the test setup, runs everything.
 
-**Left for slice f2:** the PG-001 and production-deploy patterns, which leave `guard-commands.mjs` for an rfr-web hook, with their tests. Also the `mutation` and `tutorials` jobs, which run only for the profiles that use them. The first is a guard change, replayed against the maintainer's transcripts before it merges. The second changes what adopters' CI runs.
+**Done in slice f2 (2026-11-13).**
+
+- The PG-001 database patterns and the whole Vercel CLI check moved from `guard-commands.mjs` to rfr-web's new `guard-cli.mjs`:
+  - production deploys (NODE-002);
+  - deleting deployments, projects, DNS records, and certificates (WA-003);
+  - pulling secrets (SEC-001).
+- The inventory said the Vercel production-deploy refusal moves. #237 had since hardened it inside `guard-commands` as part of the never list, so the maintainer was asked again on 2026-11-13 and chose to move it.
+- `guard-cli` reads command lines with a build-generated copy of rfr-core's parser. The command walker moved, unchanged, into `plugins/core/scripts/command-words.mjs` for that purpose.
+- Before the move, `main`'s `guard-commands` was compared with this branch's `guard-commands` and `guard-cli` together on 5,372 commands, with no difference in what is refused:
+  - the guard corpus;
+  - this session's transcript;
+  - every quoted string in the test files.
+- `evals/session-replay/replay-commands.mjs` now runs both guards.
+- **Already in place:** the `mutation` job is opt-in (`mutation: false` by default) and runs only on feature pull requests. The `tutorials` job only checks coverage for each tutorial's own `runner:`. Neither runs anything a profile does not use, so neither changed.
 
 | File | Plugin |
 |---|---|

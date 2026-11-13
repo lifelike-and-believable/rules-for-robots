@@ -11,6 +11,7 @@ import { decideCommand } from '../plugins/core/scripts/guard-commands.mjs';
 import { decideEdit } from '../plugins/core/scripts/guard-test-edits.mjs';
 import { ownedPathsReason } from '../plugins/core/scripts/guard-owned-paths.mjs';
 import { vercelAskReason } from '../plugins/web/scripts/guard-mcp.mjs';
+import { decideWebCommand } from '../plugins/web/scripts/guard-cli.mjs';
 import { decideUnreal } from '../plugins/unreal/scripts/guard-unreal.mjs';
 import { formatReport, summarise } from '../checks/guard-report.mjs';
 
@@ -56,6 +57,7 @@ test('guard-tiers#AC-3: tier-4 corpus cases ask, and each ask reason names the a
   for (const c of corpus.filter(x => x.tier === 4 && !x.pending)) {
     let decision;
     if (c.guard === 'commands') decision = decideCommand(c.command, { cwd: repo().dir });
+    else if (c.guard === 'web-cli') decision = decideWebCommand(c.command, { cwd: repo().dir });
     else if (c.guard === 'mcp') {
       const reason = vercelAskReason(c.tool_name, c.tool_input);
       decision = reason && { decision: 'ask', reason };
