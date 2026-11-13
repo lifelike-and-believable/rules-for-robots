@@ -42,7 +42,7 @@ test('rm -rf still asks for the temp directory itself, an escape from it, an unk
   for (const command of [
     `rm -rf ${sh(os.tmpdir())}`,
     `rm -rf ${dir}/../..`,
-    // A folder directly under the temp folder no longer asks (default-allow decision 6); see rm-own-scratch.test.mjs.
+    // A folder directly under the temp folder no longer asks (default-allow decision 6); see guard-commands.test.mjs.
     'rm -rf $SOMEWHERE/wt',
     `R=$(pwd); rm -rf $R/wt`,
     `rm -rf ${sh(os.homedir())}/project`,
@@ -67,10 +67,10 @@ EOF`;
 
 test('scripts that do write a test file are still caught', () => {
   for (const command of [
-    `python3 -c "p='test/hooks.test.mjs'; s=open(p).read(); open(p,'w').write(s)"`,
-    `python3 - <<'EOF'\nfor p in ['test/hooks.test.mjs', 'test/plan.test.mjs']:\n    open(p, 'w').write('')\nEOF`,
-    "node -e \"require('fs').writeFileSync(`test/hooks.test.mjs`, '')\"",
-    `python3 - <<'EOF'\nfrom pathlib import Path\nPath('test/hooks.test.mjs').write_text('')\nEOF`,
+    `python3 -c "p='test/build.test.mjs'; s=open(p).read(); open(p,'w').write(s)"`,
+    `python3 - <<'EOF'\nfor p in ['test/build.test.mjs', 'test/plan.test.mjs']:\n    open(p, 'w').write('')\nEOF`,
+    "node -e \"require('fs').writeFileSync(`test/build.test.mjs`, '')\"",
+    `python3 - <<'EOF'\nfrom pathlib import Path\nPath('test/build.test.mjs').write_text('')\nEOF`,
   ]) assert.equal(decideCommand(command, { cwd: REPO })?.decision, 'deny', command);
 });
 

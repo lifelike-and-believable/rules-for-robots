@@ -1,5 +1,5 @@
-// Guard tiers, slice 15c (docs/specs/guard-tiers.md, AC-11): a snapshot before a destructive local
-// command, which is then allowed. Each test title cites the criterion it covers.
+// Snapshots (docs/specs/guard-tiers.md, AC-11): a snapshot before a destructive local command,
+// which is then allowed. Each test title cites the criterion it covers. Was guard-tiers-15c.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

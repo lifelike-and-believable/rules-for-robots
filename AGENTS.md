@@ -20,7 +20,7 @@ Rules, best practices, and agent definitions that steer Claude Code toward high-
 - `practices/`: longer guides that rules link to.
 - `.github/workflows/rfr-guards.yml`, `rfr-unreal-tier1.yml`, `rfr-process.yml`, `rfr-tutorials-preview.yml`: reusable workflows that adopting repos call.
 - `plugins/process/vale/RFR/`: the Vale style the `docs-lint` job uses; `checks/ci/install-vale.mjs` pins Vale by SHA-256 into `.cache/` (gitignored). `checks/ci/`: scripts they run.
-- `checks/`: rule lint and shared parsing. `build/`: template repo renderer and profiles. `test/`: tests for both.
+- `checks/`: rule lint and shared parsing. `build/`: template repo renderer and profiles. `test/`: tests for both, and for rfr-core and rfr-process. The domain plugins (rfr-web, rfr-unreal, rfr-android, rfr-feedback) keep their tests in `plugins/<name>/test/`; in CI, `checks/ci/verify-ci.mjs` runs those only when something they depend on changes, and runs no tests for a documents-only pull request.
 - `docs/research/`: Phase 0 findings, recommendations, notes, and experiments. Treat as a record; correct errors, but do not rewrite history.
 
 ## Writing rules and docs

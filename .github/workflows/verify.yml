@@ -9,7 +9,23 @@ permissions:
   contents: read
 
 jobs:
+  # What a pull request's changes can affect (checks/ci/verify-ci.mjs): a documents-only pull request
+  # runs no tests, and a plugin's tests run only when something they depend on changes.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      docs-only: ${{ steps.plan.outputs.docs-only }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node checks/ci/verify-ci.mjs --plan --github-output
+
   verify:
+    needs: plan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,14 +40,21 @@ jobs:
       # Ubuntu's package mirror; when the mirror cannot be reached (seen 2026-11-11), the runner
       # image's own libraries are enough for Chromium, so install the browser alone instead of
       # failing before any test runs. The tests still fail if the browser cannot start.
-      - run: timeout 300 npx playwright install --with-deps chromium || { echo "::warning::Ubuntu's package mirror failed; installing Chromium without --with-deps"; npx playwright install chromium; }
+      - if: needs.plan.outputs.docs-only != 'true'
+        run: timeout 300 npx playwright install --with-deps chromium || { echo "::warning::Ubuntu's package mirror failed; installing Chromium without --with-deps"; npx playwright install chromium; }
       # Plugin validation needs the Claude Code CLI; no API key is used.
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
-      - run: npm run verify
+      # The verify chain, cut to what the changes can affect; `npm run verify` locally runs all of it.
+      - env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node checks/ci/verify-ci.mjs
 
   # The same chain on Windows (improvement plan 18b). A separate job, so the required "verify" check
   # keeps its name. Not yet a required check: add it to branch protection once it has stayed green.
+  # Skipped for a documents-only pull request.
   verify-windows:
+    needs: plan
+    if: needs.plan.outputs.docs-only != 'true'
     runs-on: windows-latest
     steps:
       - run: git config --global core.autocrlf false
@@ -45,7 +68,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm install --global @anthropic-ai/claude-code@^2.1.288
-      - run: npm run verify
+      - env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node checks/ci/verify-ci.mjs
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -59,7 +84,7 @@ jobs:
   status:
     # A new comment on the pull request each time CI finishes, naming the head commit, so whoever
     # waits on CI is notified instead of polling. Confirm checks on the current head before merging.
-    needs: [verify, verify-windows, secret-scan]
+    needs: [plan, verify, verify-windows, secret-scan]
     if: always()
     permissions:
       contents: read

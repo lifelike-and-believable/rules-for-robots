@@ -1,6 +1,10 @@
 ---
 status: approved
+tests: [test, plugins/feedback/test]
 tests-commit: [43203a7568bd0e719d734558d9bf9421dc24b971, 8d9d0783665d3a448e3dafd8e28e22b8b536954b]
+unlocks:
+  - test/feedback.test.mjs: moved to plugins/feedback/test/feedback.test.mjs (rewrite plan 25e, verify inventory slice f: domain tests live in their plugin); only the two import paths change, to ../scripts/ and ../../../checks/, and every test is unchanged
+  - test/feedback-area.test.mjs: moved to plugins/feedback/test/feedback-area.test.mjs (rewrite plan 25e, verify inventory slice f); only the two import paths change, and every test is unchanged
 ---
 
 # Feedback intake

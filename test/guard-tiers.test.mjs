@@ -1,5 +1,6 @@
-// Guard tiers, slice 15b (docs/specs/guard-tiers.md): the tier changes to the guards and the
-// testWeakening setting. Each test title cites the criterion it covers.
+// Guard tiers (docs/specs/guard-tiers.md): which tier each guard decision takes across rfr-core,
+// rfr-web, and rfr-unreal, and the testWeakening setting. Each test title cites the criterion it
+// covers. Was guard-tiers-15b.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { parse } from 'yaml';
-import { FIELDS, issueBody, issueUrl, scanPrivate } from '../plugins/feedback/scripts/feedback.mjs';
-import { runIntake } from '../checks/ci/feedback-intake.mjs';
+import { FIELDS, issueBody, issueUrl, scanPrivate } from '../scripts/feedback.mjs';
+import { runIntake } from '../../../checks/ci/feedback-intake.mjs';
 
 const readJson = p => JSON.parse(fs.readFileSync(p, 'utf8'));
 

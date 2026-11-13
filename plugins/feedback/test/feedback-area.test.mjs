@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { parse } from 'yaml';
-import { FIELDS } from '../plugins/feedback/scripts/feedback.mjs';
-import { runIntake } from '../checks/ci/feedback-intake.mjs';
+import { FIELDS } from '../scripts/feedback.mjs';
+import { runIntake } from '../../../checks/ci/feedback-intake.mjs';
 
 test('feedback#AC-8: the form\'s area is an optional text input that describes each area', () => {
   const form = parse(fs.readFileSync('.github/ISSUE_TEMPLATE/feedback.yml', 'utf8'));
