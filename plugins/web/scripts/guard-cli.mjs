@@ -59,7 +59,7 @@ function vercelInLine(command, cwd, depth = 0) {
   for (const { words: raw, dir } of commandsWithDirs(command, cwd) ?? []) {
     let words = commandWords(raw);
     if (depth < 3) {
-      for (const inner of innerScripts(words)) {
+      for (const inner of innerScripts(words, command)) {
         const found = vercelInLine(inner, dir, depth + 1);
         if (found) return found;
       }

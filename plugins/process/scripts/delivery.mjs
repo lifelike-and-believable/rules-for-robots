@@ -162,7 +162,11 @@ function start(root, name) {
   let specs = [];
   if (name) {
     specs = resolveSpecs(root, name);
-    if (!specs.length) {
+    // A story whose user documentation is approved and which has no spec yet is where a delivery
+    // starts: the run begins, and its first step is the spec (AC-9, amended in rewrite plan 25f after
+    // the delegated eval found every new delivery refused here).
+    const opens = !specs.length && processNext(root)?.steps.some(s => s.story === name && s.step === 'deliver');
+    if (!specs.length && !opens) {
       // Nothing to deliver yet: the feature is at an earlier stage, which is written and approved first.
       console.error(`${where(root, name)}\n\n${name} has no spec yet, so this is not a delivery run. Write the stage it is at, push the branch, and tell the lead once that it is waiting for their approval.`);
       return 1;
