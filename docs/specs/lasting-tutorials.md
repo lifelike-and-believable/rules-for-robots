@@ -89,6 +89,7 @@ Criteria marked D rest on the decision of that number below.
 | AC-12 | XR Studio In A Box is moved onto this: a `try` command and preview deployments with tutorial sign-in; its four tutorials rewritten by task as `runner: web`, with their Playwright scripts removed; and each linked from its user documentation. The lead follows them on a preview. (D5) | review: the lead validates slices 2, 3, and 4 from a preview. |
 | AC-13 | The guide's validation part has the table of kinds of product and what trying each takes, and each profile's part names its own row. For a product with external services, the guide asks the architecture for a "Trying the product" section listing each service and its stand-in locally and in a preview, with what the stand-in hides; the persona walkthrough of an architecture reports a service the design names that the section leaves out. | test: the guide and the walkthrough's text. |
 | AC-14 | A tutorial may list services in `needs:`, and `try:` in `process.yml` may list, for `local`, `preview`, and a `staging` address, the services each `provides`. The runner takes `--provides <list>` (the workflows pass the list for where they run), runs a tutorial only where every need is provided, and reports the others as "not run here: needs <service>", apart from passes and failures. The process check fails a need that no place provides. The release check lists a story whose tutorial has needs and has no recorded run where they were met. (D7) | test: a tutorial with a need run with and without it provided; the report; an unprovided need; the release check. |
+| AC-15 | The rules in AC-2 and AC-9 can be reported as warnings, for a project whose tutorials were written before them. `checkCoverage` and `runProcessTrace` take `lasting: 'warn'`; their command lines read it from `RFR_LASTING_TUTORIALS`; and the reusable process workflow has a `lasting-tutorials` input that it passes to both. The input's default is `warn` until slice 27d is done, and `fail` from then on; a project can set `fail` sooner. (Added 2026-11-13 while building 27a: XR Studio In A Box's four tutorials break the rules and cannot be rewritten before 27b to 27d exist, and its CI follows this repository's `main`.) | test: the default and `warn` for both checks; another problem still failing; the command line; the workflow. |
 
 ## Decisions
 
@@ -121,8 +122,8 @@ Approved by the maintainer on 2026-11-13, each as recommended: "yes to all decis
 ## Delivery
 
 - Plan item: `PLAN.md`, Phase 27. One pull request for each slice.
-  - **27a, what a tutorial is:** AC-1, AC-2, AC-7, AC-9.
+  - **27a, what a tutorial is:** AC-1, AC-2, AC-7, AC-9, AC-15.
   - **27b, the runner:** AC-3, AC-4.
   - **27c, a place to try it:** AC-5, AC-6, AC-8, AC-10, AC-11, AC-13, AC-14.
-  - **27d, XR Studio In A Box:** AC-12.
+  - **27d, XR Studio In A Box:** AC-12, and the workflow's `lasting-tutorials` default becomes `fail`.
 - Pull requests: none yet.
