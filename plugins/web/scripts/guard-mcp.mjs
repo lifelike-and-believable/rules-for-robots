@@ -47,14 +47,26 @@ export function vercelAskReason(toolName, toolInput) {
   return null;
 }
 
-// A deployment that does not target production: what NODE-002 tells the agent to do instead of a
-// production deploy, so it goes ahead.
+// A new preview deployment: what NODE-002 tells the agent to do instead of a production deploy, so it
+// goes ahead. Only a plain new deployment counts: no target, or target "preview"; no redeploy of an
+// existing deployment, no change to the project's settings, and no custom environment, any of which
+// can reach production. Anything the guard cannot read is not a preview.
+const PREVIEW_UNSAFE_KEYS = /^(deploymentid|projectsettings|customenvironmentslugorid|customenvironment|environment|production|prod|withlatestcommit)$/i;
 export function isPreviewDeploy(toolName, toolInput) {
   if (typeof toolName !== 'string' || !/^mcp__.*vercel/i.test(toolName)) return false;
   const action = toolName.slice(toolName.lastIndexOf('__') + 2).toLowerCase();
   if (!/^(create_deployment|deploy(_to_vercel|_project)?)$/.test(action)) return false;
-  const text = typeof toolInput === 'string' ? toolInput : JSON.stringify(toolInput ?? {});
-  return !/"(target|environment)"\s*:\s*"prod|--prod\b|"production"\s*:\s*true/i.test(text);
+  let input = toolInput ?? {};
+  if (typeof input === 'string') {
+    try { input = JSON.parse(input); } catch { return false; }
+  }
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return false;
+  if (/--prod\b|"production"/i.test(JSON.stringify(input))) return false;
+  for (const [key, value] of Object.entries(input)) {
+    if (PREVIEW_UNSAFE_KEYS.test(key)) return false;
+    if (/^target$/i.test(key) && value !== 'preview') return false;
+  }
+  return true;
 }
 
 // The decision for a Vercel MCP call: { decision: 'ask', reason }, refused as a never-list action, or

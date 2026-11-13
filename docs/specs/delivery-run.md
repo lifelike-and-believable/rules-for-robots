@@ -42,7 +42,7 @@ Under the GitHub gate the agent does not write the pull request's description, s
 ## Scope
 
 - In: `plugins/process/scripts/delivery.mjs` (the commands and the `Stop` hook), the `deliver` skill, `hooks.json`, the session text in `checks/lib/process.mjs`, `checks/ci/process-pr-body.mjs`, the step in `templates/workflows/rfr-open-pr.yml`, the guide, tests.
-- Out: letting a session subscribe to a pull request where rfr-core is loaded, which its default-allow hook refuses today (a separate change to rfr-core, with a release); running the project's tests inside the hook, which is CI's job and too slow for a hook; removing WA-003 and WA-009, which the skill's text replaces in 25e.
+- Out: letting a session subscribe to a pull request where rfr-core is loaded, which its default-allow hook refused (allowed in rfr-core 7.3.0; the hook itself was removed in rewrite plan 25e); running the project's tests inside the hook, which is CI's job and too slow for a hook; removing WA-003 and WA-009, which the skill's text replaces in 25e.
 
 ## APIs and assumptions
 

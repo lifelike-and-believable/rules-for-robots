@@ -196,8 +196,7 @@ const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s
 // docs/specs/unattended.md).
 export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots } = {}) {
   if (typeof command !== 'string') return null;
-  // Approving a pull request is refused before anything else, so no task approval can allow it
-  // (github-gate AC-9).
+  // Approving a pull request is refused before anything else (github-gate AC-9).
   const approves = commandApprovesPr(command);
   if (approves) return { decision: 'deny', reason: approves === 'approve' ? approveReason : unreadReason };
   const existed = cwd ? file => existingProjectFile(file, cwd) : undefined;
@@ -569,6 +568,19 @@ const PUSH_DEFAULT = { rule: 'WA-003', action: 'pushing to the default branch', 
 const REMOTE_DELETE = { rule: 'WA-003', action: 'deleting a branch, tag, release, or repository on the remote', why: 'it removes shared work from the remote, outside the project folder', instead: 'leave it in place and report what you would delete' };
 const PROD_DEPLOY = { rule: 'NODE-002', action: 'a production deploy, promotion, alias, or domain change', why: 'it changes what users of the live site see', instead: 'deploy a preview and report its URL' };
 
+const BYPASS_GATE = { rule: 'WA-003', action: 'bypassing or changing branch protection (gh pr merge --admin, or a change to protection or rulesets)', why: 'branch protection is how the approver\'s review gates a merge, and changing it reaches outside the project', instead: 'leave the pull request for its checks and the approver\'s review, and report what you would change' };
+
+// A gh api call that changes branch protection or rulesets: a method other than GET on a
+// .../branches/<b>/protection... or .../rulesets... path.
+function changesProtection(args) {
+  const path = args.find(a => /(^|\/)(branches\/[^\s]+\/protection|rulesets)(\/|$|\?)/.test(a));
+  if (!path) return false;
+  const k = args.findIndex(a => a === '-X' || a === '--method' || /^(-X|--method=)\S+/.test(a));
+  const method = k === -1 ? (args.some(a => /^(-f|-F|--field|--raw-field|--input)$/.test(a)) ? 'POST' : 'GET')
+    : (args[k] === '-X' || args[k] === '--method' ? args[k + 1] : args[k].replace(/^(-X|--method=)/, ''));
+  return String(method).toUpperCase() !== 'GET';
+}
+
 // The branches a push must not reach: main, master, and the remote's default branch.
 export function defaultBranches(cwd) {
   const head = git(cwd, ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD']).out.trim().replace(/^origin\//, '');
@@ -598,7 +610,7 @@ export function namedAsk(command, cwd) {
       const args = g.slice(1);
       const flags = args.filter(a => a.startsWith('-'));
       if (flags.some(f => /^(-d|--delete|--mirror|--prune)$/.test(f))) return REMOTE_DELETE;
-      if (flags.includes('--all')) return PUSH_DEFAULT;
+      if (flags.some(f => /^(--all|--branches)$/.test(f))) return PUSH_DEFAULT;
       const positional = [];
       for (let k = 0; k < args.length; k++) {
         if (/^(-o|--push-option|--repo|--receive-pack|--exec)$/.test(args[k])) { k++; continue; }
@@ -607,6 +619,8 @@ export function namedAsk(command, cwd) {
       const defaults = defaultBranches(dir);
       const refspecs = positional.slice(1);
       if (!refspecs.length) {
+        // --tags pushes the tags and not the current branch; --follow-tags pushes both.
+        if (flags.includes('--tags')) continue;
         const current = git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']).out.trim();
         if (current && defaults.has(current)) return PUSH_DEFAULT;
         continue;
@@ -614,13 +628,22 @@ export function namedAsk(command, cwd) {
       for (const spec of refspecs) {
         if (spec.startsWith(':')) return REMOTE_DELETE;
         const [src, dst = src] = spec.replace(/^\+/, '').split(':');
+        // The destination decides: a tag pushed to refs/tags/ is not a branch, but a tag (or any
+        // source) pushed to the default branch, or a glob that can reach it, moves that branch.
+        if (/^refs\/tags\//.test(dst)) continue;
+        if (dst.includes('*')) return PUSH_DEFAULT;
+        if (dst === src && git(dir, ['show-ref', '--verify', '--quiet', `refs/tags/${src}`]).status === 0) continue;
         const target = dst === 'HEAD' ? git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']).out.trim() : dst.replace(/^refs\/heads\//, '');
-        if (/^refs\/tags\//.test(dst) || git(dir, ['show-ref', '--verify', '--quiet', `refs/tags/${src}`]).status === 0) continue;
         if (defaults.has(target)) return PUSH_DEFAULT;
       }
       continue;
     }
     if (words[0] === 'gh' && ((words[1] === 'release' && words[2] === 'delete') || (words[1] === 'repo' && /^(delete|archive|rename)$/.test(words[2] ?? '')))) return REMOTE_DELETE;
+    // Replacing a published release's assets removes what was there.
+    if (words[0] === 'gh' && words[1] === 'release' && words[2] === 'upload' && words.includes('--clobber')) return REMOTE_DELETE;
+    // The gate is branch protection: an agent neither bypasses it nor changes it (github-gate AC-9).
+    if (words[0] === 'gh' && words[1] === 'pr' && words[2] === 'merge' && words.includes('--admin')) return BYPASS_GATE;
+    if (words[0] === 'gh' && words[1] === 'api' && changesProtection(words.slice(2))) return BYPASS_GATE;
     if (words[0] === 'vercel') {
       const rest = words.slice(1);
       if (rest.some(w => /^(--prod|--production|--target=prod(uction)?)$/i.test(w)) || /^(promote|alias|aliases|domains|rollback)$/i.test(rest[0] ?? '') || rest.some((w, k) => w === '--target' && /^prod/i.test(rest[k + 1] ?? ''))) return PROD_DEPLOY;

@@ -58,7 +58,7 @@ export function summarise(entries) {
     const g = groups.get(key);
     if (e.decision === 'ask') { g.asks++; asks++; }
     else if (e.decision === 'approved') { g.approved++; approved++; }
-    else if (e.decision === 'deny') { g.refusals++; refusals++; }
+    else if (e.decision === 'deny' || e.decision === 'never') { g.refusals++; refusals++; }
   }
   const hours = first === null ? 0 : (last - first) / 3600000;
   const reasons = [...groups.values()]
