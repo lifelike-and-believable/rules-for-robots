@@ -45,9 +45,12 @@ export function decideStage(input, root) {
   const { artifacts } = loadArtifacts(workingTree(root));
   const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
   const linked = (parsed.links ?? []).map(l => byId.get(l.target)).filter(Boolean);
-  // Approval is read from the default branch, as the process state does (process-state AC-3; rewrite
-  // plan 25e): an artifact marked approved only in this branch is a proposal its pull request asks for.
-  const approved = approvedOnDefaultBranch(root);
+  // Delivery (a spec or a tutorial) starts only from what the approver has approved: approval is read
+  // from the default branch, as the process state does (process-state AC-3; rewrite plan 25e), so a
+  // status set to approved only in this branch does not open delivery. Inside a feature packet (stories,
+  // design, and user documentation in one pull request), each stage derives from the one before it as
+  // proposed in the same branch, so a design or user documentation counts the working tree's status.
+  const approved = stage === 'specs' || stage === 'tutorials' ? approvedOnDefaultBranch(root) : a => ['approved', 'implemented'].includes(a.status);
   if (linked.some(a => a.stage === need && approved(a))) return null;
   // Work with no user-facing behaviour (process-state AC-11): a spec may derive from an approved
   // design that says, with a reason, that what it covers needs no user documentation.
