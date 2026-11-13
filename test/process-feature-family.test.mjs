@@ -45,6 +45,33 @@ test('process-state#AC-13: delivery is open while any of a feature\'s user docum
   assert.deepEqual(old.units, ['user-old-more']);
 });
 
+test('process-state#AC-13: a finished feature stays done when it also has a no-user-docs design with a spec', () => {
+  const artifacts = [
+    art('story-s', 'stories', 'approved'),
+    art('design-d', 'design', 'approved', ['story-s']),
+    art('design-d2', 'design', 'approved', ['story-s'], { noUserDocs: 'build tooling with nothing a user sees' }),
+    art('user-u', 'user-docs', 'approved', ['design-d']),
+    art('spec-sp', 'specs', 'approved', ['user-u']),
+    art('spec-sp2', 'specs', 'approved', ['design-d2']),
+    art('tutorial-t', 'tutorials', 'approved', ['user-u']),
+  ];
+  assert.equal(featureSteps(artifacts, config)[0].step, 'done');
+  // The enabling design alone, with no spec yet, is still open work.
+  assert.equal(featureSteps(artifacts.filter(a => a.id !== 'spec-sp2'), config)[0].step, 'deliver');
+});
+
+test('process-state#AC-13: one tutorial covers every user documentation its spec delivers', () => {
+  const artifacts = [
+    art('story-s', 'stories', 'approved'),
+    art('design-d', 'design', 'approved', ['story-s']),
+    art('user-u1', 'user-docs', 'approved', ['design-d']),
+    art('user-u2', 'user-docs', 'approved', ['design-d']),
+    art('spec-sp', 'specs', 'approved', ['user-u1', 'user-u2']),
+    art('tutorial-t', 'tutorials', 'approved', ['user-u1']),
+  ];
+  assert.equal(featureSteps(artifacts, config)[0].step, 'done');
+});
+
 test('process-state#AC-13: a spec joins through a design marked no-user-docs', () => {
   const artifacts = [
     art('story-skel', 'stories', 'approved'),

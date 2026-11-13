@@ -177,7 +177,9 @@ export function openDeliveries(root) {
     .filter(b => b !== ref && b !== 'origin/HEAD' && b !== 'origin');
   const elsewhere = [];
   for (const branch of branches) {
-    const specs = lines(git(root, ['diff', '--name-only', `${ref ?? 'HEAD'}...${branch}`, '--', 'docs/specs'])).filter(f => f.endsWith('.md'));
+    // Since the branch left the default branch; a branch with no history in common is compared whole.
+    const diff = git(root, ['diff', '--name-only', `${ref ?? 'HEAD'}...${branch}`, '--', 'docs/specs']) ?? git(root, ['diff', '--name-only', ref ?? 'HEAD', branch, '--', 'docs/specs']);
+    const specs = lines(diff).filter(f => f.endsWith('.md'));
     for (const file of specs) {
       const text = git(root, ['show', `${branch}:${file}`]);
       const parsed = text ? parseArtifact(text) : null;

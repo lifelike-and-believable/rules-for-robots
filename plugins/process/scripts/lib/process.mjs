@@ -505,11 +505,18 @@ export function featureSteps(artifacts, config) {
     const ORDER = ['deliver', 'delivering', 'validate', 'done'];
     const stateOf = unit => {
       const specs = from('specs', unit);
-      const tutorials = from('tutorials', unit);
+      // One tutorial covers everything its spec delivers: a tutorial that links any piece a spec of
+      // this one links counts for this one too, as the delivery run's own check accepts.
+      const group = new Set([unit.id, ...specs.flatMap(sp => (sp.links ?? []).map(l => l.target))]);
+      const tutorials = at('tutorials').filter(a => (a.links ?? []).some(l => group.has(l.target) && units.some(u => u.id === l.target)));
       if (tutorials.length) return tutorials.every(approvedNow) ? { step: 'done', stage: 'tutorials', items: tutorials } : { step: 'validate', stage: 'tutorials', items: tutorials };
       return specs.length ? { step: 'delivering', stage: 'specs', items: specs } : { step: 'deliver', stage: 'specs', items: [] };
     };
-    const states = units.map(u => ({ unit: u, ...stateOf(u) }));
+    // A design marked no-user-docs needs no tutorial, so once it has a spec it does not hold back a
+    // feature that also has user documentation; on its own it reads as before.
+    const all = units.map(u => ({ unit: u, ...stateOf(u) }));
+    const enabling = s => s.unit.stage === 'design' && s.step === 'delivering';
+    const states = all.some(s => !enabling(s)) ? all.filter(s => !enabling(s)) : all;
     if (!states.length) { steps.push({ ...make('deliver', 'specs'), units: [] }); continue; }
     const first = Math.min(...states.map(s => ORDER.indexOf(s.step)));
     const at_ = states.filter(s => ORDER.indexOf(s.step) === first);
