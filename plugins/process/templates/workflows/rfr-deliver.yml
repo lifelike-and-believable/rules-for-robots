@@ -1,0 +1,50 @@
+# Copy to .github/workflows/rfr-deliver.yml in a repository that uses the rfr-process plugin
+# (docs/specs/delivery-run.md in rules-for-robots, AC-16 and AC-17). After each push to the default
+# branch, this lists the open deliveries (approved user documentation, no spec, none under way on
+# another branch) and, only when there is one, starts the project's delivery routine with one
+# request. When nothing is open it costs one short job and starts no session. It starts the first
+# open delivery; that delivery's own merge runs this again for the next.
+# Needs three steps only a person can do: create a routine in Claude Code on this repository whose
+# prompt is /rfr-process:deliver with no feature name; add an API trigger to it and generate its
+# token, which is shown once; and store the routine's id as the repository variable
+# RFR_DELIVER_ROUTINE and the token as the repository secret RFR_DELIVER_TOKEN (Settings, Secrets
+# and variables, Actions). Until then the job says what is open and succeeds.
+# Change `main` below if your default branch has another name.
+name: deliver
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One run at a time for the repository, and none cancelled: a run started while another is still
+# starting a delivery could otherwise start the same one twice.
+concurrency:
+  group: rfr-deliver
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    steps:
+      # The whole history: a delivery is under way when another branch adds its spec, and the check
+      # compares each remote branch with the default branch. It fetches every branch from origin
+      # itself, with the credentials this checkout keeps.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v5
+        with:
+          repository: lifelike-and-believable/rules-for-robots
+          ref: main
+          path: .rfr
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Start a delivery if one is open
+        env:
+          RFR_DELIVER_ROUTINE: ${{ vars.RFR_DELIVER_ROUTINE }}
+          RFR_DELIVER_TOKEN: ${{ secrets.RFR_DELIVER_TOKEN }}
+        run: node .rfr/checks/ci/deliver-on-merge.mjs .

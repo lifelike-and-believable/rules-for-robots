@@ -6,9 +6,15 @@ Part of the [rfr-process guide](../GUIDE.md).
 
 ### Starting a delivery when a packet merges
 
-Once the approver's review merges a feature packet, the delivery runs without them: the spec, the tests, the implementation, and the tutorial, on one branch (the `deliver` skill, rules-for-robots `docs/specs/delivery-run.md`). Nothing has to be waiting for that merge. Set up a Claude Code routine on the repository, fired by GitHub whenever a pull request merges into the default branch, whose prompt is `/rfr-process:deliver` with no feature name. The skill runs `delivery.mjs open`, which lists the features whose user documentation is approved and which have no spec yet, and leaves out any whose spec is already on another branch; it delivers the first, or says in one line that none is open and stops. A delivery's own merge fires the routine again, which picks up the next open feature, so packets the approver has approved are built one after another.
+Once the approver's review merges a feature packet, the delivery runs without them: the spec, the tests, the implementation, and the tutorial, on one branch (the `deliver` skill, rules-for-robots `docs/specs/delivery-run.md`). Nothing has to be waiting for that merge. The workflow `templates/workflows/rfr-deliver.yml`, copied to `.github/workflows/`, runs each time a pull request merges into the default branch. It runs `delivery.mjs open`, which lists the features whose user documentation is approved and which have no spec yet, and leaves out any whose spec is already on another branch. That costs no tokens. Only when a delivery is open does it start the project's delivery routine, a Claude Code routine whose prompt is `/rfr-process:deliver` with no feature name, and print the session's address in the job's log. The skill delivers the first open feature. A delivery's own merge runs the workflow again, which starts the next, so packets the approver has approved are built one after another.
 
-Create the routine once, in Claude Code (a session can do it with its routines tool when the lead asks): the repository as its source, a cloud environment that can run the project's checks, no connectors the delivery does not need, and the GitHub trigger on merged pull requests for that repository. A session that wrote a packet stops once the packet is pushed and leaves the delivery to the routine. Only a run started with no name checks `delivery open`, so a session that starts a delivery by name while the routine is set up can build the same feature twice.
+Three steps only a person can do, once:
+
+1. In Claude Code, create a routine on the repository, with a cloud environment that can run the project's checks and no connectors the delivery does not need, whose prompt is `/rfr-process:deliver` with no feature name.
+2. In the routine's Edit dialog, add an API trigger and generate its token. The token is shown once.
+3. Store the routine's id as the repository variable `RFR_DELIVER_ROUTINE` and the token as the repository secret `RFR_DELIVER_TOKEN`.
+
+Until then the workflow lists what is open and succeeds. The session the routine starts acts as the account that owns the routine, with that account's access to the repository; the workflow holds only a token that can start that one routine. A session that wrote a packet stops once the packet is pushed and leaves the delivery to the routine. Only a run started with no name checks `delivery open`, so a session that starts a delivery by name while the workflow is set up can build the same feature twice.
 
 ### What each stage holds
 

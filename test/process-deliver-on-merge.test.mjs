@@ -137,7 +137,7 @@ test('delivery-run#AC-16: with no token or no id it prints what is open and how 
 });
 
 test('delivery-run#AC-16: an id that is not a routine id is refused before any request, without echoing it', async () => {
-  for (const routine of ['trig_abc/../../v1/other', 'https://evil.example/x', TOKEN, 'trig_', 'TRIG_abc']) {
+  for (const routine of ['trig_abc/../../v1/other', 'https://evil.example/x', TOKEN, 'trig_ab-cd', 'TRIG_abc']) {
     const { calls, fetch } = stub();
     const run = await runMain({ env: { RFR_DELIVER_ROUTINE: routine, RFR_DELIVER_TOKEN: TOKEN }, fetch });
     assert.equal(run.code, 1);
