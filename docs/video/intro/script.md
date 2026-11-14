@@ -21,7 +21,7 @@ The brief is in the [README](README.md): for people who already work with agents
 | 9 | Your decision | Two flags offered. The orange one goes up the pole. | Heading: It asks you what only you can decide. Agent: The flag: orange or violet? You: Orange. | 3.5 | 14 |
 | 10 | The record | A card of decisions beside the treehouse. | Heading: It writes down why. Agent: Noted, so the next session knows too. Card: Flag: orange. Your choice. Ladder on the left. So the kids can climb up. | 5 | 26 |
 | 11 | A change | The slide unrolls from the deck to the grass. Nothing else moves. | You: Add a slide. Agent: Added. Nothing else moved. Heading: A change is a change. Not a restart. | 4.5 | 15 |
-| 12 | The promise | The view pulls back: one treehouse is one of five, each a different building of the same family, joined by bridges. | Your biggest ideas. A skilled team. Built the way you meant. | 4 | 11 |
+| 12 | The promise | The view pulls back: one treehouse is one of five, each a different building of the same family, joined by bridges. | Your biggest ideas. A skilled team. Built as you envision them. | 4 | 11 |
 | 13 | End | The name, the three volumes, where to find it. | Rules for Robots. A practical guide for people and agents who work together. Rules and plugins for Claude Code. github.com/RulesForRobots. (Yes, you may put the hammer down.) | 5.5 | 26 |
 | | | | **Total** | **64** | **246** |
 
@@ -35,7 +35,7 @@ Every beat is at or under four words a second except the record (5.2) and the en
 - **Beat 5: micromanaging, not rules.** The heading is "So you micromanage." and your order is "Ask before you change anything.", which the maintainer kept because "it makes it explicit". It is now something you say, not a sticky note, and "KEEP THE TREE." is gone. This also removes the contradiction the review found between mocking rules and the name.
 - **Beat 6: the next session, it remembers nothing.** The heading is the maintainer's: "the next morning in the same session wouldn't have lost all context." So the picture no longer shows night and morning. The conversation is wiped and a line marks the new session, which is what losing the context looks like. "Slide tower" and the agent's unprompted suggestion are gone. You ask to continue, the agent asks what you are working on, you say the treehouse, and it adds another box to the tree with the same "Done! One treehouse." as beat 2.
 
-- **Beat 12: more ambition.** The maintainer: "bigger projects, longer projects sounds a little flat, lacks ambition." Then, on "Your biggest idea, built the way you meant.": "need to tie it all back to what this is - a team of skilled collaborators working with you to bring your most ambitious ideas to life as you envision them." Then: "but more succinct". The line now names the team in three short phrases, over the village it built.
+- **Beat 12: more ambition.** The maintainer: "bigger projects, longer projects sounds a little flat, lacks ambition." Then, on "Your biggest idea, built the way you meant.": "need to tie it all back to what this is - a team of skilled collaborators working with you to bring your most ambitious ideas to life as you envision them." Then: "but more succinct". Then: "the tense feels mis-matched between building and meant". The line now names the team in three short phrases, over the village it built, and ends in the present, in the maintainer's word "envision".
 
 Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), and a 30-second cut is made at stage 10.
 
