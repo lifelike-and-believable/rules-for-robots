@@ -68,7 +68,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
 2. **The look.** Done. The maintainer chose it (decision 6) and approved the eight style frames in `style/` on 2026-11-14.
-3. **Production.** A fourth cut exists: `node film.cjs` renders `out/intro.mp4`, 53 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the maintainer's view of the fourth cut and of what is left under "Review of the second cut"; sound; the shorter and vertical cuts.
+3. **Production.** A fifth cut exists: `node film.cjs` renders `out/intro.mp4`, 54 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the maintainer's view of the fifth cut and of what is left under "Review of the second cut"; sound; the shorter and vertical cuts.
 
 ## Review of the second cut
 
@@ -94,9 +94,14 @@ Done in the fourth cut, after the maintainer asked why the fixes that touch the 
 - **The slide through the ladder did not read, and the pine tree changed between two beats.** Both beats now use one take. `kit.cjs` paints the slide's shape the colour of the foliage for the earlier picture, and leaves the slide in orange in the ash picture for the later one.
 - **The village was off-model, and a slide the session drew over it looked childish** (the maintainer's word). It is replaced by a new take, `scene-village-c`: ladders to the ground, wavy orange flags on the roofs, bridges from deck to deck, a slide that lands on the grass.
 
+Done in the fifth cut, from the maintainer's notes on the fourth ("I agree with most of the reviewer's comments"):
+
+- **The flag was already orange when its colour was asked for.** The pole now stands bare from the moment the treehouse is built; the orange flag goes up after "Orange." `kit.cjs` paints the flag's tile the colour of the foliage for the bare pictures, and the flag is its own layer.
+- **Nothing moved inside a scene.** The flag now moves in the wind for as long as it is up.
+
 Still open:
 
-1. Nothing moves inside a scene (no flag flutter, no drift), and the film is 8 seconds over the 45 that was the aim.
+1. The film is 9 seconds over the 45 that was the aim. The review asked for more time in the dense beats, not less overall.
 2. The treehouse from the film is not in the village.
 3. Smaller: bubble text that is marginal when embedded small; the long "Noted" bubble over the foliage; whether "It asks you what only you can decide" should come before "It asks before it builds".
 

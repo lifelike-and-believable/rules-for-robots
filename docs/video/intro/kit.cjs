@@ -37,6 +37,10 @@ const tiles = b.paths.map((p, i) => (i < 2 || SLIDE.includes(i) ? '' : SHADOW.in
 const treehouse = {
   defs: `${b.defs}<defs>${masks}</defs>`,
   withSlide: b.paths.join('\n'),
+  // Tile 390 is the flag. The film raises it only once its colour has been chosen: until then the pole stands bare,
+  // which is the picture with the flag's tile painted the colour of the foliage behind it.
+  flag: b.paths[390],
+  bare: (inner) => inner.replace(b.paths[390], b.paths[390].replace(/fill="[^"]+"/, 'fill="rgb(11,110,91)"')),
   noSlide: `${b.paths[0]}<g mask="url(#outZone)">${b.paths[1]}</g>${behind}${tiles}${front}`,
 };
 

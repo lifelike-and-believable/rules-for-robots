@@ -92,4 +92,4 @@ if (require.main === module) {
   for (const [name, make] of Object.entries(frames)) fs.writeFileSync(`style/${name}.svg`, make());
   console.log(Object.keys(frames).join(' '));
 }
-module.exports = { frames, defs, picture, blueprint, frame, literal, pineBefore, pineAfter, village };
+module.exports = { frames, defs, place, picture, blueprint, frame, literal, pineBefore, pineAfter, village };
