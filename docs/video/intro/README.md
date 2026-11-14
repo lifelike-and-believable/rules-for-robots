@@ -56,13 +56,28 @@ The scripts need Playwright with its Chromium, and ffmpeg, which this repository
 
 ## Next
 
-1. **The illustration test.** Approved by the maintainer for up to 100 Higgsfield credits and not yet run, because the MCP guard refused it in the session that planned it (see unattended AC-10). Recipe: model Recraft V4.1; aspect 16:9; resolution 2k; two variants with `model_type` `vector` and two with `standard`; colours `#FFF4E6 #2A1A14 #E4572E #B8401D #2563C4 #7A45C9 #0E8A72 #0B6E5B #F9C9B2`; prompt:
+1. **The illustration test.** Run on 2026-11-14 for 36 of the approved 100 Higgsfield credits; the takes are listed under "Illustration test takes" below and wait for the maintainer to compare them with `style/3-fit.svg`. They are not yet in this repository, and the tracing step has not been tried. Recipe: model Recraft V4.1; aspect 16:9; resolution 2k; two variants with `model_type` `vector` and two with `standard`; colours `#FFF4E6 #2A1A14 #E4572E #B8401D #2563C4 #7A45C9 #0E8A72 #0B6E5B #F9C9B2`; prompt:
 
    > Flat vector editorial illustration for a motion-graphics explainer film. A charming children's treehouse in a large round leafy tree on a gentle grassy hill: wooden deck with a railing, a small blue cabin with a violet pitched roof, a round glowing window, a small door, an orange pennant flag on the roof, a wooden ladder on the left, and a bright orange slide curving down on the right. Warm cream sky, a large orange sun, layered mint-green hills behind, small flowers in the grass. Bold simple shapes with hand-made character, subtle grain texture, soft shadows, no outlines, no people, no text, no lettering. The tree sits right of centre with empty sky on the left.
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
 2. **The look.** The maintainer approves the style frames, code-drawn or generated, before anything is animated.
 3. **Production.** Animate each beat to the approved look, cut toward 45 seconds, and render at 1080p.
+
+## Illustration test takes
+
+Generated on 2026-11-14 with the recipe above (model ID `recraft_v4_1`). The cost was quoted first: 20 credits for the two `vector` takes and 16 for the two `standard` takes. All four are kept in the maintainer's Higgsfield account. Every address starts with `https://d8j0ntlcm91z4.cloudfront.net/user_3FflbWuJ9ah9kIXSyBa65xCGYiy/`.
+
+| Take | Type | Output | Job ID | File |
+|---|---|---|---|---|
+| vector A | `vector` | SVG, 1344 by 756 | `dcb53f4f-ba3d-4a58-a4c5-ae721ebc76d7` | `hf_20261114_202710_dcb53f4f-ba3d-4a58-a4c5-ae721ebc76d7.svg` |
+| vector B | `vector` | SVG, 1344 by 756 | `d3c2f600-c33b-45c3-9bb6-9c55c5f87d6e` | `hf_20261114_202709_d3c2f600-c33b-45c3-9bb6-9c55c5f87d6e.svg` |
+| standard A | `standard` | PNG, 2688 by 1536 | `be54b30e-12c2-4a17-b970-2a8a2ee8459b` | `hf_20261114_202712_be54b30e-12c2-4a17-b970-2a8a2ee8459b.png` |
+| standard B | `standard` | PNG, 2688 by 1536 | `aa742c0a-2d5c-4156-97e6-7e4531acef76` | `hf_20261114_202712_aa742c0a-2d5c-4156-97e6-7e4531acef76.png` |
+
+The `vector` takes came back as SVG files, so they may need no tracing.
+
+The session that ran the test could show the takes to the maintainer but could not open them or save them here: its cloud environment allows package registries and connected services only, and refused `d8j0ntlcm91z4.cloudfront.net`. The same policy refuses `fonts.googleapis.com` and `fonts.gstatic.com`, which `frames.js` and `stylepng.js` load Space Grotesk from. Until those three hosts are allowed in the environment's settings, a cloud session cannot compare the takes, save them to `takes/`, or render with the brand font. The session proposed an environment with those hosts, and the `rfr-core` MCP guard refused the proposal, as it refuses any change in a service the project has not declared.
 
 ## Tools worth adding
 
