@@ -40,13 +40,15 @@ const treehouse = {
   noSlide: `${b.paths[0]}<g mask="url(#outZone)">${b.paths[1]}</g>${behind}${tiles}${front}`,
 };
 
-// The idea, as an outline of vector B: its foliage, cabin, roof, flag, and the shape under its deck, ladder, trunk and slide.
+// The idea, as an outline of vector B. Its foliage, cabin, roof, flag and slide are traced from the take's own tiles.
+// Its railing, ladder and trunk are drawn here over the take, because the tiles for those are merged with their surroundings.
 const first = (i) => b.d(i).split(/(?=M)/)[0];
-const outline = (withSlide) => {
-  const parts = [323, 357, 370, 391, 390].map((i) => `<path d="${first(i)}"/>`).join('');
-  const base = `<path d="${b.d(1)}"/>`;
-  return `${parts}${withSlide ? base : `<g mask="url(#outZone)">${base}</g>`}`;
-};
+const rungs = [1, 2, 3, 4, 5, 6, 7].map((i) => { const t = i / 8; return `M${(1428 - 161 * t).toFixed(0)} ${(767 + 672 * t).toFixed(0)} l147 7`; }).join(' ');
+const drawn = `<path d="M1244 711 H2235 V884 H1244 Z M1400 737 V860 M1560 737 V860 M1720 737 V860 M1880 737 V860 M2040 737 V860"/>
+  <path d="M1428 767 L1267 1439 M1575 774 L1414 1446 ${rungs}"/>
+  <path d="M1700 884 L1612 1010 L1700 1110 C1700 1250 1680 1330 1600 1402 M1890 1030 C1895 1200 1900 1330 1945 1405"/>`;
+const outline = (withSlide) => [323, 357, 370, 391, 390].map((i) => `<path d="${first(i)}"/>`).join('') + drawn
+  + (withSlide ? [137, 141].map((i) => `<path d="${first(i)}"/>`).join('') : '');
 
 // Any other take, whole, with the tiles that start inside the given circles left out (to clear room for words).
 function scene(name, without = []) {

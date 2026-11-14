@@ -48,10 +48,12 @@ Not yet decided: how the scenes B does not show (the trouble half, the sketch, t
 
 | File | What it is |
 |---|---|
-| `animatic.html` | The proxy: the whole film at sketch quality, playable in a browser, with the beats as a list. The timing and every word are in its `BEATS` array. |
+| `animatic.html` | The proxy from before the look was chosen: the whole film at sketch quality, playable in a browser. `film-page.js` has replaced it as the source of the timing and the words. |
 | `frames.cjs` | Renders the animatic. `node frames.cjs sheet` writes one frame for each beat; `node frames.cjs render 20` writes every frame at 20 a second, for ffmpeg to encode. |
 | `art.cjs` | Builds the style frames as SVG from the takes and the words. `node art.cjs` writes them to `style/`. |
 | `kit.cjs` | Reads the takes: vector B with and without its slide, the idea's outline, and any other take as a scene. |
+| `film.cjs` | Renders the film to `out/intro.mp4`: the pictures once as layers, then every frame, then ffmpeg. `node film.cjs sheet` writes two frames of each beat to `out/sheet/` in a few seconds, to check a change. |
+| `film-page.js` | The film as a function of time, run in the page `film.cjs` builds. The timing and every word are in its `BEATS` array. It repeats the bubble and mark drawing from `art.cjs`. |
 | `stylepng.cjs` | Renders the style frames to PNG at 1920 by 1080. |
 | `style/` | The style frames. |
 | `takes/` | Every generated take, as downloaded: the illustration test and the scenes. |
@@ -65,8 +67,8 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
    > Flat vector editorial illustration for a motion-graphics explainer film. A charming children's treehouse in a large round leafy tree on a gentle grassy hill: wooden deck with a railing, a small blue cabin with a violet pitched roof, a round glowing window, a small door, an orange pennant flag on the roof, a wooden ladder on the left, and a bright orange slide curving down on the right. Warm cream sky, a large orange sun, layered mint-green hills behind, small flowers in the grass. Bold simple shapes with hand-made character, subtle grain texture, soft shadows, no outlines, no people, no text, no lettering. The tree sits right of centre with empty sky on the left.
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
-2. **The look.** Chosen on 2026-11-14 (decision 6), and the maintainer approved the two frames made from vector B ("looks good now. go ahead with next phase"). `kit.cjs` reads the takes and `art.cjs` places them and adds the words; `style/` now holds eight frames in story order: the three troubles and the rules frame in ash with the idea as a blue outline, the turn, the treehouse before and after the slide, and the village. The trouble scenes and the village are takes generated in B's style (see "Scene takes"). The maintainer has not yet reviewed the eight frames together. Known rough spots: the idea's outline below the deck is one merged shape, not a clear ladder and trunk; `3a-asks` shows the finished treehouse where the story shows a sketch; the animatic still has its own, older drawing.
-3. **Production.** Animate each beat to the approved look, cut toward 45 seconds, and render at 1080p.
+2. **The look.** Done. The maintainer chose it (decision 6) and approved the eight style frames in `style/` on 2026-11-14.
+3. **Production.** A first cut exists: `node film.cjs` renders `out/intro.mp4`, 47 seconds at 1920 by 1080 and 24 frames a second, silent, in under two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. The maintainer has not yet reviewed it. Still to do: the maintainer's notes on the cut; trimming toward 45 seconds if wanted; sound; the shorter and vertical cuts. `out/` is not committed.
 
 ## Illustration test takes
 
