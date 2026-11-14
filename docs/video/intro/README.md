@@ -62,6 +62,8 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
 ## Next
 
+**The motto.** On 2026-11-14 the maintainer said the film's promise line "should emerge as the Rules for Robots motto". Once its wording is approved, the brand carries it too: `docs/brand/wordmarks.json` has "A practical guide for agent collaborators" under the name on the social preview, and the motto would replace it there and in the README.
+
 **From 2026-11-14 the film follows [the process](../process.md), one approved stage at a time.** The maintainer asked to "back up and do the professional process" in place of rendering the film again after each change. Where it stands: the brief is above; the script is drafted in [`script.md`](script.md) and waits for the maintainer; the look (vector B) and the village's five designs are approved in concept; design, the animatic, motion, sound, and the cuts follow in order. The six cuts so far are the trial that the process was written from, and the list below is its record.
 
 1. **The illustration test.** Run on 2026-11-14 for 36 of the approved 100 Higgsfield credits; the takes are listed under "Illustration test takes" below and wait for the maintainer to compare them with `style/3-fit.svg`. The tracing step has not been tried, and is only needed if a `standard` take is chosen. Recipe: model Recraft V4.1; aspect 16:9; resolution 2k; two variants with `model_type` `vector` and two with `standard`; colours `#FFF4E6 #2A1A14 #E4572E #B8401D #2563C4 #7A45C9 #0E8A72 #0B6E5B #F9C9B2`; prompt:
