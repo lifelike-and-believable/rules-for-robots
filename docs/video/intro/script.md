@@ -38,7 +38,7 @@ Every beat is at or under four words a second except the record (5.2) and the en
 
 ## For the maintainer to decide
 
-1. **Length.** The script reads comfortably at about 60 seconds. Reaching 45 means cutting two beats: the session would cut beat 6 (next morning) and fold beat 9 (your decision) into beat 8. The session recommends keeping 60 for the master and making a 30-second cut from beats 1, 4, 7, 11, 12, and 13 at stage 10.
+1. **Length.** Decided on 2026-11-14: "60 seconds sounds good." The master runs about 60 seconds, and a 30-second cut from beats 1, 4, 7, 11, 12, and 13 is made at stage 10.
 2. **The turn's second line.** "Rules for Robots teaches your agent to be one." is the session's wording.
 3. **The end card's plain line.** "Rules and plugins for Claude Code." names one agent. If the volumes are meant for more than Claude Code, say what it should name.
 4. **The order of beats 8 and 9.** The review asked whether "It asks you what only you can decide" should come before "It asks before it builds", so the film answers the hammer questions sooner. The session recommends the order above: the sketch has to be approved before there is a flagpole to choose a flag for.
