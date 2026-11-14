@@ -123,4 +123,5 @@ Approved by the maintainer on 2026-11-13, each as recommended: "I'm good with th
   - **26c, foundations:** AC-9, AC-10, AC-11.
   - **26d, the design system:** AC-12, AC-13, AC-14, AC-15, then the migration of XR Studio In A Box.
   - **26e, mock-up images:** AC-16.
-- Pull requests: none yet.
+- Pull requests: #253 (spec), #268 (26a).
+- Choices made in 26a: open build steps (delivery-run AC-19) come before `revise`, and their run, scoped to every spec of the feature, completes any revision too; `revise` applies only once a feature is delivered (it has a tutorial, or it is enabling work with approved specs); a tutorial set back to draft because its step words changed is not a withdrawal under rule 7; steps are compared by position, so inserting a step marks every later step as changed. From the review of #268: a spec behind a draft upstream is reported by rule 3 and is no revision open; the branch is compared from its merge base with the base ref; a branch that changes only a tutorial puts a revision under way only when no spec of it is behind; prose lines under "Steps" that are not part of a numbered step are not compared, so changing one does not send the tutorial back to draft.

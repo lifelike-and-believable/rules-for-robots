@@ -4,9 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268.
 
 ### Changed
+
+- **Revisions as open work** (Phase 26a; revisions-and-foundations AC-1, AC-3 to AC-6). `rfr-process` 2.13.0. A change to an approved document that specs or tutorials cite no longer forces their code into the same pull request.
+  - The document side (concept to user documentation) still fails the process check when it falls behind a change, so what the lead approves stays consistent.
+  - An approved spec or tutorial that falls behind, and that the pull request does not change, is a note, `revision open: <id> is behind <link>`, and opens no `stale` issue. One the pull request changes still fails when behind, so a delivery cannot merge half a revision.
+  - The feature's step is `revise`: the session text says what is behind, `delivery open` lists it as a revision, and a merge or "deliver it" starts the run that brings the specs, tests, and tutorials up to date.
+  - A revised tutorial stays approved when only its hashes or recorded results changed; when a step's words change it must go back to draft, for the lead to follow again, and the process check fails one that does not. The pull request description says which.
+
+  Adopters: update `rfr-process` to 2.13.0. Nothing to do; a stale spec or tutorial that failed the process check before is now a note.
 
 - **Pull requests are titled after what they carry** (rewrite plan 25f; delivery-run AC-20). `rfr-process` 2.12.0. The open-pull-request workflow titled each pull request after its last commit, so a delivery read "Write the spec for ...". It now sets "Deliver: <the spec's title>", "Packet: <the design's title>", or "Validate: <the tutorial's title>" on each push, and leaves a title a person has edited alone.
 
