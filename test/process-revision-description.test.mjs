@@ -3,7 +3,7 @@
 // specs and tutorials it leaves behind (docs/specs/revisions-and-foundations.md, AC-7; decision D4).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { prBody, readPrBody } from '../checks/ci/process-pr-body.mjs';
+import { prBody, readPrBody, revisionReasons } from '../checks/ci/process-pr-body.mjs';
 import { relink } from '../checks/process-relink.mjs';
 import { RECOLOUR, impactProject } from './fixtures/revision-project.mjs';
 
@@ -82,6 +82,55 @@ test('revisions-and-foundations#AC-7: a document the revision has not dealt with
   const left = group(revision, 'Not yet dealt with (2)');
   assert.match(left, /^- \*\*decision-navigation\*\* \(`docs\/design\/decisions\/navigation\.md`\)$/m);
   assert.match(left, /^- \*\*design-export\*\* \(`docs\/design\/export\.md`\)$/m);
+});
+
+test('revisions-and-foundations#AC-7: a document with only spacing changed, or set to draft with no withdrawn entry, is not dealt with', () => {
+  // design-export's body changes only in spacing and its hashes are not recorded again; the decision
+  // note is set to draft without a withdrawn entry. The process check fails both.
+  const p = impactProject({ git: true });
+  p.git('switch', '-q', '-c', BRANCH);
+  p.editBody('foundation-style', RECOLOUR);
+  p.editBody('design-retarget', b => b.replace('with **Retarget** and **Undo** buttons.', 'with **Retarget** and **Undo** buttons; **Retarget** is orange.'));
+  relink(p.root, ['design-retarget', 'docs-retarget']);
+  p.editBody('design-export', b => b.replace('A dialog with', 'A dialog  with').concat('\n'));
+  p.setStatus('decision-navigation', 'draft');
+  p.write('docs/decisions/packet-orange.md', `## Revision\n\n${REASONS}\n`);
+  p.commit('orange accent');
+  const revision = section(description(p));
+  assert.match(group(revision, 'Re-recorded as unaffected (1)'), /docs-retarget/);
+  assert.doesNotMatch(group(revision, 'Re-recorded as unaffected'), /design-export/);
+  assert.match(group(revision, 'Withdrawn (0)'), /None\./);
+  const left = group(revision, 'Not yet dealt with (2)');
+  assert.match(left, /^- \*\*decision-navigation\*\* /m);
+  assert.match(left, /^- \*\*design-export\*\* /m);
+});
+
+test('revisions-and-foundations#AC-7: reasons are read with the id in bold or code, the colon inside or outside, or the reason on the next line', () => {
+  const reasons = revisionReasons([
+    '## Revision',
+    '',
+    'Why the change is made.',
+    '',
+    '- **design-export:** unaffected; no accent colour.',
+    '- **docs-retarget**: unaffected; cites the whole design.',
+    '- `decision-navigation`: unaffected; the row colour is named, not given.',
+    '- `design-board:` unaffected; the board is grey.',
+    '- tutorial-retarget',
+    '  unaffected; no step mentions colour.',
+    '- design-list: unaffected;',
+    '  the list has no accent.',
+    '',
+    '## Later',
+    '- design-other: not read',
+  ].join('\n'));
+  assert.deepEqual(Object.fromEntries(reasons), {
+    'design-export': 'unaffected; no accent colour.',
+    'docs-retarget': 'unaffected; cites the whole design.',
+    'decision-navigation': 'unaffected; the row colour is named, not given.',
+    'design-board': 'unaffected; the board is grey.',
+    'tutorial-retarget': 'unaffected; no step mentions colour.',
+    'design-list': 'unaffected; the list has no accent.',
+  });
 });
 
 test('revisions-and-foundations#AC-7: the Revision section comes after the review packet and before the decisions', () => {

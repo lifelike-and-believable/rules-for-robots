@@ -4,8 +4,10 @@
 //   - the documents (concept to user documentation, with designs and decision notes) that cite a
 //     changed section directly, which the pull request must update, re-record, or withdraw;
 //   - the specs and tutorials that cite one directly, which become open revisions when it merges,
-//     each with the features it belongs to (process-state AC-13) and, for a spec, the test files that
-//     cite it (`<spec file name>#AC-`, found as the delivery run finds them);
+//     each with the stories whose features hold it (process-state AC-13; counted as stories, since
+//     stories that share user documentation are one feature to `delivery open`) and, for a spec, the
+//     test files that cite it (`<spec file name>#AC-`, found as the delivery run finds them, with
+//     git grep: outside a git working tree they are unknown, and null in the JSON);
 //   - the paths a changed artifact names in `implemented-by` (foundations, slice 26c).
 // Staleness is direct only (project-process.md): an artifact two links away is not listed.
 // Only approved artifacts count, as for staleness. It reads the working tree and git; it makes no
@@ -60,11 +62,14 @@ export function implementedBy(text) {
 }
 
 // The test files that cite a spec: the rule deliveryMissing uses (plugins/process/scripts/delivery.mjs),
-// a tracked file that contains "<spec file name>#AC-" and counts as a test.
-function citingTests(root, spec) {
+// a tracked file that contains "<spec file name>#AC-" and counts as a test. Null when the root is not
+// in a git working tree, where git grep cannot say.
+function citingTests(root, spec, inGit) {
+  if (!inGit) return null;
   const name = path.posix.basename(spec.file, '.md');
   return lines(git(root, ['grep', '-l', '-F', `${name}#AC-`])).filter(isTestOrBaseline).sort();
 }
+const UNKNOWN_TESTS = 'test files: unknown (not a git repository)';
 
 // What a change reaches. `targets` are "<id>" or "<id>#<section>"; with `base`, the sections are
 // changedSections against where the working tree left base. Throws ImpactError for an id or section
@@ -112,10 +117,11 @@ export function impactReport(root, { targets = [], base = null } = {}) {
   const config = readConfig(root)?.config ?? {};
   const stories = withId.filter(a => a.stage === 'stories');
   const families = new Map(stories.map(s => [s.id, new Set(featureFamily(withId, s, config).map(a => a.id))]));
+  const inGit = (git(root, ['rev-parse', '--is-inside-work-tree']) ?? '').trim() === 'true';
   const revisions = sorted.filter(c => DELIVERY_SIDE.has(c.artifact.stage)).map(c => ({
     ...entry(c),
-    features: stories.filter(s => families.get(s.id).has(c.artifact.id)).map(s => s.id).sort(),
-    tests: c.artifact.stage === 'specs' ? citingTests(root, c.artifact) : [],
+    stories: stories.filter(s => families.get(s.id).has(c.artifact.id)).map(s => s.id).sort(),
+    tests: c.artifact.stage === 'specs' ? citingTests(root, c.artifact, inGit) : [],
   }));
   const implemented = [];
   for (const id of new Set(wanted.map(w => w.id))) {
@@ -129,8 +135,8 @@ export function impactReport(root, { targets = [], base = null } = {}) {
     documents: documents.length,
     specs: revisions.filter(r => r.stage === 'specs').length,
     tutorials: revisions.filter(r => r.stage === 'tutorials').length,
-    features: new Set(revisions.flatMap(r => r.features)).size,
-    tests: new Set(revisions.flatMap(r => r.tests)).size,
+    stories: new Set(revisions.flatMap(r => r.stories)).size,
+    tests: inGit ? new Set(revisions.flatMap(r => r.tests)).size : null,
     paths: new Set(implemented.flatMap(i => i.paths)).size,
   };
   return { sections, counts, documents, revisions, implementedBy: implemented };
@@ -146,8 +152,8 @@ export function countsLine(report) {
   const parts = [
     `${plural(c.documents, 'document')} to update or re-record`,
     `${plural(c.specs, 'spec')} and ${plural(c.tutorials, 'tutorial')} that become open revisions`,
-    plural(c.features, 'feature'),
-    plural(c.tests, 'test file'),
+    plural(c.stories, 'story', 'stories'),
+    c.tests === null ? UNKNOWN_TESTS : plural(c.tests, 'test file'),
   ];
   if (c.paths) parts.push(`${plural(c.paths, 'path')} of code that a changed foundation names`);
   return `This change reaches ${parts.slice(0, -1).join(', ')}, and ${parts.at(-1)}.`;
@@ -165,8 +171,8 @@ export function formatImpact(report) {
   if (!report.revisions.length) out.push('  None.');
   for (const r of report.revisions) {
     out.push(named(r));
-    out.push(`      ${r.features.length === 1 ? 'Feature' : 'Features'}: ${r.features.length ? r.features.join(', ') : 'none (it joins no story)'}`);
-    if (r.stage === 'specs') out.push(`      Test files: ${r.tests.length ? r.tests.join(', ') : 'none cite it yet'}`);
+    out.push(`      ${r.stories.length === 1 ? 'Story' : 'Stories'}: ${r.stories.length ? r.stories.join(', ') : 'none (it is in no story\'s feature)'}`);
+    if (r.stage === 'specs') out.push(`      Test files: ${r.tests === null ? 'unknown (not a git repository)' : r.tests.length ? r.tests.join(', ') : 'none cite it yet'}`);
   }
   for (const i of report.implementedBy) {
     out.push('', `Code that ${i.id} names in implemented-by (${i.paths.length}):`, ...i.paths.map(p => `  - ${p}`));

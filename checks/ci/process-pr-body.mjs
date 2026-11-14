@@ -17,26 +17,30 @@ import { buildPacket, changedArtifacts, formatPacket } from '../process-packet.m
 
 // The reasons a branch's decisions file gives for its re-records (AC-7): the list items under a
 // "## Revision" heading that start with an artifact id, as a map from id to reason. Read tolerantly:
-// the id may be in backticks or bold, and a colon or a dash may follow it, as in
-// "- design-board: unaffected; the change is to the export dialog only." A line indented under an
-// item continues it.
+// the id may be in bold or code, with a colon or a dash after it, inside or outside the marks
+// ("- design-board: ...", "- **design-board:** ...", "- **design-board**: ...", "- `design-board` - ...").
+// A line indented under an item continues its reason; an item whose first line holds only the id
+// takes its reason from the lines indented under it.
 export function revisionReasons(text) {
   const reasons = new Map();
   const rows = String(text ?? '').split(/\r?\n/);
   const start = rows.findIndex(r => /^##\s+Revision\s*#*\s*$/i.test(r));
   if (start < 0) return reasons;
+  const MARK = '(?:\\*\\*|__|`)?';
+  const ITEM = new RegExp(`^\\s{0,3}[-*+]\\s+${MARK}([\\w.-]+?)(?:${MARK}\\s*:${MARK}|${MARK}\\s+[-–—]|${MARK}\\s*$)\\s*(.*?)\\s*$`);
   let last = null;
   for (const row of rows.slice(start + 1)) {
     if (/^#{1,2}\s/.test(row)) break;
-    const item = /^\s{0,3}[-*+]\s+(?:\*\*)?`?([\w.-]+?)`?(?:\*\*)?(?:\s*:|\s+[-–—])\s*(.*?)\s*$/.exec(row);
+    const item = ITEM.exec(row);
     if (item) {
-      last = item[2] ? item[1] : null;
-      if (item[2] && !reasons.has(item[1])) reasons.set(item[1], item[2]);
+      last = reasons.has(item[1]) ? null : item[1];
+      if (last) reasons.set(last, item[2]);
       continue;
     }
-    if (last && /^\s+\S/.test(row) && !/^\s*[-*+]\s/.test(row)) reasons.set(last, `${reasons.get(last)} ${row.trim()}`);
+    if (last && /^\s+\S/.test(row) && !/^\s*[-*+]\s/.test(row)) reasons.set(last, `${reasons.get(last)} ${row.trim()}`.trim());
     else last = null;
   }
+  for (const [id, reason] of reasons) if (!reason) reasons.delete(id);
   return reasons;
 }
 
@@ -47,9 +51,10 @@ export function revisionReasons(text) {
 //   - withdrawn: it is now a draft with a `withdrawn` entry, or the branch removed it;
 //   - updated: its body (the text after the front matter) differs, compared with spacing made even
 //     as section hashes compare it (hashText);
-//   - re-recorded: its body is the same and the file is not, so only its front matter changed: the
-//     hashes it records for the sections it cites;
-//   - not yet dealt with: the file is unchanged, so the process check fails it as stale.
+//   - re-recorded: its body is the same and at least one hash recorded in its derived-from list
+//     differs from the base;
+//   - not yet dealt with: anything else, such as a change to spacing only with no hash recorded
+//     again, or a draft with no withdrawn entry. The process check still fails it.
 // Specs and tutorials are not dependants of the packet: those still behind a section they cite are
 // listed as behind, the open revisions the merge leaves.
 export function revisionSummary(root, since, branch) {
@@ -63,9 +68,7 @@ export function revisionSummary(root, since, branch) {
   try { decisionsText = fs.readFileSync(path.join(root, decisionsFile), 'utf8'); } catch { /* none */ }
   const reasons = revisionReasons(decisionsText);
   const out = { sections: sections.map(s => ({ key: s.key, file: s.file })), decisionsFile, updated: [], reRecorded: [], withdrawn: [], untouched: [], behind: [] };
-  // Line endings are made even, so a checkout that writes CRLF does not read as a change.
-  const lf = text => (text ?? '').replace(/\r\n/g, '\n');
-  const read = file => { try { return lf(fs.readFileSync(path.join(root, file), 'utf8')); } catch { return null; } };
+  const hashes = a => JSON.stringify((a.links ?? []).map(l => [l.key, l.hash]).sort());
   for (const id of [...new Set(sections.flatMap(s => s.citedBy))].sort()) {
     const was = before.get(id);
     const is = now.get(id);
@@ -76,8 +79,9 @@ export function revisionSummary(root, since, branch) {
     }
     if (!is) { out.withdrawn.push({ id, file: was.file, reason: 'removed in this pull request' }); continue; }
     if (is.status === 'draft' && is.withdrawn) { out.withdrawn.push({ id, file: is.file, reason: is.withdrawn }); continue; }
-    if (hashText(is.body ?? '') !== hashText(was.body ?? '')) out.updated.push({ id, file: is.file });
-    else if (read(is.file) !== lf(tree.read(was.file))) out.reRecorded.push({ id, file: is.file, reason: reasons.get(id) ?? null });
+    if (is.status === 'draft') out.untouched.push({ id, file: is.file });
+    else if (hashText(is.body ?? '') !== hashText(was.body ?? '')) out.updated.push({ id, file: is.file });
+    else if (hashes(is) !== hashes(was)) out.reRecorded.push({ id, file: is.file, reason: reasons.get(id) ?? null });
     else out.untouched.push({ id, file: is.file });
   }
   return out;
