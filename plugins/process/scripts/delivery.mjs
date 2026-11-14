@@ -256,13 +256,19 @@ export function openDeliveries(root) {
   // records a step of one of those designs.
   const underWay = f => elsewhere.some(spec => spec.links.some(l => f.docs.includes(l.target) || f.designs.includes(l.target)))
     || f.designs.some(d => stepsElsewhere.has(d));
-  return features.filter(f => !underWay(f));
+  // A feature whose only open steps were left for later by a merged delivery is waiting for the lead:
+  // a step is left for later when it needs something only a person can do, so a run started by the
+  // next merge would only leave it for later again. "deliver it" still starts it; the merge check
+  // does not (AC-19, from the review of #265).
+  const { later } = stepRecords(decisionFiles(root).map(d => d.text));
+  return features.filter(f => !underWay(f))
+    .map(f => ({ ...f, waiting: f.openSteps.length > 0 && f.openSteps.every(key => later.has(key)), later: f.openSteps.filter(key => later.has(key)) }));
 }
 
 function open(root) {
   const features = openDeliveries(root);
   if (!features.length) return 'No delivery is open.';
-  return features.map(f => `${f.stories.join(', ')}${f.docs.length ? ` (user documentation: ${f.docs.join(', ')})` : ''}${f.openSteps.length ? ` (steps still to build: ${f.openSteps.join(', ')})` : ''}`).join('\n');
+  return features.map(f => `${f.stories.join(', ')}${f.docs.length ? ` (user documentation: ${f.docs.join(', ')})` : ''}${f.waiting ? ` (waiting for the lead: ${f.later.join(', ')} was left for later; say "deliver it" when it can be done)` : ''}${f.openSteps.length && !f.waiting ? ` (steps still to build: ${f.openSteps.join(', ')})`: ''}`).join('\n');
 }
 
 function start(root, name) {

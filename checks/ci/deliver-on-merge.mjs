@@ -104,6 +104,12 @@ export async function deliverOnMerge({ open, routine, token, fetch, last = null,
   const redact = redactor(token);
   const finish = (code, lines, summary = null, marker = null) => ({ code, lines: lines.map(redact), summary: summary === null ? null : redact(summary), marker });
   if (!open.length) return finish(0, ['No delivery is open after this merge, so none was started.']);
+  // A feature whose only open steps were left for later waits for the lead (delivery-run AC-19).
+  const waiting = open.filter(f => f.waiting);
+  open = open.filter(f => !f.waiting);
+  if (!open.length) {
+    return finish(0, [`No delivery was started: ${waiting.length === 1 ? 'the open feature has' : `the ${waiting.length} open features have`} only steps left for later, which wait for the lead. When they can be done, say "deliver it".`]);
+  }
   const listed = [`Open deliveries: ${open.length}.`, ...open.map(f => `- ${describe(f)}`)];
   if (!routine || !token) {
     const missing = [!routine && 'the environment secret RFR_DELIVER_ROUTINE', !token && 'the environment secret RFR_DELIVER_TOKEN'].filter(Boolean).join(' and ');

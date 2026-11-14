@@ -10,7 +10,7 @@ Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265.
 
 - **A design's build order, and a feature that stays open until every step is built** (rewrite plan 25f; delivery-run AC-18, AC-19). `rfr-process` 2.11.0. On XR Studio In A Box a delivery built step 1 of the six its design listed and finished, because the end-of-run check asked only for a spec, tests, and a tutorial.
   - The numbered list at the start of a design's "Notes for delivery" is its build order. A delivery records each step in its decisions file as `[step done: <design id> <n>]` or `[step later: <design id> <n>]` with the reason, and cannot finish with one unaccounted for. The end-of-run report names the steps left for later.
-  - A step that no merged decisions file records as built keeps the feature's delivery open: the process state says which steps are still to build, `delivery open` lists it, and the next merge (where merges start deliveries) or "deliver it" carries on.
+  - A step that no merged decisions file records as built keeps the feature's delivery open: the process state says which steps are still to build, `delivery open` lists it, and the next merge (where merges start deliveries) or "deliver it" carries on. A feature whose only open steps were left for later waits for the lead: merges do not start it, and "deliver it" does.
   - Designs with no build order are unaffected. The design template, the guide, and the `deliver` skill describe the build order.
 
   Adopters: update `rfr-process` to 2.11.0. Nothing to do. A design that should be built in steps lists them as a numbered list at the start of "Notes for delivery".
