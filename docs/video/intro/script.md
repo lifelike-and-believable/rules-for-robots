@@ -1,6 +1,6 @@
 # Intro video: script
 
-Stage 2 of [the process](../process.md). Draft 2, 2026-11-14, by the session, from the maintainer's notes on draft 1; not yet approved. Nothing more is designed or rendered until the maintainer approves it.
+Stage 2 of [the process](../process.md). Approved 2026-11-14 as it stands: "Let's move to the design stage." The copywriter's suggestions below that the maintainer did not pick are not applied.
 
 The brief is in the [README](README.md): for people who already work with agents; why Rules for Robots exists and what working with a collaborator is like; every word on screen, because it plays muted.
 
