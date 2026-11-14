@@ -4,13 +4,17 @@
 //   1. a duplicate id, or a link to an id or section that does not exist;
 //   2. a cycle of links;
 //   3. an approved artifact that links to a draft (or withdrawn) one;
-//   4. an approved artifact whose recorded hash for a linked section is missing or out of date;
+//   4. an approved artifact whose recorded hash for a linked section is missing or out of date; an
+//      out-of-date spec or tutorial that the branch does not add or change is a revision open, which
+//      is reported as a note and does not fail (docs/specs/revisions-and-foundations.md, AC-3);
 //   5. a story that names no persona, or a persona that is not approved;
 //   8. a story without "As <persona>, I want ... so that ..." naming a linked persona, or without
 //      acceptance criteria (an error when approved, a warning when draft);
 //   6. a spec `test:` criterion whose Source cell names no approved story or user documentation
 //      section in the spec's derived-from;
-//   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry;
+//   7. with --base, an artifact approved at the base and now draft without a `withdrawn` entry (a
+//      tutorial whose step words changed goes back to draft, and is not a withdrawal), and a tutorial
+//      approved at the base whose step words changed and which is still approved (AC-6);
 //   9. a tutorial whose starts-from is not a tutorial's id, or a cycle of starts-from;
 //  10. a tutorial whose needs: cannot be read, or names a service no place in try.provides provides;
 //  11. a try.local command that runs a package script the root package.json does not have;
@@ -31,7 +35,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { needsOf, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
 import { USER_DOCS, userDocsProblems } from './lib/user-docs.mjs';
-import { CONFIG_PATH, STAGE_ORDER, approversFor, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, workingTree } from './lib/process.mjs';
+import { CONFIG_PATH, DELIVERY_SIDE, STAGE_ORDER, approversFor, changedSince, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, tutorialStepWords, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
 const WITHDRAWN = /\S.*#\d+/;
@@ -44,6 +48,16 @@ function gitTree(root, ref) {
     fileExists: file => git(['cat-file', '-e', `${ref}:${file}`]).status === 0,
     read: file => git(['show', `${ref}:${file}`]).stdout,
   };
+}
+
+// The numbers of the steps whose words differ between two versions of a tutorial, including steps
+// added or removed (revisions-and-foundations AC-6).
+export function changedSteps(was, is) {
+  const before = tutorialStepWords(was?.body);
+  const after = tutorialStepWords(is?.body);
+  const out = [];
+  for (let i = 0; i < Math.max(before.length, after.length); i++) if (before[i] !== after[i]) out.push(i + 1);
+  return out;
 }
 
 function parseCriteria(body) {
@@ -181,6 +195,12 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
 
   const involved = new Set();
   const open = [];
+  // Revisions open (AC-3): approved specs and tutorials behind a section they cite. Neither errors
+  // nor warnings, and never a reason for the stale issue.
+  const notes = [];
+  // The files the branch adds or changes, compared with the base. With no base (a push to the
+  // default branch, or a local run) nothing is in the branch.
+  const inBranch = base ? changedSince(root, base) : new Set();
   const artifactFiles = new Set(artifacts.map(x => x.file.replace(/\\/g, '/')));
   for (const a of artifacts) {
     const soft = adopting && a.links.length === 0;
@@ -204,6 +224,10 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
       if (!isApproved(target)) problems.push(`${name}: links to ${target.id}, which is ${target.status ?? 'without a status'}`);
       if (!link.hash) problems.push(`${name}: the link to ${link.key} has no recorded hash (record it with node .rfr/checks/process-relink.mjs ${a.id})`);
       else if (link.hash !== current) {
+        // On the delivery side a stale spec or tutorial is a revision, open work for its feature, and
+        // not a failure (revisions-and-foundations AC-3, D1). One the branch adds or changes must be
+        // left up to date, so that a delivery cannot merge half a revision.
+        if (DELIVERY_SIDE.has(a.stage) && !inBranch.has(a.file)) { notes.push(`revision open: ${name} is behind ${link.key}`); continue; }
         // A link to a whole artifact goes stale on any edit to it; suggest its sections (AC-38).
         const sections = link.section ? [] : [...target.body.matchAll(/^##\s+(.+?)\s*$/gm)].map(m => `${target.id}#${slug(m[1])}`);
         const hint = sections.length ? `; it links the whole of ${target.id}, so any edit there stales it: link the sections it depends on instead (${sections.join(', ')})` : '';
@@ -353,8 +377,16 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
     else {
       const before = new Map(loadArtifacts(tree).artifacts.filter(a => a.id).map(a => [a.id, a]));
       for (const a of artifacts) {
-        if (a.status === 'draft' && !a.withdrawn && isApproved(before.get(a.id))) {
+        // A tutorial a revision changes goes back to draft when a step's words changed (AC-6, D3):
+        // the lead's validation was of the steps as they were.
+        const tutorialChanged = a.stage === 'tutorials' && isApproved(before.get(a.id)) && isApproved(a);
+        if (a.status === 'draft' && !a.withdrawn && isApproved(before.get(a.id)) && !(a.stage === 'tutorials' && changedSteps(before.get(a.id), a).length)) {
           errors.push(`${a.id}: was approved at ${base} and is now draft without a withdrawn entry. If you are amending it, keep status: approved; the gated merge approves the change. Set draft only to withdraw it, with withdrawn: <reason> (#<issue>)`);
+          involved.add(a.id);
+        }
+        const steps = tutorialChanged ? changedSteps(before.get(a.id), a) : [];
+        if (steps.length) {
+          errors.push(`${a.id}: the words of ${steps.length === 1 ? 'step' : 'steps'} ${steps.join(', ')} changed since ${base}, so it is no longer the tutorial the lead followed; set status: draft, and it is approved again when the lead has followed it and it holds`);
           involved.add(a.id);
         }
       }
@@ -362,7 +394,7 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
   }
 
   const unrecorded = artifacts.filter(a => !isApproved(a)).reduce((n, a) => n + a.links.filter(l => !l.hash).length, 0);
-  return { errors, warnings, openItems: open, checked: artifacts.length, involved: [...involved].sort(), unrecorded };
+  return { errors, warnings, notes, openItems: open, checked: artifacts.length, involved: [...involved].sort(), unrecorded };
 }
 
 // One row per persona, epic, and story: its status, the furthest stage that approved work below
@@ -433,6 +465,8 @@ function main(argv) {
   if (!json) console.log(`Checked with rules-for-robots ${checkoutCommit()}.`);
   if (json) console.log(JSON.stringify(r, null, 2));
   for (const w of r.warnings) console.warn(`warning: ${w}`);
+  for (const n of r.notes) console.warn(`note: ${n}`);
+  if (!json && r.notes.length) console.warn(`note: ${r.notes.length === 1 ? 'that spec or tutorial is' : 'those specs and tutorials are'} behind an approved change. That is delivery work, not a failure: the process state lists each feature as a revision open, and /rfr-process:deliver brings it up to date.`);
   for (const e of r.errors) console.error(e);
   if (!json && r.openItems?.length) {
     console.log(`Open items (${r.openItems.length}):`);
@@ -441,6 +475,7 @@ function main(argv) {
   if (r.errors.length) process.exit(1);
   if (!json) {
     if (!r.checked) console.log('No process artifacts.');
+    else if (r.notes.length) console.log(`${r.checked} process artifact(s) checked; ${r.notes.length} link(s) of approved specs and tutorials are behind (revisions open, listed above as notes); every other recorded link is current.`);
     else if (r.unrecorded) console.log(`${r.checked} process artifact(s) checked; recorded links are current, and ${r.unrecorded} draft link(s) have hashes not yet recorded (they are recorded when each draft is approved).`);
     else console.log(`${r.checked} process artifact(s) checked; links are current.`);
   }

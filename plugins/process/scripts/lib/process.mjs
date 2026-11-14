@@ -398,6 +398,109 @@ export function sectionHash(body, section) {
   return text === null ? null : hashText(text);
 }
 
+// ---- revisions (docs/specs/revisions-and-foundations.md) --------------------------------------
+
+// The stages agents build from the lead's packet: a stale artifact here is open work, a revision,
+// and not a failure (AC-3, decision D1). The stages before them are the document side.
+export const DELIVERY_SIDE = new Set(['specs', 'tutorials']);
+
+// The links of an artifact whose recorded hash differs from the current hash of the section it
+// cites, as link keys ("id" or "id#section"). A link with no recorded hash, or to an artifact or
+// section that does not exist, is not counted here: the process check reports those.
+export function linksBehind(artifact, byId) {
+  const out = [];
+  for (const l of artifact?.links ?? []) {
+    if (!l.hash) continue;
+    const target = byId.get(l.target);
+    const current = target ? sectionHash(target.body ?? '', l.section) : null;
+    if (current !== null && current !== l.hash) out.push(l.key ?? (l.section ? `${l.target}#${l.section}` : l.target));
+  }
+  return out;
+}
+
+// A reader for the tree at a git ref, in the shape loadArtifacts takes, or null when the ref is not
+// a commit here.
+export function refTree(root, ref) {
+  if (!ref || gitOut(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]) === null) return null;
+  return {
+    listDir: dir => (gitOut(root, ['ls-tree', '-r', '--name-only', ref, '--', dir]) ?? '').split('\n').filter(f => f.endsWith('.md')).sort(),
+    fileExists: file => gitOut(root, ['cat-file', '-e', `${ref}:${file}`]) !== null,
+    read: file => gitOut(root, ['show', `${ref}:${file}`]) ?? '',
+  };
+}
+
+const approvedStatus = a => a?.status === 'approved' || a?.status === 'implemented';
+const sectionsOf = body => [...(body ?? '').matchAll(/^##\s+(.+?)\s*#*\s*$/gm)].map(m => slug(m[1]));
+
+// The sections the working tree has changed that an artifact approved on the base cites (AC-1):
+// [{ id, file, section, key, citedBy }], by key. Both the cited artifact and the one citing it must
+// be approved on the base, so an artifact new in the branch, a draft, and a section nothing links to
+// are not listed. A link to a whole artifact cites each of its "## " sections; the whole artifact is
+// listed (section null) only when its text changed outside every one of them. A pull request with
+// any changed section is a revision. Returns [] when the base cannot be read.
+export function changedSections(root, base) {
+  const tree = refTree(root, base);
+  if (!tree) return [];
+  const before = new Map(loadArtifacts(tree).artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const now = new Map(loadArtifacts(workingTree(root)).artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const cited = new Map(); // id -> Map(section | null -> Set of citing ids)
+  for (const a of before.values()) {
+    if (!approvedStatus(a)) continue;
+    for (const l of a.links ?? []) {
+      const target = before.get(l.target);
+      if (!target || target === a || !approvedStatus(target)) continue;
+      const sections = l.section ? [l.section] : [...sectionsOf(target.body), null];
+      if (!cited.has(target.id)) cited.set(target.id, new Map());
+      for (const s of sections) {
+        const by = cited.get(target.id);
+        if (!by.has(s)) by.set(s, new Set());
+        by.get(s).add(a.id);
+      }
+    }
+  }
+  const out = [];
+  for (const [id, sections] of cited) {
+    const was = before.get(id);
+    const is = now.get(id);
+    const changed = [...sections.keys()].filter(s => {
+      const old = sectionHash(was.body, s);
+      return old !== null && (is ? sectionHash(is.body, s) : null) !== old;
+    });
+    // The whole artifact stands for the text outside its sections, so it is listed only when no
+    // section it holds is.
+    const named = changed.filter(s => s !== null);
+    for (const s of named.length ? named : changed) {
+      out.push({ id, file: was.file, section: s, key: s ? `${id}#${s}` : id, citedBy: [...sections.get(s)].sort() });
+    }
+  }
+  return out.sort((p, q) => p.key.localeCompare(q.key));
+}
+
+// The words of a tutorial's steps: each numbered item under "## Steps", with lines that continue it,
+// and with spacing made even (AC-6). A tutorial whose step words are unchanged reads as it did when
+// the lead followed it.
+export function tutorialStepWords(body) {
+  const section = /^##\s+Steps\s*\n([\s\S]*?)(?=^##\s|$(?![\s\S]))/m.exec(body ?? '')?.[1] ?? '';
+  const steps = [];
+  for (const line of section.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/)) {
+    const item = /^\s{0,3}(\d+)[.)]\s+(.*)$/.exec(line);
+    if (item) steps.push(item[2].trim());
+    else if (steps.length && line.trim() && /^\s+/.test(line)) steps[steps.length - 1] += ` ${line.trim()}`;
+  }
+  return steps.map(normalize);
+}
+
+// A spec's acceptance criteria, as a map from id (AC-n) to its row with spacing made even.
+export function criteriaRows(body) {
+  const section = /^## Acceptance criteria\s*\n([\s\S]*?)(?=^## |$(?![\s\S]))/m.exec(body ?? '')?.[1] ?? '';
+  const rows = new Map();
+  for (const row of section.split('\n').filter(l => l.trim().startsWith('|'))) {
+    const id = row.trim().replace(/^\|/, '').split('|')[0].trim();
+    if (/^AC-\d+$/.test(id)) rows.set(id, normalize(row));
+  }
+  return rows;
+}
+
 // ---- a design's build order (docs/specs/delivery-run.md, AC-18) -------------------------------
 
 const ORDERED_ITEM = /^( *)(\d{1,9})[.)]\s+(.*)$/;
@@ -664,7 +767,9 @@ export function featureFamily(artifacts, story, config) {
 }
 
 // The first thing still to do for each story, in stage order (AC-1): { story, step, stage, files,
-// inBranch }, where step is approve, write, deliver, delivering, validate, or done. Artifacts
+// inBranch }, where step is approve, write, deliver, delivering, revise, validate, or done. A revise
+// step (revisions-and-foundations AC-4) has the stale specs and tutorials as its files and the
+// sections they are behind as behind; an open build step outranks it. Artifacts
 // belong to a story when they are in its feature (AC-13). decisions: the text of every file under
 // docs/decisions/ in the same tree; a step of an approved design's build order that none of them
 // records as built keeps the feature's delivery open (delivery-run AC-19), with the steps as
@@ -672,6 +777,7 @@ export function featureFamily(artifacts, story, config) {
 export function featureSteps(artifacts, config, decisions = []) {
   const waived = config?.waived ?? {};
   const withId = artifacts.filter(a => a.id);
+  const byId = new Map(withId.map(a => [a.id, a]));
   const built = stepRecords(decisions).done;
   const steps = [];
   for (const story of withId) {
@@ -698,13 +804,21 @@ export function featureSteps(artifacts, config, decisions = []) {
     const units = need === 'stories' ? [story]
       : at(need).concat(need === 'user-docs' ? at('design').filter(d => typeof d.noUserDocs === 'string' && d.noUserDocs.length >= 10) : []);
     const from = (stage, unit) => at(stage).filter(a => (a.links ?? []).some(l => l.target === unit.id));
-    const ORDER = ['deliver', 'delivering', 'validate', 'done'];
+    // A revision (revisions-and-foundations AC-4): an approved spec or tutorial behind a section it
+    // cites. It comes after delivering, since a delivery under way brings its own spec up to date,
+    // and before validate and done, so a built feature that is behind is not counted as finished.
+    const ORDER = ['deliver', 'delivering', 'revise', 'validate', 'done'];
+    const behind = items => items.filter(a => approvedNow(a) && linksBehind(a, byId).length);
     const stateOf = unit => {
       const specs = from('specs', unit);
       // One tutorial covers everything its spec delivers: a tutorial that links any piece a spec of
       // this one links counts for this one too, as the delivery run's own check accepts.
       const group = new Set([unit.id, ...specs.flatMap(sp => (sp.links ?? []).map(l => l.target))]);
       const tutorials = at('tutorials').filter(a => (a.links ?? []).some(l => group.has(l.target) && units.some(u => u.id === l.target)));
+      const stale = behind([...specs, ...tutorials]);
+      // Enabling work (a design marked no-user-docs) has no tutorial, so its approved specs are built.
+      const delivered = tutorials.length || (unit.stage === 'design' && specs.length && specs.every(approvedNow));
+      if (delivered && stale.length) return { step: 'revise', stage: stale.some(a => a.stage === 'specs') ? 'specs' : 'tutorials', items: stale };
       if (tutorials.length) return tutorials.every(approvedNow) ? { step: 'done', stage: 'tutorials', items: tutorials } : { step: 'validate', stage: 'tutorials', items: tutorials };
       return specs.length ? { step: 'delivering', stage: 'specs', items: specs } : { step: 'deliver', stage: 'specs', items: [] };
     };
@@ -727,7 +841,10 @@ export function featureSteps(artifacts, config, decisions = []) {
       steps.push({ ...make('deliver', 'specs'), units: designs, openSteps });
       continue;
     }
-    steps.push({ ...make(ORDER[first], at_[0].stage, items), units: at_.map(s => s.unit.id).sort() });
+    const step = { ...make(ORDER[first], at_[0].stage, items), units: at_.map(s => s.unit.id).sort() };
+    // A revision names the sections its specs and tutorials are behind.
+    if (step.step === 'revise') step.behind = [...new Set(items.flatMap(a => linksBehind(a, byId)))].sort();
+    steps.push(step);
   }
   return steps.sort((p, q) => p.story.localeCompare(q.story));
 }
@@ -767,7 +884,8 @@ export function renderNext({ steps, product = [], note = null }) {
         : s.step === 'write' ? `write ${STAGE_WORDS[s.stage]}`
           : s.step === 'deliver' && s.openSteps?.length ? `delivery is open: ${stepsStillToBuild(s.openSteps)} (/rfr-process:deliver)`
           : s.step === 'deliver' ? 'delivery is open: the spec, tests, implementation, and tutorial, on one branch (/rfr-process:deliver)'
-            : `delivery is under way${names(s.files)}`;
+            : s.step === 'revise' ? `revision open: ${s.files.join(', ')} ${s.files.length === 1 ? 'is' : 'are'} behind ${(s.behind ?? []).join(', ')} (/rfr-process:deliver)`
+              : `delivery is under way${names(s.files)}`;
     const key = `${['approve', 'validate'].includes(s.step) ? 'waiting' : 'open'}\n${what}`;
     groups.set(key, [...(groups.get(key) ?? []), s.story]);
   }

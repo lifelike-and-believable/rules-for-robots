@@ -1,6 +1,6 @@
 ---
 name: deliver
-description: Deliver or finish a feature - find how far it has got, then write whatever it still lacks (spec, failing tests, implementation, tutorial) on one branch and push it, without asking the lead anything. Use when the user asks to deliver, build, or finish a feature or slice, when the process state says a feature's delivery is open or under way, or when a feature packet's pull request has merged.
+description: Deliver or finish a feature - find how far it has got, then write whatever it still lacks (spec, failing tests, implementation, tutorial) on one branch and push it, without asking the lead anything. Use when the user asks to deliver, build, or finish a feature or slice, when the process state says a feature's delivery or a revision is open or under way, or when a feature packet's pull request has merged.
 argument-hint: "[story or feature name]"
 ---
 
@@ -20,6 +20,17 @@ A delivery run takes a feature from approved user documentation to a pushed bran
 4. **Start the run:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/delivery.mjs" start <story id or spec file name>`. It records that a run is under way on this branch and lists what is still to do. Name the feature when its spec is already on the default branch, so that the run finishes it from where it stands: a feature that was built before it had a tutorial lacks only the tutorial. From here until the run ends, a check at the end of each turn sends you back to work while anything on that list is missing.
 
 Do only the steps on that list. Skip any step below that is already done and approved; do not rewrite an approved spec or rework code that passes.
+
+## A revision open
+
+When the process state or `delivery open` says `revision open`, an approved change to a document the feature's spec or tutorial cites has merged, and they are behind it. That is a delivery like any other, on one branch: start it the same way, and `start` scopes the run to the stale specs and lists what they lack.
+
+1. Read each changed section against the stale spec, bring the spec up to it, and record its hashes (`node .rfr/checks/process-relink.mjs <spec id>`). Never record hashes without reading the change: a spec that still holds needs only its hashes, and one that does not needs its criteria changed.
+2. Write tests for each criterion that changed or is new, citing it, and see them fail before the code changes. The usual rules apply: commit them on their own and add that commit to the spec's `tests-commit`, and list an existing test file you change under `unlocks:` with the reason.
+3. Change the code until they pass.
+4. Run each stale tutorial again against the delivery, and record its hashes. A tutorial whose steps read as they did stays `status: approved`, and the pull request lists it as re-recorded, still validated: the lead does not follow it again. If the words of any step changed, set it back to `status: draft`: the lead follows it again, and the pull request lists it as built, not yet validated.
+
+A spec or tutorial that a branch changes must be left up to date there, so finish every one the run touches.
 
 ## The run
 
