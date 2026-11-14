@@ -149,6 +149,56 @@ Generated on 2026-11-14 on the maintainer's word, with the recipe above and a pr
 
 The prompts are in the Higgsfield account under those jobs. Each began "Flat vector editorial illustration for a motion-graphics explainer film" and described the scene, then B's foliage, trunk, sky, sun, bushes, and flowers. The first prompts added "hand-drawn with printed dry-brush texture", and one of those four came back outlined; the retries dropped that phrase, added "no black line work", and both came back in style.
 
+## Reference editing test
+
+On 2026-11-14 the maintainer asked whether models exist that keep elements consistent, so that the session need not redraw them, and said to try it, with cost estimates, and to plan for the most professional version.
+
+Recraft V4.1, used for every take above, accepts no reference picture, so each take was a new roll. Higgsfield also offers models that edit from references, and video models that take a first and a last frame. Costs were quoted first (2026-11-14, 16:9):
+
+| Model | Use | Quoted cost |
+|---|---|---|
+| `gpt_image_2_6`, 2k, quality high, one reference | Edit a picture, keep the rest | 2.75 credits |
+| `gpt_image_2_6`, 2k, quality medium | The same, cheaper | 1 credit |
+| `flux_3_image`, 2k, one reference | Edit a picture | 3 credits |
+| `minimax_h3`, 5 seconds, 2K, first and last frame | Animate between two of our frames | 10 credits |
+| `kling3_0_turbo`, 5 seconds, 1080p, first frame only | Animate from one frame | 10 credits |
+| `flux_3_video`, 5 seconds, 1080p, first and last frame, no audio | Animate between two frames | 40 credits |
+
+The test: three edits with `gpt_image_2_6` from one reference, the film's treehouse with its slide (`takes/ref-*.png`, 2688 by 1520, about 8 credits), and one `minimax_h3` clip from the before and after frames (10 credits).
+
+| File | Asked for | Result | Job ID |
+|---|---|---|---|
+| `ref-literal-a.png` | The same hill and tree with only a box in the branches | The hill, bushes, flowers, sun and style are the reference's; the tree is redrawn close to it | `e5ca1801-3a9c-47c2-99b1-a60f18f73170` |
+| `ref-pine-a.png` | The same hill with a pine, the house moved, a ladder | The same world and the same cabin, tilted on a pine | `78d5576a-c09c-4e7d-8f90-0c3050254b3c` |
+| `ref-village-a.png` | A village of the same treehouse | Five treehouses of the film's design with bridges, ladders to the grass, and open sky; all five have slides, where one was asked for | `9bc5c38d-3bb4-4e67-af9d-32dcafb56a72` |
+
+The clip, `takes/ref-slide-minimax.mp4` (job `c4a8828f-9169-4179-896f-f5c6d50b6210`, 5 seconds, 2560 by 1440, 24 frames a second): the slide unrolls from the deck to the grass, the flag moves, and the rest of the picture holds still and flat.
+
+What it shows: an edit from a reference keeps the world, where separate takes did not, and a video model can animate one change between two of our frames without redrawing the rest. The results are pictures, not vector, so parts are removed with a further edit and not with `kit.cjs`. The test cost 18.25 credits; 134 have been spent on the film, and the account held 791 afterwards.
+
+## Plan for the professional version
+
+Proposed by the session on 2026-11-14, at the maintainer's request, and not yet approved. Each stage ends with the maintainer's approval before the next, costlier one.
+
+1. **Lock the master.** The film's treehouse with its slide (vector B) is the one reference every other picture is edited from.
+2. **Key frames, by reference edit.** One still for the start and end of each beat, all edited from the master so they share one hill: the empty hill, the box in the tree, the pine with the house moved and a ladder, the slide through the ladder (edited from the pine), that mess at night, the sketch, the treehouse built with a bare pole, with its flag, with its slide, and the village with the film's treehouse in it. About 12 key frames at three takes each.
+3. **Motion, by first and last frame.** One generated clip for each change: the box arriving, the tree becoming a pine, the slide going through the ladder, night to morning, the sketch becoming the treehouse, the flag going up, the slide unrolling, and the pull back to the village. About 8 clips at two or three takes each. The few shots that matter most can be retaken on the costlier model.
+4. **Words stay in code.** Headings, bubbles, the idea's outline, the turn, and the end card are drawn by `film-page.js` over the clips, because a model does not set exact words reliably. `film.cjs` needs one addition: clips as layers, read frame by frame.
+5. **Sound.** Music and effects, with the licence for web, social, and paid use checked first. Cost to be quoted.
+6. **Review.** An independent creative review of the assembled cut, as for the second cut, before the maintainer's.
+7. **Cuts.** The 16:9 master, then a vertical and a square cut and a 15-second cut, with the words laid out again in code for each shape.
+
+| Stage | Assumption | Estimate |
+|---|---|---|
+| Key frames | 12 frames, 3 takes each, 2.75 credits a take | about 100 credits |
+| Motion | 8 clips, 2 to 3 takes each, 10 credits a take on `minimax_h3` | 160 to 240 credits |
+| Hero shots on `flux_3_video` | 3 clips, 2 takes each, 40 credits a take | up to 240 credits, optional |
+| Sound | Not yet quoted | unknown; allow 50 |
+| Retakes after review | A quarter of the above | 80 to 160 credits |
+| **Total** | | **about 400 credits without the costlier model, about 700 with it** |
+
+## Tools worth adding
+
 ## Tools worth adding
 
 From research on 2026-11-14; claims about vendors' terms were not all checked first-hand.
