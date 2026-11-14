@@ -5,16 +5,107 @@
 // process artifacts the branch changes, the decision files it changes, where to try the change when
 // it adds or changes a tutorial, and, for a gated change, the line the lead can run to approve it.
 // A tutorial a revision re-records with its steps unchanged is listed as re-recorded and still
-// validated (revisions-and-foundations AC-6).
+// validated (revisions-and-foundations AC-6). A revision, a pull request that changes a section an
+// approved artifact cites, has a Revision section after the review packet (AC-7).
 // Usage: node checks/ci/process-pr-body.mjs [project root] --base <ref> [--number <n>] [--branch <name>]
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { gateOf, parseArtifact, readConfig, readWorkMode, stageOf, tryItLines, tutorialStepWords, tutorialTitle } from '../lib/process.mjs';
+import { DELIVERY_SIDE, changedSections, gateOf, hashText, linksBehind, loadArtifacts, parseArtifact, readConfig, readWorkMode, refTree, stageOf, tryItLines, tutorialStepWords, tutorialTitle, workingTree } from '../lib/process.mjs';
 import { buildPacket, changedArtifacts, formatPacket } from '../process-packet.mjs';
 
-export function prBody({ packet = '', enabling = [], decisions = [], tutorials = [], tryIt = null, gated = false, number = null, branch = '' }) {
+// The reasons a branch's decisions file gives for its re-records (AC-7): the list items under a
+// "## Revision" heading that start with an artifact id, as a map from id to reason. Read tolerantly:
+// the id may be in backticks or bold, and a colon or a dash may follow it, as in
+// "- design-board: unaffected; the change is to the export dialog only." A line indented under an
+// item continues it.
+export function revisionReasons(text) {
+  const reasons = new Map();
+  const rows = String(text ?? '').split(/\r?\n/);
+  const start = rows.findIndex(r => /^##\s+Revision\s*#*\s*$/i.test(r));
+  if (start < 0) return reasons;
+  let last = null;
+  for (const row of rows.slice(start + 1)) {
+    if (/^#{1,2}\s/.test(row)) break;
+    const item = /^\s{0,3}[-*+]\s+(?:\*\*)?`?([\w.-]+?)`?(?:\*\*)?(?:\s*:|\s+[-–—])\s*(.*?)\s*$/.exec(row);
+    if (item) {
+      last = item[2] ? item[1] : null;
+      if (item[2] && !reasons.has(item[1])) reasons.set(item[1], item[2]);
+      continue;
+    }
+    if (last && /^\s+\S/.test(row) && !/^\s*[-*+]\s/.test(row)) reasons.set(last, `${reasons.get(last)} ${row.trim()}`);
+    else last = null;
+  }
+  return reasons;
+}
+
+// The Revision section's content (AC-7, decision D4), or null when the pull request is not a
+// revision (no section an approved artifact cites has changed since the branch left the base).
+// Each document that cites a changed section directly (a dependant) is put in one group, by
+// comparing its version where the branch left the base with the working tree:
+//   - withdrawn: it is now a draft with a `withdrawn` entry, or the branch removed it;
+//   - updated: its body (the text after the front matter) differs, compared with spacing made even
+//     as section hashes compare it (hashText);
+//   - re-recorded: its body is the same and the file is not, so only its front matter changed: the
+//     hashes it records for the sections it cites;
+//   - not yet dealt with: the file is unchanged, so the process check fails it as stale.
+// Specs and tutorials are not dependants of the packet: those still behind a section they cite are
+// listed as behind, the open revisions the merge leaves.
+export function revisionSummary(root, since, branch) {
+  const sections = changedSections(root, since);
+  if (!sections.length) return null;
+  const tree = refTree(root, since);
+  const before = new Map(loadArtifacts(tree).artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const now = new Map(loadArtifacts(workingTree(root)).artifacts.filter(a => a.id).map(a => [a.id, a]));
+  const decisionsFile = `docs/decisions/${String(branch ?? '').replace(/[\\/]+/g, '-')}.md`; // as delivery.mjs names it
+  let decisionsText = '';
+  try { decisionsText = fs.readFileSync(path.join(root, decisionsFile), 'utf8'); } catch { /* none */ }
+  const reasons = revisionReasons(decisionsText);
+  const out = { sections: sections.map(s => ({ key: s.key, file: s.file })), decisionsFile, updated: [], reRecorded: [], withdrawn: [], untouched: [], behind: [] };
+  // Line endings are made even, so a checkout that writes CRLF does not read as a change.
+  const lf = text => (text ?? '').replace(/\r\n/g, '\n');
+  const read = file => { try { return lf(fs.readFileSync(path.join(root, file), 'utf8')); } catch { return null; } };
+  for (const id of [...new Set(sections.flatMap(s => s.citedBy))].sort()) {
+    const was = before.get(id);
+    const is = now.get(id);
+    if (DELIVERY_SIDE.has(was.stage)) {
+      const behind = is && ['approved', 'implemented'].includes(is.status) ? linksBehind(is, now) : [];
+      if (behind.length) out.behind.push({ id, file: is.file, behind });
+      continue;
+    }
+    if (!is) { out.withdrawn.push({ id, file: was.file, reason: 'removed in this pull request' }); continue; }
+    if (is.status === 'draft' && is.withdrawn) { out.withdrawn.push({ id, file: is.file, reason: is.withdrawn }); continue; }
+    if (hashText(is.body ?? '') !== hashText(was.body ?? '')) out.updated.push({ id, file: is.file });
+    else if (read(is.file) !== lf(tree.read(was.file))) out.reRecorded.push({ id, file: is.file, reason: reasons.get(id) ?? null });
+    else out.untouched.push({ id, file: is.file });
+  }
+  return out;
+}
+
+function revisionLines(r) {
+  const named = a => `- **${a.id}** (\`${a.file}\`)`;
+  const group = (title, items, intro, line = named) => {
+    const lines = [`### ${title} (${items.length})`, ''];
+    if (items.length && intro) lines.push(intro, '');
+    lines.push(...(items.length ? items.map(line) : ['None.']), '');
+    return lines;
+  };
+  return [
+    '## Revision',
+    '',
+    'This pull request changes sections that approved documents cite, so it is a revision. Read the updated documents first. For each document re-recorded as unaffected, check that its reason holds.',
+    '',
+    ...group('Changed sections', r.sections, null, s => `- \`${s.key}\` (\`${s.file}\`)`),
+    ...group('Updated: read these first', r.updated, 'These documents cite a changed section, and their text changed with it.'),
+    ...group('Re-recorded as unaffected', r.reRecorded, `Only the hashes these documents record changed; their text is as it was. Each reason comes from "## Revision" in \`${r.decisionsFile}\`.`, a => `${named(a)}: ${a.reason ?? 'no reason given'}`),
+    ...group('Withdrawn', r.withdrawn, null, a => `${named(a)}: ${a.reason}`),
+    ...(r.untouched.length ? group('Not yet dealt with', r.untouched, 'These cite a changed section and this pull request has not changed them. The process check fails until each is updated, re-recorded, or withdrawn.') : []),
+    ...group('Behind after the merge', r.behind, 'These specs and tutorials cite a changed section. When this pull request merges they become open revisions, and an agent brings each up to date in a delivery of its own.', a => `${named(a)}, behind ${a.behind.join(', ')}`),
+  ];
+}
+
+export function prBody({ packet = '', revision = null, enabling = [], decisions = [], tutorials = [], tryIt = null, gated = false, number = null, branch = '' }) {
   const out = [];
   // Accepting a delivery and validating it are two approvals (AC-11). A tutorial that is still a
   // draft means this pull request delivers the feature; one marked approved means it records the
@@ -43,6 +134,9 @@ export function prBody({ packet = '', enabling = [], decisions = [], tutorials =
     out.push('');
   }
   if (packet.trim()) out.push(packet.trim(), '');
+  // A revision's view (AC-7): next to the packet, before the decisions, so the lead sees what the
+  // change reaches with the documents it changes.
+  if (revision) out.push(...revisionLines(revision));
   if (decisions.length) {
     out.push('## Decisions', '', 'Set aside or decided by the agent during the run, for you to confirm:', '');
     for (const d of decisions) out.push(`From \`${d.file}\`:`, '', d.text.trim(), '');
@@ -73,7 +167,8 @@ export function prTitle(artifacts = []) {
 }
 
 // What the description needs, read from the repository: the branch is HEAD, compared with base.
-export function readPrBody(root, base) {
+// `branch` names the branch's decisions file; by default, the branch checked out.
+export function readPrBody(root, base, { branch = null } = {}) {
   const artifacts = changedArtifacts(root, base);
   const config = readConfig(root)?.config ?? {};
   const mode = readWorkMode(root);
@@ -100,7 +195,9 @@ export function readPrBody(root, base) {
     preview: config.try?.preview ?? false,
     local: config.try?.local ?? null,
   };
-  return { packet, enabling, decisions, tutorials, tryIt, gated };
+  const head = branch || (spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout ?? '').trim();
+  const revision = revisionSummary(root, since, head);
+  return { packet, revision, enabling, decisions, tutorials, tryIt, gated };
 }
 
 function main(argv) {
@@ -111,7 +208,7 @@ function main(argv) {
   if (!base) { console.error('Usage: process-pr-body.mjs [project root] --base <ref> [--number <n>] [--branch <name>] [--title]'); process.exit(2); }
   // --title prints the title alone, or nothing when the branch carries no process artifact.
   if (argv.includes('--title')) { process.stdout.write(prTitle(changedArtifacts(root, base)) ?? ''); return; }
-  process.stdout.write(prBody({ ...readPrBody(root, base), number: value('--number'), branch: value('--branch') ?? '' }));
+  process.stdout.write(prBody({ ...readPrBody(root, base, { branch: value('--branch') }), number: value('--number'), branch: value('--branch') ?? '' }));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2));

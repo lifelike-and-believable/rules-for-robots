@@ -4,9 +4,16 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269.
 
 ### Changed
+
+- **The revision packet's view** (Phase 26b; revisions-and-foundations AC-2, AC-7, AC-8). `rfr-process` 2.14.0.
+  - `checks/process-impact.mjs` says what a change reaches before it is made: the documents that cite it, which the pull request must update, re-record, or withdraw; the specs and tutorials that become open revisions, with their features and the test files that cite them; and code a changed document names in `implemented-by`. `--base <ref>` reports a branch's changes; `--json` gives data.
+  - A revision's pull request description has a Revision section: the changed sections; the documents updated, listed first; the documents re-recorded as unaffected, each with its reason from `## Revision` in the branch's decisions file or "no reason given"; those withdrawn; and the specs and tutorials behind after the merge.
+  - A new `revise` skill carries a change to something approved: impact report first, each citing document dealt with and never re-recorded unread, reasons written down, and the delivery side left to the revision that follows. The guide has a section on it.
+
+  Adopters: update `rfr-process` to 2.14.0. Nothing to do.
 
 - **Revisions as open work** (Phase 26a; revisions-and-foundations AC-1, AC-3 to AC-6). `rfr-process` 2.13.0. A change to an approved document that specs or tutorials cite no longer forces their code into the same pull request.
   - The document side (concept to user documentation) still fails the process check when it falls behind a change, so what the lead approves stays consistent.
