@@ -1,6 +1,6 @@
 # Intro video: design
 
-Stage 4 of [the process](../process.md), 2026-11-14; waits for the maintainer's approval. Every picture the [script](script.md) names, edited from the master (`takes/vector-b.svg` with its slide, rendered as `takes/`-era `treehouse-after.png` and uploaded as media `0d338f00-2057-4adf-9ea9-7726e4f69937`) with `gpt_image_2_6`, 2k, quality high, 2.75 credits a take. Each picture is edited from the one before it, so they share one hill, one sun, and one style. The chosen pictures are in this folder as JPEG; every take is kept in the Higgsfield account under its job.
+Stage 4 of [the process](../process.md), 2026-11-14. Approved after the retake of 04 and 05: "much better thanks". Every picture the [script](script.md) names, edited from the master (`takes/vector-b.svg` with its slide, rendered as `takes/`-era `treehouse-after.png` and uploaded as media `0d338f00-2057-4adf-9ea9-7726e4f69937`) with `gpt_image_2_6`, 2k, quality high, 2.75 credits a take. Each picture is edited from the one before it, so they share one hill, one sun, and one style. The chosen pictures are in this folder as JPEG; every take is kept in the Higgsfield account under its job.
 
 | File | Beats | Edited from | Chosen job | Other takes |
 |---|---|---|---|---|

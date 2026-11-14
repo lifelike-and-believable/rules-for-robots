@@ -62,6 +62,8 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
 ## Next
 
+**Stage 5, the animatic.** `node animatic.cjs` renders `out/animatic.mp4` (64.5 seconds) from the approved pictures in `design/` and the approved script, with cuts, dissolves, and wipes only; `node animatic.cjs sheet` writes two frames of each beat. The timing and every word are in `animatic-page.js`. The ash of beats 2 to 6 is made by ffmpeg, and the slide is kept in colour by a mask cut by its colour; the slide's darker rim falls outside that mask and shows grey, which the finals should fix with a proper mask. `film.cjs`, `film-page.js`, `art.cjs`, `kit.cjs`, and `style/` are the trial's, kept as its record.
+
 **The motto.** On 2026-11-14 the maintainer said the film's promise line "should emerge as the Rules for Robots motto". The social preview keeps "A practical guide for agent collaborators" under the name for now, at the maintainer's word: "It makes it a bit clearer on the landing page what it is." The motto is the film's, and the end card's.
 
 **From 2026-11-14 the film follows [the process](../process.md), one approved stage at a time.** The maintainer asked to "back up and do the professional process" in place of rendering the film again after each change. Where it stands: the brief is above; the script is drafted in [`script.md`](script.md) and waits for the maintainer; the look (vector B) and the village's five designs are approved in concept; design, the animatic, motion, sound, and the cuts follow in order. The six cuts so far are the trial that the process was written from, and the list below is its record.
