@@ -55,14 +55,10 @@ test('project-process#AC-57: the notify path reads the pull request number from 
   assert.equal(subjectPull('Fix #5 in the concept'), null);
 });
 
-test('project-process#AC-24: the retired tier job is a stub that passes on pull requests and runs no check', async () => {
+test('project-process#AC-24: the retired tier job is gone in 8.0.0', async () => {
   const { parse } = await import('yaml');
   const wf = parse(fs.readFileSync('.github/workflows/rfr-process.yml', 'utf8'));
-  const job = wf.jobs.tier;
-  assert.ok(job, 'a repository that still requires process / tier gets a result');
-  assert.match(job.if, /pull_request/);
-  assert.deepEqual(job.permissions, {});
-  assert.equal(job.steps.length, 1);
-  assert.doesNotMatch(job.steps[0].run, /node |exit 1/);
-  assert.match(job.steps[0].run, /::notice::/);
+  // Retired in rewrite plan 25e; a passing stub was kept until 8.0.0 for repositories that still
+  // required process / tier, and the migration note says to remove it from the required checks.
+  assert.equal(wf.jobs.tier, undefined);
 });

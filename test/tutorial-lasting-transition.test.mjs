@@ -45,7 +45,7 @@ test('lasting-tutorials#AC-15: with lasting warn they are warnings, and other pr
   assert.match(checkCoverage(root, { lasting: 'warn' }).errors.join('\n'), /no runner/);
 });
 
-test('lasting-tutorials#AC-15: the command line reads RFR_LASTING_TUTORIALS, and the workflow passes it with warn as its default', () => {
+test('lasting-tutorials#AC-15: the command line reads RFR_LASTING_TUTORIALS, and the workflow passes it with fail as its default', () => {
   const root = project();
   const run = env => spawnSync(process.execPath, [path.resolve('checks/tutorial-run.mjs'), root, '--coverage'], { encoding: 'utf8', env: { ...process.env, ...env } });
   assert.equal(run({ RFR_LASTING_TUTORIALS: '' }).status, 1);
@@ -53,6 +53,6 @@ test('lasting-tutorials#AC-15: the command line reads RFR_LASTING_TUTORIALS, and
   assert.equal(warned.status, 0, warned.stderr);
   assert.match(warned.stderr, /warning: .*localhost/);
   const workflow = fs.readFileSync(path.resolve('.github/workflows/rfr-process.yml'), 'utf8');
-  assert.match(workflow, /lasting-tutorials:[\s\S]*?default: warn/);
+  assert.match(workflow, /lasting-tutorials:[\s\S]*?default: fail/);
   assert.equal(workflow.match(/RFR_LASTING_TUTORIALS: \$\{\{ inputs\.lasting-tutorials \}\}/g)?.length, 2);
 });
