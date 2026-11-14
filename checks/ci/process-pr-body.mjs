@@ -43,6 +43,26 @@ export function prBody({ packet = '', enabling = [], decisions = [], tutorials =
   return `${out.join('\n')}\n`;
 }
 
+// The pull request's title, from what the branch carries (delivery-run AC-20), or null to keep the
+// one it has. `artifacts` are the process artifacts the branch adds or changes, each with its stage,
+// status, and title (its first heading) or body.
+const TITLE_MAX = 100;
+export function prTitle(artifacts = []) {
+  const titleOf = a => (a.title ?? /^#\s+(.+?)\s*$/m.exec(a.body ?? '')?.[1] ?? path.basename(a.file, '.md')).trim();
+  const named = list => {
+    const titles = [...new Set(list.map(titleOf))];
+    return titles.length > 2 ? `${titles.slice(0, 2).join(', ')}, and ${titles.length - 2} more` : titles.join(' and ');
+  };
+  const at = stage => artifacts.filter(a => a.stage === stage);
+  let title = null;
+  if (at('specs').length) title = `Deliver: ${named(at('specs'))}`;
+  else if (at('design').length) title = `Packet: ${named(at('design').map(a => ({ ...a, title: titleOf(a).replace(/\s+design$/i, '') })))}`;
+  else if (at('user-docs').length) title = `Packet: ${named(at('user-docs'))}`;
+  else if (at('tutorials').some(a => a.status === 'approved')) title = `Validate: ${named(at('tutorials').filter(a => a.status === 'approved'))}`;
+  if (title && title.length > TITLE_MAX) title = `${title.slice(0, TITLE_MAX - 1)}…`;
+  return title;
+}
+
 // What the description needs, read from the repository: the branch is HEAD, compared with base.
 export function readPrBody(root, base) {
   const artifacts = changedArtifacts(root, base);
@@ -70,7 +90,9 @@ function main(argv) {
   const flags = new Set(['--base', '--number', '--branch']);
   const root = path.resolve(argv.find((a, i) => !a.startsWith('--') && !flags.has(argv[i - 1])) ?? '.');
   const base = value('--base');
-  if (!base) { console.error('Usage: process-pr-body.mjs [project root] --base <ref> [--number <n>] [--branch <name>]'); process.exit(2); }
+  if (!base) { console.error('Usage: process-pr-body.mjs [project root] --base <ref> [--number <n>] [--branch <name>] [--title]'); process.exit(2); }
+  // --title prints the title alone, or nothing when the branch carries no process artifact.
+  if (argv.includes('--title')) { process.stdout.write(prTitle(changedArtifacts(root, base)) ?? ''); return; }
   process.stdout.write(prBody({ ...readPrBody(root, base), number: value('--number'), branch: value('--branch') ?? '' }));
 }
 

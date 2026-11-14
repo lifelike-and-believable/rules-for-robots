@@ -71,3 +71,20 @@ jobs:
         run: |
           node .rfr/checks/ci/process-pr-body.mjs . --base "origin/$BASE" --number "$NUMBER" --branch "$BRANCH" > "$RUNNER_TEMP/body.md"
           gh pr edit "$NUMBER" --body-file "$RUNNER_TEMP/body.md"
+      # The title says what the pull request carries ("Deliver: ...", "Packet: ...", "Validate: ..."),
+      # not its last commit. It is changed only while it is still one of the branch's commit
+      # subjects, so a title a person has edited is kept.
+      - name: Title the pull request
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          BASE: main
+          NUMBER: ${{ steps.open.outputs.number }}
+        run: |
+          title=$(node .rfr/checks/ci/process-pr-body.mjs . --base "origin/$BASE" --title)
+          [ -n "$title" ] || exit 0
+          current=$(gh pr view "$NUMBER" --json title --jq .title)
+          [ "$current" = "$title" ] && exit 0
+          if git log "origin/$BASE..HEAD" --format=%s | grep -Fxq -- "$current"; then
+            gh pr edit "$NUMBER" --title "$title"
+          fi
