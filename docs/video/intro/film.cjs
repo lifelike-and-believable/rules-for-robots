@@ -12,11 +12,11 @@ const art = require('./art.cjs');
 const sheet = process.argv[2] === 'sheet', fps = sheet ? 24 : +(process.argv[2] || 24);
 const out = path.join(__dirname, 'out'), layers = path.join(out, 'layers'), fr = path.join(out, 'fr');
 const FONT = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=block">';
-const scene = (name, id, ash, without) => { const t = kit.scene(name, without); return art.frame(`${art.defs(id)}${art.picture(t.defs, t.body, 1, id, ash)}`); };
+const scene = (name, id, ash) => { const t = kit.scene(name); return art.frame(`${art.defs(id)}${art.picture(t.defs, t.body, 1, id, ash)}`); };
 const tree = (inner, id) => art.frame(`${art.defs(id)}${art.picture(kit.treehouse.defs, inner, 1, id)}`);
 const LAYERS = {
   literal: scene('scene-literal-b', 'a', true), pine: scene('scene-pine-a', 'b', true), bolted: scene('scene-bolted-a', 'c', true),
-  before: tree(kit.treehouse.noSlide, 'f'), after: tree(kit.treehouse.withSlide, 'g'), village: scene('scene-village-a', 'h', false, [[1060, 275, 240]]),
+  before: tree(kit.treehouse.noSlide, 'f'), after: tree(kit.treehouse.withSlide, 'g'), village: (() => { const t = kit.village(); return art.frame(`${art.defs('h')}${art.picture(t.defs, t.body, 1, 'h')}`); })(),
   'idea-blue': art.frame(art.blueprint('#2563C4', false, 1)), 'idea-ink': art.frame(art.blueprint('#2A1A14', false, 1)),
   'idea-cream': art.frame(art.blueprint('#FFF4E6', false, 1)), 'idea-cream-slide': art.frame(art.blueprint('#FFF4E6', true, 1)),
 };

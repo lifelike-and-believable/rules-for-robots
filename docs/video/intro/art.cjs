@@ -75,8 +75,8 @@ const frames = {
   '3b-change': () => { const id = 'g';
     return frame(`${defs(id)}${picture(kit.treehouse.defs, kit.treehouse.withSlide, 1, id)}${blueprint(CREAM, true, .75)}
     ${heading('A change is a change.', 'Not a restart.', SP)}${talk([['you', 'Add a slide.'], ['agent', 'Added. Nothing else moved.']], 300, id, true)}`); },
-  // 4. The promise: one treehouse has become a village. The take's sun is left out to make room for the words.
-  '4-village': () => { const id = 'h', t = kit.scene('scene-village-a', [[1060, 275, 240]]);
+  // 4. The promise: one treehouse has become a village.
+  '4-village': () => { const id = 'h', t = kit.village();
     return frame(`${defs(id)}${picture(t.defs, t.body, 1, id)}
     ${txt('Bigger projects. Longer projects.', 960, 92, 60, INK, 700, 'middle')}${txt('Built the way you meant.', 960, 168, 60, SP, 700, 'middle')}`); },
 };
