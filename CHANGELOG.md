@@ -4,9 +4,16 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265.
 
 ### Changed
+
+- **A design's build order, and a feature that stays open until every step is built** (rewrite plan 25f; delivery-run AC-18, AC-19). `rfr-process` 2.11.0. On XR Studio In A Box a delivery built step 1 of the six its design listed and finished, because the end-of-run check asked only for a spec, tests, and a tutorial.
+  - The numbered list at the start of a design's "Notes for delivery" is its build order. A delivery records each step in its decisions file as `[step done: <design id> <n>]` or `[step later: <design id> <n>]` with the reason, and cannot finish with one unaccounted for. The end-of-run report names the steps left for later.
+  - A step that no merged decisions file records as built keeps the feature's delivery open: the process state says which steps are still to build, `delivery open` lists it, and the next merge (where merges start deliveries) or "deliver it" carries on.
+  - Designs with no build order are unaffected. The design template, the guide, and the `deliver` skill describe the build order.
+
+  Adopters: update `rfr-process` to 2.11.0. Nothing to do. A design that should be built in steps lists them as a numbered list at the start of "Notes for delivery".
 
 - **A delivery starts only when a merge leaves one open** (rewrite plan 25f; delivery-run AC-14 amended, AC-16, AC-17). `rfr-process` 2.10.0, and 2.10.1 for the routine's address. The earlier plan had a routine fired by every merge; the maintainer asked that it start only when an approved packet has left a delivery to do.
   - `checks/ci/deliver-on-merge.mjs` runs in the project's CI after each merge to the default branch. It lists the open deliveries with rfr's own script, which starts no session. With none open it stops. With one open it starts the project's delivery routine by one request to the routines API and prints the session's address. A delivery's own merge starts the next.

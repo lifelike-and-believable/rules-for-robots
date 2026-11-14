@@ -211,3 +211,10 @@ test('delivery-run#AC-18: a report with every step built mentions no steps left 
   assert.equal(report.decision, 'block');
   assert.doesNotMatch(report.reason, /stays open/);
 });
+
+test('delivery-run#AC-18: a step that is still the template placeholder is not a step', () => {
+  const template = fs.readFileSync(path.resolve('plugins/process/templates/artifacts/design.md'), 'utf8');
+  assert.deepEqual(buildSteps(template), []);
+  const body = '# D\n\n## Notes for delivery\n\n1. **Build the store.** It runs.\n2. **<Step title.>** <...>\n';
+  assert.deepEqual(buildSteps(body).map(s => s.n), [1]);
+});
