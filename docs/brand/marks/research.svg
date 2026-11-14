@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">Rules for Robots Research</title>
+  <rect width="128" height="128" fill="#0E8A72"/>
+  <rect width="20" height="128" fill="#0B6E5B"/>
+  <g transform="translate(9 8.5) scale(.64)">
+    <line x1="43.5" y1="34" x2="43.5" y2="23" stroke="#FFF4E6" stroke-width="5"/>
+    <circle cx="43.5" cy="19" r="5.5" fill="#FFF4E6"/>
+    <rect x="36" y="32" width="15" height="66" fill="#FFF4E6"/>
+    <path d="M43.5 39.5 H68 a18.5 18.5 0 0 1 0 37 H43.5" fill="none" stroke="#FFF4E6" stroke-width="15"/>
+    <polygon points="56,76 77,76 99,98 78,98" fill="#FFF4E6"/>
+    <circle cx="65" cy="58" r="6.5" fill="#2A1A14"/>
+  </g>
+  <circle cx="90" cy="46" r="10" fill="none" stroke="#B7D4C3" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M98 54.5 L106 64" fill="none" stroke="#B7D4C3" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#B7D4C3"><rect x="32" y="82" width="76" height="8" rx="4"/><rect x="32" y="97" width="50" height="8" rx="4"/></g>
+</svg>
