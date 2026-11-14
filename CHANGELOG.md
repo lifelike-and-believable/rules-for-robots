@@ -4,9 +4,13 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267.
 
 ### Changed
+
+- **Pull requests are titled after what they carry** (rewrite plan 25f; delivery-run AC-20). `rfr-process` 2.12.0. The open-pull-request workflow titled each pull request after its last commit, so a delivery read "Write the spec for ...". It now sets "Deliver: <the spec's title>", "Packet: <the design's title>", or "Validate: <the tutorial's title>" on each push, and leaves a title a person has edited alone.
+
+  Adopters: update `rfr-process` to 2.12.0, and copy the new step "Title the pull request" from `templates/workflows/rfr-open-pr.yml` into your `.github/workflows/rfr-open-pr.yml` (or copy the whole file again).
 
 - **A design's build order, and a feature that stays open until every step is built** (rewrite plan 25f; delivery-run AC-18, AC-19). `rfr-process` 2.11.0. On XR Studio In A Box a delivery built step 1 of the six its design listed and finished, because the end-of-run check asked only for a spec, tests, and a tutorial.
   - The numbered list at the start of a design's "Notes for delivery" is its build order. A delivery records each step in its decisions file as `[step done: <design id> <n>]` or `[step later: <design id> <n>]` with the reason, and cannot finish with one unaccounted for. The end-of-run report names the steps left for later.
