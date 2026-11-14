@@ -42,9 +42,9 @@ on:
         type: boolean
         default: false
       lasting-tutorials:
-        description: "`warn` reports the lasting-tutorial rules (docs/specs/lasting-tutorials.md, AC-2 and AC-9) as warnings, for tutorials written before them; `fail` fails the check. The default becomes `fail` when slice 27d is done."
+        description: "`warn` reports the lasting-tutorial rules (docs/specs/lasting-tutorials.md, AC-2 and AC-9) as warnings, for tutorials written before them; `fail` fails the check, the default since 8.0.0."
         type: string
-        default: warn
+        default: fail
       typecheck:
         description: Command for the project's type check (for example `npm run check` or `npx tsc --noEmit`); when set, the typecheck job runs it on every pull request
         type: string
@@ -139,17 +139,6 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node .rfr/checks/ci/process-approvals.mjs .
-
-  # Retired in rewrite plan 25e: the change job reads a fix or trivial claim from the commits. This
-  # stub passes so that a repository that still requires `process / tier` is not blocked; remove it
-  # from the required checks, and the stub goes in 8.0.0.
-  tier:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
-      - name: Tier check retired
-        run: echo "::notice::process / tier is retired (rules-for-robots rewrite plan 25e); the change job checks fix and trivial claims. Remove process / tier from this repository's required checks."
 
   # A pull request that changes source belongs to a feature with an approved spec, or declares
   # itself a fix or a trivial change in a commit message (docs/specs/process-state.md).

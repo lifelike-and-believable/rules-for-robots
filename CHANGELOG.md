@@ -4,9 +4,21 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270.
+## [8.0.0] - 2026-11-14
+
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270, #272.
+
+Evaluated on: claude-opus-5-5, claude-sonnet-5-5.
+
+The release of the rewrite plan (`docs/rewrite-plan.md`), after its acceptance test on XR Studio In A Box passed: the lead approves decisions in GitHub, never commands, and agents carry each approved feature to something the lead can try. A clean break from 7.x (decision D4): see the migration note, [docs/migration-8.md](docs/migration-8.md), for what a project changes.
+
+### Removed
+
+- **The `process / tier` stub.** The tier check was retired in 7.4.0 and a passing stub kept for repositories that still required it. Adopters: remove `process / tier` from the required checks, or pull requests wait for a check that never runs.
 
 ### Changed
+
+- **The lasting-tutorial and user-documentation rules fail by default.** The reusable process workflow's `lasting-tutorials` input now defaults to `fail` (it was `warn` until Phase 27d was done). Adopters: rewrite tutorials as the migration note says, or set `lasting-tutorials: warn` in the caller's `with:` while moving.
 
 - **Mock-up images that cannot go stale unnoticed** (Phase 26e; revisions-and-foundations AC-16). `rfr-process` 2.15.0.
   - `checks/mockup-render.mjs` renders a design's mock-up HTML pages to the PNGs beside them, at 1280 wide and, where a `<page>-phone.png` exists, at 320, with every request outside the repository blocked, and records in `.rendered.json` what each image was made from.

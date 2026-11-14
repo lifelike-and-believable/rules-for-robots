@@ -1,6 +1,6 @@
 # Project Plan: rules-for-robots
 
-Status: v7.4.0 (2026-11-13). Phases 0 to 7, 9, 12, 13, 16, and 17 complete. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
+Status: v8.0.0 (2026-11-14), the release of the rewrite plan. Phases 0 to 7, 9, 12, 13, 16, 17, 25, and 27 complete; Phase 26 has 26c and 26d left, which follow 8.0.0. Phases 10, 11, 14, and 15 have built their machinery and wait on eval rounds or one remaining slice. Phases 18 to 23 carry out the improvement plans of 2026-11-10 ([main](docs/improvement-plan.md), [process](docs/improvement-plan-process.md)). All Phase 0 recommendations (R1 to R64 in [docs/research/recommendations.md](docs/research/recommendations.md)) were accepted and are applied below. Evidence is in [docs/research/findings.md](docs/research/findings.md).
 
 ## 1. Goal
 
@@ -451,7 +451,8 @@ From the quiet-launcher project, which fits no profile: an `rfr-android` plugin 
 - **24c:** the `adb` tutorial runner. `uiautomator dump` works on the reference TV once the screen is awake.
 - **24d:** the `android-app` profile, profile inference, and documentation.
 
-### Phase 25: Rewrite of rfr-core and rfr-process (planned)
+### Phase 25: Rewrite of rfr-core and rfr-process (complete)
+Pull requests: #218, #221, #224, #227, #229, #230, #233, #235 to #237, #239, #240, #242 to #249, #251, #252, #261 to #267, #272 (8.0.0).
 Plan: [docs/rewrite-plan.md](docs/rewrite-plan.md) (written 2026-11-12 after a whole-system review; approved the same day with the recommended answer for each of its decisions D1 to D8).
 
 The lead approves a feature packet, and agents carry the feature unsupervised to an implementation the lead can test. Approval and merging move to GitHub (a bot-authored pull request, a required review on gated folders, auto-merge), containment to the environment, and stage order to one CI rule and a state command; the merge guard, task approval, and the default-allow hook go.
@@ -475,7 +476,7 @@ A change to something already built is approved as one packet of documents and c
 - **26d:** the design system, declared or defined, cited by designs and read by mock-ups; then XR Studio In A Box moved onto it.
 - **26e:** mock-up images tracked by the hash of their inputs. Done (#270).
 
-### Phase 27: Lasting tutorials and a place to try them (planned)
+### Phase 27: Lasting tutorials and a place to try them (complete)
 Spec: [docs/specs/lasting-tutorials.md](docs/specs/lasting-tutorials.md) (written 2026-11-13 from the maintainer's feedback on the 25f acceptance test; its changes and its seven decisions were approved the same day, each as recommended).
 Pull requests: #254 (spec), #255 (27a), #256 (27e spec), #257 (27b), #258 (27c), #259 (27e).
 
