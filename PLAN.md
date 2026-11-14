@@ -489,6 +489,14 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 - **27e:** organised user documentation: a folder and an overview for each area of the product, one start page, every page reachable, `covers:` for what a page applies to, and the help published with the product. Added 2026-11-13 from the maintainer's feedback; its four decisions (D8 to D11) were approved the same day, each as recommended (#256). Done (#259): the shape rules apply once a project has a start page or an overview, and are warnings through the reusable workflow until 27d.
 - **27d:** XR Studio In A Box moved onto it, with its user documentation organised into areas, and slices 2 to 4 validated from a preview. Built there on 2026-11-14 (its #365, #369, #370), started by the merge-triggered workflow; the reusable workflow's `lasting-tutorials` default is still `warn` for other adopters. Waiting on the lead: connecting previews, and validating slices 2 to 4.
 
+### Phase 28: Scoped hosting access (proposed)
+Spec: [docs/specs/scoped-hosting-access.md](docs/specs/scoped-hosting-access.md) (a draft, written 2026-11-14 at the maintainer's request; its three decisions are not yet answered).
+
+An agent may set up and change the hosting of the one project the lead names in `process.yml`, short of production: create and link the Vercel project, deploy previews, and set preview and development variables. Production, money, deletion, other projects, and reading secrets stay with the lead. It changes guard behaviour, so it follows 8.0.0, chosen by the maintainer over lifting the freeze.
+
+- **28a:** the grant in `process.yml` and the MCP guard.
+- **28b:** the CLI guard, the rule, and the texts.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
