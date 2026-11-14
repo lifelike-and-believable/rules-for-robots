@@ -57,16 +57,20 @@ function scene(name, without = []) {
   return { defs: t.defs, body: t.paths.filter(keep).join('\n') };
 }
 
-// The village take, mended. As generated, its flagpoles stop in the foliage above each roof and its ladders stop in
-// mid-air. Each pole is carried down to its roof, and each ladder down to the ground: the added lengths are clipped to
+// The village take, mended. As generated, its flagpoles stop in the foliage above each roof, its ladders stop in
+// mid-air, and one treehouse has no ladder. Each pole is carried down to its roof, and each ladder down to the ground: the added lengths are clipped to
 // the take's own tiles of open sky (544, 140, 234, 142) and a strip above them, so they pass behind the bushes. Its sun is left out for the words.
 function village() {
   const t = load('scene-village-a'), body = scene('scene-village-a', [[1060, 275, 240]]).body;
   const poles = [[358, 420, 505], [882, 690, 738], [1415, 505, 600], [1920, 560, 608], [2420, 385, 448]].map(([x, y1, y2]) => `M${x} ${y1} V${y2}`).join(' ');
   const ladder = ([x1, x2, y1, y2]) => { let d = `M${x1} ${y1} V${y2} M${x2} ${y1} V${y2}`; for (let y = y1 + 42; y < y2 - 20; y += 54) d += ` M${x1} ${y} H${x2}`; return d; };
-  const ladders = [[420, 491, 1078, 1440], [1476, 1542, 1092, 1440], [1979, 2047, 1088, 1420], [2480, 2555, 962, 1320]].map(ladder).join(' ');
-  const sky = `<clipPath id="villageSky">${[544, 140, 234, 142].map((i) => `<path d="${t.d(i)}"/>`).join('')}${[[420, 491, 1060, 1270], [1476, 1542, 1075, 1240], [1979, 2047, 1070, 1200], [2480, 2555, 945, 1080]].map(([x1, x2, y1, y2]) => `<rect x="${x1 - 12}" y="${y1}" width="${x2 - x1 + 24}" height="${y2 - y1}"/>`).join('')}</clipPath>`;
-  return { defs: `${t.defs}<defs>${sky}</defs>`, body: `${body}<path d="${poles}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><path d="${ladders}" clip-path="url(#villageSky)" fill="none" stroke="${PEACH}" stroke-width="15" stroke-linecap="round"/>` };
+  const ladders = [[420, 491, 1078, 1440], [980, 1044, 915, 1440], [1476, 1542, 1092, 1440], [1979, 2047, 1088, 1420], [2480, 2555, 962, 1320]].map(ladder).join(' ');
+  // The slide, as generated, is the trunk's colour and ends in the next tree's trunk. It is redrawn in two tones, in front
+  // of that trunk and down to the bushes.
+  const run = 'M2075 885 C2150 915 2210 1005 2280 1058 C2340 1102 2390 1150 2440 1210';
+  const slide = `<clipPath id="villageSlide"><path d="M1900 700 H2600 V1016 L2331 1214 L2250 1262 H1900 Z"/></clipPath><g clip-path="url(#villageSlide)" fill="none" stroke-linecap="round"><path d="${run}" stroke="${SP}" stroke-width="84"/><path d="${run}" stroke="rgb(254,133,92)" stroke-width="50"/></g>`;
+  const sky = `<clipPath id="villageSky">${[544, 495, 140, 234, 142].map((i) => `<path d="${t.d(i)}"/>`).join('')}${[[420, 491, 1060, 1270], [980, 1044, 900, 1290], [1476, 1542, 1075, 1240], [1979, 2047, 1070, 1200], [2480, 2555, 945, 1080]].map(([x1, x2, y1, y2]) => `<rect x="${x1 - 12}" y="${y1}" width="${x2 - x1 + 24}" height="${y2 - y1}"/>`).join('')}</clipPath>`;
+  return { defs: `${t.defs}<defs>${sky}</defs>`, body: `${body}<path d="${poles}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><path d="${ladders}" clip-path="url(#villageSky)" fill="none" stroke="${PEACH}" stroke-width="15" stroke-linecap="round"/>${slide}` };
 }
 
 module.exports = { treehouse, outline, scene, village, masks };
