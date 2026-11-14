@@ -4,9 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270, #277.
 
 ### Changed
+
+- **Making things in outside services a project declares** (unattended AC-10). `rfr-core`, in the next release. The MCP guard refused every change in another service, which stopped a project from generating a picture, a video, or a sound for itself.
+  - A project lists the services it makes things in as `"services"` in `.claude/rfr.json`. An entry is the name of the service's MCP server, or an object with that `name` and what the project records about it, such as what it is `for` and the `limits` on its use. There, a tool that generates, creates, edits, or uploads is no longer refused.
+  - Deleting, sharing, publishing, sending, inviting, buying, renting, licensing, transferring, and deploying are still refused there, and every change on a service that is not declared is refused as before.
+  - The list counts only as merged to the default branch, so adding a service is a pull request the person approves, and a session cannot add one for itself. The refusal for an undeclared service says how to propose it.
+  - A tool whose name says it licenses something is now treated as a change, not a read.
+
+  Adopters: nothing changes until a project declares a service. To allow one, add it to `"services"` in `.claude/rfr.json` in a pull request. The guard does not limit what generation spends; set a limit in the service's own account.
 
 - **Mock-up images that cannot go stale unnoticed** (Phase 26e; revisions-and-foundations AC-16). `rfr-process` 2.15.0.
   - `checks/mockup-render.mjs` renders a design's mock-up HTML pages to the PNGs beside them, at 1280 wide and, where a `<page>-phone.png` exists, at 320, with every request outside the repository blocked, and records in `.rendered.json` what each image was made from.

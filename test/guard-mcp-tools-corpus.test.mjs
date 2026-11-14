@@ -11,7 +11,9 @@ const { cases } = JSON.parse(fs.readFileSync('test/fixtures/mcp-tool-decisions.j
 
 test('every tool in the audit corpus gets its recorded decision', () => {
   const wrong = cases
-    .map(c => ({ ...c, got: mcpNever({ tool_name: c.tool, tool_input: c.input ?? {} }) ? 'refuse' : 'allow' }))
+    // No service is declared here: the corpus records the decisions for a project that declares none
+    // (unattended AC-10 is tested in guard-mcp-declared-services.test.mjs).
+    .map(c => ({ ...c, got: mcpNever({ tool_name: c.tool, tool_input: c.input ?? {} }, []) ? 'refuse' : 'allow' }))
     .filter(c => c.got !== c.decision)
     .map(c => `${c.tool}: ${c.got}, expected ${c.decision}`);
   assert.deepEqual(wrong, []);
