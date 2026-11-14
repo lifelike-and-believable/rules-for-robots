@@ -34,7 +34,7 @@ function project({ record = true } = {}) {
   const inputs = { 'docs/design/board/board.html': sha(HTML), 'docs/design/wireframe.css': sha(CSS) };
   if (record) {
     write(root, 'docs/design/board/.rendered.json', `${JSON.stringify({
-      'board-phone.png': { source: 'board.html', width: 390, height: 844, inputs },
+      'board-phone.png': { source: 'board.html', width: 320, height: 640, inputs },
       'board.png': { source: 'board.html', width: 1280, height: 800, inputs },
     }, null, 2)}\n`);
   }

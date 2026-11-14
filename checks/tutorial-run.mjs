@@ -179,11 +179,12 @@ export function videoNames(people) {
   return names;
 }
 
-function loadPlaywright(root) {
+// Also used by checks/mockup-render.mjs. `purpose` finishes the message when neither has it.
+export function loadPlaywright(root, purpose = 'to run web tutorials') {
   for (const from of [path.join(root, 'package.json'), fileURLToPath(import.meta.url)]) {
     try { return createRequire(from)('playwright'); } catch { /* try the next place */ }
   }
-  throw new Error('playwright is not installed in this project; add it as a dev dependency to run web tutorials');
+  throw new Error(`playwright is not installed in this project; add it as a dev dependency ${purpose}`);
 }
 
 // Runs one web tutorial. Returns { ok, steps, failure: { step, text, message } | null, artifacts,

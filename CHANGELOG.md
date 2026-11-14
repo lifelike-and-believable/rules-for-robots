@@ -4,9 +4,15 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270.
 
 ### Changed
+
+- **Mock-up images that cannot go stale unnoticed** (Phase 26e; revisions-and-foundations AC-16). `rfr-process` 2.15.0.
+  - `checks/mockup-render.mjs` renders a design's mock-up HTML pages to the PNGs beside them, at 1280 wide and, where a `<page>-phone.png` exists, at 320, with every request outside the repository blocked, and records in `.rendered.json` what each image was made from.
+  - The process check, which runs no browser, fails a recorded image whose page or stylesheet changed since it was rendered, and warns about images that are not tracked yet.
+
+  Adopters: update `rfr-process` to 2.15.0. Nothing fails: untracked mock-ups are a warning. To track a design's mock-ups, run `node .rfr/checks/mockup-render.mjs docs/design/<folder>` and commit the PNGs and `.rendered.json`.
 
 - **The revision packet's view** (Phase 26b; revisions-and-foundations AC-2, AC-7, AC-8). `rfr-process` 2.14.0.
   - `checks/process-impact.mjs` says what a change reaches before it is made: the documents that cite it, which the pull request must update, re-record, or withdraw; the specs and tutorials that become open revisions, with their features and the test files that cite them; and code a changed document names in `implemented-by`. `--base <ref>` reports a branch's changes; `--json` gives data.

@@ -26,7 +26,8 @@ derived-from:
 
 <!-- Required for every screen, panel, menu, or dialog this design adds or changes. Wireframes are
 enough; they do not need to be polished. Put images in docs/design/<feature>/ with their editable source
-beside them (an HTML file rendered to PNG, say), or link to the design tool (Figma, Penpot,
+beside them (an HTML file rendered to PNG with node .rfr/checks/mockup-render.mjs docs/design/<feature>,
+say), or link to the design tool (Figma, Penpot,
 Excalidraw), and say which state each one shows. For a third-party interface, the mock-ups settle
 wording and states; say which of the tool's behaviours the design assumes, and which version of the tool
 you checked them against ("Checked against <product> <version>: ..."), so the walkthrough can ask whether

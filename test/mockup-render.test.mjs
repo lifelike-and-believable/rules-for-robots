@@ -92,7 +92,7 @@ test('revisions-and-foundations#AC-16: a fresh render writes each PNG and record
   ]);
 });
 
-test('revisions-and-foundations#AC-16: a page with <page>-phone.png beside it is also rendered at phone size, 390 by 844', async () => {
+test('revisions-and-foundations#AC-16: a page with <page>-phone.png beside it is also rendered at phone size, 320 by 640', async () => {
   const root = tmp();
   write(root, 'docs/design/work/work.html', PAGE('<p>Work</p>'));
   write(root, 'docs/design/work/work-phone.png', 'not yet a real image');
@@ -100,12 +100,12 @@ test('revisions-and-foundations#AC-16: a page with <page>-phone.png beside it is
 
   await renderMockups(root, { browser });
 
-  assert.equal(pngSize(path.join(root, 'docs/design/work/work-phone.png')).width, 390);
+  assert.equal(pngSize(path.join(root, 'docs/design/work/work-phone.png')).width, 320);
   assert.equal(pngSize(path.join(root, 'docs/design/work/work.png')).width, 1280);
   assert.equal(fs.existsSync(path.join(root, 'docs/design/work/solo-phone.png')), false);
   const record = readRecord(root, 'docs/design/work');
   assert.deepEqual(Object.keys(record), ['solo.png', 'work-phone.png', 'work.png']);
-  assert.deepEqual({ ...record['work-phone.png'], inputs: undefined }, { source: 'work.html', width: 390, height: 844, inputs: undefined });
+  assert.deepEqual({ ...record['work-phone.png'], inputs: undefined }, { source: 'work.html', width: 320, height: 640, inputs: undefined });
 });
 
 test('revisions-and-foundations#AC-16: a size in the record wins over the default when the page is rendered again', async () => {
