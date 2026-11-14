@@ -381,8 +381,15 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
   // Mock-up images (revisions-and-foundations AC-16): a PNG recorded in its folder's .rendered.json
   // whose HTML, stylesheet, or image changed since it was rendered fails; an unrecorded PNG that has
   // an HTML source is a warning. Hashes only: no browser runs here.
+  // A stale image involves the design it belongs to (docs/design/<folder>.md, or any artifact under
+  // the folder), or every design when none matches, so the stale issue goes to the design approvers.
   const mockups = mockupProblems(root);
-  errors.push(...mockups.errors);
+  const designs = artifacts.filter(a => a.stage === 'design' && a.id).map(a => ({ id: a.id, file: a.file.replace(/\\/g, '/') }));
+  for (const { folder, message } of mockups.errors) {
+    errors.push(message);
+    const owners = designs.filter(d => d.file === `${folder}.md` || d.file.startsWith(`${folder}/`));
+    for (const d of owners.length ? owners : designs) involved.add(d.id);
+  }
   warnings.push(...mockups.warnings);
 
   // Rule 7: withdrawals since the base.

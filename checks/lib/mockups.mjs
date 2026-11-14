@@ -63,9 +63,30 @@ export function sourceOf(png, files) {
   return null;
 }
 
-// The local files a page references, as references written in it: href on <link> (stylesheets,
-// icons) and src on any element (scripts, images, frames), and url(...) and @import in its <style>
-// elements and style attributes. Links between pages (<a href>) are not inputs.
+// Whether a path is inside the root once symlinks and junctions are followed: both are compared by
+// their real paths, and a path that cannot be resolved (it does not exist, or a link is broken) is
+// treated as outside.
+export function insideRoot(root, abs) {
+  let real;
+  let realRoot;
+  try { real = fs.realpathSync.native(abs); realRoot = fs.realpathSync.native(root); } catch { return false; }
+  const rel = path.relative(realRoot, real);
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+// Whether a path written relative to the root stays inside it as written, before any link is followed.
+const lexicallyInside = (root, rel) => {
+  const r = path.relative(root, path.resolve(root, rel));
+  return !!r && !r.startsWith('..') && !path.isAbsolute(r);
+};
+
+// Elements whose href loads a file into the page: stylesheets and icons, and SVG images and uses.
+const HREF_LOADS = new Set(['link', 'image', 'use', 'feimage']);
+
+// The local files a page references, as references written in it: src and poster on any element
+// (scripts, images, frames, video posters), every URL in a srcset, href or xlink:href on <link> and
+// on SVG <image>, <use>, and <feImage>, and url(...) and @import in its <style> elements and style
+// attributes. Links between pages (<a href>) are not inputs.
 function pageRefs(html) {
   const refs = [];
   for (const tag of html.matchAll(/<([a-zA-Z][\w-]*)\b([^>]*)>/g)) {
@@ -73,7 +94,8 @@ function pageRefs(html) {
     for (const attr of tag[2].matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/g)) {
       const key = attr[1].toLowerCase();
       const value = attr[2] ?? attr[3] ?? attr[4];
-      if (key === 'src' || (key === 'href' && name === 'link')) refs.push(value);
+      if (key === 'src' || key === 'poster' || ((key === 'href' || key === 'xlink:href') && HREF_LOADS.has(name))) refs.push(value);
+      if (key === 'srcset') refs.push(...value.split(',').map(c => c.trim().split(/\s+/)[0]).filter(Boolean));
       if (key === 'style') refs.push(...cssRefs(value));
     }
   }
@@ -100,29 +122,39 @@ function resolveRef(root, from, ref) {
   const abs = path.resolve(path.dirname(from), clean);
   const rel = path.relative(root, abs);
   if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return null;
+  // Inside as written, and still inside once a junction or symlink on the way is followed.
+  if (!insideRoot(root, abs)) return null;
   try { if (!fs.statSync(abs).isFile()) return null; } catch { return null; }
   return toPosix(rel);
 }
 
+// How deep stylesheets are followed through @import and url(...). Five levels is more than a
+// wireframe, a token file, and a base sheet need, and stops a long or looping chain early.
+const CSS_DEPTH = 5;
+
 // The inputs of a page, as repository paths, sorted: the HTML itself, every local file it references,
-// and the files its local stylesheets reference with url(...) or @import. Stylesheets are followed one
-// level only: a stylesheet imported by a stylesheet is an input, but what that one references is not.
-// That is enough for a shared wireframe or token file and keeps the reading simple.
+// and, for each local stylesheet among them, the files it references with url(...) or @import,
+// followed through imported stylesheets up to CSS_DEPTH levels. Each stylesheet is read once.
 export function pageInputs(root, htmlFile) {
   const abs = path.resolve(root, htmlFile);
   const inputs = new Set([toPosix(path.relative(root, abs))]);
-  const html = fs.readFileSync(abs, 'utf8');
-  for (const ref of pageRefs(html)) {
+  const visited = new Set();
+  const follow = (rel, depth) => {
+    if (!rel.toLowerCase().endsWith('.css') || visited.has(rel) || depth > CSS_DEPTH) return;
+    visited.add(rel);
+    const cssFile = path.join(root, rel);
+    for (const inner of cssRefs(fs.readFileSync(cssFile, 'utf8'))) {
+      const innerRel = resolveRef(root, cssFile, inner);
+      if (!innerRel) continue;
+      inputs.add(innerRel);
+      follow(innerRel, depth + 1);
+    }
+  };
+  for (const ref of pageRefs(fs.readFileSync(abs, 'utf8'))) {
     const rel = resolveRef(root, abs, ref);
     if (!rel) continue;
     inputs.add(rel);
-    if (rel.toLowerCase().endsWith('.css')) {
-      const cssFile = path.join(root, rel);
-      for (const inner of cssRefs(fs.readFileSync(cssFile, 'utf8'))) {
-        const innerRel = resolveRef(root, cssFile, inner);
-        if (innerRel) inputs.add(innerRel);
-      }
-    }
+    follow(rel, 1);
   }
   return [...inputs].sort();
 }
@@ -161,13 +193,22 @@ const list = items => items.join(', ');
 // PNG one of whose inputs changed or is gone; a warning for each PNG that has an HTML source by name
 // and no record entry, or one warning for the folder when it has no record at all, so a large project
 // that has never rendered its mock-ups gets a readable log. A PNG with no HTML source is not checked,
-// and neither is a recorded PNG that has since been deleted.
+// and neither is a recorded PNG that has since been deleted. A path in a record that leads outside
+// the repository, as written or through a junction or symlink, is an error and is never read.
+// Each error is { folder, message }, so the caller can tell which design it belongs to.
 export function mockupProblems(root) {
   const errors = [];
   const warnings = [];
   for (const { folder, files } of designFolders(root)) {
     const { record, error } = readRecord(root, folder);
-    if (error) { errors.push(`${folder}/${RECORD} cannot be read: ${error}; render the folder again with ${renderCommand(folder)}`); continue; }
+    const fail = message => errors.push({ folder, message });
+    if (error) { fail(`${folder}/${RECORD} cannot be read: ${error}; render the folder again with ${renderCommand(folder)}`); continue; }
+    const outside = p => fail(`${folder}/${RECORD} lists ${p}, which is outside the repository; render the folder again with ${renderCommand(folder)}`);
+    // The lexical test comes first, so nothing outside as written is even looked up.
+    const isOutside = input => !lexicallyInside(root, input) || (fs.existsSync(path.resolve(root, input)) && !insideRoot(root, path.resolve(root, input)));
+    const pngNames = Object.keys(record ?? {}).sort();
+    for (const png of pngNames) if (!lexicallyInside(root, path.join(folder, png))) outside(png);
+    for (const input of [...new Set(pngNames.flatMap(png => Object.keys(record[png].inputs)))].sort()) if (isOutside(input)) outside(input);
     const pngs = files.filter(f => f.toLowerCase().endsWith('.png'));
     const untracked = pngs.filter(png => sourceOf(png, files) && !(record && Object.hasOwn(record, png)));
     if (!record && untracked.length) {
@@ -181,6 +222,7 @@ export function mockupProblems(root) {
       const changed = [];
       const gone = [];
       for (const input of Object.keys(entry.inputs).sort()) {
+        if (isOutside(input)) continue; // reported above, and never read
         const abs = path.join(root, input);
         if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) gone.push(input);
         else if (hashFile(abs) !== entry.inputs[input]) changed.push(input);
@@ -189,7 +231,7 @@ export function mockupProblems(root) {
       const parts = [];
       if (changed.length) parts.push(`${list(changed)} changed since`);
       if (gone.length) parts.push(`${list(gone)} no longer ${gone.length === 1 ? 'exists' : 'exist'}`);
-      errors.push(`${folder}/${png}: rendered from ${entry.source}, but ${parts.join(', and ')}; render it again with ${renderCommand(folder)}`);
+      fail(`${folder}/${png}: rendered from ${entry.source}, but ${parts.join(', and ')}; render it again with ${renderCommand(folder)}`);
     }
   }
   return { errors, warnings };

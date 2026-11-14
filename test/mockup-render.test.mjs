@@ -14,6 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { renderMockups } from '../checks/mockup-render.mjs';
 import { runProcessTrace } from '../checks/process-trace.mjs';
+import { pageInputs } from '../checks/lib/mockups.mjs';
 
 const RENDERER = path.resolve('checks/mockup-render.mjs');
 
@@ -161,4 +162,76 @@ test('revisions-and-foundations#AC-16: the command renders the folder it is give
   assert.equal(all.status, 0, all.stderr);
   assert.deepEqual(Object.keys(readRecord(root, 'docs/design/board')), ['a.png', 'b.png']);
   assert.equal(fs.existsSync(path.join(root, 'docs/design/other/c.png')), false, 'only the folder named was rendered');
+});
+
+test('revisions-and-foundations#AC-16: a page that tries to navigate away stays on itself and is rendered', async () => {
+  const root = tmp();
+  write(root, 'docs/design/nav/away.html', PAGE('<meta http-equiv="refresh" content="0; url=other.html"><p>Away</p><script>setTimeout(() => { location.href = "other.html"; }, 0);</script>'));
+  write(root, 'docs/design/nav/other.html', PAGE('<p>Other</p>'));
+
+  const result = await renderMockups(root, { browser });
+
+  const folder = result.folders[0];
+  assert.deepEqual(folder.failed, []);
+  assert.deepEqual(folder.rendered, ['docs/design/nav/away.png', 'docs/design/nav/other.png']);
+  assert.ok(folder.blocked.some(u => u.endsWith('/nav/other.html')), folder.blocked.join(', '));
+  assert.deepEqual(Object.keys(readRecord(root, 'docs/design/nav')), ['away.png', 'other.png']);
+});
+
+test('revisions-and-foundations#AC-16: a page that fails to render is named and skipped, the others are recorded, and the command exits non-zero', () => {
+  const root = tmp();
+  write(root, 'docs/design/mixed/bad.html', PAGE('<p>Bad</p>'));
+  write(root, 'docs/design/mixed/good.html', PAGE('<p>Good</p>'));
+  // A folder where bad.png should go, so its screenshot cannot be written.
+  fs.mkdirSync(path.join(root, 'docs/design/mixed/bad.png'));
+
+  const r = spawnSync(process.execPath, [RENDERER, 'docs/design/mixed'], { cwd: root, encoding: 'utf8' });
+
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /^could not render docs\/design\/mixed\/bad\.png from bad\.html: /m);
+  assert.deepEqual(Object.keys(readRecord(root, 'docs/design/mixed')), ['good.png']);
+  assert.ok(pngSize(path.join(root, 'docs/design/mixed/good.png')).width === 1280);
+});
+
+test('revisions-and-foundations#AC-16: a junction or symlink that leads outside the repository is neither loaded nor recorded', async () => {
+  const parent = tmp();
+  const root = path.join(parent, 'repo');
+  write(parent, 'outside/style.css', 'body { color: blue; }\n');
+  write(root, 'docs/design/link/page.html', PAGE('<link rel="stylesheet" href="shared/style.css"><p>Linked</p>'));
+  fs.symlinkSync(path.join(parent, 'outside'), path.join(root, 'docs/design/link/shared'), 'junction');
+
+  const result = await renderMockups(root, { browser });
+
+  assert.ok(result.folders[0].blocked.some(u => u.endsWith('/shared/style.css')), result.folders[0].blocked.join(', '));
+  assert.deepEqual(Object.keys(readRecord(root, 'docs/design/link')['page.png'].inputs), ['docs/design/link/page.html']);
+});
+
+test('revisions-and-foundations#AC-16: inputs include srcset, poster, SVG image and use references, and stylesheets followed more than one level down', () => {
+  const root = tmp();
+  write(root, 'docs/design/tokens.css', '@import "base/base.css";\n');
+  write(root, 'docs/design/base/base.css', '@import url(deep/deep.css);\n');
+  write(root, 'docs/design/base/deep/deep.css', '.hero { background: url("../../img/hero.png"); }\n');
+  for (const f of ['img/hero.png', 'img/a.png', 'img/a2.png', 'img/b.png', 'img/poster.png', 'img/pic.png', 'img/sprite.svg', 'img/old.svg']) write(root, `docs/design/${f}`, 'x');
+  write(root, 'docs/design/feat/page.html', PAGE([
+    '<link rel="stylesheet" href="../tokens.css">',
+    '<img srcset="../img/a.png 1x, ../img/a2.png 2x" alt="">',
+    '<picture><source srcset="../img/b.png"></picture>',
+    '<video poster="../img/poster.png"></video>',
+    '<svg><image href="../img/pic.png"/><use href="../img/sprite.svg#icon"/><use xlink:href="../img/old.svg#x"/><use href="#local"/></svg>',
+  ].join('')));
+
+  assert.deepEqual(pageInputs(root, 'docs/design/feat/page.html'), [
+    'docs/design/base/base.css',
+    'docs/design/base/deep/deep.css',
+    'docs/design/feat/page.html',
+    'docs/design/img/a.png',
+    'docs/design/img/a2.png',
+    'docs/design/img/b.png',
+    'docs/design/img/hero.png',
+    'docs/design/img/old.svg',
+    'docs/design/img/pic.png',
+    'docs/design/img/poster.png',
+    'docs/design/img/sprite.svg',
+    'docs/design/tokens.css',
+  ]);
 });

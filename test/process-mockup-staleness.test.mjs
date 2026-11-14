@@ -118,6 +118,76 @@ test('revisions-and-foundations#AC-16: a .rendered.json that cannot be read is a
   assert.ok(errors[0].includes('node .rfr/checks/mockup-render.mjs docs/design/board'), errors[0]);
 });
 
+const OUTSIDE = (p, folder = 'docs/design/board') => `${folder}/.rendered.json lists ${p}, which is outside the repository; render the folder again with node .rfr/checks/mockup-render.mjs ${folder}`;
+
+test('revisions-and-foundations#AC-16: a record that lists a path outside the repository is an error, and the path is not read', () => {
+  const parent = tmp();
+  const root = path.join(parent, 'repo');
+  write(parent, 'secret.txt', 'secret\n');
+  write(root, 'docs/design/board/board.html', HTML);
+  write(root, 'docs/design/board/board.png', 'png');
+  write(root, 'docs/design/board/.rendered.json', JSON.stringify({
+    'board.png': { source: 'board.html', width: 1280, height: 800, inputs: { 'docs/design/board/board.html': sha(HTML), '../secret.txt': sha('secret\n') } },
+    '../../../../x.png': { source: 'board.html', width: 1280, height: 800, inputs: {} },
+  }));
+  assert.deepEqual(runProcessTrace(root).errors, [OUTSIDE('../../../../x.png'),OUTSIDE('../secret.txt')]);
+  // A wrong hash for the outside file makes no difference: it is never read, so never compared.
+  write(root, 'docs/design/board/.rendered.json', JSON.stringify({
+    'board.png': { source: 'board.html', width: 1280, height: 800, inputs: { 'docs/design/board/board.html': sha(HTML), '../secret.txt': 'f'.repeat(64) } },
+  }));
+  assert.deepEqual(runProcessTrace(root).errors, [OUTSIDE('../secret.txt')]);
+});
+
+test('revisions-and-foundations#AC-16: a recorded input reached through a junction or symlink that leads outside is an error', () => {
+  const parent = tmp();
+  const root = path.join(parent, 'repo');
+  write(parent, 'outside/style.css', CSS);
+  write(root, 'docs/design/board/board.html', HTML);
+  write(root, 'docs/design/board/board.png', 'png');
+  fs.symlinkSync(path.join(parent, 'outside'), path.join(root, 'docs/design/shared'), 'junction');
+  write(root, 'docs/design/board/.rendered.json', JSON.stringify({
+    'board.png': { source: 'board.html', width: 1280, height: 800, inputs: { 'docs/design/board/board.html': sha(HTML), 'docs/design/shared/style.css': sha(CSS) } },
+  }));
+  assert.deepEqual(runProcessTrace(root).errors, [OUTSIDE('docs/design/shared/style.css')]);
+});
+
+// A small process project whose design for the board lives beside its mock-up folder, so the design
+// stage's approvers are the ones to assign when an image is stale.
+function processProject() {
+  const root = project();
+  write(root, 'docs/product/process.yml', 'mode: team\ndefault: [lead]\nstages:\n  design: [designer]\n');
+  write(root, 'docs/product/concept.md', '---\nid: concept\nstatus: approved\n---\n\n# Concept\n\nOne.\n');
+  write(root, 'docs/product/personas/animator.md', '---\nid: persona-animator\nstatus: approved\nderived-from:\n  - concept:\n---\n\n# Animator\n\n## Goals\n\nFast.\n');
+  write(root, 'docs/product/epics/board.md', '---\nid: epic-board\nstatus: approved\nderived-from:\n  - persona-animator:\n---\n\n# Board\n');
+  write(root, 'docs/product/stories/board.md', '---\nid: story-board\nstatus: approved\nderived-from:\n  - persona-animator:\n  - epic-board:\n---\n\n# See the board\n\nAs an animator, I want to see the board so that I know what is next.\n\n## Acceptance criteria\n\n- The board lists the work.\n');
+  write(root, 'docs/design/board.md', '---\nid: design-board\nstatus: approved\nderived-from:\n  - story-board:\n---\n\n# Board\n\nThe board.\n');
+  write(root, 'docs/design/settings.md', '---\nid: design-settings\nstatus: approved\nderived-from:\n  - story-board:\n---\n\n# Settings\n\nThe settings.\n');
+  return root;
+}
+
+test('revisions-and-foundations#AC-16: a stale image puts its folder\'s design among those involved, so the stale issue goes to the design approvers', async () => {
+  const { relink } = await import('../checks/process-relink.mjs');
+  const { staleAssignees } = await import('../checks/process-trace.mjs');
+  const root = processProject();
+  relink(root, ['persona-animator', 'epic-board', 'story-board', 'design-board', 'design-settings']);
+  const clean = runProcessTrace(root);
+  assert.deepEqual(clean.errors, [], 'the project is clean before the change');
+  assert.deepEqual(clean.involved, []);
+  write(root, 'docs/design/wireframe.css', `${CSS}.card { margin: 0; }\n`);
+  assert.deepEqual(runProcessTrace(root).involved, ['design-board']);
+  assert.deepEqual(staleAssignees(root), ['designer']);
+});
+
+test('revisions-and-foundations#AC-16: a stale image in a folder no design matches involves every design', async () => {
+  const { relink } = await import('../checks/process-relink.mjs');
+  const root = processProject();
+  fs.renameSync(path.join(root, 'docs/design/board.md'), path.join(root, 'docs/design/board-design.md'));
+  relink(root, ['persona-animator', 'epic-board', 'story-board', 'design-board', 'design-settings']);
+  assert.deepEqual(runProcessTrace(root).involved, []);
+  write(root, 'docs/design/wireframe.css', `${CSS}.card { margin: 0; }\n`);
+  assert.deepEqual(runProcessTrace(root).involved, ['design-board', 'design-settings']);
+});
+
 // The check needing no browser. The process check and its modules are copied into a temporary folder
 // with no node_modules above it, and run there in a child process, so nothing can resolve playwright:
 // a static import of it would fail to load, and a dynamic one would throw. The child first proves that
