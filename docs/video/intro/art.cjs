@@ -19,8 +19,10 @@ const defs = (id) => `<defs>
 const grain = (id) => `<rect width="1920" height="1080" filter="url(#grain${id})" opacity=".3" style="mix-blend-mode:multiply"/>`;
 
 // A take is 2688 by 1536. Place it at a scale, anchored to the bottom right, on a cream ground.
-const place = (inner, s = 1) => { const w = 1920 * s, h = 1097.2 * s; return `<svg x="${(1920 - w).toFixed(1)}" y="${(1080 - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" viewBox="0 0 2688 1536">${inner}</svg>`; };
-const picture = (takeDefs, inner, s, id, ash) => `${takeDefs}<g${ash ? ` filter="url(#ash${id})"` : ''}><rect width="1920" height="1080" fill="${CREAM}"/>${place(inner, s)}</g>`;
+const place = (inner, s = 1, dy = 0) => { const w = 1920 * s, h = 1097.2 * s; return `<svg x="${(1920 - w).toFixed(1)}" y="${(1080 - h + dy).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" viewBox="0 0 2688 1536">${inner}</svg>`; };
+const picture = (takeDefs, inner, s, id, ash, dy) => `${takeDefs}<g${ash ? ` filter="url(#ash${id})"` : ''}><rect width="1920" height="1080" fill="${CREAM}"/>${place(inner, s, dy)}</g>`;
+// The same in ash, with one shape of the take (given as path data) left in its own colour.
+const accented = (takeDefs, inner, id, shape) => `${picture(takeDefs, inner, 1, id, true)}${place(`<clipPath id="accent${id}"><path d="${shape}"/></clipPath><g clip-path="url(#accent${id})">${inner}</g>`)}`;
 // The idea: vector B's outline, where the treehouse you meant would stand. It never changes.
 const blueprint = (colour, withSlide, opacity = .9) => `<defs>${kit.masks}</defs>${place(`<g fill="none" stroke="${colour}" stroke-width="7" stroke-dasharray="22 16" stroke-linecap="round" opacity="${opacity}">${kit.outline(withSlide)}</g>`)}`;
 
@@ -42,20 +44,24 @@ const sticky = (s, x, y, rot, id) => { const w = Math.round(s.length * 21.5) + 6
 const frame = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">${body}</svg>\n`;
 const heading = (a, b, colour, size = 72) => `${txt(a, 110, 150, size, INK)}${b ? txt(b, 110, 150 + size * 1.14, size, colour) : ''}`;
 
-// One frame of the trouble half: a take in ash, the idea in blue, the words.
-const trouble = (id, take, s, a, b, rows, size) => { const t = kit.scene(take);
-  return frame(`${defs(id)}${picture(t.defs, t.body, s, id, true)}${blueprint(B, false, .8)}${heading(a, b, MUTED, size)}${talk(rows, 300, id)}${grain(id)}`); };
+// One frame of the trouble half: a picture in ash, the idea in blue, the words.
+const trouble = (id, pic, a, b, rows, size) => frame(`${defs(id)}${pic}${blueprint(B, false, .5)}${heading(a, b, MUTED, size)}${talk(rows, 300, id)}${grain(id)}`);
+const literal = (id) => { const t = kit.scene('scene-literal-b'); return picture(t.defs, t.body, 1, id, true); };
+const pineBefore = (id) => { const t = kit.pine(); return picture(t.defs, t.noSlide, 1, id, true); };
+// The village, set a little lower in the frame to leave sky for the words.
+const village = (id) => { const t = kit.scene('scene-village-c'); return picture(t.defs, t.body, 1, id, false, 70); };
+const pineAfter = (id) => { const t = kit.pine(); return accented(t.defs, t.withSlide, id, t.slide); };
 
 const frames = {
   // 1a. Literal: a box in a tree, and no way up.
-  '1a-literal': () => trouble('a', 'scene-literal-b', 1, 'Exactly what you said.', 'Not what you meant.', [['you', 'Build me a treehouse.'], ['agent', 'Done! One treehouse.'], ['you', 'How do I get up?']]),
+  '1a-literal': () => trouble('a', literal('a'), 'Exactly what you said.', 'Not what you meant.', [['you', 'Build me a treehouse.'], ['agent', 'Done! One treehouse.'], ['you', 'How do I get up?']]),
   // 1b. One change: a ladder, but now it is a pine tree and the house has moved.
-  '1b-drift': () => trouble('b', 'scene-pine-a', 1, 'You ask for one change.', 'Everything else changes too.', [['you', 'Add a ladder.'], ['agent', 'Added! Plus a few improvements.'], ['you', 'Why is it a pine tree?']], 56),
+  '1b-drift': () => trouble('b', pineBefore('b'), 'You ask for one change.', 'Everything else changes too.', [['you', 'Add a ladder.'], ['agent', 'Added! Plus a few improvements.'], ['you', 'Why is it a pine tree?']], 56),
   // 1c. An addition: the slide goes through the ladder.
-  '1c-bolted': () => trouble('c', 'scene-bolted-a', 1, 'You add what you forgot.', 'It gets bolted on.', [['you', 'And a slide.'], ['agent', 'Added!'], ['you', 'That was the ladder.']]),
+  '1c-bolted': () => trouble('c', pineAfter('c'), 'You add what you forgot.', 'It gets bolted on.', [['you', 'And a slide.'], ['agent', 'Added!'], ['you', 'That was the ladder.']]),
   // 1d. The worst of the trouble: rules, and questions about a hammer.
-  '1d-rules': () => { const id = 'd', t = kit.scene('scene-bolted-a');
-    return frame(`${defs(id)}${picture(t.defs, t.body, 1, id, true)}${blueprint(B, false, .8)}
+  '1d-rules': () => { const id = 'd';
+    return frame(`${defs(id)}${pineAfter(id)}${blueprint(B, false, .5)}
     ${heading('So you write rules.', 'Now it asks about everything.', MUTED)}
     ${sticky('KEEP THE TREE.', 150, 320, -5, id)}${sticky('The house stays put.', 380, 440, 3, id)}${sticky('Ask before you change anything.', 130, 560, -2, id)}
     ${bubble('agent', 'May I pick up the hammer?', 206, 782, id, { opacity: .45 })}${bubble('agent', 'May I use the hammer?', 206, 868, id, { opacity: .7 })}${bubble('agent', 'May I put the hammer down?', 206, 954, id)}
@@ -76,9 +82,9 @@ const frames = {
     return frame(`${defs(id)}${picture(kit.treehouse.defs, kit.treehouse.withSlide, 1, id)}${blueprint(CREAM, true, .75)}
     ${heading('A change is a change.', 'Not a restart.', SP)}${talk([['you', 'Add a slide.'], ['agent', 'Added. Nothing else moved.']], 300, id, true)}`); },
   // 4. The promise: one treehouse has become a village.
-  '4-village': () => { const id = 'h', t = kit.village();
-    return frame(`${defs(id)}${picture(t.defs, t.body, 1, id)}
-    ${txt('Bigger projects. Longer projects.', 960, 92, 60, INK, 700, 'middle')}${txt('Built the way you meant.', 960, 168, 60, SP, 700, 'middle')}`); },
+  '4-village': () => { const id = 'h';
+    return frame(`${defs(id)}${village(id)}
+    ${txt('Bigger projects. Longer projects.', 960, 84, 56, INK, 700, 'middle')}${txt('Built the way you meant.', 960, 154, 56, SP, 700, 'middle')}`); },
 };
 
 if (require.main === module) {
@@ -86,4 +92,4 @@ if (require.main === module) {
   for (const [name, make] of Object.entries(frames)) fs.writeFileSync(`style/${name}.svg`, make());
   console.log(Object.keys(frames).join(' '));
 }
-module.exports = { frames, defs, picture, blueprint, frame };
+module.exports = { frames, defs, picture, blueprint, frame, literal, pineBefore, pineAfter, village };

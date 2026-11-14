@@ -15,8 +15,8 @@ const FONT = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?fam
 const scene = (name, id, ash) => { const t = kit.scene(name); return art.frame(`${art.defs(id)}${art.picture(t.defs, t.body, 1, id, ash)}`); };
 const tree = (inner, id) => art.frame(`${art.defs(id)}${art.picture(kit.treehouse.defs, inner, 1, id)}`);
 const LAYERS = {
-  literal: scene('scene-literal-b', 'a', true), pine: scene('scene-pine-a', 'b', true), bolted: scene('scene-bolted-a', 'c', true),
-  before: tree(kit.treehouse.noSlide, 'f'), after: tree(kit.treehouse.withSlide, 'g'), village: (() => { const t = kit.village(); return art.frame(`${art.defs('h')}${art.picture(t.defs, t.body, 1, 'h')}`); })(),
+  literal: art.frame(art.defs('a') + art.literal('a')), pine: art.frame(art.defs('b') + art.pineBefore('b')), bolted: art.frame(art.defs('c') + art.pineAfter('c')),
+  before: tree(kit.treehouse.noSlide, 'f'), after: tree(kit.treehouse.withSlide, 'g'), village: art.frame(art.defs('h') + art.village('h')),
   'idea-blue': art.frame(art.blueprint('#2563C4', false, 1)), 'idea-ink': art.frame(art.blueprint('#2A1A14', false, 1)),
   'idea-cream': art.frame(art.blueprint('#FFF4E6', false, 1)), 'idea-cream-slide': art.frame(art.blueprint('#FFF4E6', true, 1)),
 };

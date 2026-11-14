@@ -68,7 +68,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
 2. **The look.** Done. The maintainer chose it (decision 6) and approved the eight style frames in `style/` on 2026-11-14.
-3. **Production.** A third cut exists: `node film.cjs` renders `out/intro.mp4`, 52 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the decisions under "Review of the second cut"; sound; the shorter and vertical cuts.
+3. **Production.** A fourth cut exists: `node film.cjs` renders `out/intro.mp4`, 53 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the maintainer's view of the fourth cut and of what is left under "Review of the second cut"; sound; the shorter and vertical cuts.
 
 ## Review of the second cut
 
@@ -88,15 +88,17 @@ Fixed in the third cut:
 - The first frame was blank. It now carries the first heading.
 - The village: every treehouse has a ladder to the ground, the flagpoles reach the roofs, and the slide is redrawn in two tones down to the bushes.
 
-Not done, because each is the maintainer's to decide:
+Done in the fourth cut, after the maintainer asked why the fixes that touch the story or need new artwork were being held back:
 
-1. **The film mocks "So you write rules", and the product is called Rules for Robots.** Nothing says how these rules differ. The review suggests a bridging line at the turn or on the end card.
-2. **It never says what the thing is.** The mark speaks as the agent, so a viewer may take it for a new agent. The review suggests one line on the end card saying what is installed and for what.
-3. **The slide-through-the-ladder picture does not show the joke.** In ash the slide reads as a path or a trunk. The review suggests an unmistakable slide in the accent colour.
-4. **The pine tree changes between "Add a ladder" and "And a slide".** The heading says "bolted on", and the picture says everything changed again. The review suggests building the second picture from the first.
-5. **The village is off-model:** the treehouse from the film is not in it, the flags are triangles and two are pale after the film chose orange, and the ropes hang from the trunks.
-6. **Nothing moves inside a scene** (no flag flutter, no drift), and the film is now 7 seconds over the 45 that was the aim.
-7. Smaller: the cratered-looking sun and outsized daisies in the pine picture; bubble text that is marginal when embedded small; the long "Noted" bubble over the foliage; whether "It asks you what only you can decide" should come before "It asks before it builds".
+- **The film mocked "So you write rules", and never said what the thing is.** The end card now says "Rules and plugins for Claude Code. They teach it what to ask you, and what to just do." The words are the session's and the maintainer has not yet read them.
+- **The slide through the ladder did not read, and the pine tree changed between two beats.** Both beats now use one take. `kit.cjs` paints the slide's shape the colour of the foliage for the earlier picture, and leaves the slide in orange in the ash picture for the later one.
+- **The village was off-model, and a slide the session drew over it looked childish** (the maintainer's word). It is replaced by a new take, `scene-village-c`: ladders to the ground, wavy orange flags on the roofs, bridges from deck to deck, a slide that lands on the grass.
+
+Still open:
+
+1. Nothing moves inside a scene (no flag flutter, no drift), and the film is 8 seconds over the 45 that was the aim.
+2. The treehouse from the film is not in the village.
+3. Smaller: bubble text that is marginal when embedded small; the long "Noted" bubble over the foliage; whether "It asks you what only you can decide" should come before "It asks before it builds".
 
 What the review said to keep: the switch from ash to colour at the turn, the cover wipe, the fixed outline as what you had in mind, the two faces and bubble colours, the lines "Added! Plus a few improvements." and "Shall I remove the tree?", and the change beat.
 
@@ -127,16 +129,18 @@ A cloud session needs `d8j0ntlcm91z4.cloudfront.net` (where Higgsfield stores re
 
 ## Scene takes
 
-Generated on 2026-11-14 for 60 credits, on the maintainer's word, with the recipe above and a prompt for each scene; all are `vector` SVG files in `takes/`. With the illustration test, 96 credits have been spent on the film.
+Generated on 2026-11-14 on the maintainer's word, with the recipe above and a prompt for each scene; all are `vector` SVG files in `takes/`. The first six cost 60 credits and the two village retakes 20. With the illustration test, 116 credits have been spent on the film.
 
 | File | Scene | Used | Job ID |
 |---|---|---|---|
 | `scene-literal-a.svg` | A box in a tree | No: outlined, with a violet ground | `89a6afd7-abc4-4fb1-9848-c16eb9d7d2ee` |
 | `scene-literal-b.svg` | A box in a tree (retry) | Yes | `68d1d09f-d9f6-4068-b97d-f5bb9979c3b2` |
 | `scene-literal-c.svg` | A box in a tree (retry) | No: violet bushes | `231e6baf-a0ea-42a7-96cb-13973fd94d5b` |
-| `scene-pine-a.svg` | A pine tree, the house moved, a ladder | Yes | `56f6a5bb-4c44-41e6-a750-fe83a7dfb7f2` |
-| `scene-bolted-a.svg` | The slide through the ladder | Yes, twice | `cf04d631-1cfa-4af3-b7ae-3f5015a55077` |
-| `scene-village-a.svg` | A village of treehouses | Yes, without its sun | `b7e17ad6-fcaa-4871-b14f-862ad7de1275` |
+| `scene-pine-a.svg` | A pine tree, the house moved, a ladder | No longer: a different tree from the next beat's | `56f6a5bb-4c44-41e6-a750-fe83a7dfb7f2` |
+| `scene-bolted-a.svg` | The slide through the ladder | Yes, with and without its slide | `cf04d631-1cfa-4af3-b7ae-3f5015a55077` |
+| `scene-village-a.svg` | A village of treehouses | No longer: ladders short of the ground, flags off the roofs | `b7e17ad6-fcaa-4871-b14f-862ad7de1275` |
+| `scene-village-b.svg` | A village (retake) | No: little sky for the words | `6b4dc357-04d3-46b2-93ec-897e80c72065` |
+| `scene-village-c.svg` | A village (retake) | Yes | `c4c904b4-ea01-43cb-bcd8-109af4a73599` |
 
 The prompts are in the Higgsfield account under those jobs. Each began "Flat vector editorial illustration for a motion-graphics explainer film" and described the scene, then B's foliage, trunk, sky, sun, bushes, and flowers. The first prompts added "hand-drawn with printed dry-brush texture", and one of those four came back outlined; the retries dropped that phrase, added "no black line work", and both came back in style.
 

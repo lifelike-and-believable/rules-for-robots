@@ -103,12 +103,13 @@ const BEATS = [
       clipRect('clipB', 1200, 430, 720, 660 * p); show('after', p > 0 ? 1 : 0, PUSHED, 'clipB');
       return heading(t, 'A change is a change.', 'Not a restart.', SP, 72, 2.5) + talk([['you', 'Add a slide.', .3], ['agent', 'Added. Nothing else moved.', 2]], t, true); } },
   { name: 'village', dur: 3.3, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = ease(prog(t, 0, .7));
-      show('after', 1, PUSHED); clipRect('clipA', 0, 1080 * (1 - p), 1920, 1080); show('village', p > 0 ? 1 : 0, 1.05 - .05 * ease(prog(t, 0, d)), 'clipA');
-      return rise(prog(t, .5), txt('Bigger projects. Longer projects.', 960, 92, 60, INK, 700, 'middle')) + rise(prog(t, 1.3), txt('Built the way you meant.', 960, 168, 60, SP, 700, 'middle')); } },
-  { name: 'end', dur: 4.8, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = ease(prog(t, 0, .5)); show('village', 1 - p, 1);
-      placeMark('rules-for-robots', 450, 270, 220, ease(prog(t, .3, .4))); ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 712 + i * 104, 524, 88, ease(prog(t, 1.1 + i * .12, .35))));
-      return rise(prog(t, .3), txt('Rules for Robots', 708, 388, 110, INK) + txt('A practical guide for people and agents who work together', 712, 458, 34, SP, 500))
-        + rise(prog(t, 1.4), txt('github.com/RulesForRobots', 1050, 584, 44, INK, 700)) + rise(prog(t, 2.2), txt('(Yes, you may put the hammer down.)', 960, 800, 42, MUTED, 500, 'middle')); } },
+      show('after', 1, PUSHED); clipRect('clipA', 0, 1080 * (1 - p), 1920, 1080); show('village', p > 0 ? 1 : 0, 1, 'clipA');
+      return rise(prog(t, .5), txt('Bigger projects. Longer projects.', 960, 84, 56, INK, 700, 'middle')) + rise(prog(t, 1.3), txt('Built the way you meant.', 960, 154, 56, SP, 700, 'middle')); } },
+  { name: 'end', dur: 5.8, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = ease(prog(t, 0, .5)); show('village', 1 - p, 1);
+      placeMark('rules-for-robots', 452, 150, 200, ease(prog(t, .3, .4))); ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 520 + i * 104, 640, 88, ease(prog(t, 2.2 + i * .12, .35))));
+      return rise(prog(t, .3), txt('Rules for Robots', 690, 262, 110, INK) + txt('A practical guide for people and agents who work together', 694, 328, 34, SP, 500))
+        + rise(prog(t, 1), txt('Rules and plugins for Claude Code.', 960, 456, 52, INK, 700, 'middle')) + rise(prog(t, 1.5), txt('They teach it what to ask you, and what to just do.', 960, 520, 40, INK, 500, 'middle'))
+        + rise(prog(t, 2.4), txt('github.com/RulesForRobots', 860, 700, 44, INK, 700)) + rise(prog(t, 3.1), txt('(Yes, you may put the hammer down.)', 960, 880, 42, MUTED, 500, 'middle')); } },
 ];
 let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
