@@ -196,6 +196,25 @@ export function textAtBase(file, cwd = process.cwd()) {
   return r.status === 0 ? r.stdout : null;
 }
 
+// The outside services a project declares it makes things in: "services" in .claude/rfr.json, as
+// that file stood where the current branch started (unattended AC-10). A service a session adds on
+// its own branch does not count until the pull request that adds it has merged, so a session cannot
+// open a service for itself. Names are lower case; [] when there is no declaration or git cannot tell.
+// The same list is where a project keeps what each approved service is for and the limits on it.
+export function declaredServices(cwd = process.cwd()) {
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', timeout: 5000 });
+  if (r.status !== 0) return [];
+  try {
+    const json = JSON.parse(textAtBase(nodePath.join(r.stdout.trim(), '.claude', 'rfr.json'), cwd) ?? 'null');
+    // An entry is the service's name, or an object with a name and whatever the project records
+    // about it (what it is for, the limits on its use).
+    const names = Array.isArray(json?.services) ? json.services.map(s => (typeof s === 'string' ? s : s?.name)) : [];
+    return names.filter(s => typeof s === 'string' && s).map(s => s.toLowerCase());
+  } catch {
+    return [];
+  }
+}
+
 export function existedAtBase(file, cwd = process.cwd()) {
   const b = baseOf(file, cwd);
   if (!b) return null;

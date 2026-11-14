@@ -1,0 +1,14 @@
+{
+  "services": [
+    {
+      "name": "Higgsfield",
+      "for": "Generated illustration, video, music, voice, and sound for the brand and the intro video.",
+      "limits": "The maintainer sets a credit limit for each run. Get the cost first where the tool offers one, and keep every take."
+    },
+    {
+      "name": "Adobe_for_creativity",
+      "for": "Tracing generated pictures into vector layers, and resizing video for social formats.",
+      "limits": "No stock licensing and no sharing links."
+    }
+  ]
+}

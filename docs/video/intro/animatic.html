@@ -1,0 +1,228 @@
+<title>Rules for Robots Ad Animatic</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the film on top with transport controls, then the beat list as the script. */
+:root {
+  --bg: #f3f4f1; --panel: #ffffff; --fg: #1b1f1d; --muted: #5d665f; --line: #d9ddd6; --accent: #b8401d; --accent-fg: #ffffff;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #151816; --panel: #1e2320; --fg: #e9ece8; --muted: #a0a9a2; --line: #333a35; --accent: #ff8a66; --accent-fg: #1b1f1d; color-scheme: dark }
+}
+:root[data-theme="dark"] { --bg: #151816; --panel: #1e2320; --fg: #e9ece8; --muted: #a0a9a2; --line: #333a35; --accent: #ff8a66; --accent-fg: #1b1f1d; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 28px; line-height: 1.15; margin: 0; text-wrap: balance; }
+.stage-label { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+.lede { color: var(--muted); max-width: 68ch; margin: 8px 0 0; }
+#film { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; border-radius: 8px; border: 1px solid var(--line); background: #FFF4E6; }
+.bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bar button { font: 600 14px var(--body); color: var(--accent-fg); background: var(--accent); border: 0; border-radius: 6px; padding: 8px 16px; cursor: pointer; min-width: 78px; }
+.bar button:focus-visible, .beats button:focus-visible, #scrub:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+#scrub { flex: 1 1 220px; min-width: 0; accent-color: var(--accent); }
+#clock { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+h2 { font-family: var(--display); font-weight: 700; font-size: 19px; margin: 8px 0 0; }
+.beats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.beats li { border-bottom: 1px solid var(--line); }
+.beats button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 92px 1fr; gap: 4px 16px; width: 100%; padding: 10px 8px; }
+.beats button:hover, .beats li.on button { background: var(--panel); }
+.beats .when { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.beats .cap { font-family: var(--display); font-weight: 700; }
+.beats .chat { grid-column: 2; color: var(--muted); font-size: 13.5px; }
+.beats li.on .when { color: var(--accent); }
+@media (max-width: 520px) { .beats button { grid-template-columns: 1fr; } .beats .chat { grid-column: 1; } }
+.note { color: var(--muted); max-width: 68ch; margin: 0; border-top: 1px solid var(--line); padding-top: 16px; }
+.note b { color: var(--fg); }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="stage-label">Intro video · Stage 3 proxy, second version</p>
+    <h1>The ad, as a rough animatic</h1>
+    <p class="lede">The whole film at sketch quality: every beat, every word, and rough timing. This version builds a treehouse, and each trouble is one agents really cause. Motion is limited to things appearing and text typing. Judge the story, the jokes, the words, and the pace.</p>
+  </header>
+
+  <svg id="film" viewBox="0 0 1280 720" role="img" aria-label="Animatic of the Rules for Robots advertisement"></svg>
+  <div class="bar">
+    <button id="play" type="button">Play</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Position in the film">
+    <span id="clock">0:00 / 0:00</span>
+  </div>
+
+  <h2>Beats and words</h2>
+  <ol class="beats" id="beats"></ol>
+
+  <p class="note"><b>How to give notes:</b> name the beat by its time, such as "0:10, the pine tree joke needs longer" or "cut the hammer questions to two". To approve the proxy as it stands, say so, and the next stage makes each beat properly: richer drawing, real motion, transitions between beats, and a 1080p render.</p>
+</div>
+
+<script>
+const CREAM = "#FFF4E6", INK = "#2A1A14", O = "#E4572E", SP = "#B8401D", TI = "#F9C9B2", B = "#2563C4", P = "#7A45C9", G = "#0E8A72", EDGE = "#C9C4BC", MUTED = "#6B5A52";
+const FONT = "'Space Grotesk','Segoe UI',system-ui,sans-serif";
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = p => 1 - Math.pow(1 - clamp(p), 3);
+const prog = (t, at, d = .45) => clamp((t - at) / d);
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const txt = (s, x, y, size, fill, weight = 700, anchor = "start") => `<text x="${x}" y="${y}" font-family="${FONT}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">${esc(s)}</text>`;
+const pop = (p, cx, cy, body) => p <= 0 ? "" : `<g opacity="${ease(p).toFixed(3)}" transform="translate(${cx} ${cy}) scale(${(.9 + .1 * ease(p)).toFixed(3)}) translate(${-cx} ${-cy})">${body}</g>`;
+
+/* The thing being built, on a 100 by 70 grid. The idea is always in colour; what comes back is grey until the turn. */
+const COL = { sky: "#FFFFFF", sun: O, ground: "#0B6E5B", leaf: G, trunk: "#7A5A46", wood: SP, house: B, roof: P, win: CREAM, flag: O, slide: O, line: INK };
+const GREY = { sky: "#F7F5F1", sun: "#C9C3BA", ground: "#8F897F", leaf: "#A8A297", trunk: "#6E6960", wood: "#7F7A71", house: "#D6D1C8", roof: "#6E6960", win: "#F7F5F1", flag: "#8F897F", slide: "#5C5850", line: "#6E6960" };
+const sky = c => `<rect width="100" height="70" fill="${c.sky}"/>`;
+const ground = c => `<rect y="60" width="100" height="10" fill="${c.ground}"/>`;
+const sun = c => `<circle cx="87" cy="12" r="8" fill="${c.sun}"/>`;
+const roundTree = c => `<rect x="44" y="30" width="8" height="32" fill="${c.trunk}"/><circle cx="48" cy="15" r="19" fill="${c.leaf}"/><circle cx="29" cy="25" r="12" fill="${c.leaf}"/><circle cx="67" cy="25" r="12" fill="${c.leaf}"/>`;
+const pine = c => `<rect x="45" y="40" width="7" height="22" fill="${c.trunk}"/><polygon points="48.5,1 32,22 65,22" fill="${c.leaf}"/><polygon points="48.5,10 27,36 70,36" fill="${c.leaf}"/><polygon points="48.5,22 22,52 75,52" fill="${c.leaf}"/>`;
+const ladder = (c, x, y1, y2) => { let r = ""; for (let y = y1 + 3; y < y2; y += 4) r += `<line x1="${x}" y1="${y}" x2="${x + 5}" y2="${y}"/>`; return `<g stroke="${c.wood}" stroke-width="1.2" stroke-linecap="round"><line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/><line x1="${x + 5}" y1="${y1}" x2="${x + 5}" y2="${y2}"/>${r}</g>`; };
+const cabin = c => `<rect x="30" y="38" width="36" height="3.5" fill="${c.wood}"/><rect x="36" y="22" width="22" height="16" fill="${c.house}"/><polygon points="33,22 47,11 61,22" fill="${c.roof}"/><circle cx="47" cy="29.5" r="3.6" fill="${c.win}"/><line x1="47" y1="11" x2="47" y2="3" stroke="${c.line}" stroke-width="1"/><polygon points="47,3 55,5.5 47,8" fill="${c.flag}"/>`;
+const slide = c => `<path d="M66 39.5 Q82 42 92 61" fill="none" stroke="${c.slide}" stroke-width="4.5" stroke-linecap="round"/>`;
+const treehouse = (c, withSlide) => `${roundTree(c)}${cabin(c)}${ladder(c, 32, 41.5, 61)}${withSlide ? slide(c) : ""}`;
+const moved = c => `<rect x="55" y="44" width="30" height="3.5" fill="${c.wood}"/><rect x="60" y="30" width="20" height="14" fill="${c.house}"/><rect x="57" y="27" width="26" height="3.5" fill="${c.roof}"/><rect x="67" y="34" width="6" height="6" fill="${c.win}"/>`;
+const pics = {
+  blank: c => sky(c),
+  idea: c => `${sky(c)}${sun(c)}${ground(c)}${treehouse(c, false)}`,
+  ideaSlide: c => `${sky(c)}${sun(c)}${ground(c)}${treehouse(c, true)}`,
+  literal: c => `${sky(c)}${ground(c)}${roundTree(c)}<g transform="rotate(-7 48 28)"><rect x="37" y="20" width="22" height="17" fill="${c.house}"/></g>`,
+  drift: c => `${sky(c)}${ground(c)}${pine(c)}${moved(c)}${ladder(c, 79, 47.5, 61)}`,
+  bolted: c => `${sky(c)}${ground(c)}${pine(c)}${moved(c)}${ladder(c, 79, 47.5, 52)}<g transform="rotate(64 70 58)">${ladder(c, 68, 50, 60)}</g><path d="M72 27 Q95 30 96 61" fill="none" stroke="${c.slide}" stroke-width="5" stroke-linecap="round"/>`,
+  sketch: c => `${sky(c)}<g fill="none" stroke="${INK}" stroke-width="1.1" stroke-dasharray="3 2.5"><circle cx="87" cy="12" r="8"/><path d="M0 60 H100"/><path d="M44 62 V34 M52 62 V41"/><path d="M30 38 A19 19 0 1 1 66 38"/><rect x="30" y="38" width="36" height="3.5"/><rect x="36" y="22" width="22" height="16"/><polygon points="33,22 47,11 61,22"/><circle cx="47" cy="29.5" r="3.6"/><path d="M47 11 V3 L55 5.5 L47 8"/><path d="M32 41.5 V61 M37 41.5 V61 M32 46 H37 M32 51 H37 M32 56 H37"/></g>`,
+};
+const pic = (key, grey, x, y, w) => `<svg x="${x}" y="${y}" width="${w}" height="${w * .7}" viewBox="0 0 100 70">${pics[key](grey ? GREY : COL)}</svg><rect x="${x}" y="${y}" width="${w}" height="${w * .7}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
+
+/* The brand mark, for the agent's avatar after the turn and for the end card. */
+let uid = 0;
+const R = `<g transform="translate(9 8.5) scale(.64)"><line x1="43.5" y1="34" x2="43.5" y2="23" stroke="${CREAM}" stroke-width="5"/><circle cx="43.5" cy="19" r="5.5" fill="${CREAM}"/><rect x="36" y="32" width="15" height="66" fill="${CREAM}"/><path d="M43.5 39.5 H68 a18.5 18.5 0 0 1 0 37 H43.5" fill="none" stroke="${CREAM}" stroke-width="15"/><polygon points="56,76 77,76 99,98 78,98" fill="${CREAM}"/><circle cx="65" cy="58" r="6.5" fill="${INK}"/></g>`;
+const bar = (x, y, w) => `<rect x="${x}" y="${y}" width="${w}" height="8" rx="4"/>`;
+const st = (c, w) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+const foot = bar(32, 82, 76) + bar(32, 97, 50);
+const VOL = {
+  orange: { cover: O, spine: SP, tint: TI, m: t => `<g fill="${t}">${bar(79, 29, 29)}${bar(79, 46, 29)}${bar(79, 63, 29)}${foot}</g>` },
+  blue: { cover: B, spine: "#1E4F9D", tint: "#BEC9DC", m: t => `<path d="M82 36 L95 50 L82 64" ${st(t, 8)}/><g fill="${t}">${bar(96, 60, 12)}${bar(32, 82, 58)}${bar(44, 97, 64)}</g>` },
+  violet: { cover: P, spine: "#6237A1", tint: "#D7C0DD", m: t => `<circle cx="93.5" cy="50" r="13" fill="${t}"/><path d="M35 102 L52 85 L66 97 L84 80 L106 102" ${st(t, 8)}/>` },
+  green: { cover: G, spine: "#0B6E5B", tint: "#B7D4C3", m: t => `<circle cx="90" cy="46" r="10" ${st(t, 6.5)}/><path d="M98 54.5 L106 64" ${st(t, 7.5)}/><g fill="${t}">${foot}</g>` },
+};
+const mark = (k, x, y, s) => { const v = VOL[k], id = "m" + (uid++); return `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox="0 0 128 128"><clipPath id="${id}"><rect width="128" height="128" rx="23"/></clipPath><g clip-path="url(#${id})"><rect width="128" height="128" fill="${v.cover}"/><rect width="20" height="128" fill="${v.spine}"/>${R}${v.m(v.tint)}</g></svg>`; };
+
+/* Fixed layout of a story beat: caption on top, the idea at left, the result at right, the conversation below. */
+const CX = 650, CY = 130, CW = 500, CH = 350;
+const caption = (s, t) => pop(prog(t, .1), 640, 70, txt(s, 640, 82, 40, INK, 700, "middle"));
+const idea = key => `<rect x="70" y="140" width="400" height="300" rx="70" fill="#FFFFFF" stroke="${EDGE}" stroke-width="2"/><circle cx="118" cy="462" r="14" fill="#FFFFFF" stroke="${EDGE}" stroke-width="2"/><circle cx="92" cy="492" r="8" fill="#FFFFFF" stroke="${EDGE}" stroke-width="2"/>${pic(key, false, 120, 185, 300)}${txt("In your head", 270, 128, 20, MUTED, 500, "middle")}`;
+const canvasLabel = s => txt(s, CX + CW / 2, 118, 20, MUTED, 500, "middle");
+function bubble(who, s, row, p, brand, typed = 1) {
+  if (p <= 0) return "";
+  const size = 26, pad = 22, h = 50, y = 512 + row * 62, w = Math.round(s.length * size * .55) + pad * 2, x = who === "you" ? 70 : CX;
+  const shown = s.slice(0, Math.ceil(s.length * clamp(typed)));
+  const face = who === "you" ? "" : brand ? mark("orange", x - 56, y + 3, 44) : `<rect x="${x - 56}" y="${y + 3}" width="44" height="44" rx="8" fill="#AFA99F"/>`;
+  const body = `${face}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="25" fill="${who === "you" ? INK : "#FFFFFF"}" ${who === "agent" ? `stroke="${EDGE}" stroke-width="2"` : ""}/>${txt(shown, x + pad, y + 34, size, who === "you" ? CREAM : INK, 500)}`;
+  return pop(p, x + w / 2, y + h / 2, body);
+}
+const sticky = (s, x, y, rot, p) => pop(p, x + 150, y + 30, `<g transform="rotate(${rot} ${x + 150} ${y + 30})"><rect x="${x}" y="${y}" width="${Math.round(s.length * 13.2) + 36}" height="60" fill="${TI}"/>${txt(s, x + 18, y + 39, 24, INK, 700)}</g>`);
+
+/* Beats. Times inside a beat are seconds from its start. */
+const BEATS = [
+  { name: "You have an idea.", dur: 4, grey: true, idea: "idea", canvas: [], label: "",
+    chat: [{ who: "you", text: "Build me a treehouse.", at: 1.2, row: 0, type: 1.6 }] },
+  { name: "Exactly what you said. Not what you meant.", dur: 5, grey: true, idea: "idea", canvas: [{ at: .9, key: "literal" }],
+    chat: [{ who: "you", text: "Build me a treehouse.", at: -1, row: 0 }, { who: "agent", text: "Done! One treehouse.", at: .8, row: 1 }, { who: "you", text: "How do I get up?", at: 2.8, row: 2, type: .9 }] },
+  { name: "You ask for one change. Everything else changes too.", dur: 5.5, grey: true, idea: "idea", prev: "literal", canvas: [{ at: 1.7, key: "drift" }],
+    chat: [{ who: "you", text: "Add a ladder.", at: .1, row: 0, type: .8 }, { who: "agent", text: "Added! Plus a few improvements.", at: 1.5, row: 1 }, { who: "you", text: "Why is it a pine tree?", at: 3.6, row: 2, type: .8 }] },
+  { name: "You add what you forgot. It gets bolted on.", dur: 5, grey: true, idea: "idea", prev: "drift", canvas: [{ at: 1.9, key: "bolted" }],
+    chat: [{ who: "you", text: "And a slide.", at: .1, row: 0, type: .7 }, { who: "agent", text: "Added!", at: 1.7, row: 1 }, { who: "you", text: "That was the ladder.", at: 3.3, row: 2, type: .8 }] },
+  { name: "So you write rules. Now it asks about everything.", dur: 6.5, grey: true, idea: "idea", prev: "bolted", canvas: [],
+    chat: [{ who: "agent", text: "May I pick up the hammer?", at: 2.6, row: 0 }, { who: "agent", text: "May I use the hammer?", at: 3.7, row: 1 }, { who: "agent", text: "May I put the hammer down?", at: 4.8, row: 2 }],
+    extra: t => sticky("KEEP THE TREE.", 96, 196, -5, prog(t, .3)) + sticky("The house stays put.", 150, 286, 4, prog(t, .9)) + sticky("Ask before you change anything.", 60, 372, -2, prog(t, 1.5)) },
+  { name: "The next morning, a new session has to guess.", dur: 5, grey: true, idea: "idea", prev: "bolted", canvas: [],
+    chat: [{ who: "agent", text: "Hi! Nice slide tower.", at: .9, row: 0 }, { who: "agent", text: "Shall I remove the tree?", at: 2.7, row: 1 }] },
+  { name: "What you wanted was a collaborator.", dur: 4, special: "turn", chatText: "The screen clears to the orange cover." },
+  { name: "It asks before it builds.", dur: 6, idea: "idea", prev: "blank", canvas: [{ at: 3.7, key: "sketch" }], label: "A sketch, before anything is built",
+    chat: [{ who: "agent", text: "Before I build: who is it for?", at: .4, row: 0 }, { who: "you", text: "My kids. They love to climb.", at: 2, row: 1, type: .9 }, { who: "agent", text: "Here is a sketch. Is this it?", at: 3.5, row: 2 }],
+    extra: t => pop(prog(t, 5), CX + CW - 90, CY + CH - 40, `<rect x="${CX + CW - 170}" y="${CY + CH - 62}" width="150" height="44" rx="22" fill="${O}"/>${txt("Approved", CX + CW - 95, CY + CH - 32, 24, CREAM, 700, "middle")}`) },
+  { name: "It asks you what only you can decide.", dur: 4.5, idea: "idea", special: "flag", label: "Your decision",
+    chat: [{ who: "agent", text: "The flag: orange or violet?", at: .3, row: 0 }, { who: "you", text: "Orange.", at: 2.2, row: 1, type: .4 }] },
+  { name: "It writes down why.", dur: 4.5, idea: "idea", special: "log", label: "The record",
+    chat: [{ who: "agent", text: "Noted, so the next session knows too.", at: .3, row: 0 }] },
+  { name: "A change is a change. Not a restart.", dur: 5.5, idea: "idea", ideaSwitch: { at: .8, key: "ideaSlide" }, prev: "idea", canvas: [{ at: 2.8, key: "ideaSlide" }],
+    chat: [{ who: "you", text: "Add a slide.", at: 1, row: 0, type: .7 }, { who: "agent", text: "Added. Nothing else moved.", at: 2.6, row: 1 }] },
+  { name: "Bigger projects. Longer projects. Built the way you meant.", dur: 5, special: "town", chatText: "The view pulls back: one treehouse has become a village in the trees." },
+  { name: "Rules for Robots", dur: 5.5, special: "end", chatText: "A practical guide for people and agents who work together. Then: (Yes, you may put the hammer down.)" },
+];
+let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
+const TOTAL = acc;
+
+const specials = {
+  turn: t => `<rect width="1280" height="720" fill="${O}"/><rect width="56" height="720" fill="${SP}"/>${pop(prog(t, .3), 640, 300, txt("What you wanted", 150, 320, 92, CREAM))}${pop(prog(t, 1.2), 640, 420, txt("was a collaborator.", 150, 430, 92, TI))}`,
+  flag: t => {
+    const f = (x, fill, picked) => `<line x1="${x}" y1="${CY + 62}" x2="${x}" y2="${CY + 292}" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><polygon points="${x},${CY + 66} ${x + 124},${CY + 110} ${x},${CY + 154}" fill="${fill}"/>` + (picked ? `<rect x="${x - 34}" y="${CY + 40}" width="190" height="272" rx="8" fill="none" stroke="${O}" stroke-width="6" opacity="${ease(prog(t, 2.5)).toFixed(3)}"/>` : "");
+    return `<rect x="${CX}" y="${CY}" width="${CW}" height="${CH}" fill="#FFFFFF" stroke="${EDGE}" stroke-width="2"/>${pop(prog(t, .5), CX + 150, CY + 170, f(CX + 96, O, true))}${pop(prog(t, .8), CX + 350, CY + 170, f(CX + 306, P, false))}`;
+  },
+  log: t => {
+    const row = (i, a, b) => pop(prog(t, .5 + i * .8), CX + 250, CY + 120 + i * 78, `<circle cx="${CX + 48}" cy="${CY + 110 + i * 78}" r="8" fill="${O}"/>${txt(a, CX + 72, CY + 118 + i * 78, 26, INK)}${txt(b, CX + 72, CY + 146 + i * 78, 20, MUTED, 500)}`);
+    return `<rect x="${CX}" y="${CY}" width="${CW}" height="${CH}" rx="10" fill="#FFFFFF" stroke="${EDGE}" stroke-width="2"/>${txt("Decisions", CX + 36, CY + 58, 32, INK)}${row(0, "Flag: orange", "Your choice.")}${row(1, "Ladder on the left", "So the kids can climb up.")}${row(2, "Round tree, as sketched", "From the approved sketch.")}`;
+  },
+  town: t => {
+    const kinds = [[B, P, O], [O, SP, B], [P, "#6237A1", O], [B, O, P]], S = .62, TY = 22.8, dx = [-4, 44, 92, 140];
+    const one = (i) => `<g opacity="${ease(prog(t, .4 + i * .45)).toFixed(3)}" transform="translate(${dx[i]} ${TY}) scale(${S})">${treehouse({ ...COL, house: kinds[i][0], roof: kinds[i][1], flag: kinds[i][2] }, i === 3)}</g>`;
+    const bridge = (i) => { const x1 = 66 * S + dx[i], x2 = 30 * S + dx[i + 1], y = 39.5 * S + TY; return `<path d="M${x1} ${y} Q${(x1 + x2) / 2} ${y + 6} ${x2} ${y}" fill="none" stroke="${INK}" stroke-width="1" stroke-dasharray="1.6 1.2" opacity="${ease(prog(t, 1 + i * .45)).toFixed(3)}"/>`; };
+    const body = `<rect width="200" height="70" fill="#FFFFFF"/><circle cx="186" cy="11" r="8" fill="${O}"/><rect y="60" width="200" height="10" fill="${COL.ground}"/>${[0, 1, 2, 3].map(one).join("")}${[0, 1, 2].map(bridge).join("")}`;
+    return `<rect width="1280" height="720" fill="${CREAM}"/>${pop(prog(t, .1), 640, 70, txt("Bigger projects. Longer projects.", 640, 76, 40, INK, 700, "middle"))}${pop(prog(t, 2), 640, 124, txt("Built the way you meant.", 640, 128, 40, SP, 700, "middle"))}<svg x="120" y="176" width="1040" height="364" viewBox="0 0 200 70">${body}</svg><rect x="120" y="176" width="1040" height="364" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
+  },
+  end: t => `<rect width="1280" height="720" fill="${CREAM}"/>${pop(prog(t, .2), 640, 280, `${mark("orange", 250, 176, 170)}${txt("Rules for Robots", 456, 266, 84, INK)}${txt("A practical guide for people and agents who work together", 458, 320, 27, SP, 500)}`)}${pop(prog(t, 1.2), 640, 420, `${mark("blue", 458, 364, 64)}${mark("violet", 536, 364, 64)}${mark("green", 614, 364, 64)}${txt("github.com/RulesForRobots", 700, 404, 24, MUTED, 500)}`)}${pop(prog(t, 2.8), 640, 560, txt("(Yes, you may put the hammer down.)", 640, 568, 26, MUTED, 500, "middle"))}`,
+};
+
+function drawBeat(b, t) {
+  if (b.special && !b.idea) return specials[b.special](t);
+  const grey = !!b.grey, brand = !grey;
+  let out = `<rect width="1280" height="720" fill="${grey ? "#ECE8E1" : CREAM}"/>${caption(b.name, t)}`;
+  out += idea(b.ideaSwitch && t >= b.ideaSwitch.at ? b.ideaSwitch.key : b.idea);
+  out += canvasLabel(b.label !== undefined ? b.label : "What came back");
+  if (b.special) out += specials[b.special](t);
+  else {
+    const cur = b.canvas.filter(c => t >= c.at).pop();
+    if (b.prev) out += pic(b.prev, grey, CX, CY, CW);
+    else if (!cur) out += `<rect x="${CX}" y="${CY}" width="${CW}" height="${CH}" fill="none" stroke="${EDGE}" stroke-width="2" stroke-dasharray="10 8"/>`;
+    if (cur) out += pop(prog(t, cur.at), CX + CW / 2, CY + CH / 2, pic(cur.key, grey, CX, CY, CW));
+  }
+  if (b.extra) out += b.extra(t);
+  for (const c of b.chat || []) out += bubble(c.who, c.text, c.row, c.at < 0 ? 1 : prog(t, c.at, .35), brand, c.type ? prog(t, c.at + .2, c.type) : 1);
+  return out;
+}
+const film = document.getElementById("film");
+function render(t) {
+  t = clamp(t, 0, TOTAL - .001); uid = 0;
+  const b = BEATS.filter(x => t >= x.start).pop();
+  film.innerHTML = drawBeat(b, t - b.start);
+  return b;
+}
+
+/* Transport. */
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"), clock = document.getElementById("clock"), list = document.getElementById("beats");
+list.innerHTML = BEATS.map((b, i) => `<li data-i="${i}"><button type="button" id="beat-${i}"><span class="when">${fmt(b.start)} to ${fmt(b.start + b.dur)}</span><span class="cap">${esc(b.name)}</span><span class="chat">${esc(b.chatText || [...(b.chat || []).filter(c => c.at >= 0).map(c => (c.who === "you" ? "You: " : "Agent: ") + c.text)].join("  ·  "))}</span></button></li>`).join("");
+let now = 0, playing = false, last = 0;
+function show(t) {
+  now = clamp(t, 0, TOTAL);
+  const b = render(now), i = BEATS.indexOf(b);
+  scrub.value = Math.round(now / TOTAL * 1000);
+  clock.textContent = `${fmt(now)} / ${fmt(TOTAL)}`;
+  for (const li of list.children) li.classList.toggle("on", +li.dataset.i === i);
+}
+function tick(ts) {
+  if (!playing) return;
+  show(now + (ts - last) / 1000); last = ts;
+  if (now >= TOTAL) { playing = false; playBtn.textContent = "Replay"; return; }
+  requestAnimationFrame(tick);
+}
+function setPlaying(on) {
+  playing = on; playBtn.textContent = on ? "Pause" : "Play";
+  if (on) { if (now >= TOTAL) now = 0; last = performance.now(); requestAnimationFrame(tick); }
+}
+playBtn.addEventListener("click", () => setPlaying(!playing));
+scrub.addEventListener("input", () => { setPlaying(false); show(scrub.value / 1000 * TOTAL); });
+list.addEventListener("click", e => { const li = e.target.closest("li"); if (li) { setPlaying(false); show(BEATS[+li.dataset.i].start + Math.min(3.2, BEATS[+li.dataset.i].dur - .1)); } });
+window.__seek = show; window.__total = TOTAL;
+show(BEATS[3].start + 4.6);
+</script>
