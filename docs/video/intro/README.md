@@ -68,7 +68,37 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
 2. **The look.** Done. The maintainer chose it (decision 6) and approved the eight style frames in `style/` on 2026-11-14.
-3. **Production.** A first cut exists: `node film.cjs` renders `out/intro.mp4`, 47 seconds at 1920 by 1080 and 24 frames a second, silent, in under two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. The maintainer has not yet reviewed it. Still to do: the maintainer's notes on the cut; trimming toward 45 seconds if wanted; sound; the shorter and vertical cuts. `out/` is not committed.
+3. **Production.** A third cut exists: `node film.cjs` renders `out/intro.mp4`, 52 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the decisions under "Review of the second cut"; sound; the shorter and vertical cuts.
+
+## Review of the second cut
+
+On 2026-11-14 the maintainer asked for an independent creative review. A fresh agent was given the film, the brief, and the story, and no opinion of the work. Its verdict: the second half sells, the first half is muddled, and the film plays as a captioned slideshow.
+
+Fixed in the third cut:
+
+- The rules beat was unreadable (about 35 words in 4.6 seconds). It now runs 6.4 seconds with two notes, and its three questions are at full contrast.
+- The record beat was too dense. It now runs 4 seconds with two decisions and larger reasons.
+- Headings ran into the pictures. The trouble headings are smaller.
+- The blue outline hid the joke of the box with no way up, because its ladder was drawn over the tree. The outline is bright while it is alone and steps back once a picture is over it.
+- Pictures arrived as dissolves that looked like double exposures. They now wipe in, and the village builds up from the ground as the treehouse does.
+- The finished treehouse appeared and was gone. It now holds a second longer.
+- Dashes stayed on the finished artwork. The sketch now fades once the thing is built, and the slide's sketch appears and goes the same way.
+- One still picture held for eleven seconds. Night now falls at the end of the rules beat and lifts on the next morning.
+- The end card was lopsided and its address small. It is centred, the address is larger, and the last line has more time.
+- The first frame was blank. It now carries the first heading.
+- The village: every treehouse has a ladder to the ground, the flagpoles reach the roofs, and the slide is redrawn in two tones down to the bushes.
+
+Not done, because each is the maintainer's to decide:
+
+1. **The film mocks "So you write rules", and the product is called Rules for Robots.** Nothing says how these rules differ. The review suggests a bridging line at the turn or on the end card.
+2. **It never says what the thing is.** The mark speaks as the agent, so a viewer may take it for a new agent. The review suggests one line on the end card saying what is installed and for what.
+3. **The slide-through-the-ladder picture does not show the joke.** In ash the slide reads as a path or a trunk. The review suggests an unmistakable slide in the accent colour.
+4. **The pine tree changes between "Add a ladder" and "And a slide".** The heading says "bolted on", and the picture says everything changed again. The review suggests building the second picture from the first.
+5. **The village is off-model:** the treehouse from the film is not in it, the flags are triangles and two are pale after the film chose orange, and the ropes hang from the trunks.
+6. **Nothing moves inside a scene** (no flag flutter, no drift), and the film is now 7 seconds over the 45 that was the aim.
+7. Smaller: the cratered-looking sun and outsized daisies in the pine picture; bubble text that is marginal when embedded small; the long "Noted" bubble over the foliage; whether "It asks you what only you can decide" should come before "It asks before it builds".
+
+What the review said to keep: the switch from ash to colour at the turn, the cover wipe, the fixed outline as what you had in mind, the two faces and bubble colours, the lines "Added! Plus a few improvements." and "Shall I remove the tree?", and the change beat.
 
 ## Illustration test takes
 

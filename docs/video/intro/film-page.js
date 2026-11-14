@@ -27,7 +27,7 @@ function bubble(who, s, y, p, brand, typed = 1, opacity = 1) {
 }
 // rows: [who, words, at]. A row with at < 0 is already there. Your words are typed as they arrive.
 const talk = (rows, t, brand, y0 = 300) => rows.map(([who, s, at], i) => bubble(who, s, y0 + i * 92, at < 0 ? 1 : prog(t, at, .35), brand, who === 'you' && at >= 0 ? prog(t, at + .1, Math.min(.9, s.length * .035)) : 1)).join('');
-const heading = (t, a, b, colour, size = 72, atB = .5) => rise(prog(t, .1), txt(a, 110, 150, size, INK)) + (b ? rise(prog(t, atB), txt(b, 110, 150 + size * 1.14, size, colour)) : '');
+const heading = (t, a, b, colour, size = 72, atB = .5, sizeB = size) => rise(prog(t, .1), txt(a, 110, 150, size, INK)) + (b ? rise(prog(t, atB), txt(b, 110, 150 + size * .2 + sizeB * .94, sizeB, colour)) : '');
 const sticky = (s, x, y, rot, p) => { const w = Math.round(s.length * 21.5) + 64; return pop(p, x + w / 2, y + 46, `<g transform="rotate(${rot} ${x + w / 2} ${y + 46})" filter="url(#note)"><rect x="${x}" y="${y}" width="${w}" height="92" fill="#F6D7C3"/><rect x="${x}" y="${y}" width="${w}" height="16" fill="#EDC3A9"/>${txt(s, x + 32, y + 64, 38, INK)}</g>`); };
 
 /* The page: pictures below, words above. */
@@ -58,51 +58,57 @@ const PUSHED = 1.028;
 function trouble(t, dur, o) {
   ground.setAttribute('fill', ASH);
   if (o.prev) show(o.prev, 1, PUSHED);
-  if (o.pic) { const p = prog(t, o.popAt, .5); show(o.pic, ease(p * 1.5), (.955 + .045 * back(p)) * (o.still ? PUSHED : push(Math.max(0, t - o.popAt), dur - o.popAt))); }
-  show('idea-blue', .8 * (o.ideaIn !== undefined ? ease(prog(t, o.ideaIn, .6)) : 1));
-  return heading(t, o.a, o.b, MUTED, o.size) + (o.rows ? talk(o.rows, t, false) : '');
+  let covered = o.prev ? 1 : 0;
+  if (o.pic) { const p = ease(prog(t, o.popAt, .55)); covered = Math.max(covered, p);   // what comes back wipes in from the left
+    clipRect('clipA', 0, 0, 1920 * p, 1080); show(o.pic, p > 0 ? 1 : 0, push(Math.max(0, t - o.popAt), dur - o.popAt), 'clipA'); }
+  // The idea is bright while it is alone, and steps back once something has been built over it.
+  show('idea-blue', (o.ideaIn !== undefined ? ease(prog(t, o.ideaIn, .6)) : 1) * (.85 - .4 * covered));
+  return heading(t, o.a, o.b, MUTED, o.size || 64, .5, o.sizeB) + (o.rows ? talk(o.rows, t, false) : '');
 }
 
 const BEATS = [
-  { name: 'idea', dur: 2.6, draw: (t, d) => trouble(t, d, { a: 'You have an idea.', ideaIn: .9, rows: [['you', 'Build me a treehouse.', .5]] }) },
+  { name: 'idea', dur: 2.4, draw: (t, d) => trouble(t + .6, d, { a: 'You have an idea.', ideaIn: 1.3, rows: [['you', 'Build me a treehouse.', .8]] }) },
   { name: 'literal', dur: 4, draw: (t, d) => trouble(t, d, { pic: 'literal', popAt: .5, a: 'Exactly what you said.', b: 'Not what you meant.', rows: [['you', 'Build me a treehouse.', -1], ['agent', 'Done! One treehouse.', .9], ['you', 'How do I get up?', 2.2]] }) },
-  { name: 'drift', dur: 4.1, draw: (t, d) => trouble(t, d, { prev: 'literal', pic: 'pine', popAt: 1.2, a: 'You ask for one change.', b: 'Everything else changes too.', size: 56, rows: [['you', 'Add a ladder.', .2], ['agent', 'Added! Plus a few improvements.', 1.4], ['you', 'Why is it a pine tree?', 2.7]] }) },
+  { name: 'drift', dur: 4.4, draw: (t, d) => trouble(t, d, { prev: 'literal', pic: 'pine', popAt: 1.2, a: 'You ask for one change.', b: 'Everything else changes too.', size: 56, rows: [['you', 'Add a ladder.', .2], ['agent', 'Added! Plus a few improvements.', 1.4], ['you', 'Why is it a pine tree?', 2.7]] }) },
   { name: 'bolted', dur: 3.6, draw: (t, d) => trouble(t, d, { prev: 'pine', pic: 'bolted', popAt: 1.1, a: 'You add what you forgot.', b: 'It gets bolted on.', rows: [['you', 'And a slide.', .2], ['agent', 'Added!', 1.3], ['you', 'That was the ladder.', 2.2]] }) },
-  { name: 'rules', dur: 4.6, draw: (t, d) => trouble(t, d, { prev: 'bolted', a: 'So you write rules.', b: 'Now it asks about everything.', }) + sticky('KEEP THE TREE.', 150, 320, -5, prog(t, .4, .3)) + sticky('The house stays put.', 380, 440, 3, prog(t, .8, .3)) + sticky('Ask before you change anything.', 130, 560, -2, prog(t, 1.2, .3))
-      + bubble('agent', 'May I pick up the hammer?', 782, prog(t, 2, .3), false, 1, .45) + bubble('agent', 'May I use the hammer?', 868, prog(t, 2.6, .3), false, 1, .7) + bubble('agent', 'May I put the hammer down?', 954, prog(t, 3.2, .3)) },
-  { name: 'morning', dur: 3.1, draw: (t, d) => trouble(t, d, { prev: 'bolted', a: 'The next morning,', b: 'a new session has to guess.', rows: [['agent', 'Hi! Nice slide tower.', .7], ['agent', 'Shall I remove the tree?', 1.7]] }) },
+  { name: 'rules', dur: 6.4, draw: (t, d) => trouble(t, d, { prev: 'bolted', a: 'So you write rules.', b: 'Now it asks about everything.', sizeB: 48 }) + sticky('KEEP THE TREE.', 150, 330, -4, prog(t, .5, .3)) + sticky('Ask before you change anything.', 130, 470, 2, prog(t, 1.1, .3))
+      + bubble('agent', 'May I pick up the hammer?', 690, prog(t, 2.2, .3)) + bubble('agent', 'May I use the hammer?', 782, prog(t, 3.1, .3)) + bubble('agent', 'May I put the hammer down?', 874, prog(t, 4, .3))
+      + `<rect width="1920" height="1080" fill="${INK}" opacity="${(.5 * ease(prog(t, d - .5, .5))).toFixed(3)}"/>` },
+  // Night, then morning: the same mess, and an agent that remembers none of it.
+  { name: 'morning', dur: 3.5, draw: (t, d) => trouble(t, d, { prev: 'bolted', a: 'The next morning,', b: 'a new session has to guess.', rows: [['agent', 'Hi! Nice slide tower.', .9], ['agent', 'Shall I remove the tree?', 1.8]] })
+      + `<rect width="1920" height="1080" fill="${INK}" opacity="${(.5 * (1 - ease(prog(t, 0, .9)))).toFixed(3)}"/>` },
   { name: 'turn', dur: 2.6, draw: (t) => { ground.setAttribute('fill', ASH); show('bolted', 1, PUSHED); show('idea-blue', .8);
       const w = 1920 * ease(prog(t, 0, .45));
       return `<rect width="${w.toFixed(1)}" height="1080" fill="${O}"/><rect width="${Math.min(96, w).toFixed(1)}" height="1080" fill="${SP}"/>`
         + pop(prog(t, .25, .5), 1560, 520, `<circle cx="1560" cy="520" r="430" fill="#EB6A43" opacity=".55"/><g transform="translate(1166 196) scale(6.1)" filter="url(#soft)">${R}</g>`)
         + rise(prog(t, .35), txt('What you wanted', 190, 470, 118, CREAM), 40) + rise(prog(t, .95), txt('was a collaborator.', 190, 610, 118, TI), 40); } },
-  { name: 'asks', dur: 5.2, draw: (t, d) => { ground.setAttribute('fill', CREAM);
+  { name: 'asks', dur: 6.2, draw: (t, d) => { ground.setAttribute('fill', CREAM);
       const built = prog(t, 3.9, .9), s = push(t, d);
       clipRect('clipA', 0, 1080 * (1 - ease(built)), 1920, 1080); show('before', built > 0 ? 1 : 0, s, 'clipA');
-      show('idea-ink', .55 * ease(prog(t, 2.5, .5)) * (1 - ease(built)), s); show('idea-cream', .5 * ease(built), s);
+      show('idea-ink', .55 * ease(prog(t, 2.5, .5)) * (1 - ease(built)), s); show('idea-cream', .5 * ease(built) * (1 - ease(prog(t, 5, .8))), s);
       return `<rect width="1920" height="1080" fill="${O}" opacity="${(1 - ease(prog(t, 0, .4))).toFixed(3)}"/>` + heading(t, 'It asks before it builds.')
         + talk([['agent', 'Before I build: who is it for?', .4], ['you', 'My kids. They love to climb.', 1.3], ['agent', 'Here is a sketch. Is this it?', 2.4]], t, true)
         + pop(prog(t, 3.3, .35), 300, 620, `<g filter="url(#soft)"><rect x="206" y="582" width="230" height="76" rx="38" fill="${O}"/>${txt('Approved', 321, 632, 36, CREAM, 700, 'middle')}</g>`); } },
-  { name: 'decision', dur: 2.9, draw: (t, d) => { ground.setAttribute('fill', CREAM); show('before', 1, PUSHED); show('idea-cream', .5, PUSHED);
+  { name: 'decision', dur: 2.9, draw: (t, d) => { ground.setAttribute('fill', CREAM); show('before', 1, PUSHED);
       const flag = (x, fill, at) => pop(prog(t, at, .35), x + 50, 560, `<line x1="${x}" y1="500" x2="${x}" y2="640" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${x + 4} 504 C${x + 34} 492 ${x + 60} 520 ${x + 112} 502 L${x + 86} 530 L${x + 116} 556 C${x + 66} 552 ${x + 40} 574 ${x + 4} 558 Z" fill="${fill}"/>`);
       return heading(t, 'It asks you what only', 'you can decide.', INK, 64, .1) + talk([['agent', 'The flag: orange or violet?', .3], ['you', 'Orange.', 1.5]], t, true, 330)
         + flag(480, O, .7) + flag(660, P, .85) + `<rect x="452" y="474" width="172" height="186" rx="18" fill="none" stroke="${O}" stroke-width="7" opacity="${ease(prog(t, 1.8, .3)).toFixed(3)}"/>`; } },
-  { name: 'record', dur: 2.9, draw: (t, d) => { ground.setAttribute('fill', CREAM); show('before', 1, PUSHED); show('idea-cream', .5, PUSHED);
-      const row = (i, a, b) => rise(prog(t, .9 + i * .4, .35), `<circle cx="162" cy="${530 + i * 92}" r="9" fill="${O}"/>${txt(a, 190, 540 + i * 92, 34, INK)}${txt(b, 190, 578 + i * 92, 26, MUTED, 500)}`, 16);
+  { name: 'record', dur: 4, draw: (t, d) => { ground.setAttribute('fill', CREAM); show('before', 1, PUSHED);
+      const row = (i, a, b) => rise(prog(t, 1 + i * .6, .35), `<circle cx="164" cy="${546 + i * 118}" r="10" fill="${O}"/>${txt(a, 194, 558 + i * 118, 38, INK)}${txt(b, 194, 602 + i * 118, 32, MUTED, 500)}`, 16);
       return heading(t, 'It writes down why.') + talk([['agent', 'Noted, so the next session knows too.', .3]], t, true)
-        + pop(prog(t, .6, .4), 430, 590, `<g filter="url(#soft)"><rect x="114" y="410" width="640" height="368" rx="20" fill="#FFFFFF"/></g>${txt('Decisions', 150, 470, 38, INK)}`)
-        + row(0, 'Flag: orange', 'Your choice.') + row(1, 'Ladder on the left', 'So the kids can climb up.') + row(2, 'Round tree, as sketched', 'From the approved sketch.'); } },
-  { name: 'change', dur: 3.9, draw: (t, d) => { ground.setAttribute('fill', CREAM);
-      const p = ease(prog(t, 1.2, .9)); show('before', 1, PUSHED); show('idea-cream', .5 * (1 - ease(prog(t, .9, .3))), PUSHED); show('idea-cream-slide', .5 * ease(prog(t, .9, .3)), PUSHED);
+        + pop(prog(t, .6, .4), 430, 570, `<g filter="url(#soft)"><rect x="114" y="410" width="640" height="340" rx="20" fill="#FFFFFF"/></g>${txt('Decisions', 150, 474, 38, INK)}`)
+        + row(0, 'Flag: orange', 'Your choice.') + row(1, 'Ladder on the left', 'So the kids can climb up.'); } },
+  { name: 'change', dur: 4.2, draw: (t, d) => { ground.setAttribute('fill', CREAM);
+      const p = ease(prog(t, 1.2, .9)); show('before', 1, PUSHED); show('idea-cream-slide', .6 * ease(prog(t, .8, .3)) * (1 - ease(prog(t, 2.3, .6))), PUSHED);
       clipRect('clipB', 1200, 430, 720, 660 * p); show('after', p > 0 ? 1 : 0, PUSHED, 'clipB');
       return heading(t, 'A change is a change.', 'Not a restart.', SP, 72, 2.5) + talk([['you', 'Add a slide.', .3], ['agent', 'Added. Nothing else moved.', 2]], t, true); } },
-  { name: 'village', dur: 3.3, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = prog(t, 0, .6);
-      show('after', 1 - ease(p), PUSHED); show('village', ease(p), 1.07 - .07 * ease(prog(t, 0, d)));
+  { name: 'village', dur: 3.3, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = ease(prog(t, 0, .7));
+      show('after', 1, PUSHED); clipRect('clipA', 0, 1080 * (1 - p), 1920, 1080); show('village', p > 0 ? 1 : 0, 1.05 - .05 * ease(prog(t, 0, d)), 'clipA');
       return rise(prog(t, .5), txt('Bigger projects. Longer projects.', 960, 92, 60, INK, 700, 'middle')) + rise(prog(t, 1.3), txt('Built the way you meant.', 960, 168, 60, SP, 700, 'middle')); } },
-  { name: 'end', dur: 4.2, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = ease(prog(t, 0, .5)); show('village', 1 - p, 1);
-      placeMark('rules-for-robots', 375, 264, 255, ease(prog(t, .3, .4))); ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 687 + i * 117, 546, 96, ease(prog(t, 1.3 + i * .12, .35))));
-      return rise(prog(t, .3), txt('Rules for Robots', 684, 399, 126, INK) + txt('A practical guide for people and agents who work together', 687, 480, 40, SP, 500))
-        + rise(prog(t, 1.6), txt('github.com/RulesForRobots', 1060, 606, 36, MUTED, 500)) + rise(prog(t, 2.7), txt('(Yes, you may put the hammer down.)', 960, 852, 39, MUTED, 500, 'middle')); } },
+  { name: 'end', dur: 4.8, draw: (t, d) => { ground.setAttribute('fill', CREAM); const p = ease(prog(t, 0, .5)); show('village', 1 - p, 1);
+      placeMark('rules-for-robots', 450, 270, 220, ease(prog(t, .3, .4))); ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 712 + i * 104, 524, 88, ease(prog(t, 1.1 + i * .12, .35))));
+      return rise(prog(t, .3), txt('Rules for Robots', 708, 388, 110, INK) + txt('A practical guide for people and agents who work together', 712, 458, 34, SP, 500))
+        + rise(prog(t, 1.4), txt('github.com/RulesForRobots', 1050, 584, 44, INK, 700)) + rise(prog(t, 2.2), txt('(Yes, you may put the hammer down.)', 960, 800, 42, MUTED, 500, 'middle')); } },
 ];
 let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
