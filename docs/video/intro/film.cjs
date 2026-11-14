@@ -17,7 +17,7 @@ const tree = (inner, id) => art.frame(`${art.defs(id)}${art.picture(kit.treehous
 const LAYERS = {
   literal: art.frame(art.defs('a') + art.literal('a')), pine: art.frame(art.defs('b') + art.pineBefore('b')), bolted: art.frame(art.defs('c') + art.pineAfter('c')),
   before: tree(kit.treehouse.bare(kit.treehouse.noSlide), 'f'), after: tree(kit.treehouse.bare(kit.treehouse.withSlide), 'g'),
-  flag: art.frame(art.place(kit.treehouse.flag)), village: art.frame(art.defs('h') + art.village('h')),
+  flag: art.frame(art.place(kit.treehouse.flag)), village: art.frame(art.village('h', true)),
   'idea-blue': art.frame(art.blueprint('#2563C4', false, 1)), 'idea-ink': art.frame(art.blueprint('#2A1A14', false, 1)),
   'idea-cream': art.frame(art.blueprint('#FFF4E6', false, 1)), 'idea-cream-slide': art.frame(art.blueprint('#FFF4E6', true, 1)),
 };

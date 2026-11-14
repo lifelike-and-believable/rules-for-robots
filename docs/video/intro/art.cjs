@@ -48,8 +48,11 @@ const heading = (a, b, colour, size = 72) => `${txt(a, 110, 150, size, INK)}${b 
 const trouble = (id, pic, a, b, rows, size) => frame(`${defs(id)}${pic}${blueprint(B, false, .5)}${heading(a, b, MUTED, size)}${talk(rows, 300, id)}${grain(id)}`);
 const literal = (id) => { const t = kit.scene('scene-literal-b'); return picture(t.defs, t.body, 1, id, true); };
 const pineBefore = (id) => { const t = kit.pine(); return picture(t.defs, t.noSlide, 1, id, true); };
-// The village, set a little lower in the frame to leave sky for the words.
-const village = (id) => { const t = kit.scene('scene-village-c'); return picture(t.defs, t.body, 1, id, false, 70); };
+// The village: five treehouses of one family, composed by a reference edit from the film's treehouse and four designs
+// (takes/ref-village-c.png, 2688 by 1520). A style frame links to the file; the film embeds it.
+const village = (id, embed) => { const file = 'takes/ref-village-c.png';
+  const href = embed ? 'data:image/png;base64,' + fs.readFileSync(require('path').join(__dirname, file)).toString('base64') : '../' + file;
+  return `<rect width="1920" height="1080" fill="${CREAM}"/><image href="${href}" x="0" y="-5.7" width="1920" height="1085.7"/>`; };
 const pineAfter = (id) => { const t = kit.pine(); return accented(t.defs, t.withSlide, id, t.slide); };
 
 const frames = {

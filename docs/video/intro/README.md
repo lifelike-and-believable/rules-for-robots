@@ -68,7 +68,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
 2. **The look.** Done. The maintainer chose it (decision 6) and approved the eight style frames in `style/` on 2026-11-14.
-3. **Production.** A fifth cut exists: `node film.cjs` renders `out/intro.mp4`, 54 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the maintainer's view of the fifth cut and of what is left under "Review of the second cut"; sound; the shorter and vertical cuts.
+3. **Production.** A sixth cut exists: `node film.cjs` renders `out/intro.mp4`, 54 seconds at 1920 by 1080 and 24 frames a second, silent, in about two minutes. It has thirteen beats, with the timing and every word in the `BEATS` array of `film-page.js`. `out/` is not committed. Still to do: the maintainer's view of the fifth cut and of what is left under "Review of the second cut"; sound; the shorter and vertical cuts.
 
 ## Review of the second cut
 
@@ -176,26 +176,57 @@ The clip, `takes/ref-slide-minimax.mp4` (job `c4a8828f-9169-4179-896f-f5c6d50b62
 
 What it shows: an edit from a reference keeps the world, where separate takes did not, and a video model can animate one change between two of our frames without redrawing the rest. The results are pictures, not vector, so parts are removed with a further edit and not with `kit.cjs`. The test cost 18.25 credits; 134 have been spent on the film, and the account held 791 afterwards.
 
-## Plan for the professional version
+## The village, designed
 
-Proposed by the session on 2026-11-14, at the maintainer's request, and not yet approved. Each stage ends with the maintainer's approval before the next, costlier one.
+The maintainer on the first reference village (2026-11-14): "much better but it looks like it's describing a copy-paste project. What we want are 4 more very different treehouse designs all in the same architectural family as the first." Four designs were made one at a time from the film's treehouse (`gpt_image_2_6`, quality high, 2.75 credits each), then composed with it into one picture from all five references (two takes).
 
-1. **Lock the master.** The film's treehouse with its slide (vector B) is the one reference every other picture is edited from.
-2. **Key frames, by reference edit.** One still for the start and end of each beat, all edited from the master so they share one hill: the empty hill, the box in the tree, the pine with the house moved and a ladder, the slide through the ladder (edited from the pine), that mess at night, the sketch, the treehouse built with a bare pole, with its flag, with its slide, and the village with the film's treehouse in it. About 12 key frames at three takes each.
-3. **Motion, by first and last frame.** One generated clip for each change: the box arriving, the tree becoming a pine, the slide going through the ladder, night to morning, the sketch becoming the treehouse, the flag going up, the slide unrolling, and the pull back to the village. About 8 clips at two or three takes each. The few shots that matter most can be retaken on the costlier model.
-4. **Words stay in code.** Headings, bubbles, the idea's outline, the turn, and the end card are drawn by `film-page.js` over the clips, because a model does not set exact words reliably. `film.cjs` needs one addition: clips as layers, read frame by frame.
-5. **Sound.** Music and effects, with the licence for web, social, and paid use checked first. Cost to be quoted.
-6. **Review.** An independent creative review of the assembled cut, as for the second cut, before the maintainer's.
-7. **Cuts.** The 16:9 master, then a vertical and a square cut and a 15-second cut, with the words laid out again in code for each shape.
+| File | What it is | Job ID |
+|---|---|---|
+| `design-lookout-a.png` | The Lookout: a tall orange tower with a crow's nest and telescope | `358a5872-5654-4a9e-b9b4-4b5016e8829c` |
+| `design-longhouse-a.png` | The Long House: a wide violet cabin across two limbs, with a porch and a swing | `121cd038-c4a9-44c6-9314-91c34b093f17` |
+| `design-roundhouse-a.png` | The Roundhouse: a round blue cabin with a cone roof and a spiral stair | `d874f0cf-47f3-43b2-98be-93f43086584e` |
+| `design-workshop-a.png` | The Workshop: an orange A-frame with a hoist and bucket | `f4d5a769-df57-4f2e-8f3b-6ccf6ba36dc1` |
+| `ref-village-b.png` | The five together, first take | `69a1a920-e3e0-4cdd-a792-9f3cdcabc40e` |
+| `ref-village-c.png` | The five together, second take; in the film from the sixth cut | `39c12b84-59e1-4bb5-916b-fc7838046916` |
+
+This step cost 16.5 credits; 150.5 have been spent on the film, and the account held 774.5 afterwards.
+
+## Doing it right
+
+The maintainer on 2026-11-14: "don't compromise in advance. find out what it'll take to do it right. go all out in the design." And of the test clip: "I like the slide animation." This replaces the session's earlier, trimmed plan. Each stage ends with the maintainer's approval before the next.
+
+1. **Script.** Settle the words before more pictures: the end card's line, the order of the collaborator beats, and whether any beat goes. Free.
+2. **Design.** Every picture the film needs, edited from the master so all share one world, explored at quality high and approved as a sheet: the empty hill, the box in the tree, the pine with the house moved and a ladder, the slide through the ladder (from the pine), night, the sketch, the treehouse with a bare pole, with its flag, with its slide, the village. The trouble half is redone this way, so it stands on the film's own hill.
+3. **Finals.** Each approved picture is made again at the best quality the model offers.
+4. **Motion.** One clip for each change, between two approved pictures, several takes each, and the best take chosen: the box arriving, the tree becoming a pine, the slide going through the ladder, night to morning, the sketch becoming the treehouse, the flag going up, the slide unrolling, the pull back from one treehouse to the village. One shot is made on both video models first, to learn whether the costlier one is better on this artwork.
+5. **Words and assembly.** Headings, bubbles, the outline, the turn, and the end card stay in code over the clips, because a model does not set exact words reliably. `film.cjs` gains clips as layers.
+6. **Sound.** Music and effects cut to picture, with the licence for web, social, and paid use checked first.
+7. **Review.** An independent creative review of the assembled cut, then the maintainer's.
+8. **Cuts.** The 16:9 master, a vertical and a square cut, and a 15-second cut, with the words laid out again for each shape.
+
+Quoted on 2026-11-14 (16:9, one reference unless said):
+
+| What | Cost |
+|---|---|
+| Still, `gpt_image_2_6`, 2k, quality high | 2.75 credits |
+| Still, 2k, quality xhigh | 4.5 credits |
+| Still, 4k, quality max | 15 credits |
+| Clip, 5 seconds, `minimax_h3`, 2K, first and last frame | 10 credits |
+| Clip, 5 seconds, `flux_3_video`, 1080p, first and last frame | 40 credits |
+| Clip, 5 seconds, `flux_3_video`, 4k | 65 credits |
 
 | Stage | Assumption | Estimate |
 |---|---|---|
-| Key frames | 12 frames, 3 takes each, 2.75 credits a take | about 100 credits |
-| Motion | 8 clips, 2 to 3 takes each, 10 credits a take on `minimax_h3` | 160 to 240 credits |
-| Hero shots on `flux_3_video` | 3 clips, 2 takes each, 40 credits a take | up to 240 credits, optional |
-| Sound | Not yet quoted | unknown; allow 50 |
-| Retakes after review | A quarter of the above | 80 to 160 credits |
-| **Total** | | **about 400 credits without the costlier model, about 700 with it** |
+| Design | 12 pictures, 3 takes each at quality high | about 100 credits |
+| Finals | 12 pictures, 2 takes each at 4k, quality max | about 360 credits (about 110 at 2k, quality xhigh) |
+| Motion | 8 clips, 4 takes each on `minimax_h3` | about 320 credits |
+| Model comparison | One shot, 2 takes on `flux_3_video` at 4k | about 130 credits |
+| Costlier model for every shot, if it wins | 8 clips, 3 takes each at 4k | about 1,560 credits in place of the 320 |
+| Sound | Not yet quoted | unknown; allow 100 |
+| Retakes after review | A quarter of design, finals, and motion | about 200 credits |
+| **Total** | | **about 1,200 credits on `minimax_h3` with 4k stills; about 2,500 if every shot is made on the costlier model** |
+
+The account holds 774.5 credits, so doing all of it needs more than is there. What 4k stills buy for a film delivered at 1080p is headroom for the pull back and for a later 4K master; the session has not yet seen whether quality max looks better than quality high on this artwork.
 
 ## Tools worth adding
 
