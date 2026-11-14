@@ -22,7 +22,10 @@
 //      by area: no start page, a page directly in docs/user/, an area folder with no overview, or an
 //      approved page or overview that the start page and its area's overview do not reach
 //      (warnings with lasting: 'warn');
-//  13. a covers: line that cannot be read, or the same covers: entry in two pages.
+//  13. a covers: line that cannot be read, or the same covers: entry in two pages;
+//  14. a mock-up PNG under docs/design/ whose recorded inputs (its HTML, stylesheets, and images) changed
+//      since it was rendered, or a .rendered.json that cannot be read (checks/lib/mockups.mjs); an
+//      unrecorded PNG that has an HTML page of its name is a warning.
 // It warns when a bold name in a user documentation page appears in no design the page reaches,
 // and prints the rules-for-robots commit it ran from.
 // Staleness is direct only. Before process.yml's adoption-until date, problems with artifacts that
@@ -35,6 +38,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { needsOf, startsFromOf, startsFromProblems } from './lib/tutorial.mjs';
 import { USER_DOCS, userDocsProblems } from './lib/user-docs.mjs';
+import { mockupProblems } from './lib/mockups.mjs';
 import { CONFIG_PATH, DELIVERY_SIDE, STAGE_ORDER, approversFor, changedSince, isTeam, loadArtifacts, login, markdownLinks, openItems, ACCEPTED_MARKERS, parseProcessConfig, parseArtifact, requiredUpstream, sectionHash, slug, tutorialStepWords, workingTree } from './lib/process.mjs';
 
 const isApproved = a => a?.status === 'approved' || a?.status === 'implemented';
@@ -373,6 +377,20 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
     try { pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')); } catch { /* no package.json, or not JSON: not checked */ }
     if (pkg && !Object.hasOwn(pkg.scripts ?? {}, script)) errors.push(`process.yml: try.local runs the package script "${script}", which package.json does not have; add a "${script}" script to package.json, or change try.local to the command that starts the product`);
   }
+
+  // Mock-up images (revisions-and-foundations AC-16): a PNG recorded in its folder's .rendered.json
+  // whose HTML, stylesheet, or image changed since it was rendered fails; an unrecorded PNG that has
+  // an HTML source is a warning. Hashes only: no browser runs here.
+  // A stale image involves the design it belongs to (docs/design/<folder>.md, or any artifact under
+  // the folder), or every design when none matches, so the stale issue goes to the design approvers.
+  const mockups = mockupProblems(root);
+  const designs = artifacts.filter(a => a.stage === 'design' && a.id).map(a => ({ id: a.id, file: a.file.replace(/\\/g, '/') }));
+  for (const { folder, message } of mockups.errors) {
+    errors.push(message);
+    const owners = designs.filter(d => d.file === `${folder}.md` || d.file.startsWith(`${folder}/`));
+    for (const d of owners.length ? owners : designs) involved.add(d.id);
+  }
+  warnings.push(...mockups.warnings);
 
   // Rule 7: withdrawals since the base.
   if (base) {
