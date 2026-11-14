@@ -127,6 +127,9 @@ const sticky = (s, x, y, rot, id) => { const w = Math.round(s.length * 21.5) + 6
 const frame = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">${body}</svg>\n`;
 const TREE = 'translate(1010 150) scale(1.24)';
 
+const kit = require('./kit.cjs');
+const scene = (inner) => `<svg x="0" y="-8" width="1920" height="1097" viewBox="0 0 2688 1536">${kit.defs}${inner}</svg>`;
+
 const frames = {
   // 1. The worst of the trouble.
   '1-trouble': () => { const c = ASH, id = 'a';
@@ -146,13 +149,15 @@ const frames = {
     ${txt('What you wanted', 190, 470, 118, CREAM)}${txt('was a collaborator.', 190, 610, 118, TI)}${bars}
     ${grain(id)}`); },
   // 3. The fit: a change that is only a change.
-  '3-fit': () => { const c = COLOUR, id = 'c';
-    return frame(`${defs(c, id)}${world(c, id)}
-    <g transform="${TREE}">${treehouse(c, true)}${blueprint(CREAM, true, .7)}</g>
-    <g stroke="${CREAM}" stroke-width="7" stroke-linecap="round"><path d="M1770 560 l34 -22 M1786 620 l42 -4 M1740 510 l18 -36"/></g>
-    ${txt('A change is a change.', 110, 190, 92, INK)}${txt('Not a restart.', 110, 286, 92, SP)}
-    ${bubble('you', 'Add a slide.', 114, 420, id)}${bubble('agent', 'Added. Nothing else moved.', 206, 520, id, { brand: true })}
-    ${grain(id)}`); },
+  '3-fit': () => { const id = 'c';
+    return frame(`${defs(COLOUR, id)}${scene(kit.withSlide)}
+    ${txt('A change is a change.', 110, 160, 78, INK)}${txt('Not a restart.', 110, 246, 78, SP)}
+    ${bubble('you', 'Add a slide.', 114, 320, id)}${bubble('agent', 'Added. Nothing else moved.', 206, 412, id, { brand: true })}`); },
+  // 3, a moment earlier: the same picture before the slide was asked for.
+  '3-before': () => { const id = 'e';
+    return frame(`${defs(COLOUR, id)}${scene(kit.noSlide)}
+    ${txt('It asks before it builds.', 110, 160, 78, INK)}
+    ${bubble('agent', 'Here is a sketch. Is this it?', 206, 320, id, { brand: true })}${bubble('you', 'Yes. Build it.', 114, 412, id)}`); },
   // 4. The promise: one treehouse has become a village.
   '4-village': () => { const c = COLOUR, id = 'd';
     const spots = [[50, 470, .7, B, BD, P, PD, O], [400, 392, .82, O, SP, B, BD, P], [810, 452, .74, P, PD, O, SP, O], [1150, 380, .84, B, BD, O, SP, P], [1440, 474, .66, O, SP, P, PD, B]];

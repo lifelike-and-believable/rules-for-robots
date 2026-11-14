@@ -40,9 +40,9 @@ Each was the maintainer's, on 2026-11-14, from options shown on a review page.
 4. A treehouse, because a house and a boat were dull and swapping one for the other was a straw man. Each trouble is one an agent really causes.
 5. The look should aim at current agency work: scenes that fill the frame, no diagram layout, the idea as a blueprint outline that what is built either misses or fits.
 
-6. The look is take vector A with more of take vector B's shapes (see "Illustration test takes"): A's flat fills in the brand palette and its dark shadow masses, with B's scalloped foliage, baluster railing, leaning ladder, gabled cabin, wavy pennant, ribbon slide, edge bushes, daisies, and printed texture strokes. The takes are the target; the scenes are drawn by code.
+6. The look is take vector B (see "Illustration test takes"). The maintainer first asked for vector A with more of B's shapes, saw the four frames redrawn that way by code, and did not like them: "I think the style of vector B is my favourite." What makes B is its hand-drawn shapes and printed texture, which geometric code does not reproduce, so the film uses B's own artwork where it can.
 
-Not yet decided: whether the redrawn style frames meet that look; length (the proxy runs 66 seconds, and about 45 is the aim); sound.
+Not yet decided: how the scenes B does not show (the trouble half, the sketch, the village) are made in its style; length (the proxy runs 66 seconds, and about 45 is the aim); sound.
 
 ## Files
 
@@ -51,8 +51,9 @@ Not yet decided: whether the redrawn style frames meet that look; length (the pr
 | `animatic.html` | The proxy: the whole film at sketch quality, playable in a browser, with the beats as a list. The timing and every word are in its `BEATS` array. |
 | `frames.cjs` | Renders the animatic. `node frames.cjs sheet` writes one frame for each beat; `node frames.cjs render 20` writes every frame at 20 a second, for ffmpeg to encode. |
 | `art.cjs` | Draws the four style frames as SVG: the trouble, the turn, the fit, the promise. `node art.cjs` writes them to `style/`. |
+| `kit.cjs` | Reads `takes/vector-b.svg` and gives `art.cjs` the picture with and without the slide. |
 | `stylepng.cjs` | Renders the style frames to PNG at 1920 by 1080. |
-| `style/` | The four style frames. |
+| `style/` | The style frames. |
 | `takes/` | The four generated takes from the illustration test, as downloaded. |
 
 The scripts end in `.cjs` because this repository's `package.json` makes `.js` files ES modules. They need Playwright with its Chromium, and ffmpeg, which this repository does not install. The animatic and the frames use Space Grotesk from Google Fonts.
@@ -64,7 +65,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
    > Flat vector editorial illustration for a motion-graphics explainer film. A charming children's treehouse in a large round leafy tree on a gentle grassy hill: wooden deck with a railing, a small blue cabin with a violet pitched roof, a round glowing window, a small door, an orange pennant flag on the roof, a wooden ladder on the left, and a bright orange slide curving down on the right. Warm cream sky, a large orange sun, layered mint-green hills behind, small flowers in the grass. Bold simple shapes with hand-made character, subtle grain texture, soft shadows, no outlines, no people, no text, no lettering. The tree sits right of centre with empty sky on the left.
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
-2. **The look.** The maintainer chose it on 2026-11-14 (decision 6), and `art.cjs` and `style/` were redrawn to it the same day. The maintainer approves the redrawn frames before anything is animated. The animatic still has its own, older drawing of the treehouse.
+2. **The look.** Chosen on 2026-11-14 (decision 6). `kit.cjs` turns `takes/vector-b.svg` into the film's picture. The take is a flat stack of tiles over one base shape, so `kit.cjs` removes a part by repainting what lies behind its footprint; so far it removes the slide. `style/3-fit.svg` is B as generated with the captions, and `style/3-before.svg` is the same picture without the slide. `style/1-trouble.svg` and `style/4-village.svg` are still the code-drawn look the maintainer turned down, and are to be replaced. Open: the blueprint outline is not on the B frames yet; the trouble scenes and the village need artwork in B's style, either generated with the same recipe (`vector`, 10 credits a take; 64 of the approved 100 credits are unspent, and a new run needs the maintainer's limit) or built from B's parts. The animatic still has its own, older drawing of the treehouse.
 3. **Production.** Animate each beat to the approved look, cut toward 45 seconds, and render at 1080p.
 
 ## Illustration test takes
