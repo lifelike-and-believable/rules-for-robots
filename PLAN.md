@@ -469,7 +469,7 @@ Pull requests: #253 (spec), #268 (26a).
 
 A change to something already built is approved as one packet of documents and carried to the built features as open deliveries; and what many features share, starting with the design system, has one approved document that designs cite. Starts after 25f passes, because two slices change the stage guard.
 
-- **26a:** a stale spec or tutorial is open work, not a failure: the `revise` step, `delivery open`, and the run. Done (#268).
+- **26a:** a stale spec or tutorial is open work, not a failure: the `revise` step, `delivery open`, and the run. Done (#268), with the review's fixes.
 - **26b:** the impact report, the Revision section of the pull request description, and the `revise` skill.
 - **26c:** foundations: the folder, their place in stage order, `implemented-by`, and the change check.
 - **26d:** the design system, declared or defined, cited by designs and read by mock-ups; then XR Studio In A Box moved onto it.
