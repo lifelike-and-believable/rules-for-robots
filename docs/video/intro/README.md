@@ -62,7 +62,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
 ## Next
 
-**The motto.** On 2026-11-14 the maintainer said the film's promise line "should emerge as the Rules for Robots motto". Once its wording is approved, the brand carries it too: `docs/brand/wordmarks.json` has "A practical guide for agent collaborators" under the name on the social preview, and the motto would replace it there and in the README.
+**The motto.** On 2026-11-14 the maintainer said the film's promise line "should emerge as the Rules for Robots motto". The social preview keeps "A practical guide for agent collaborators" under the name for now, at the maintainer's word: "It makes it a bit clearer on the landing page what it is." The motto is the film's, and the end card's.
 
 **From 2026-11-14 the film follows [the process](../process.md), one approved stage at a time.** The maintainer asked to "back up and do the professional process" in place of rendering the film again after each change. Where it stands: the brief is above; the script is drafted in [`script.md`](script.md) and waits for the maintainer; the look (vector B) and the village's five designs are approved in concept; design, the animatic, motion, sound, and the cuts follow in order. The six cuts so far are the trial that the process was written from, and the list below is its record.
 

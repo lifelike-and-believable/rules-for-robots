@@ -16,14 +16,14 @@ The brief is in the [README](README.md): for people who already work with agents
 | 4 | An addition | In grey, the same pine. A slide, the one thing in colour, is set down on top of the ladder, so the ladder cannot be climbed. | Heading: You add what you forgot. It gets bolted on. You: And a slide. Agent: Added! One slide. You: It's blocking the ladder. | 5 | 19 |
 | 5 | Micromanaging | In grey, the same mess. You give an order, and the agent's questions pile up. | Heading: So you micromanage. Now it asks about everything. You: Ask before you change anything. Agent: May I pick up the hammer? Agent: May I use the hammer? Agent: May I put the hammer down? | 8 | 31 |
 | 6 | Next session | The conversation is wiped clean, and a line marks a new session. The same mess is still there. A second box appears in the tree. | Heading: The next session, it remembers nothing. You: Let's keep going. Agent: Sure! What are we working on? You: The treehouse. Agent: Done! One treehouse. | 5.5 | 20 |
-| 7 | The turn | The orange cover wipes across, with the robot R. | What you wanted was a collaborator. Then: Rules for Robots teaches your agent to be one. | 4 | 14 |
+| 7 | The turn | The orange cover wipes across, with the robot R. | What you wanted was a collaborator. Then: Rules for Robots gives you a whole team of them. | 4 | 15 |
 | 8 | Asks first | In colour. The hill and the round tree, then a pencil sketch of the treehouse, then the treehouse built to it, with a bare flagpole. | Heading: It asks before it builds. Agent: Before I build: who is it for? You: My kids. They love to climb. Agent: Here is a sketch. Is this it? You: Approved. | 6.5 | 25 |
 | 9 | Your decision | Two flags offered. The orange one goes up the pole. | Heading: It asks you what only you can decide. Agent: The flag: orange or violet? You: Orange. | 3.5 | 14 |
 | 10 | The record | A card of decisions beside the treehouse. | Heading: It writes down why. Agent: Noted, so the next session knows too. Card: Flag: orange. Your choice. Ladder on the left. So the kids can climb up. | 5 | 26 |
 | 11 | A change | The slide unrolls from the deck to the grass. Nothing else moves. | You: Add a slide. Agent: Added. Nothing else moved. Heading: A change is a change. Not a restart. | 4.5 | 15 |
 | 12 | The promise | The view pulls back: one treehouse is one of five, each a different building of the same family, joined by bridges. | The motto: A skilled team building your biggest ideas, the way you envision them. | 4.5 | 12 |
 | 13 | End | The village gives way to the end card; the motto stays where it is and the name arrives above it. Then where to find it. | Rules for Robots. (The motto, already on screen.) Rules and plugins for Claude Code. github.com/RulesForRobots. (Yes, you may put the hammer down.) | 5.5 | 15 |
-| | | | **Total** | **64.5** | **236** |
+| | | | **Total** | **64.5** | **237** |
 
 Every beat is at or under four words a second except the record (5.2) and the end (4.7), where the words are a list to glance at and not lines to read in turn.
 
@@ -39,6 +39,8 @@ Every beat is at or under four words a second except the record (5.2) and the en
 
 - **The motto.** The maintainer, on the promise line: "this should emerge as the Rules for Robots motto." Beat 12's line is the motto, and the film builds to it: it appears over the village and stays on screen as the end card forms around it, under the name. It replaces the end card's "A practical guide for people and agents who work together". The wording is the copywriter's top pick with the maintainer's word "envision", and is not yet approved as the motto.
 
+- **The turn's second line.** The maintainer: "take the copywriters advice for the turn's second line." It is "Rules for Robots gives you a whole team of them.", which leads to the team in the motto.
+
 Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), and a 30-second cut is made at stage 10.
 
 ## For the maintainer to decide
@@ -46,7 +48,6 @@ Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), an
 1. **Length.** This draft runs 64 seconds, because beats 5 and 6 gained lines. Dropping "May I use the hammer?" from beat 5 brings it to about 62. The session recommends keeping all three questions: the pile-up is the joke, and the end card answers the third.
 2. **Beat 4's last line.** "It's blocking the ladder." is the session's wording.
 3. **Beat 5's order as a bubble.** "Ask before you change anything." is now your speech, not a sticky note. Say if the note is wanted back.
-4. **The turn's second line.** "Rules for Robots teaches your agent to be one." is the session's wording.
 5. **The end card's plain line.** "Rules and plugins for Claude Code." names one agent. If the volumes are meant for more than Claude Code, say what it should name.
 6. **The order of beats 8 and 9.** The session recommends the order above: the sketch has to be approved before there is a flagpole to choose a flag for.
 
