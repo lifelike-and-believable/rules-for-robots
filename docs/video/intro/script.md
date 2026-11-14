@@ -47,3 +47,18 @@ Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), an
 4. **The turn's second line.** "Rules for Robots teaches your agent to be one." is the session's wording.
 5. **The end card's plain line.** "Rules and plugins for Claude Code." names one agent. If the volumes are meant for more than Claude Code, say what it should name.
 6. **The order of beats 8 and 9.** The session recommends the order above: the sketch has to be approved before there is a flagpole to choose a flag for.
+
+## Copywriter's suggestions, 2026-11-14
+
+At the maintainer's request, a fresh agent briefed as an independent copywriter read this script, the brief, and the client's notes, and suggested copy. Nothing below is applied; the maintainer picks.
+
+- **Promise (beat 12):** top pick "A skilled team building your biggest ideas, the way you see them." Others: "Skilled collaborators who build your biggest ideas the way you see them." "Bring your biggest ideas. A skilled team builds them as you see them." "Your biggest ideas, and a skilled team to build them with you." It reads "Built as you envision them" as still mixing tenses.
+- **Turn (beat 7), second line:** top pick "Rules for Robots gives you a whole team of them." Others: "Rules for Robots turns your agents into a team of them." It warns that "team" lands only at the village unless the collaborator half shows more than one agent.
+- **End card (beat 13):** "Rules for Robots / Rules and plugins that make Claude Code a collaborator. / github.com/RulesForRobots / (Yes, you may put the hammer down.)", dropping the guide line as a softer repeat. The three volume marks mean nothing to a first-time viewer without labels.
+- **Beat 2 heading:** "It does exactly what you said." in place of "Exactly what you said. Not what you meant.", as a contrast formula.
+- **Beat 11 heading:** "You ask for one change. Only that changes." in place of "A change is a change. Not a restart.", mirroring beat 3.
+- **Beat 6 heading:** "Next session, it remembers nothing."
+- **Beat 8:** the agent's first line becomes "Who is it for?"
+- **Beat 10 card:** "Flag: orange. Your choice. / Ladder on the left. The kids climb."
+- **Keep:** the hammer trio and its callback, "Why is it a pine tree?", the second box with the same "Done! One treehouse.", and "Added. Nothing else moved."
+- **Voice:** the bad agent uses exclamation marks and the good one full stops; keep that strict after beat 7. Sound-off risks: the tree change in beat 3 must be obvious; the session divider in beat 6 needs words on it ("New session").
