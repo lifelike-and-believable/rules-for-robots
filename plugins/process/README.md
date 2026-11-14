@@ -47,7 +47,7 @@ derived-from:
 
 A section is a heading (by slug or by an ID it contains, such as `REQ-animation-1`), a table row whose first cell is an ID, or a list item starting with an ID. Hashes ignore whitespace and front matter.
 
-When an upstream section changes, every approved artifact that links to it is stale and the check fails. In the same pull request, update each one, re-record its hashes if the change does not affect it, or withdraw it to `draft` with `withdrawn: <reason> (#<issue>)`. An approved artifact that links to a draft one also fails, so a withdrawal has to go all the way down.
+When an upstream section changes, every approved artifact that links to it is stale. On the document side (the concept through user documentation) the check fails: in the same pull request, update each one, re-record its hashes if the change does not affect it, or withdraw it to `draft` with `withdrawn: <reason> (#<issue>)`. An approved artifact that links to a draft one also fails, so a withdrawal has to go all the way down. A stale spec or tutorial does not fail the check: it is noted as a revision open, and delivered afterwards like any other delivery, which brings the spec, its tests, and the tutorial up to date.
 
 A new link can be written as `- id#section` or `- id#section:`, with no hash. To record hashes, run this from the project root, with `.rfr` as a checkout of rules-for-robots (or use the path to your copy of `checks/`):
 

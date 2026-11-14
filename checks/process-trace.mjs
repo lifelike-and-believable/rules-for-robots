@@ -200,7 +200,10 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
   const notes = [];
   // The files the branch adds or changes, compared with the base. With no base (a push to the
   // default branch, or a local run) nothing is in the branch.
-  const inBranch = base ? changedSince(root, base) : new Set();
+  // Compared from where the branch left the base, so a file changed only on the base since then is
+  // not counted as the branch's own change.
+  const forkPoint = base ? (spawnSync('git', ['merge-base', base, 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout ?? '').trim() || base : null;
+  const inBranch = forkPoint ? changedSince(root, forkPoint) : new Set();
   const artifactFiles = new Set(artifacts.map(x => x.file.replace(/\\/g, '/')));
   for (const a of artifacts) {
     const soft = adopting && a.links.length === 0;
@@ -227,7 +230,8 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
         // On the delivery side a stale spec or tutorial is a revision, open work for its feature, and
         // not a failure (revisions-and-foundations AC-3, D1). One the branch adds or changes must be
         // left up to date, so that a delivery cannot merge half a revision.
-        if (DELIVERY_SIDE.has(a.stage) && !inBranch.has(a.file)) { notes.push(`revision open: ${name} is behind ${link.key}`); continue; }
+        // Only behind an approved change: a spec behind a draft is reported above, and is no revision.
+        if (DELIVERY_SIDE.has(a.stage) && !inBranch.has(a.file)) { if (isApproved(target)) notes.push(`revision open: ${name} is behind ${link.key}`); continue; }
         // A link to a whole artifact goes stale on any edit to it; suggest its sections (AC-38).
         const sections = link.section ? [] : [...target.body.matchAll(/^##\s+(.+?)\s*$/gm)].map(m => `${target.id}#${slug(m[1])}`);
         const hint = sections.length ? `; it links the whole of ${target.id}, so any edit there stales it: link the sections it depends on instead (${sections.join(', ')})` : '';
@@ -381,7 +385,7 @@ export function runProcessTrace(root, { base = null, now = new Date(), lasting =
         // the lead's validation was of the steps as they were.
         const tutorialChanged = a.stage === 'tutorials' && isApproved(before.get(a.id)) && isApproved(a);
         if (a.status === 'draft' && !a.withdrawn && isApproved(before.get(a.id)) && !(a.stage === 'tutorials' && changedSteps(before.get(a.id), a).length)) {
-          errors.push(`${a.id}: was approved at ${base} and is now draft without a withdrawn entry. If you are amending it, keep status: approved; the gated merge approves the change. Set draft only to withdraw it, with withdrawn: <reason> (#<issue>)`);
+          errors.push(`${a.id}: was approved at ${base} and is now draft without a withdrawn entry. If you are amending it, keep status: approved, and the gated merge approves the change (a tutorial whose steps' words change is the one exception: it goes back to draft for the lead to follow again). Otherwise set draft only to withdraw it, with withdrawn: <reason> (#<issue>)`);
           involved.add(a.id);
         }
         const steps = tutorialChanged ? changedSteps(before.get(a.id), a) : [];

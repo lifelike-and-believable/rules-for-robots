@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { buildSteps, criteriaRows, decisionFiles, defaultBranchRef, featureFamily, linksBehind, loadArtifacts, parseArtifact, processNext, readConfig, refTree, renderNext, stepRecords, tryItLines, tutorialTitle, workingTree } from './lib/process.mjs';
+import { buildSteps, criteriaRows, decisionFiles, defaultBranchRef, featureFamily, linksBehind, loadArtifacts, parseArtifact, processNext, readConfig, refTree, renderNext, stageOf, stepRecords, tryItLines, tutorialTitle, workingTree } from './lib/process.mjs';
 import { isTestOrBaseline } from './lib/test-paths.mjs';
 
 const MAX_BLOCKS = 3;
@@ -285,12 +285,14 @@ export function openDeliveries(root) {
   const wantSteps = features.some(f => f.designs.length);
   // The stale specs and tutorials another branch changes: a revision of them is under way there.
   const revisedElsewhere = new Set();
+  const tutorialsElsewhere = new Set();
   for (const branch of branches) {
     // Since the branch left the default branch; a branch with no history in common is compared whole.
     const changedIn = dir => lines(git(root, ['diff', '--name-only', `${ref ?? 'HEAD'}...${branch}`, '--', dir]) ?? git(root, ['diff', '--name-only', ref ?? 'HEAD', branch, '--', dir]));
     const specs = changedIn('docs/specs').filter(f => f.endsWith('.md'));
     for (const file of specs) revisedElsewhere.add(file);
-    if (features.some(f => f.revision)) for (const file of changedIn('docs/tutorials')) revisedElsewhere.add(file);
+    // A changed tutorial puts a revision under way only when no spec of it is behind (below).
+    if (features.some(f => f.revision)) for (const file of changedIn('docs/tutorials')) tutorialsElsewhere.add(file);
     for (const file of specs) {
       const text = git(root, ['show', `${branch}:${file}`]);
       const parsed = text ? parseArtifact(text) : null;
@@ -308,7 +310,8 @@ export function openDeliveries(root) {
   // records a step of one of those designs.
   const underWay = f => elsewhere.some(spec => spec.links.some(l => f.docs.includes(l.target) || f.designs.includes(l.target)))
     || f.designs.some(d => stepsElsewhere.has(d))
-    || f.behind.some(file => revisedElsewhere.has(file));
+    || f.behind.some(file => revisedElsewhere.has(file))
+    || (f.behind.length > 0 && f.behind.every(file => stageOf(file) === 'tutorials') && f.behind.some(file => tutorialsElsewhere.has(file)));
   // A feature whose only open steps were left for later by a merged delivery is waiting for the lead:
   // a step is left for later when it needs something only a person can do, so a run started by the
   // next merge would only leave it for later again. "deliver it" still starts it; the merge check
