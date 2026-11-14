@@ -51,12 +51,13 @@ Not yet decided: whether the four style frames are the look; length (the proxy r
 | `art.js` | Draws the four style frames as SVG: the trouble, the turn, the fit, the promise. `node art.js` writes them to `style/`. |
 | `stylepng.js` | Renders the style frames to PNG at 1920 by 1080. |
 | `style/` | The four style frames. |
+| `takes/` | The four generated takes from the illustration test, as downloaded. |
 
 The scripts need Playwright with its Chromium, and ffmpeg, which this repository does not install. The animatic and the frames use Space Grotesk from Google Fonts.
 
 ## Next
 
-1. **The illustration test.** Run on 2026-11-14 for 36 of the approved 100 Higgsfield credits; the takes are listed under "Illustration test takes" below and wait for the maintainer to compare them with `style/3-fit.svg`. They are not yet in this repository, and the tracing step has not been tried. Recipe: model Recraft V4.1; aspect 16:9; resolution 2k; two variants with `model_type` `vector` and two with `standard`; colours `#FFF4E6 #2A1A14 #E4572E #B8401D #2563C4 #7A45C9 #0E8A72 #0B6E5B #F9C9B2`; prompt:
+1. **The illustration test.** Run on 2026-11-14 for 36 of the approved 100 Higgsfield credits; the takes are listed under "Illustration test takes" below and wait for the maintainer to compare them with `style/3-fit.svg`. The tracing step has not been tried, and is only needed if a `standard` take is chosen. Recipe: model Recraft V4.1; aspect 16:9; resolution 2k; two variants with `model_type` `vector` and two with `standard`; colours `#FFF4E6 #2A1A14 #E4572E #B8401D #2563C4 #7A45C9 #0E8A72 #0B6E5B #F9C9B2`; prompt:
 
    > Flat vector editorial illustration for a motion-graphics explainer film. A charming children's treehouse in a large round leafy tree on a gentle grassy hill: wooden deck with a railing, a small blue cabin with a violet pitched roof, a round glowing window, a small door, an orange pennant flag on the roof, a wooden ladder on the left, and a bright orange slide curving down on the right. Warm cream sky, a large orange sun, layered mint-green hills behind, small flowers in the grass. Bold simple shapes with hand-made character, subtle grain texture, soft shadows, no outlines, no people, no text, no lettering. The tree sits right of centre with empty sky on the left.
 
@@ -75,9 +76,19 @@ Generated on 2026-11-14 with the recipe above (model ID `recraft_v4_1`). The cos
 | standard A | `standard` | PNG, 2688 by 1536 | `be54b30e-12c2-4a17-b970-2a8a2ee8459b` | `hf_20261114_202712_be54b30e-12c2-4a17-b970-2a8a2ee8459b.png` |
 | standard B | `standard` | PNG, 2688 by 1536 | `aa742c0a-2d5c-4156-97e6-7e4531acef76` | `hf_20261114_202712_aa742c0a-2d5c-4156-97e6-7e4531acef76.png` |
 
-The `vector` takes came back as SVG files, so they may need no tracing.
+The files are in `takes/`, under the names in the first column (`vector-a.svg`, `vector-b.svg`, `standard-a.png`, `standard-b.png`), as downloaded.
 
-The session that ran the test could show the takes to the maintainer but could not open them or save them here: its cloud environment allows package registries and connected services only, and refused `d8j0ntlcm91z4.cloudfront.net`. The same policy refuses `fonts.googleapis.com` and `fonts.gstatic.com`, which `frames.js` and `stylepng.js` load Space Grotesk from. Until those three hosts are allowed in the environment's settings, a cloud session cannot compare the takes, save them to `takes/`, or render with the brand font. The session proposed an environment with those hosts, and the `rfr-core` MCP guard refused the proposal, as it refuses any change in a service the project has not declared.
+What the session that ran the test saw, for the maintainer to weigh; the choice of look is theirs:
+
+- **Vector A** is the closest to the brand. It is a real SVG of 164 flat shapes, and almost every fill is a palette colour exactly. The tree sits right of centre with empty sky on the left, as asked. The slide's shape is confused, and the dark shadow under the deck is heavy.
+- **Vector B** has the most hand-made character: 504 shapes with printed-looking texture. Its blue and violet are off the palette, and bushes come into the lower left where captions would sit.
+- **Standard A** drew the foliage brown and the treehouse small. The weakest of the four.
+- **Standard B** is the most charming picture, with soft grain and a clear ladder, deck, and slide. Its sun sits where the words go, its oranges are off the palette, and it is a picture, so using it means tracing.
+- **`style/3-fit.svg`** is stiffer than any take, but it is the only one that carries the blueprint outline and the captions, and the only one whose every part is drawn by code.
+
+Both SVG takes are a flat stack of paths with no groups, so no take comes with parts that can be animated separately. The film needs the same treehouse in about ten states (a box in a tree, a pine tree, a slide through the ladder, a sketch, a village), which a generator will not draw consistently. So a generated take serves better as the target for the look than as the artwork itself: the scenes in `art.js` would be redrawn toward it.
+
+A cloud session needs `d8j0ntlcm91z4.cloudfront.net` (where Higgsfield stores results) and `fonts.googleapis.com` and `fonts.gstatic.com` (Space Grotesk) allowed in its environment. The maintainer opened the Default environment to all domains on 2026-11-14 after the first attempt was refused.
 
 ## Tools worth adding
 
