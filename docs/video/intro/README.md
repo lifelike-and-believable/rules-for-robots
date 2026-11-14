@@ -50,11 +50,11 @@ Not yet decided: how the scenes B does not show (the trouble half, the sketch, t
 |---|---|
 | `animatic.html` | The proxy: the whole film at sketch quality, playable in a browser, with the beats as a list. The timing and every word are in its `BEATS` array. |
 | `frames.cjs` | Renders the animatic. `node frames.cjs sheet` writes one frame for each beat; `node frames.cjs render 20` writes every frame at 20 a second, for ffmpeg to encode. |
-| `art.cjs` | Draws the four style frames as SVG: the trouble, the turn, the fit, the promise. `node art.cjs` writes them to `style/`. |
-| `kit.cjs` | Reads `takes/vector-b.svg` and gives `art.cjs` the picture with and without the slide. |
+| `art.cjs` | Builds the style frames as SVG from the takes and the words. `node art.cjs` writes them to `style/`. |
+| `kit.cjs` | Reads the takes: vector B with and without its slide, the idea's outline, and any other take as a scene. |
 | `stylepng.cjs` | Renders the style frames to PNG at 1920 by 1080. |
 | `style/` | The style frames. |
-| `takes/` | The four generated takes from the illustration test, as downloaded. |
+| `takes/` | Every generated take, as downloaded: the illustration test and the scenes. |
 
 The scripts end in `.cjs` because this repository's `package.json` makes `.js` files ES modules. They need Playwright with its Chromium, and ffmpeg, which this repository does not install. The animatic and the frames use Space Grotesk from Google Fonts.
 
@@ -65,7 +65,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
    > Flat vector editorial illustration for a motion-graphics explainer film. A charming children's treehouse in a large round leafy tree on a gentle grassy hill: wooden deck with a railing, a small blue cabin with a violet pitched roof, a round glowing window, a small door, an orange pennant flag on the roof, a wooden ladder on the left, and a bright orange slide curving down on the right. Warm cream sky, a large orange sun, layered mint-green hills behind, small flowers in the grass. Bold simple shapes with hand-made character, subtle grain texture, soft shadows, no outlines, no people, no text, no lettering. The tree sits right of centre with empty sky on the left.
 
    Get the cost first, keep every take, and compare the results with `style/3-fit.svg`. If the generated look is better, try tracing one to vector layers with the Adobe vectorize tool.
-2. **The look.** Chosen on 2026-11-14 (decision 6). `kit.cjs` turns `takes/vector-b.svg` into the film's picture. The take is a flat stack of tiles over one base shape, so `kit.cjs` removes a part by repainting what lies behind its footprint; so far it removes the slide. `style/3-fit.svg` is B as generated with the captions, and `style/3-before.svg` is the same picture without the slide. `style/1-trouble.svg` and `style/4-village.svg` are still the code-drawn look the maintainer turned down, and are to be replaced. Open: the blueprint outline is not on the B frames yet; the trouble scenes and the village need artwork in B's style, either generated with the same recipe (`vector`, 10 credits a take; 64 of the approved 100 credits are unspent, and a new run needs the maintainer's limit) or built from B's parts. The animatic still has its own, older drawing of the treehouse.
+2. **The look.** Chosen on 2026-11-14 (decision 6), and the maintainer approved the two frames made from vector B ("looks good now. go ahead with next phase"). `kit.cjs` reads the takes and `art.cjs` places them and adds the words; `style/` now holds eight frames in story order: the three troubles and the rules frame in ash with the idea as a blue outline, the turn, the treehouse before and after the slide, and the village. The trouble scenes and the village are takes generated in B's style (see "Scene takes"). The maintainer has not yet reviewed the eight frames together. Known rough spots: the idea's outline below the deck is one merged shape, not a clear ladder and trunk; `3a-asks` shows the finished treehouse where the story shows a sketch; the animatic still has its own, older drawing.
 3. **Production.** Animate each beat to the approved look, cut toward 45 seconds, and render at 1080p.
 
 ## Illustration test takes
@@ -92,6 +92,21 @@ What the session that ran the test saw, for the maintainer to weigh; the choice 
 Both SVG takes are a flat stack of paths with no groups, so no take comes with parts that can be animated separately. The film needs the same treehouse in about ten states (a box in a tree, a pine tree, a slide through the ladder, a sketch, a village), which a generator will not draw consistently. So a generated take serves better as the target for the look than as the artwork itself: the scenes in `art.cjs` are redrawn toward it.
 
 A cloud session needs `d8j0ntlcm91z4.cloudfront.net` (where Higgsfield stores results) and `fonts.googleapis.com` and `fonts.gstatic.com` (Space Grotesk) allowed in its environment. The maintainer opened the Default environment to all domains on 2026-11-14 after the first attempt was refused.
+
+## Scene takes
+
+Generated on 2026-11-14 for 60 credits, on the maintainer's word, with the recipe above and a prompt for each scene; all are `vector` SVG files in `takes/`. With the illustration test, 96 credits have been spent on the film.
+
+| File | Scene | Used | Job ID |
+|---|---|---|---|
+| `scene-literal-a.svg` | A box in a tree | No: outlined, with a violet ground | `89a6afd7-abc4-4fb1-9848-c16eb9d7d2ee` |
+| `scene-literal-b.svg` | A box in a tree (retry) | Yes | `68d1d09f-d9f6-4068-b97d-f5bb9979c3b2` |
+| `scene-literal-c.svg` | A box in a tree (retry) | No: violet bushes | `231e6baf-a0ea-42a7-96cb-13973fd94d5b` |
+| `scene-pine-a.svg` | A pine tree, the house moved, a ladder | Yes | `56f6a5bb-4c44-41e6-a750-fe83a7dfb7f2` |
+| `scene-bolted-a.svg` | The slide through the ladder | Yes, twice | `cf04d631-1cfa-4af3-b7ae-3f5015a55077` |
+| `scene-village-a.svg` | A village of treehouses | Yes, without its sun | `b7e17ad6-fcaa-4871-b14f-862ad7de1275` |
+
+The prompts are in the Higgsfield account under those jobs. Each began "Flat vector editorial illustration for a motion-graphics explainer film" and described the scene, then B's foliage, trunk, sky, sun, bushes, and flowers. The first prompts added "hand-drawn with printed dry-brush texture", and one of those four came back outlined; the retries dropped that phrase, added "no black line work", and both came back in style.
 
 ## Tools worth adding
 
