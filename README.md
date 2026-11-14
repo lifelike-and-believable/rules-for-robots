@@ -1,4 +1,9 @@
-# rules-for-robots
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockups/rules-for-robots-dark.svg">
+    <img src="docs/brand/lockups/rules-for-robots-light.svg" alt="Rules for Robots" height="72">
+  </picture>
+</h1>
 
 Rules, best practices, and agent definitions for agentic software development with Claude Code, aimed at software, websites, web apps, and Unreal Engine plugins that are high-quality, user-centred, performant, scalable, extensible, and maintainable.
 
