@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { defaultBranchRef, featureFamily, loadArtifacts, parseArtifact, processNext, readConfig, renderNext, tryItLines, tutorialTitle, workingTree } from './lib/process.mjs';
+import { buildSteps, decisionFiles, defaultBranchRef, featureFamily, loadArtifacts, parseArtifact, processNext, readConfig, renderNext, stepRecords, tryItLines, tutorialTitle, workingTree } from './lib/process.mjs';
 import { isTestOrBaseline } from './lib/test-paths.mjs';
 
 const MAX_BLOCKS = 3;
@@ -79,14 +79,38 @@ function setAside(root, name, branch) {
 // What the run still lacks (AC-2), as sentences. Empty when the delivery is complete and pushed.
 // scope: spec names the run was started for, which count even when this branch has not changed
 // them, so a feature built earlier is finished from where it stands (AC-9).
-export function deliveryMissing(root, scope = []) {
+function runSpecs(root, scope) {
   const ref = defaultBranchRef(root);
   const changed = new Set(ref
     ? [...lines(git(root, ['diff', '--name-only', ref])), ...lines(git(root, ['ls-files', '--others', '--exclude-standard']))]
     : lines(git(root, ['ls-files', '--cached', '--others', '--exclude-standard'])));
   const { artifacts } = loadArtifacts(workingTree(root));
-  const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
   const specs = artifacts.filter(a => a.stage === 'specs' && (changed.has(a.file) || scope.includes(specName(a))));
+  return { ref, changed, artifacts, specs };
+}
+
+// The approved designs with a build order (AC-18) in the features of the specs a run delivers: the
+// features of the stories whose feature holds one of those specs (process-state AC-13), so a design
+// joins only along the stage chain. Returns [{ design, steps }], by design id.
+function designsWithSteps(root, artifacts, specs) {
+  const config = readConfig(root)?.config ?? {};
+  const withId = artifacts.filter(a => a.id);
+  const ids = new Set(specs.map(s => s.id));
+  const found = new Map();
+  for (const story of withId.filter(a => a.stage === 'stories')) {
+    const family = featureFamily(withId, story, config);
+    if (!family.some(a => ids.has(a.id))) continue;
+    for (const design of family.filter(a => a.stage === 'design' && ['approved', 'implemented'].includes(a.status))) {
+      const steps = buildSteps(design);
+      if (steps.length) found.set(design.id, { design, steps });
+    }
+  }
+  return [...found.values()].sort((p, q) => p.design.id.localeCompare(q.design.id));
+}
+
+export function deliveryMissing(root, scope = []) {
+  const { ref, changed, artifacts, specs } = runSpecs(root, scope);
+  const byId = new Map(artifacts.filter(a => a.id).map(a => [a.id, a]));
   const tests = [...changed].filter(isTestOrBaseline).map(f => { try { return fs.readFileSync(path.join(root, f), 'utf8'); } catch { return ''; } });
   // A test that cites the spec may already be on the default branch, for a feature built earlier.
   const citedInRepo = name => lines(git(root, ['grep', '-l', '-F', `${name}#AC-`])).some(isTestOrBaseline);
@@ -101,12 +125,33 @@ export function deliveryMissing(root, scope = []) {
     const hasTutorial = artifacts.some(a => a.stage === 'tutorials' && a.links.some(l => userDocs.includes(l.target)));
     if (userDocs.length && !hasTutorial && !aside.has('tutorial')) missing.push(`a tutorial in docs/tutorials/ that derives from ${userDocs.join(', ')}, with each step run and its result recorded`);
   }
+  // Each step of the build order (AC-18). Built counts from any decisions file; left for later counts
+  // only where this branch records it, so a run that continues a feature is asked again for the steps
+  // an earlier run left, and builds them or says why not this time.
+  const decisions = decisionFiles(root);
+  const done = stepRecords(decisions.map(f => f.text)).done;
+  const later = stepRecords(decisions.filter(f => !ref || changed.has(f.file)).map(f => f.text)).later;
+  for (const { design, steps } of designsWithSteps(root, artifacts, specs)) {
+    for (const { n } of steps) {
+      const key = `${design.id} ${n}`;
+      if (!done.has(key) && !later.has(key)) missing.push(`step ${n} of ${design.id}: build it and record \`[step done: ${key}]\` in the run's decisions file, or record \`[step later: ${key}]\` with why`);
+    }
+  }
   if (git(root, ['status', '--porcelain'])) missing.push('uncommitted changes: commit them');
   const branch = currentBranch(root);
   const upstream = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
   if (!upstream || upstream === ref) missing.push(`the branch is not pushed: git push -u origin ${branch}`);
   else if (git(root, ['rev-parse', '@{u}']) !== git(root, ['rev-parse', 'HEAD'])) missing.push('commits not pushed: git push');
   return missing;
+}
+
+// The steps of the delivered designs that a decisions file leaves for later and none records as
+// built (AC-18), as report lines: "step <n> of <design id>: <title>".
+function stepsLeftForLater(root, scope = []) {
+  const { artifacts, specs } = runSpecs(root, scope);
+  const { later } = stepRecords(decisionFiles(root).map(f => f.text));
+  return designsWithSteps(root, artifacts, specs)
+    .flatMap(({ design, steps }) => steps.filter(s => later.has(`${design.id} ${s.n}`)).map(s => `step ${s.n} of ${design.id}: ${s.title}`));
 }
 
 // The link to review a branch's pull request and the line the lead can run to approve it (AC-6).
@@ -151,21 +196,32 @@ function where(root, name) {
 // `deliver` step; stories that share user documentation are one feature. A feature is under way when
 // a branch on the origin remote, other than the default branch, adds or changes a spec that derives
 // from its story, design, or user documentation: the default branch does not show a delivery until
-// it merges. Returns [{ stories, docs }], in the process state's order.
+// it merges. A feature open for the steps of its build order (AC-19) is listed too. Returns
+// [{ stories, docs, designs, openSteps }], in the process state's order.
 export function openDeliveries(root) {
   git(root, ['fetch', '-q', '--prune', 'origin']);
   const next = processNext(root);
   if (!next) return [];
   // Stories whose open work shares any user documentation are one feature: a packet's documents are
   // delivered together.
+  // A feature open because steps of its build order are still to build (AC-19) has the designs with
+  // those steps as its units; its user documentation is all there is in its feature.
+  const withId = loadArtifacts(workingTree(root)).artifacts.filter(a => a.id);
+  const config = readConfig(root)?.config ?? {};
   let features = [];
   for (const step of next.steps.filter(s => s.step === 'deliver')) {
-    const docs = step.units ?? [];
-    const overlapping = features.filter(f => f.docs.some(d => docs.includes(d)));
+    const openSteps = step.openSteps ?? [];
+    const designs = openSteps.length ? step.units ?? [] : [];
+    const docs = openSteps.length
+      ? featureFamily(withId, step.story, config).filter(a => a.stage === 'user-docs').map(a => a.id)
+      : step.units ?? [];
+    const overlapping = features.filter(f => f.docs.some(d => docs.includes(d)) || f.designs.some(d => designs.includes(d)));
     features = features.filter(f => !overlapping.includes(f));
     features.push({
       stories: [...overlapping.flatMap(f => f.stories), step.story].sort(),
       docs: [...new Set([...overlapping.flatMap(f => f.docs), ...docs])].sort(),
+      designs: [...new Set([...overlapping.flatMap(f => f.designs), ...designs])].sort(),
+      openSteps: [...new Set([...overlapping.flatMap(f => f.openSteps), ...openSteps])],
     });
   }
   if (!features.length) return [];
@@ -176,26 +232,43 @@ export function openDeliveries(root) {
   const branches = lines(git(root, ['for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin']))
     .filter(b => b !== ref && b !== 'origin/HEAD' && b !== 'origin');
   const elsewhere = [];
+  // The designs whose build steps another branch records in a decisions file it adds or changes.
+  const stepsElsewhere = new Set();
+  const wantSteps = features.some(f => f.designs.length);
   for (const branch of branches) {
     // Since the branch left the default branch; a branch with no history in common is compared whole.
-    const diff = git(root, ['diff', '--name-only', `${ref ?? 'HEAD'}...${branch}`, '--', 'docs/specs']) ?? git(root, ['diff', '--name-only', ref ?? 'HEAD', branch, '--', 'docs/specs']);
-    const specs = lines(diff).filter(f => f.endsWith('.md'));
+    const changedIn = dir => lines(git(root, ['diff', '--name-only', `${ref ?? 'HEAD'}...${branch}`, '--', dir]) ?? git(root, ['diff', '--name-only', ref ?? 'HEAD', branch, '--', dir]));
+    const specs = changedIn('docs/specs').filter(f => f.endsWith('.md'));
     for (const file of specs) {
       const text = git(root, ['show', `${branch}:${file}`]);
       const parsed = text ? parseArtifact(text) : null;
       if (parsed?.front) elsewhere.push({ id: parsed.front.id ?? `${branch}:${file}`, stage: 'specs', status: parsed.front.status, file, links: parsed.links ?? [] });
     }
+    if (!wantSteps) continue;
+    for (const file of changedIn('docs/decisions')) {
+      const { done, later } = stepRecords([git(root, ['show', `${branch}:${file}`]) ?? '']);
+      for (const key of [...done, ...later]) stepsElsewhere.add(key.slice(0, key.lastIndexOf(' ')));
+    }
   }
   // A spec on another branch that derives from the feature's open user documentation (or what stands
-  // in for it) is its delivery under way.
-  const underWay = f => elsewhere.some(spec => spec.links.some(l => f.docs.includes(l.target)));
-  return features.filter(f => !underWay(f));
+  // in for it) is its delivery under way. For a feature open for its build steps, so is a spec that
+  // derives from one of those designs or from its user documentation, or a decisions file that
+  // records a step of one of those designs.
+  const underWay = f => elsewhere.some(spec => spec.links.some(l => f.docs.includes(l.target) || f.designs.includes(l.target)))
+    || f.designs.some(d => stepsElsewhere.has(d));
+  // A feature whose only open steps were left for later by a merged delivery is waiting for the lead:
+  // a step is left for later when it needs something only a person can do, so a run started by the
+  // next merge would only leave it for later again. "deliver it" still starts it; the merge check
+  // does not (AC-19, from the review of #265).
+  const { later } = stepRecords(decisionFiles(root).map(d => d.text));
+  return features.filter(f => !underWay(f))
+    .map(f => ({ ...f, waiting: f.openSteps.length > 0 && f.openSteps.every(key => later.has(key)), later: f.openSteps.filter(key => later.has(key)) }));
 }
 
 function open(root) {
   const features = openDeliveries(root);
   if (!features.length) return 'No delivery is open.';
-  return features.map(f => `${f.stories.join(', ')}${f.docs.length ? ` (user documentation: ${f.docs.join(', ')})` : ''}`).join('\n');
+  return features.map(f => `${f.stories.join(', ')}${f.docs.length ? ` (user documentation: ${f.docs.join(', ')})` : ''}${f.waiting ? ` (waiting for the lead: ${f.later.join(', ')} was left for later; say "deliver it" when it can be done)` : ''}${f.openSteps.length && !f.waiting ? ` (steps still to build: ${f.openSteps.join(', ')})`: ''}`).join('\n');
 }
 
 function start(root, name) {
@@ -212,8 +285,11 @@ function start(root, name) {
     // starts: the run begins, and its first step is the spec (AC-9, amended in rewrite plan 25f after
     // the delegated eval found every new delivery refused here). Its feature may also hold an earlier
     // slice's built spec (process-state AC-13), which this run is not for.
-    const opens = processNext(root)?.steps.some(s => s.story === name && s.step === 'deliver');
-    specs = opens ? [] : resolveSpecs(root, name);
+    // A feature open again because steps of its build order are still to build (AC-19) is finished
+    // from its existing specs, which the run amends with criteria for those steps.
+    const step = processNext(root)?.steps.find(s => s.story === name && s.step === 'deliver');
+    const opens = !!step;
+    specs = opens && !step.openSteps?.length ? [] : resolveSpecs(root, name);
     if (!specs.length && !opens) {
       // Nothing to deliver yet: the feature is at an earlier stage, which is written and approved first.
       console.error(`${where(root, name)}\n\n${name} has no spec yet, so this is not a delivery run. Write the stage it is at, push the branch, and tell the lead once that it is waiting for their approval.`);
@@ -267,7 +343,12 @@ function stop(root) {
       .map(t => ({ file: t.file, title: tutorialTitle(t.text) }));
     const tryLines = tryItLines({ tutorials: changedTutorials, preview: tryConfig.preview, local: tryConfig.local, where: 'pr' });
     const tryIt = tryLines.length ? `\nAlso tell the lead, once, where to try it:\n${tryLines.filter(Boolean).join('\n')}` : '';
-    block(`rfr-process: the delivery on ${marker.branch} is complete and pushed. Before you stop, tell the lead once: what was built, anything set aside in docs/decisions/, and how to review it.${validation}${tryIt}\n${gateFor(root)}`);
+    // Steps of the build order left for later keep the feature's delivery open (AC-18, AC-19).
+    const later = stepsLeftForLater(root, marker.specs ?? []);
+    const leftOpen = later.length
+      ? `\nTell the lead which steps of the build order were left for later, and why, and that the feature's delivery stays open for them until they are built: the lead can say "deliver it", or, where merges start deliveries, the merge of this pull request starts the next run.\n${listed(later)}`
+      : '';
+    block(`rfr-process: the delivery on ${marker.branch} is complete and pushed. Before you stop, tell the lead once: what was built, anything set aside in docs/decisions/, and how to review it.${validation}${leftOpen}${tryIt}\n${gateFor(root)}`);
     return;
   }
   clearMarker(root);

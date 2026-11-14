@@ -397,6 +397,113 @@ export function sectionHash(body, section) {
   return text === null ? null : hashText(text);
 }
 
+// ---- a design's build order (docs/specs/delivery-run.md, AC-18) -------------------------------
+
+const ORDERED_ITEM = /^( *)(\d{1,9})[.)]\s+(.*)$/;
+const BULLET_ITEM = /^ *[-*+]\s+/;
+const TITLE_MAX = 80;
+
+// A step's title: its text with Markdown emphasis removed, cut at the first sentence end (a full
+// stop is dropped, ! and ? kept) or at 80 characters, on a word boundary where there is one.
+function stepTitle(text) {
+  let t = text
+    .replace(/(\*\*|__)(.+?)\1/g, '$2')
+    .replace(/~~(.+?)~~/g, '$1')
+    .replace(/(^|[^\w*])\*(?!\s)(.+?)\*(?!\w)/g, '$1$2')
+    .replace(/(^|[^\w])_(?!\s)(.+?)_(?!\w)/g, '$1$2')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const end = /[.!?](?=\s|$)/.exec(t);
+  if (end) t = t.slice(0, end.index + (end[0] === '.' ? 0 : 1));
+  if (t.length > TITLE_MAX) {
+    const space = t.slice(0, TITLE_MAX + 1).lastIndexOf(' ');
+    t = t.slice(0, space > TITLE_MAX / 2 ? space : TITLE_MAX);
+  }
+  return t.trim();
+}
+
+// The steps of a design's build order: the first ordered list in its "Notes for delivery" section,
+// when no unordered list comes before it. Takes the design or its body; returns [{ n, title }], with
+// n as written. Lines indented under an item, and lines that run on from it, belong to it; its
+// title comes from its first paragraph. No section or no such list: [].
+export function buildSteps(design) {
+  const body = typeof design === 'string' ? design : design?.body ?? '';
+  const section = sectionText(body, 'notes-for-delivery');
+  if (section === null) return [];
+  // Comments are notes to the author, and fenced blocks are examples: neither is part of the list.
+  const lines = section.replace(/<!--[\s\S]*?-->/g, m => m.replace(/[^\n]/g, '')).split(/\r?\n/).slice(1)
+    .map(l => l.replace(/^\t+/, tabs => '    '.repeat(tabs.length)));
+  const steps = [];
+  let item = null;
+  let indent = 0;
+  let blank = false;
+  let inFence = false;
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) { inFence = !inFence; if (item) item.para = false; continue; }
+    if (inFence) continue;
+    if (!line.trim()) { blank = true; continue; }
+    const ordered = ORDERED_ITEM.exec(line);
+    if (!item) {
+      if (BULLET_ITEM.test(line)) return [];
+      if (ordered && ordered[1].length <= 3) {
+        indent = ordered[1].length;
+        item = { n: Number(ordered[2]), text: [ordered[3]], para: true };
+        steps.push(item);
+        blank = false;
+      }
+      continue;
+    }
+    const lead = /^ */.exec(line)[0].length;
+    if (ordered && lead === indent) {
+      item = { n: Number(ordered[2]), text: [ordered[3]], para: true };
+      steps.push(item);
+    } else if (lead > indent || (!blank && !BULLET_ITEM.test(line) && !HEADING.test(line))) {
+      // A line indented under the item, or a lazy continuation of its text. A blank line or a nested
+      // list ends the paragraph the title comes from.
+      if (blank || BULLET_ITEM.test(line) || ORDERED_ITEM.test(line)) item.para = false;
+      if (item.para) item.text.push(line.trim());
+    } else {
+      break;
+    }
+    blank = false;
+  }
+  // An item still in the template's placeholder form ("**<Step title.>**") is not a step yet.
+  return steps.filter(s => !/^\s*(\*\*|__)?\s*<[^>]*>/.test(s.text.join(' ')))
+    .map(s => ({ n: s.n, title: stepTitle(s.text.join(' ')) }));
+}
+
+// `[step done: <design id> <n>]` and `[step later: <design id> <n>]`, exact and case-sensitive,
+// with spaces allowed between the parts.
+const STEP_TOKEN = /\[ *step +(done|later) *: *([^\s\]]+) +(\d+) *\]/g;
+
+// What the decisions files record about build steps: { done, later }, sets of "<design id> <n>". A
+// step recorded as done anywhere is done, even where another file leaves it for later.
+export function stepRecords(texts = []) {
+  const done = new Set();
+  const later = new Set();
+  for (const text of texts) {
+    for (const m of String(text ?? '').matchAll(STEP_TOKEN)) (m[1] === 'done' ? done : later).add(`${m[2]} ${Number(m[3])}`);
+  }
+  for (const key of done) later.delete(key);
+  return { done, later };
+}
+
+// Every file under docs/decisions/ in a working tree: [{ file, text }], with repository paths.
+export function decisionFiles(root) {
+  const out = [];
+  const walk = rel => {
+    let entries;
+    try { entries = fs.readdirSync(path.join(root, rel), { withFileTypes: true }); } catch { return; }
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      const child = `${rel}/${e.name}`;
+      if (e.isDirectory()) walk(child);
+      else if (e.isFile()) { try { out.push({ file: child, text: fs.readFileSync(path.join(root, child), 'utf8') }); } catch { /* unreadable */ } }
+    }
+  };
+  walk('docs/decisions');
+  return out;
+}
+
 // ---- stages, gates, and approvers -------------------------------------------------------------
 
 // The stage a repository path belongs to, or null. A docs/specs file maps to 'specs' whatever its
@@ -557,10 +664,14 @@ export function featureFamily(artifacts, story, config) {
 
 // The first thing still to do for each story, in stage order (AC-1): { story, step, stage, files,
 // inBranch }, where step is approve, write, deliver, delivering, validate, or done. Artifacts
-// belong to a story when they are in its feature (AC-13).
-export function featureSteps(artifacts, config) {
+// belong to a story when they are in its feature (AC-13). decisions: the text of every file under
+// docs/decisions/ in the same tree; a step of an approved design's build order that none of them
+// records as built keeps the feature's delivery open (delivery-run AC-19), with the steps as
+// openSteps ("<design id> <n>") and the designs as units. With no decisions, no step is built.
+export function featureSteps(artifacts, config, decisions = []) {
   const waived = config?.waived ?? {};
   const withId = artifacts.filter(a => a.id);
+  const built = stepRecords(decisions).done;
   const steps = [];
   for (const story of withId) {
     if (story.stage !== 'stories') continue;
@@ -605,6 +716,16 @@ export function featureSteps(artifacts, config) {
     const first = Math.min(...states.map(s => ORDER.indexOf(s.step)));
     const at_ = states.filter(s => ORDER.indexOf(s.step) === first);
     const items = [...new Set(at_.flatMap(s => s.items))];
+    // A feature with a spec for every piece is open again while a step of an approved design's build
+    // order is not recorded as built, whatever its tutorial (delivery-run AC-19). One with a piece
+    // still to specify keeps its ordinary delivery step, which builds every step anyway.
+    const openSteps = ORDER[first] === 'deliver' ? [] : at('design').filter(approvedNow)
+      .flatMap(d => buildSteps(d).map(s => `${d.id} ${s.n}`)).filter(key => !built.has(key));
+    if (openSteps.length) {
+      const designs = [...new Set(openSteps.map(key => key.slice(0, key.lastIndexOf(' '))))].sort();
+      steps.push({ ...make('deliver', 'specs'), units: designs, openSteps });
+      continue;
+    }
     steps.push({ ...make(ORDER[first], at_[0].stage, items), units: at_.map(s => s.unit.id).sort() });
   }
   return steps.sort((p, q) => p.story.localeCompare(q.story));
@@ -617,6 +738,18 @@ const NEXT_RULE = [
   'After you push a branch the approver must review, tell them once, with the link to review it, subscribe to its pull request if you can, so that their review reaches you, and do not build on it until it has merged. When a feature\'s delivery is open, run /rfr-process:deliver and finish it without asking.',
 ];
 const NEXT_MAX_LINES = 40;
+
+// "steps 2, 3 of design-a are still to build", from openSteps ("<design id> <n>").
+function stepsStillToBuild(openSteps) {
+  const byDesign = new Map();
+  for (const key of openSteps) {
+    const at = key.lastIndexOf(' ');
+    const id = key.slice(0, at);
+    byDesign.set(id, [...(byDesign.get(id) ?? []), key.slice(at + 1)]);
+  }
+  const parts = [...byDesign].map(([id, ns]) => `${ns.length === 1 ? 'step' : 'steps'} ${ns.join(', ')} of ${id}`);
+  return `${parts.join(' and ')} ${openSteps.length === 1 ? 'is' : 'are'} still to build`;
+}
 
 // The text an agent is given at the start of a session (AC-3).
 export function renderNext({ steps, product = [], note = null }) {
@@ -631,6 +764,7 @@ export function renderNext({ steps, product = [], note = null }) {
     const what = s.step === 'approve' ? `${STAGE_WORDS[s.stage]}${names(s.files)} is ${pending(s)}`
       : s.step === 'validate' ? `built, not yet validated: the approver follows the tutorial${names(s.files)} against the delivery, and it is then marked approved${s.inBranch ? ' (the tutorial is in this branch)' : ''}`
         : s.step === 'write' ? `write ${STAGE_WORDS[s.stage]}`
+          : s.step === 'deliver' && s.openSteps?.length ? `delivery is open: ${stepsStillToBuild(s.openSteps)} (/rfr-process:deliver)`
           : s.step === 'deliver' ? 'delivery is open: the spec, tests, implementation, and tutorial, on one branch (/rfr-process:deliver)'
             : `delivery is under way${names(s.files)}`;
     const key = `${['approve', 'validate'].includes(s.step) ? 'waiting' : 'open'}\n${what}`;
@@ -717,7 +851,7 @@ export function processNext(root) {
   } else {
     note = 'There is no remote default branch to read, so this is the working tree: an artifact marked approved here may not have been reviewed.';
   }
-  const steps = featureSteps(artifacts, loaded.config ?? {});
+  const steps = featureSteps(artifacts, loaded.config ?? {}, decisionFiles(root).map(f => f.text));
   const product = artifacts.filter(a => ['concept', 'discovery', 'requirements', 'personas', 'epics'].includes(a.stage) && !approvedNow(a));
   return { steps, product, text: renderNext({ steps, product, note }) };
 }

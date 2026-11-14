@@ -64,7 +64,14 @@ each control exactly as the user documentation will use it.>
 
 ## Notes for delivery
 
-<!-- What the run that builds this must know and the documents do not say. Leave out if empty. -->
+<!-- What the run that builds this must know and the documents do not say. Leave out if empty.
+     When the work is built in steps, start with the build order: a numbered list, one item per step,
+     each starting with a short bold title and ending with something that runs. The delivery builds
+     every step, and records each one as built or left for later; a step not built keeps the
+     feature's delivery open. Put prose notes after the list, never a list before it. -->
 
-- <A follow-up this packet could not make, or an order the work has to be built in.>
+1. **<Step title.>** <What this step builds, ending with something that runs.>
+2. **<Step title.>** <...>
+
+- <A follow-up this packet could not make.>
 - <A check only a person can do (a first-use test with someone new, a manual accessibility pass); the delivery lists it for the approver's validation.>
