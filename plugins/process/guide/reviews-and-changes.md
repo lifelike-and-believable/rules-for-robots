@@ -35,6 +35,17 @@ Link to sections, not whole artifacts. A link to `concept` goes stale on any edi
 
 Recording hashes is not approval: the pull request that carries them is approved by the stage's approver like any other change. An artifact becomes approved only through a pull request that sets `status: approved` and records its hashes; merging a pull request whose artifacts still say `draft` leaves them drafts (see the README's "How an artifact becomes approved"). Run `node .rfr/checks/process-trace.mjs --status` to see how far each persona, epic, and story has reached and what needs attention.
 
+### A revision packet
+
+A pull request that changes a section other approved documents cite is a revision. The chain has two sides. The document side (concept through user documentation, with designs and decision notes) is what the lead reads and approves, so it must be consistent in the pull request. The delivery side (specs and tutorials, and through them tests and code) is what agents build from it, so staleness there is open work, not a failure.
+
+`/rfr-process:revise` runs a revision:
+
+1. Run the impact report first, `node .rfr/checks/process-impact.mjs . <id>[#section]`, and tell the lead its counts once.
+2. Make the change on its own branch, then update, re-record, or withdraw each document-side dependant, as above. Never re-record one without reading the changed section against it.
+3. Under `## Revision` in the branch's decisions file, give the reason for the change and one line for each re-recorded document saying why it is unaffected. The pull request's description lists these reasons apart from the documents that changed. They are the only check on a re-record, so write each one from reading the section.
+4. The delivery side follows as open work: after the merge, `/rfr-process:deliver` brings each stale spec, its tests and code, and its tutorial up to date.
+
 ## When the same correction comes back
 
 The review checks for each stage in this guide are a starting list. A project adds to them from what its own reviews keep finding, so a problem is caught by a check rather than by the approver a third time.
