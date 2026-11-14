@@ -48,8 +48,24 @@ The final `pnpm verify` passed: 64 and 112 unit tests and 132 end-to-end tests.
 7. **The branch was pushed only at the end** (17:32), so for 90 minutes nothing outside the session showed the delivery under way. #252 has the skill push once the spec is committed.
 8. **A slow machine failed one run of the checks.** The first final verify took 13.8 minutes against 7.6 before, and the slice 3 tutorial script hit its four-minute limit. The session ran it again three times, then the whole suite, before reporting.
 
+## Afterwards: the second run, started by a merge (2026-11-13 and 14)
+
+The packet for slice 27d of rules-for-robots (Trying the product: a try command, previews, tutorial sign-in, twelve task tutorials, organised user documentation) was the second run, and the first with the merge-triggered workflow (`rfr-deliver.yml`, rules-for-robots #261) in place.
+
+| Time (UTC) | Event |
+|---|---|
+| 13 Nov 21:19 | Packet pushed by a cloud session; #365 opened by `rfr-agent` |
+| 14 Nov 00:38:39 | The lead approves; #365 merges |
+| 00:38:57 | The workflow finds the delivery open and starts the delivery routine with one request; the session starts 18 seconds after the merge |
+| about 01:10 | The delivery pushes step 1 of the design's six build steps and reports; the lead asks for steps 2 to 6 in a comment on the pull request, and the subscribed session builds them on the same branch |
+| 02:49 | #369 merges. No step was recorded (the session ran on a plugin from before build steps, rules-for-robots #265), so all six read as open, and the workflow starts a follow-up session |
+| 02:59 | The follow-up checks each step against the code, records all six as done (#370); its merge's check reports no delivery open, and no session starts |
+
+Shown: a packet's merge starting the run with nobody's help; a merge starting the run for unfinished steps; the chain stopping when nothing is left; no prompt or question to the lead in either session.
+
+Not shown: the delivery building every step the first time (it built one of six and finished, which led to delivery-run AC-18 and AC-19, #265); a preview to test from (connecting the hosting account and its database is the lead's, a check the design lists); and validation (the lead has not yet followed the slice 2, 3, and 4 tutorials). Pull request titles still come from the last commit's subject ("Write the spec for ..." for a whole delivery).
+
 ## Still to show
 
-- A packet's merge starting the run with nobody's help.
-- The feature validated: the lead has not yet followed the slice 2, 3, or 4 tutorials.
-- A second run.
+- A preview the lead tests from, and the features validated by following their tutorials.
+- A delivery that builds every step of its design's build order in one run.
