@@ -16,7 +16,7 @@ const ff = (args) => execFileSync('ffmpeg', ['-nostdin', '-v', 'error', '-y', ..
 // The slide in one frame, as a grey mask. The bright orange, inside the part of the picture the slide passes through, makes
 // pieces; only the largest piece is the slide, so specks of orange on the ladder or the trunk are left out. The slide is then
 // grown by up to GROW pixels into warm neighbours, which takes in its darker rim and its highlights but not the grass or the ladder.
-const GROW = 18;
+const GROW = 18, MIN = 150;
 function slideMask(rgb) {
   const n = W * H, core = new Uint8Array(n), seen = new Int32Array(n).fill(-1), at = (i, k) => rgb[i * 3 + k];
   for (let y = Math.floor(H * .4); y < H * .98; y++) for (let x = Math.floor(W * .36); x < W * .62; x++) { const i = y * W + x, r = at(i, 0), g = at(i, 1), b = at(i, 2);
@@ -28,6 +28,9 @@ function slideMask(rgb) {
       for (const j of [i - 1, i + 1, i - W, i + W]) if (j >= 0 && j < n && Math.abs((j % W) - x) <= 1 && core[j] && seen[j] < 0) { seen[j] = label; stack[top++] = j; } }
     if (size > bestSize) { bestSize = size; best = label; } label++; }
   const mask = new Uint8Array(n); let front = [];
+  // Before the slide comes out of the box, the largest piece is a speck on the trunk or the ladder (10 to 20 pixels); the slide's
+  // first sliver is about 250. Below MIN there is no slide, and nothing stays in colour.
+  if (bestSize < MIN) return mask;
   for (let i = 0; i < n; i++) if (seen[i] === best && best >= 0) { mask[i] = 255; front.push(i); }
   const warm = (i) => at(i, 0) > 100 && at(i, 0) - at(i, 2) > 50;
   for (let step = 0; step < GROW; step++) { const next = [];

@@ -14,7 +14,7 @@ The brief is in the [README](README.md): for people who already work with agents
 | 2 | Literal | In grey. A box appears, wedged in the tree, and there is no way up. | Heading: Exactly what you said. Not what you meant. Agent: Done! One treehouse. You: How do I get up? | 4.5 | 16 |
 | 3 | One change | In grey. A ladder arrives, and the round tree is now a pine and the box has moved. | Heading: You ask for one change. Everything else changes too. You: Add a ladder. Agent: Added! One ladder. You: Why is it a pine tree? | 5.5 | 21 |
 | 4 | An addition | In grey, the same pine. A slide, the one thing in colour, is set down on top of the ladder, so the ladder cannot be climbed. | Heading: You add what you forgot. It gets bolted on. You: And a slide. Agent: Added! One slide. You: It's blocking the ladder. | 5 | 19 |
-| 5 | Micromanaging | In grey, the same mess. You give an order, and the agent's questions pile up. | Heading: So you micromanage. Now it asks about everything. You: Ask before you change anything. Agent: May I pick up the hammer? Agent: May I use the hammer? Agent: May I put the hammer down? | 8 | 31 |
+| 5 | Micromanaging | In grey, the same mess. You give an order, and the agent's questions pile up. | Heading: So you micromanage. Now it asks about everything. You: Ask before you change anything. Agent: May I pick up the hammer? Agent: May I use the hammer? Agent: May I put the hammer down? | 7 | 31 |
 | 6 | Next session | The conversation is wiped clean, and a line marks a new session. The same mess is still there. A second box appears in the tree. | Heading: The next session, it remembers nothing. You: Let's keep going. Agent: Sure! What are we working on? You: The treehouse. Agent: Done! One treehouse. | 5.5 | 20 |
 | 7 | The turn | The orange cover wipes across, with the robot R. | What you wanted was a collaborator. Then: Rules for Robots gives you a whole team of them. | 4 | 15 |
 | 8 | Asks first | In colour. The hill and the round tree, then a pencil sketch of the treehouse, then the treehouse built to it, with a bare flagpole. | Heading: It asks before it builds. Agent: Before I build: who is it for? You: My kids. They love to climb. Agent: Here is a sketch. Is this it? You: Approved. | 6.5 | 25 |
@@ -23,7 +23,7 @@ The brief is in the [README](README.md): for people who already work with agents
 | 11 | A change | The slide unrolls from the deck to the grass. Nothing else moves. | You: Add a slide. Agent: Added. Nothing else moved. Heading: A change is a change. Not a restart. | 4.5 | 15 |
 | 12 | The promise | The view pulls back: one treehouse is one of five, each a different building of the same family, joined by bridges. | The motto: A skilled team building your biggest ideas, the way you envision them. | 4.5 | 12 |
 | 13 | End | The village gives way to the end card; the motto stays at the top, and the name comes out below it. | (The motto, at the top.) Rules for Robots. A practical guide for people and agents who work together. github.com/RulesForRobots. Rules and plugins for Claude Code. (Yes, you may put the hammer down.) Then the R winks. | 5.5 | 24 |
-| | | | **Total** | **64.5** | **237** |
+| | | | **Total** | **63.5** | **237** |
 
 Every beat is at or under four words a second except the record (5.2) and the end (4.7), where the words are a list to glance at and not lines to read in turn.
 
@@ -46,6 +46,8 @@ Every beat is at or under four words a second except the record (5.2) and the en
 - **The wink.** The maintainer: "maybe the R in the last slide could wink at the end?" After the hammer line, the eye of the R in the mark closes into an arc and opens again. Then: "The wink needs to be a much more cartoon-y squash-and-stretch action. A whole body kind of wink, so it reads from a distance". The whole mark squashes, springs up and leans as the eye shuts, lands in a squash, and wobbles to rest.
 
 Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), and a 30-second cut is made at stage 10.
+
+After the review at stage 9 (2026-11-15), beat 5 is 7 seconds, not 8, so the film is 63.5: the review found it sat still for three seconds after the third question.
 
 ## For the maintainer to decide
 

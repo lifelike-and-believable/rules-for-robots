@@ -26,7 +26,8 @@ function mix({ music, effects, total }, out) {
     const fade = m.fadeOut ? `,afade=t=out:st=${m.fadeOut[0] - m.at}:d=${m.fadeOut[1] - m.fadeOut[0]}` : '';
     parts.push(`[${i}:a]aresample=44100,aformat=channel_layouts=stereo,volume=${m.gain}dB${fade},adelay=${Math.round(m.at * 1000)}:all=1[m${i}]`); });
   effects.forEach((e, j) => { const i = music.length + j; inputs.push('-i', file(e.file));
-    parts.push(`[${i}:a]aresample=44100,aformat=channel_layouts=stereo,volume=${e.gain}dB,adelay=${Math.round(e.t * 1000)}:all=1[e${j}]`); });
+    const shift = e.pitch ? `asetrate=44100*${Math.pow(2, e.pitch / 12).toFixed(5)},aresample=44100,` : '';
+    parts.push(`[${i}:a]aresample=44100,${shift}aformat=channel_layouts=stereo,volume=${e.gain}dB,adelay=${Math.round(e.t * 1000)}:all=1[e${j}]`); });
   const labels = music.map((_, i) => `[m${i}]`).concat(effects.map((_, j) => `[e${j}]`)).join('');
   const graph = parts.join(';') + `;${labels}amix=inputs=${music.length + effects.length}:normalize=0:duration=longest,atrim=0:${total}[a]`;
   const script = path.join(out, 'sound-graph.txt'); fs.writeFileSync(script, graph);
