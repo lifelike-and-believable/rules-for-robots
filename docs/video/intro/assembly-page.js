@@ -28,7 +28,9 @@ function bubble(who, s, y, p, brand, typed = 1) {
   const shown = lines.map((l) => { const part = l.slice(0, Math.max(0, left)); left -= l.length + 1; return part; });
   return pop(p, x + 40, y + 36, `<g filter="url(#soft)">${who === 'you' ? '' : face(x - 90, y - 2, brand)}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="36" fill="${who === 'you' ? INK : '#FFFFFF'}"/>${shown.map((l, i) => txt(l, x + pad, y + 47 + 42 * i, size, who === 'you' ? CREAM : INK, 500)).join('')}</g>`);
 }
-const talk = (rows, t, brand, y0 = 290, gap = 88) => rows.map(([who, s, at], i) => bubble(who, s, y0 + i * gap, at < 0 ? 1 : prog(t, at, .35), brand, who === 'you' && at >= 0 ? prog(t, at + .1, Math.min(.9, s.length * .035)) : 1)).join('');
+// While the sound is listed (window.__sounds), each bubble that arrives in a beat is noted with its time.
+let heard = null;
+const talk = (rows, t, brand, y0 = 290, gap = 88) => (heard && rows.forEach(([who, s, at]) => at >= 0 && heard.push([at, who, s])), rows.map(([who, s, at], i) => bubble(who, s, y0 + i * gap, at < 0 ? 1 : prog(t, at, .35), brand, who === 'you' && at >= 0 ? prog(t, at + .1, Math.min(.9, s.length * .035)) : 1)).join(''));
 const heading = (t, a, b, colourB, size = 60, atB = .45) => rise(prog(t, .1), txt(a, 110, 140, size, INK)) + (b ? rise(prog(t, atB), txt(b, 110, 140 + size * 1.15, size, colourB)) : '');
 
 /* The page: two picture layers below, words above. */
@@ -143,6 +145,51 @@ const BEATS = [
 ];
 let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
+
+/* The sound. Music: two cues from sound/, the first under the trouble and the second from the turn. Effects: sound/sfx/, Kenney's
+   CC0 packs, and three made in code (whoosh, long whoosh, boing; see sound.cjs). An effect is placed by a frame of a clip, so it
+   stays with the picture if the clip is retimed, or by a time in a beat. Gains are in decibels; sound.cjs sets the final loudness.
+   Every bubble also makes a sound as it arrives: a pluck for yours, a drop for the agent's, a rising question for each "May I",
+   and a confirmation for "Approved.". */
+const MUSIC = [{ file: 'music-a-3.mp3', at: 0, gain: 2 }, { file: 'music-b-2.mp3', at: 31, gain: 0, fadeOut: [64, 64.5] }];
+const clipAt = (name, f) => { const c = CLIPS[name]; return c.at + (f - c.key) / (FPS * c.speed); };
+const beatAt = (name, t) => BEATS.find((b) => b.name === name).start + t;
+const SOUNDS = [
+  [clipAt('02-box-a', 36), 'impactWood_heavy_000', -4],          // the box lands in the tree
+  [clipAt('02-box-a', 44), 'impactWood_light_001', -12],         // ...and bounces
+  [clipAt('03-pine-minimax-a', 14), 'cloth1', -8],               // the round tree swishes into a pine
+  [clipAt('03-pine-minimax-a', 96), 'impactPlank_medium_000', -6], // the ladder lands
+  [clipAt('04-slide-on-ladder-a', 33), 'scroll_002', -12],       // the slide slithers out of the box
+  [clipAt('04-slide-on-ladder-a', 55), 'impactPlate_medium_000', -6], // ...and lands on the ladder
+  [beatAt('next-session', 0), 'minimize_005', -10],              // the conversation is wiped
+  [beatAt('next-session', .45), 'tick_004', -12],                // the new-session line
+  [clipAt('05-second-box-a', 42), 'impactWood_medium_002', -5],  // the second box pops in
+  [beatAt('turn', 0), 'whoosh', -10],                            // the orange wipe
+  [beatAt('turn', .38), 'bong_001', -8],                         // the R
+  ...[8, 18, 28, 38, 48, 58, 68, 78, 88, 98].map((f, i) => [clipAt('06-sketch-a', f), i % 2 ? 'scratch_005' : 'scratch_004', -13]),   // the pencil
+  [clipAt('07-build-b', 12), 'impactWood_light_000', -7],        // built: the ladder
+  [clipAt('07-build-b', 30), 'impactWood_light_002', -7],        // the deck and railing
+  [clipAt('07-build-b', 52), 'impactWood_light_003', -6],        // the cabin
+  [clipAt('07-build-b', 62), 'impactWood_light_001', -6],        // the roof
+  [beatAt('decision', .6), 'pluck_002', -12], [beatAt('decision', .75), 'pluck_002', -12],   // two flags offered
+  [beatAt('decision', 1.8), 'select_003', -9],                   // orange chosen
+  [clipAt('08-flag-a', 33), 'clothBelt', -10],                   // the flag runs up
+  [clipAt('08-flag-a', 66), 'cloth2', -8],                       // ...and unfurls
+  [beatAt('record', .7), 'bookPlace1', -6],                      // the decisions card
+  [beatAt('record', 1.1), 'tick_004', -10], [beatAt('record', 1.8), 'tick_004', -10],        // its rows
+  [clipAt('09-slide-a', 28), 'scroll_002', -8],                  // the slide unrolls
+  [clipAt('09-slide-a', 72), 'impactSoft_medium_001', -6],       // ...and settles on the grass
+  [beatAt('promise', .05), 'whoosh-long', -12],                  // the pull back
+  [beatAt('end', .5), 'drop_002', -8],                           // the mark
+  ...[0, 1, 2].map((i) => [beatAt('end', 1.6 + i * .1), 'pluck_002', -14]),                // the three volume marks
+  [beatAt('end', 3.9 + .1), 'boing', -6],                        // the wink
+];
+window.__sounds = () => { const out = SOUNDS.map(([t, file, gain]) => ({ t, file, gain }));
+  let questions = 0;
+  for (const b of BEATS) { heard = []; b.draw(b.dur - .001, b.dur);
+    for (const [at, who, s] of heard) out.push({ t: b.start + at, gain: -13,
+      file: s === 'Approved.' ? 'confirmation_002' : /^May I/.test(s) ? `question_00${++questions}` : who === 'you' ? 'pluck_002' : 'drop_002' }); }
+  heard = null; return { music: MUSIC, effects: out.sort((a, b) => a.t - b.t), total: acc }; };
 window.__ready = Promise.all([document.fonts.ready, ...Object.values(marks).map((el) => { const i = new Image(); i.src = el.getAttribute('href'); return i.decode().catch(() => {}); })]);
 // Draw the moment t: the words at once, and the pictures once their frames are decoded.
 window.__seek = async (t) => { t = clamp(t, 0, acc - .001); NOW = t; shown = [];
