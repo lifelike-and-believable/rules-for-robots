@@ -51,6 +51,7 @@ Not yet decided: how the scenes B does not show (the trouble half, the sketch, t
 | `animatic.html` | The proxy from before the look was chosen: the whole film at sketch quality, playable in a browser. `film-page.js` has replaced it as the source of the timing and the words. |
 | `motion/`, `motion/cuts.json`, `motion.cjs` | Stage 6: every motion take, the chosen take of each change with the frames the film uses, and the script that strings them into `out/motion-reel.mp4`. `cuts.cjs` reads the cuts for it and for assembly. |
 | `sound/`, `sound/sfx/`, `sound.cjs` | Stage 8: every music take, the effects used (Kenney, CC0, with `License-kenney.txt`), and the mixer. |
+| `cuts.md` | Stage 10: the vertical and square layouts and the 30-second cut, as approved. |
 | `assembly.cjs`, `assembly-page.js`, `assembly-clips.cjs` | Stage 7: `node assembly.cjs` renders `out/assembly.mp4`, the clips under the animatic's words; `node assembly.cjs sheet` writes two frames of each beat. Where each clip sits in the film is its `CLIPS` entry in `assembly-page.js`. `assembly-clips.cjs` cuts the clips into frames once (again with `node assembly.cjs clips`), greys beats 2 to 6, and keeps the slide in colour by a mask of the slide's own shape in each frame. |
 | `frames.cjs` | Renders the animatic. `node frames.cjs sheet` writes one frame for each beat; `node frames.cjs render 20` writes every frame at 20 a second, for ffmpeg to encode. |
 | `art.cjs` | Builds the style frames as SVG from the takes and the words. `node art.cjs` writes them to `style/`. |
@@ -64,6 +65,8 @@ Not yet decided: how the scenes B does not show (the trouble half, the sketch, t
 The scripts end in `.cjs` because this repository's `package.json` makes `.js` files ES modules. They need Playwright with its Chromium, and ffmpeg, which this repository does not install. The animatic and the frames use Space Grotesk from Google Fonts.
 
 ## Next
+
+**Stage 10, cuts (2026-11-15).** The maintainer approved the proposal in [`cuts.md`](cuts.md) ("go ahead"): the vertical (1080 by 1920) and square (1080 by 1080) layouts, and a 31-second cut. `node assembly.cjs` takes `vertical`, `square`, and `short` and writes six films to `out/`: `film.mp4`, `film-vertical.mp4`, `film-square.mp4`, `film-30s.mp4`, `film-30s-vertical.mp4`, and `film-30s-square.mp4`. Nothing new was generated; every shape and length uses the approved clips, words, and sound. The master is unchanged.
 
 **Stage 9, review (2026-11-15).** A fresh agent, given the film, the brief, the script, and the sound list and nobody's opinion, reviewed the cut frame by frame (contact sheets, a scan of every frame for pops and for colour in the grey beats, contrast, and each effect's time against the picture). It found the story reads with the sound off and every effect but one lands within a frame or two. Its findings, and what was done:
 

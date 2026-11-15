@@ -55,3 +55,14 @@ Technical conformance that the session can verify itself. Each belongs to the st
 - The session re-rendered the film after each note. Six cuts were made where three would have done.
 - The session held back fixes that touched the story or cost credits and asked about each; the person wanted them applied within a named limit.
 - An independent review found in minutes what the session and the person had both stopped seeing.
+
+## What the intro film's run taught
+
+From the run through stages 2 to 10 on 2026-11-14 and 15:
+
+- Every word of a motion prompt shows up in the clip. "Bounces once as it lands" made a bounce the maintainer cut out.
+- Place each clip by a frame of its change and a time in its beat, and each sound by a frame of its clip. When a beat was shortened after the review, everything after it moved with it, and the sounds moved with the retimed clips.
+- An approved design sheet can still break the story. The review after assembly found the tree changing when the house was built, in the half that says nothing else moves. Check the design sheet against every claim the script makes about what stays the same.
+- Settle a picture's look before making the clips that start or end on it. A shadow asked for after eight clips were made left those clips unused.
+- The session cannot hear. It chose music by how each take's loudness rises and falls against what the prompt asked for, and the person was the first to listen.
+- A batch tool can charge for every take and return only the first. Check the account's history against the charges.

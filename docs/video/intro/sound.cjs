@@ -18,20 +18,22 @@ function made(dir) {
   ff(['-f', 'lavfi', '-i', "aevalsrc='0.5*sin(2*PI*(260*t+40*t*t)+5*sin(2*PI*9*t)*exp(-4*t))*exp(-5*t)':d=0.75:s=44100", '-af', 'afade=t=in:d=0.005', '-ac', '2', path.join(dir, 'boing.wav')]);
 }
 
-function mix({ music, effects, total }, out) {
+// A music entry plays its file from `from` seconds in (default 0), placed at `at` in the film, with optional fades given in film time.
+function mix({ music, effects, total }, out, name = 'sound') {
   const tmp = path.join(out, 'sound-made'); fs.mkdirSync(tmp, { recursive: true }); made(tmp);
   const file = (name) => { for (const p of [path.join(SFX, name + '.ogg'), path.join(tmp, name + '.wav')]) if (fs.existsSync(p)) return p; throw new Error('no sound ' + name); };
   const inputs = [], parts = [];
   music.forEach((m, i) => { inputs.push('-i', path.join(SOUND, m.file));
-    const fade = m.fadeOut ? `,afade=t=out:st=${m.fadeOut[0] - m.at}:d=${m.fadeOut[1] - m.fadeOut[0]}` : '';
-    parts.push(`[${i}:a]aresample=44100,aformat=channel_layouts=stereo,volume=${m.gain}dB${fade},adelay=${Math.round(m.at * 1000)}:all=1[m${i}]`); });
+    const trim = m.from ? `atrim=start=${m.from},asetpts=PTS-STARTPTS,` : '';
+    const fade = (m.fadeIn ? `,afade=t=in:st=${m.fadeIn[0] - m.at}:d=${m.fadeIn[1] - m.fadeIn[0]}` : '') + (m.fadeOut ? `,afade=t=out:st=${m.fadeOut[0] - m.at}:d=${m.fadeOut[1] - m.fadeOut[0]}` : '');
+    parts.push(`[${i}:a]${trim}aresample=44100,aformat=channel_layouts=stereo,volume=${m.gain}dB${fade},adelay=${Math.round(m.at * 1000)}:all=1[m${i}]`); });
   effects.forEach((e, j) => { const i = music.length + j; inputs.push('-i', file(e.file));
     const shift = e.pitch ? `asetrate=44100*${Math.pow(2, e.pitch / 12).toFixed(5)},aresample=44100,` : '';
     parts.push(`[${i}:a]aresample=44100,${shift}aformat=channel_layouts=stereo,volume=${e.gain}dB,adelay=${Math.round(e.t * 1000)}:all=1[e${j}]`); });
   const labels = music.map((_, i) => `[m${i}]`).concat(effects.map((_, j) => `[e${j}]`)).join('');
   const graph = parts.join(';') + `;${labels}amix=inputs=${music.length + effects.length}:normalize=0:duration=longest,atrim=0:${total}[a]`;
   const script = path.join(out, 'sound-graph.txt'); fs.writeFileSync(script, graph);
-  const raw = path.join(out, 'sound-raw.wav'), wav = path.join(out, 'sound.wav');
+  const raw = path.join(out, name + '-raw.wav'), wav = path.join(out, name + '.wav');
   ff([...inputs, '-filter_complex_script', script, '-map', '[a]', '-c:a', 'pcm_f32le', raw]);
   // Two passes: measure, then level by one gain for the whole film (linear), so the mix keeps its dynamics.
   const LN = 'loudnorm=I=-16:TP=-1.5:LRA=11';

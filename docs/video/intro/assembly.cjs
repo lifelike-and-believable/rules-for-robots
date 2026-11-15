@@ -2,7 +2,8 @@
 // Run: node assembly.cjs [fps]   (writes out/assembly.mp4 and, with the sound, out/film.mp4; needs Playwright with Chromium, and ffmpeg)
 // Or:  node assembly.cjs sheet   (writes two frames of each beat to out/assembly-sheet/)
 // Or:  node assembly.cjs sound   (mixes the sound again and joins it to out/assembly.mp4, as out/film.mp4, without rendering)
-// Add "vertical" or "square" for those cuts (stage 10): the files are named for the shape, as out/film-vertical.mp4.
+// Add "vertical" or "square" for those shapes, and "short" for the 30-second cut (stage 10, cuts.md): the files are named for
+// them, as out/film-vertical.mp4 or out/film-30s-square.mp4.
 // Add "clips" to cut the clip frames again after motion/cuts.json changes; otherwise they are cut once.
 // Stages 7 to 10 of docs/video/process.md. The clips' place in the film is in CLIPS, and every word, in assembly-page.js; the mixing
 // is in sound.cjs. Every shape has the same timing, so they share one mix.
@@ -21,7 +22,8 @@ const SHAPES = {
   vertical: { W: 1080, H: 1920, box: [0, 840, 1080, 1080] },
   square: { W: 1080, H: 1080, box: [0, 472, 1080, 608] },
 };
-const shape = Object.keys(SHAPES).find((k) => args.includes(k)) || 'wide', S = SHAPES[shape], tag = shape === 'wide' ? '' : '-' + shape;
+const shape = Object.keys(SHAPES).find((k) => args.includes(k)) || 'wide', S = SHAPES[shape], cut = args.includes('short') ? 'short' : 'full';
+const tag = (cut === 'short' ? '-30s' : '') + (shape === 'wide' ? '' : '-' + shape);
 const out = path.join(__dirname, 'out'), layers = path.join(out, 'assembly-layers'), clipsDir = path.join(layers, 'clips'), fr = path.join(out, 'assembly-fr' + tag);
 const FONT = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=block">';
 const MARKS = ['rules-for-robots', 'engineering', 'creation', 'research'];
@@ -37,7 +39,7 @@ const MARKS = ['rules-for-robots', 'engineering', 'creation', 'research'];
 img.pic{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block}
 svg{position:absolute;left:0;top:0;width:${S.W}px;height:${S.H}px;display:block}</style></head><body>
 <div id="stage"><div id="box"><img class="pic" alt=""><img class="pic" alt=""></div><svg id="film" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S.W} ${S.H}" width="${S.W}" height="${S.H}"></svg></div>
-<script>const FRAMES = ${JSON.stringify(frames)}; const SHAPE = ${JSON.stringify(shape)};</script><script>${fs.readFileSync(path.join(__dirname, 'assembly-page.js'), 'utf8')}</script></body></html>`);
+<script>const FRAMES = ${JSON.stringify(frames)}; const SHAPE = ${JSON.stringify(shape)}; const CUT = ${JSON.stringify(cut)};</script><script>${fs.readFileSync(path.join(__dirname, 'assembly-page.js'), 'utf8')}</script></body></html>`);
 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: S.W, height: S.H }, deviceScaleFactor: 1 });
@@ -48,9 +50,9 @@ svg{position:absolute;left:0;top:0;width:${S.W}px;height:${S.H}px;display:block}
   const total = await page.evaluate(() => window.__total), n = Math.round(total * fps);
   console.log(`assembly${tag}: ${total.toFixed(1)} seconds, ${n} frames, ${S.W} by ${S.H}`);
   const sounds = await page.evaluate(() => window.__sounds());
-  fs.writeFileSync(path.join(out, 'sound-list.json'), JSON.stringify(sounds, null, 1));
+  fs.writeFileSync(path.join(out, `sound-list${tag}.json`), JSON.stringify(sounds, null, 1));
   const video = path.join(out, `assembly${tag}.mp4`), film = path.join(out, `film${tag}.mp4`);
-  const withSound = () => { const wav = mix(sounds, out);
+  const withSound = () => { const wav = mix(sounds, out, 'sound' + tag);
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', film]);
     console.log(`wrote out/film${tag}.mp4 (${sounds.effects.length} effects)`); };
   if (args.includes('sound')) { await browser.close(); withSound(); return; }

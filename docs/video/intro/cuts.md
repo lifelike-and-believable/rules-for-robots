@@ -1,6 +1,6 @@
 # Intro video: cuts
 
-Stage 10 of [the process](../process.md): the other shapes and lengths of the approved film, with the words laid out again for each. Proposed 2026-11-15; nothing here is approved yet.
+Stage 10 of [the process](../process.md): the other shapes and lengths of the approved film, with the words laid out again for each. Proposed and approved 2026-11-15 ("go ahead"), as it stands below.
 
 ## Shapes
 
@@ -35,4 +35,4 @@ What it gives up, for the maintainer to weigh:
 - **The hammer.** Without the micromanaging beat, the end card's "(Yes, you may put the hammer down.)" has nothing to answer, so it goes. Keeping the hammer means keeping a short micromanaging beat (about 3.5 seconds: "So you micromanage." and "May I put the hammer down?") in place of the flag beat; but then the flag in beat 7 arrives without being chosen, which breaks the continuity check. The session recommends the table above.
 - **The record and the next session** go, so the film no longer shows the agent remembering. The motto and "a whole team of them" carry the promise.
 
-Music for the 30-second cut: the first cue's opening to the turn (about 10 seconds, faded), and from the turn the second cue's lift, joined to its last 15 seconds so its final chord lands on the end card. The effects follow their beats as in the master. Every shape of the 30-second cut is rendered the same way as the master's.
+Music for the 30-second cut: the first cue's opening to the turn (10 seconds, faded), and from the turn six seconds of the second cue's lift, crossfaded over a second into its last 15 seconds, so its final chord lands on the end card. The effects follow their beats as in the master. `node assembly.cjs short` renders it, and `short vertical` and `short square` its other shapes; the beats, clip timings, music, and effects are the `_SHORT` lists in `assembly-page.js`.

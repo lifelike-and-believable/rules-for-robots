@@ -33,11 +33,32 @@ let heard = null;
 const talk = (rows, t, brand, y0 = 290, gap = 88) => (heard && rows.forEach(([who, s, at]) => at >= 0 && heard.push([at, who, s])), rows.map(([who, s, at], i) => bubble(who, s, y0 + i * gap, at < 0 ? 1 : prog(t, at, .35), brand, who === 'you' && at >= 0 ? prog(t, at + .1, Math.min(.9, s.length * .035)) : 1)).join(''));
 const heading = (t, a, b, colourB, size = 60, atB = .45) => rise(prog(t, .1), txt(a, 110, 140, size, INK)) + (b ? rise(prog(t, atB), txt(b, 110, 140 + size * 1.15, size, colourB)) : '');
 
+// The end card. Its smaller lines start at `small` seconds, the R winks at `winkAt`, and `hammer` keeps the hammer line.
+function endCard(t, small, winkAt, hammer) { const p = inout(prog(t, 0, .7)); pic('10-village-a', 1 - p);
+      const E = END, [mx, my, ms] = E.mark;
+      placeMark('rules-for-robots', mx, my, ms, ease(prog(t, .5, .4)));
+      ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, E.vols[0] + i * E.vols[1], E.vols[2], E.vols[3], ease(prog(t, small + i * .1, .35))));
+      // The R winks with its whole body, as in the animatic. Its eye is at (65, 58), radius 6.5, inside the mark's (9, 8.5) scale .64
+      // group; the mark pivots on the middle of its base, and its jumps scale with its size.
+      const k = ms / 128, ex = mx + (9 + 65 * .64) * k, ey = my + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k, w = t - winkAt, px = mx + ms / 2, py = my + ms;
+      const [sx, sy, rot, dy] = wink(w), shut = w < .25 ? 0 : w < .31 ? (w - .25) / .06 : w < .6 ? 1 : w < .68 ? 1 - (w - .6) / .08 : 0;
+      const body = w <= 0 || w >= 1.2 ? '' : `translate(${px} ${py}) translate(0 ${(dy * ms / 150).toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(${-px} ${-py})`;
+      if (body) marks['rules-for-robots'].setAttribute('transform', body);
+      over.setAttribute('transform', body);
+      over.innerHTML = shut <= 0 ? '' : `<circle cx="${ex}" cy="${ey}" r="${(er + 1.6).toFixed(2)}" fill="${O}"/>` + (shut > .7
+        ? `<path d="M${ex - er * 1.6} ${ey - er * .5} Q${ex} ${ey + er * 1.4} ${ex + er * 1.6} ${ey - er * .5}" fill="none" stroke="${INK}" stroke-width="${(er * .75).toFixed(2)}" stroke-linecap="round"/>`
+        : `<ellipse cx="${ex}" cy="${ey}" rx="${er}" ry="${(er * (1 - shut)).toFixed(2)}" fill="${INK}"/>`);
+      const line = ([x, y, size, anchor], at, s2, fill, weight) => rise(prog(t, at), txt(s2, x, y, size, fill, weight, anchor));
+      TOP += motto(1, 1) + line(E.name, .5, 'Rules for Robots', INK, 700) + line(E.guide, small - .6, 'A practical guide for people and agents who work together', SP, 500)
+        + line(E.url, small, 'github.com/RulesForRobots', INK, 700) + line(E.plain, small + .1, 'Rules and plugins for Claude Code.', '#4A3F38', 500)
+        + (hammer ? line(E.hammer, small + 1, '(Yes, you may put the hammer down.)', MUTED, 500) : '');
+  return ''; }
 /* The shapes. The master is wide (16:9). In the vertical cut the words keep their size in a band at the top and the picture is a
    square below; in the square cut the picture is the whole 16:9 frame along the bottom and the words above it are scaled to fit, which
    keeps them the same size against the frame as in the master. The picture's place and crop are set by assembly.cjs; the turn card,
    the motto, and the end card are laid out for each shape below. */
-/* global SHAPE */
+/* global SHAPE, CUT */
+const SHORT = typeof CUT === 'string' && CUT === 'short';   // the 30-second cut (cuts.md); otherwise the approved film
 const LAYOUTS = { wide: { W: 1920, H: 1080, col: 1 }, vertical: { W: 1080, H: 1920, col: 1 }, square: { W: 1080, H: 1080, col: .58 } };
 const L = LAYOUTS[typeof SHAPE === 'string' ? SHAPE : 'wide'], WIDE = L.W === 1920, TALL = L.H > L.W;
 /* The page: two picture layers below, words above. Full-frame drawing (the turn card, the motto, the end card) goes in TOP, above the
@@ -56,7 +77,7 @@ const placeMark = (name, x, y, s, opacity) => { const el = marks[name]; el.setAt
    seconds into it), and how fast it plays (speed). Before its first frame a clip holds that frame; after its last it holds that, or, where
    loop is given, plays that stretch back and forth so a flag keeps moving. The -ash takes play in step with their colour take. */
 const FPS = 24;
-const CLIPS = {
+const CLIPS_FULL = {
   '02-box-a': { key: 12, at: ['literal', .15], speed: 1.25 },               // the box falls as the colour drains, and lands on "Done! One treehouse."
   '03-pine-minimax-a': { key: 14, at: ['one-change', .55], speed: 1.6 },  // the tree becomes a pine after "Add a ladder.", and the ladder flies in on "Added! One ladder."
   '04-slide-on-ladder-a': { key: 18, at: ['addition', 1.1], speed: 1.2 },    // the slide comes down on "Added! One slide."
@@ -67,6 +88,17 @@ const CLIPS = {
   '09-slide-a': { key: 32, at: ['change', .6], speed: 1.5, loop: [90, 123] },   // the slide unrolls on "Add a slide."
   '10-village-a': { key: 2, at: ['promise', .1], speed: 1.6 },             // the pull back to the village
 };
+// The 30-second cut uses fewer clips, placed in its own shorter beats.
+const CLIPS_SHORT = {
+  '02-box-a': { key: 12, at: ['literal', .15], speed: 1.25 },            // the box lands on "Done! One treehouse."
+  '03-pine-minimax-a': { key: 14, at: ['one-change', .55], speed: 1.6 }, // the pine, and the ladder before "Why is it a pine tree?"
+  '06-sketch-a': { key: 8, at: ['asks', .5], speed: 2.4 },               // the sketch draws itself on "Here is a sketch."
+  '07-build-b': { key: 15, at: ['asks', 2.25], speed: 2 },               // built after "Approved."
+  '08-flag-b': { key: 24, at: ['decision', 1.5], speed: 1.6, loop: [80, 123] },   // the flag runs up after "Orange."
+  '09-slide-a': { key: 32, at: ['change', .5], speed: 1.5, loop: [90, 123] },     // the slide unrolls on "Add a slide."
+  '10-village-a': { key: 2, at: ['promise', .1], speed: 2 },             // the pull back
+};
+const CLIPS = SHORT ? CLIPS_SHORT : CLIPS_FULL;
 const clipStart = (c) => BEATS.find((b) => b.name === c.at[0]).start + c.at[1];
 function frameOf(name, T) {
   const c = CLIPS[name.replace(/-ash$/, '')], n = FRAMES[name];
@@ -113,9 +145,9 @@ const END = WIDE ? { mark: [413, 385, 150], vols: [552, 78, 713, 64], name: [593
   : TALL ? { mark: [465, 620, 150], vols: [430, 78, 1040, 64], name: [540, 890, 104, 'middle'], guide: [540, 948, 30, 'middle'], url: [540, 1200, 40, 'middle'], plain: [540, 1280, 36, 'middle'], hammer: [540, 1450, 38, 'middle'] }
   : { mark: [480, 250, 120], vols: [450, 64, 560, 52], name: [540, 465, 84, 'middle'], guide: [540, 512, 25, 'middle'], url: [540, 700, 34, 'middle'], plain: [540, 760, 30, 'middle'], hammer: [540, 900, 32, 'middle'] };
 // Draw without noting bubbles for the sound list (for words repeated from an earlier beat).
-const quiet = (fn) => { const h = heard; heard = null; const r = fn(); heard = h; return r; };
+const quiet = (fn) => { const h = heard, sh = shown; heard = null; shown = []; const r = fn(); heard = h; shown = sh; return r; };
 
-const BEATS = [
+const BEATS_FULL = [
   // 1. The idea.
   { name: 'idea', dur: 2.5, draw: (t) => { pic('02-box-a');
       return heading(t, 'You have an idea.') + talk([['you', 'Build me a treehouse.', .3]], t, false); } },
@@ -159,26 +191,32 @@ const BEATS = [
   { name: 'promise', dur: 4.5, draw: (t) => { pic('09-slide-a'); pic('10-village-a', ease(prog(t, 0, .2)));
       TOP += motto(prog(t, 1.4), prog(t, 1.9)); return ''; } },
   // 13. End: the motto stays at the top, and the name comes out below it with the guide line under it.
-  { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); pic('10-village-a', 1 - p);
-      const E = END, [mx, my, ms] = E.mark;
-      placeMark('rules-for-robots', mx, my, ms, ease(prog(t, .5, .4)));
-      ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, E.vols[0] + i * E.vols[1], E.vols[2], E.vols[3], ease(prog(t, 1.6 + i * .1, .35))));
-      // The R winks with its whole body, as in the animatic. Its eye is at (65, 58), radius 6.5, inside the mark's (9, 8.5) scale .64
-      // group; the mark pivots on the middle of its base, and its jumps scale with its size.
-      const k = ms / 128, ex = mx + (9 + 65 * .64) * k, ey = my + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k, w = t - 3.9, px = mx + ms / 2, py = my + ms;
-      const [sx, sy, rot, dy] = wink(w), shut = w < .25 ? 0 : w < .31 ? (w - .25) / .06 : w < .6 ? 1 : w < .68 ? 1 - (w - .6) / .08 : 0;
-      const body = w <= 0 || w >= 1.2 ? '' : `translate(${px} ${py}) translate(0 ${(dy * ms / 150).toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(${-px} ${-py})`;
-      if (body) marks['rules-for-robots'].setAttribute('transform', body);
-      over.setAttribute('transform', body);
-      over.innerHTML = shut <= 0 ? '' : `<circle cx="${ex}" cy="${ey}" r="${(er + 1.6).toFixed(2)}" fill="${O}"/>` + (shut > .7
-        ? `<path d="M${ex - er * 1.6} ${ey - er * .5} Q${ex} ${ey + er * 1.4} ${ex + er * 1.6} ${ey - er * .5}" fill="none" stroke="${INK}" stroke-width="${(er * .75).toFixed(2)}" stroke-linecap="round"/>`
-        : `<ellipse cx="${ex}" cy="${ey}" rx="${er}" ry="${(er * (1 - shut)).toFixed(2)}" fill="${INK}"/>`);
-      const line = ([x, y, size, anchor], at, s2, fill, weight) => rise(prog(t, at), txt(s2, x, y, size, fill, weight, anchor));
-      TOP += motto(1, 1) + line(E.name, .5, 'Rules for Robots', INK, 700) + line(E.guide, 1, 'A practical guide for people and agents who work together', SP, 500)
-        + line(E.url, 1.6, 'github.com/RulesForRobots', INK, 700) + line(E.plain, 1.7, 'Rules and plugins for Claude Code.', '#4A3F38', 500)
-        + line(E.hammer, 2.6, '(Yes, you may put the hammer down.)', MUTED, 500);
-      return ''; } },
+  { name: 'end', dur: 5.5, draw: (t) => endCard(t, 1.6, 3.9, true) },
 ];
+/* The 30-second cut (cuts.md): the story whole, the turn, and one of each thing the collaborator does. Words and pictures as in the
+   full film; times shorter. */
+const oneChangeShort = (t) => heading(t, 'You ask for one change.', 'Everything else changes too.', MUTED, 52) + talk([['you', 'Add a ladder.', .2], ['you', 'Why is it a pine tree?', 2.3]], t, false);
+const BEATS_SHORT = [
+  { name: 'idea', dur: 2, draw: (t) => { pic('02-box-a');
+      return heading(t, 'You have an idea.') + talk([['you', 'Build me a treehouse.', .3]], t, false); } },
+  { name: 'literal', dur: 3.5, draw: (t) => { pic('02-box-a'); pic('02-box-a-ash', ease(prog(t, 0, .6)));
+      return heading(t, 'Exactly what you said.', 'Not what you meant.', MUTED) + talk([['you', 'Build me a treehouse.', -1], ['agent', 'Done! One treehouse.', .9]], t, false); } },
+  { name: 'one-change', dur: 4.5, draw: (t) => { pic('02-box-a-ash'); pic('03-pine-minimax-a-ash', ease(prog(t, 0, .25))); return oneChangeShort(t); } },
+  { name: 'turn', dur: 4, draw: (t) => { pic('03-pine-minimax-a-ash'); TOP += turnCard(t); return quiet(() => oneChangeShort(4.5)); } },
+  { name: 'asks', dur: 4, draw: (t) => { pic('06-sketch-a'); pic('07-build-b', ease(prog(t, 2.1, .15)));
+      UNDER += fade(1 - ease(prog(t, 0, .45)), turnCard(4));
+      return heading(t, 'It asks before it builds.') + talk([['agent', 'Here is a sketch. Is this it?', .5], ['you', 'Approved.', 2]], t, true); } },
+  { name: 'decision', dur: 2.5, draw: (t) => { pic('07-build-b'); pic('08-flag-b', ease(prog(t, 0, .25)));
+      const flag = (x, fill, at) => pop(prog(t, at, .35), x + 50, 560, `<line x1="${x}" y1="500" x2="${x}" y2="640" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${x + 4} 504 C${x + 34} 492 ${x + 60} 520 ${x + 112} 502 L${x + 86} 530 L${x + 116} 556 C${x + 66} 552 ${x + 40} 574 ${x + 4} 558 Z" fill="${fill}"/>`);
+      return talk([['agent', 'The flag: orange or violet?', .1], ['you', 'Orange.', .9]], t, true, 200)
+        + fade(1 - ease(prog(t, 1.3, .35)), flag(480, O, .3) + flag(660, P, .4) + `<rect x="452" y="474" width="172" height="186" rx="18" fill="none" stroke="${O}" stroke-width="7" opacity="${ease(prog(t, 1.1, .3)).toFixed(3)}"/>`); } },
+  { name: 'change', dur: 4, draw: (t) => { pic('08-flag-b'); pic('09-slide-a', ease(prog(t, 0, .3)));
+      return talk([['you', 'Add a slide.', .1], ['agent', 'Added. Nothing else moved.', 1.2]], t, true) + (t > 1.8 ? heading(t - 1.8, 'A change is a change.', 'Not a restart.', SP) : ''); } },
+  { name: 'promise', dur: 3, draw: (t) => { pic('09-slide-a'); pic('10-village-a', ease(prog(t, 0, .2)));
+      TOP += motto(prog(t, .9), prog(t, 1.3)); return ''; } },
+  { name: 'end', dur: 3.5, draw: (t) => endCard(t, 1.2, 2.2, false) },
+];
+const BEATS = SHORT ? BEATS_SHORT : BEATS_FULL;
 let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
 
@@ -188,9 +226,26 @@ window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]
    Every bubble also makes a sound as it arrives: a pluck for yours, a drop for the agent's, a rising question for each "May I",
    and a confirmation for "Approved.", each a little higher or lower than the last. */
 const beatAt = (name, t) => BEATS.find((b) => b.name === name).start + t;
-const MUSIC = [{ file: 'music-a-3.mp3', at: 0, gain: 2, fadeOut: [beatAt('turn', -.4), beatAt('turn', 0)] }, { file: 'music-b-2.mp3', at: beatAt('turn', 0), gain: 0, fadeOut: [acc - .5, acc] }];
+const MUSIC = !SHORT ? [{ file: 'music-a-3.mp3', at: 0, gain: 2, fadeOut: [beatAt('turn', -.4), beatAt('turn', 0)] }, { file: 'music-b-2.mp3', at: beatAt('turn', 0), gain: 0, fadeOut: [acc - .5, acc] }]
+  // The 30-second cut: the first cue's opening to the turn; then the second cue's lift for six seconds, crossfaded into its last 15
+  // (from 19 seconds in), so its final chord lands on the end card. `from` is where in the cue it starts playing.
+  : [{ file: 'music-a-3.mp3', at: 0, gain: 2, fadeOut: [beatAt('turn', -.4), beatAt('turn', 0)] },
+     { file: 'music-b-2.mp3', at: beatAt('turn', 0), gain: 0, fadeOut: [beatAt('turn', 5.5), beatAt('turn', 6.5)] },
+     { file: 'music-b-2.mp3', at: beatAt('turn', 6), from: 19, gain: 0, fadeIn: [beatAt('turn', 6), beatAt('turn', 6.8)], fadeOut: [acc - .4, acc] }];
 const clipAt = (name, f) => { const c = CLIPS[name]; return clipStart(c) + (f - c.key) / (FPS * c.speed); };
-const SOUNDS = [
+const SOUNDS = SHORT ? [
+  [clipAt('02-box-a', 36), 'impactWood_heavy_000', -4], [clipAt('02-box-a', 44), 'impactWood_light_001', -12],
+  [clipAt('03-pine-minimax-a', 14), 'cloth1', -8], [clipAt('03-pine-minimax-a', 96), 'impactPlank_medium_000', -6],
+  [beatAt('turn', 0), 'whoosh', -10], [beatAt('turn', .38), 'bong_001', -8],
+  ...[8, 18, 28, 38, 48, 58, 68, 78, 88, 98].map((f, i) => [clipAt('06-sketch-a', f), i % 2 ? 'scratch_005' : 'scratch_004', -13]),
+  [clipAt('07-build-b', 23), 'impactWood_light_000', -7], [clipAt('07-build-b', 43), 'impactWood_light_002', -7],
+  [clipAt('07-build-b', 69), 'impactWood_light_003', -6], [clipAt('07-build-b', 86), 'impactWood_light_001', -6],
+  [beatAt('decision', .3), 'pluck_002', -12], [beatAt('decision', .4), 'pluck_002', -12], [beatAt('decision', 1.1), 'select_003', -9],
+  [clipAt('08-flag-b', 24), 'clothBelt', -10], [clipAt('08-flag-b', 68), 'cloth2', -8],
+  [clipAt('09-slide-a', 32), 'scroll_002', -8], [clipAt('09-slide-a', 82), 'impactSoft_medium_001', -6],
+  [beatAt('promise', .05), 'whoosh-long', -12],
+  [beatAt('end', .5), 'drop_002', -8], ...[0, 1, 2].map((i) => [beatAt('end', 1.2 + i * .1), 'pluck_002', -14]), [beatAt('end', 2.2 + .1), 'boing', -6],
+] : [
   [clipAt('02-box-a', 36), 'impactWood_heavy_000', -4],          // the box lands in the tree
   [clipAt('02-box-a', 44), 'impactWood_light_001', -12],         // ...and bounces
   [clipAt('03-pine-minimax-a', 14), 'cloth1', -8],               // the round tree swishes into a pine
