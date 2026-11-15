@@ -62,6 +62,16 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
 ## Next
 
+**Stage 6, motion: the test.** The maintainer approved the animatic on 2026-11-15 ("those are all fine"). One change, beat 3's round tree becoming the pine as the box moves and the ladder lands, was made between design pictures 02 and 03 (as first and last frame, by their job IDs) on both video models. Quotes: 8 credits for 4 seconds on `minimax_h3`, 40 for 5 seconds at 1080p on `flux_3_video`.
+
+| File | Model | Job | Result |
+|---|---|---|---|
+| `motion/03-pine-flux-a.mp4` | `flux_3_video`, 5 s, 1080p | `6f6ad487-a065-4c72-ae2d-faa2acb99768` | The box flies out and lands, the ladder tumbles in; the tree swaps almost as a cut. 40 credits. |
+| `motion/03-pine-minimax-a.mp4` | `minimax_h3`, 5 s, 2560 by 1440 | `fa5b6dbd-dc86-4cbd-aa48-e02425367641` | The round tree visibly folds into the pine, the box tumbles down, the ladder swings up into place. 10 credits. |
+| `motion/03-pine-minimax-b.mp4` | `minimax_h3`, 5 s, 2560 by 1440 | `48c80651-2050-4a1a-a630-50aac2a4d67c` | A quicker change; the box tumbles, the ladder flies in. 10 credits. |
+
+Two earlier takes on `minimax_h3` at 4 seconds (`28a0eb2b-574e-49fc-8d02-3af6af12da5a`, `da1a5725-7783-48c7-bad2-fe5e2152041e`) failed on Higgsfield's side and were not charged. The test cost 60 credits; 326 have been spent on the film. Both models kept the world still and the style flat. The session recommends `minimax_h3` for the motion stage: take A shows the morph the review asked for, it renders at a higher resolution, and it costs a quarter as much.
+
 **Stage 5, the animatic.** `node animatic.cjs` renders `out/animatic.mp4` (64.5 seconds) from the approved pictures in `design/` and the approved script, with cuts, dissolves, and wipes only; `node animatic.cjs sheet` writes two frames of each beat. The timing and every word are in `animatic-page.js`. The ash of beats 2 to 6 is made by ffmpeg, and the slide is kept in colour by a mask cut by its colour; the slide's darker rim falls outside that mask and shows grey, which the finals should fix with a proper mask. `film.cjs`, `film-page.js`, `art.cjs`, `kit.cjs`, and `style/` are the trial's, kept as its record.
 
 An independent review of the first animatic (2026-11-15) passed the story and found: last lines held under a second and a half in beats 1, 2, 4, 6, and 11; the second box with no moment of its own; words touching the pictures in beats 3 and 10; the end card off centre with a small plain line; the village's centre treehouse different from beat 11 and its sun gone; a tone shift around the slide in beat 11; the offered flags left on screen; and the bad agent's two-dot face as a second robot. All are fixed in the second animatic: the lines come sooner, the box arrives on "The treehouse.", the Noted line runs to two lines, the slide in beat 11 is the pixels where 09 differs from 08 laid over 08, the bad agent is a plain grey square, and the village is rebuilt. The review's list of what generated motion must do for each change is the brief for stage 6. Still open from it: the grey box in beat 2 is hard to see on the grey tree, and beat 5 mocks asking three beats before beat 8 praises it.
