@@ -1,4 +1,4 @@
-// Usage: node frames.js sheet | node frames.js render <fps>
+// Usage: node frames.cjs sheet | node frames.js render <fps>
 const { chromium } = require('playwright');
 const fs = require('fs');
 (async () => {
