@@ -62,6 +62,22 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
 ## Next
 
+**Stage 6, motion: the clips.** On 2026-11-15 the maintainer approved the rest of the motion on `minimax_h3` ("go ahead"), within about 210 credits. Each of the eight remaining changes was made twice, 5 seconds at 16:9, with its two approved design pictures as first and last frame by job ID. All sixteen jobs finished; the session chose one take for each change from contact sheets and larger frames of the busiest moments, and needed no retakes. `out/motion-reel.mp4` (not committed) strings the chosen takes in story order with a label on each, for the maintainer's approval.
+
+| Change | Beat | Take A | Take B | Chosen, and why |
+|---|---|---|---|---|
+| The box drops into the tree | 2 | `02-box-a.mp4`, `b2c27e52-12a7-4567-83df-e6ef992d4f6c` | `02-box-b.mp4`, `3f32bb90-19a3-496f-8eea-5f206ad88c78` | A: it falls from the sky and bounces; B appears inside the tree. |
+| The round tree becomes a pine | 3 | `03-pine-minimax-a.mp4` (the test) | `03-pine-minimax-b.mp4` | A, from the test. |
+| The slide lands on the ladder | 4 | `04-slide-on-ladder-a.mp4`, `7d6d46b4-c80f-45e9-8d6e-e04de60ebea5` | `04-slide-on-ladder-b.mp4`, `78be9302-dac3-4bbf-8159-60069b49c3ca` | A: a smoother slide out of the box; both usable. |
+| The second box | 6 | `05-second-box-a.mp4`, `01b28a9a-4de8-405f-9557-576238436eb7` | `05-second-box-b.mp4`, `243e9bb9-2b54-4f96-89a3-a33b681507a0` | A: it pops in large and settles to size; B just appears. |
+| The sketch draws itself | 8 | `06-sketch-a.mp4`, `e65f2ad9-4f94-4ca0-8446-b6b643b88a09` | `06-sketch-b.mp4`, `f8ca9467-06d3-43a1-9279-6b058d94ffdb` | A: deck, railing, cabin, roof, window, ladder, then the pole, as asked; B draws the pole before the ladder. |
+| The sketch is built | 8 | `07-build-a.mp4`, `857c4ddc-aa2c-4859-b528-b3422b2b2107` | `07-build-b.mp4`, `e61ae085-9165-4e9d-a4ad-c0b1938b616d` | B: A darkens the canopy behind the sketch before anything is built. |
+| The flag goes up | 9 | `08-flag-a.mp4`, `c8e135d3-81f5-41d0-9190-b86a167fc2f9` | `08-flag-b.mp4`, `1dad5142-e85a-4f7a-b4ef-74e6b27b83af` | A; the two are almost the same. |
+| The slide unrolls | 11 | `09-slide-a.mp4`, `62e42d75-956b-45bd-8a80-1eda4c33340d` | `09-slide-b.mp4`, `45a94d79-2c99-48a3-b21a-463892365fae` | A: it rolls out of the railing opening as a tube and unrolls to the grass; B starts as a stub and grows. |
+| The pull back to the village | 12 | `10-village-a.mp4`, `3dc33486-66db-425e-90d4-c21c0ac66970` | `10-village-b.mp4`, `fd9e1a09-5df6-4c76-af61-b4100b0f532b` | B: A runs rope bridges into empty sky before the neighbouring trees arrive. |
+
+Each clip is 5.17 seconds at 2560 by 1440 and cost 10 credits: 160 for the stage, 486 for the film so far, 439 left on the account. Every clip holds still around its change and keeps the flat style. Assembly will cut each clip to its beat's length and may hold or speed it; the clips are longer than most of the changes need.
+
 **Stage 6, motion: the test.** The maintainer approved the animatic on 2026-11-15 ("those are all fine"). One change, beat 3's round tree becoming the pine as the box moves and the ladder lands, was made between design pictures 02 and 03 (as first and last frame, by their job IDs) on both video models. Quotes: 8 credits for 4 seconds on `minimax_h3`, 40 for 5 seconds at 1080p on `flux_3_video`.
 
 | File | Model | Job | Result |
