@@ -25,6 +25,7 @@ The idea is the one behind the software process: each approval locks one thing b
 - **Changes are gathered and made together.** The person's notes on a stage are answered in one revision of that stage.
 - **Every picture comes from the master.** A picture is made by editing the master, or a picture already edited from it, with a model that takes references. Pictures made separately do not share a world, and the session's own drawing does not match a generated look.
 - **Motion is generated between approved pictures.** The first and last frame of a clip are both approved pictures, so a clip cannot change what was agreed.
+- **A motion prompt asks for the change and nothing more.** A model shows every word of a prompt, so a flourish written in ("bounces once as it lands") lands in the clip. Where one does, cut it out of the take before paying for a retake.
 - **Words stay in code.** Headings, speech, and the end card are set by the program over the pictures, because a model does not set exact words reliably, and words change late.
 - **The cost is quoted before a run**, the person names a limit for the stage, and every take is kept and listed with its job.
 - **Review is independent.** A fresh agent is given the work, the brief, and the script, and no opinion of it. It reviews the animatic, when a change is cheap, and the assembled film.

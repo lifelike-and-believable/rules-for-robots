@@ -49,6 +49,7 @@ Not yet decided: how the scenes B does not show (the trouble half, the sketch, t
 | File | What it is |
 |---|---|
 | `animatic.html` | The proxy from before the look was chosen: the whole film at sketch quality, playable in a browser. `film-page.js` has replaced it as the source of the timing and the words. |
+| `motion/`, `motion/cuts.json`, `motion.cjs` | Stage 6: every motion take, the chosen take of each change with the frames the film uses, and the script that strings them into `out/motion-reel.mp4`. |
 | `frames.cjs` | Renders the animatic. `node frames.cjs sheet` writes one frame for each beat; `node frames.cjs render 20` writes every frame at 20 a second, for ffmpeg to encode. |
 | `art.cjs` | Builds the style frames as SVG from the takes and the words. `node art.cjs` writes them to `style/`. |
 | `kit.cjs` | Reads the takes: vector B with and without its slide, the idea's outline, and any other take as a scene. |
@@ -62,7 +63,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 
 ## Next
 
-**Stage 6, motion: the clips.** On 2026-11-15 the maintainer approved the rest of the motion on `minimax_h3` ("go ahead"), within about 210 credits. Each of the eight remaining changes was made twice, 5 seconds at 16:9, with its two approved design pictures as first and last frame by job ID. All sixteen jobs finished; the session chose one take for each change from contact sheets and larger frames of the busiest moments, and needed no retakes. `out/motion-reel.mp4` (not committed) strings the chosen takes in story order with a label on each, for the maintainer's approval.
+**Stage 6, motion: the clips.** On 2026-11-15 the maintainer approved the rest of the motion on `minimax_h3` ("go ahead"), within about 210 credits. Each of the eight remaining changes was made twice, 5 seconds at 16:9, with its two approved design pictures as first and last frame by job ID. All sixteen jobs finished; the session chose one take for each change from contact sheets and larger frames of the busiest moments, and needed no retakes. `out/motion-reel.mp4` (not committed) strings the chosen takes in story order with a label on each. The maintainer approved them apart from the bounce in the two slide clips, which is now cut (below); the cut waits for the maintainer's look.
 
 | Change | Beat | Take A | Take B | Chosen, and why |
 |---|---|---|---|---|
@@ -75,6 +76,8 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 | The flag goes up | 9 | `08-flag-a.mp4`, `c8e135d3-81f5-41d0-9190-b86a167fc2f9` | `08-flag-b.mp4`, `1dad5142-e85a-4f7a-b4ef-74e6b27b83af` | A; the two are almost the same. |
 | The slide unrolls | 11 | `09-slide-a.mp4`, `62e42d75-956b-45bd-8a80-1eda4c33340d` | `09-slide-b.mp4`, `45a94d79-2c99-48a3-b21a-463892365fae` | A: it rolls out of the railing opening as a tube and unrolls to the grass; B starts as a stub and grows. |
 | The pull back to the village | 12 | `10-village-a.mp4`, `3dc33486-66db-425e-90d4-c21c0ac66970` | `10-village-b.mp4`, `fd9e1a09-5df6-4c76-af61-b4100b0f532b` | B: A runs rope bridges into empty sky before the neighbouring trees arrive. |
+
+The maintainer's note on the reel, 2026-11-15: "the bounce that happens after the slide extends/unfurls in both scenes is unnecessary and distracting. everything else is good". The bounce was in the session's prompts ("bounces once as it lands", "settles with a small bounce"). Both slides first land where they finally rest, so each clip now skips its bounce in place of a retake: it plays to the landing, holds that frame for a quarter second, and dissolves into the frames after the bounce, where beat 11's flag is still moving. The frames each clip uses are in `motion/cuts.json`, which assembly reads too; `node motion.cjs` builds the reel from it. Lesson for the process: ask for the motion the picture needs and no flourish beyond it, because a model takes every word of a prompt as something to show.
 
 Each clip is 5.17 seconds at 2560 by 1440 and cost 10 credits: 160 for the stage, 486 for the film so far, 439 left on the account. Every clip holds still around its change and keeps the flat style. Assembly will cut each clip to its beat's length and may hold or speed it; the clips are longer than most of the changes need.
 
