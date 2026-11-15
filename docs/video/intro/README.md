@@ -72,7 +72,7 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 | 1 | Must fix. Orange specks flicker on the trunk and the ladder in beat 4 before the slide arrives. | The slide's mask took the largest orange piece even before the slide existed. It now needs a piece of at least 150 pixels (the specks are 10 to 20, the slide's first sliver about 250); no orange shows before the slide. |
 | 2 | Must fix. The turn leaves with a blank orange frame and a cut. | The turn card is one drawing (`turnCard`), and beat 8 fades the whole of it, words and R, over the returning colour. |
 | 3 | Must fix. Beat 6's words vanish a frame before the orange reaches them, cutting the punchline short. | The turn draws beat 6's last moment under its wipe, so the words stay until the orange passes over them. |
-| 4 | Must fix. Building the house changes the round tree: its branches go and a dark mass fills the canopy, in the half that says nothing else moves. | Not done: the change is in design pictures 07 to 10, so the fix is new pictures and new clips. Put to the maintainer with a quote. |
+| 4 | Must fix. Building the house changes the round tree: its branches go and a dark mass fills the canopy, in the half that says nothing else moves. | The maintainer: "lets fix the beat 8 issue. I agree that the tree change seems unmotivated". Design pictures 07 to 10 were made again from 06, which still had the tree of beat 1, then given the dark foliage shadow of the village's other trees at the maintainer's word ("the dark shadow on foliage effect already used on the other houses in the village is the correct effect, just apply it to the foliage on the hero house without altering the branches or trunk"); see `design.md`. The four clips were made again between them (`motion/07-build-*`, `08-flag-*`, `09-slide-*`, `10-village-*`; jobs below), and the film's clips and sounds were placed on the new takes. The pictures and clips from before are kept in `takes/design-before-review/`, `takes/design-review/`, `motion/before-review/`, and `motion/no-shadow/`. |
 | 5 | "was a collaborator." in peach on orange is 2.5:1; the line under it is on screen 1.9 seconds for nine words. | Set in ink (4.5:1); the line under it arrives at 1.5 seconds in place of 2, and stays through the fade, about 3 seconds. |
 | 6 | Beat 3: "Added! One ladder." arrives before any ladder, which lands after "Why is it a pine tree?". | The clip starts at 0.55 seconds into the beat at 1.6 times speed: the tree turns after "Add a ladder.", the ladder flies in on "Added! One ladder." and lands at 9.7 seconds, as the question starts. |
 | 7 | The slide's landing sound in beat 4 is six frames late. | Placed on frame 48, where the slide stops. |
@@ -81,6 +81,17 @@ The scripts end in `.cjs` because this repository's `package.json` makes `.js` f
 | 10 | The agent's grey square reads as a missing image. | Left: the only robot is the R, and the maintainer approved it. |
 | 11 | The three volume marks on the end card are never explained; the card sits high. | The card and the motto are 25 pixels lower, in beats 12 and 13. The marks are put to the maintainer. |
 | 12 | Every bubble is the same pop or drop, over twenty times each. | Each bubble's sound is shifted a little in pitch, in a set order. |
+
+The clips made again for finding 4, `minimax_h3`, 5 seconds, two takes each, the prompts without a bounce:
+
+| Change | Take A | Take B | Chosen, and why |
+|---|---|---|---|
+| The sketch is built | `57eda3c0-59f9-4a8e-8a31-bea5b2977a72` | `457e9727-a555-454f-a99e-2b15cbf83ec3` | B: ladder, deck, cabin, then the roof as the foliage darkens behind it; A's roof pops in oversized. Neither changes the trunk or branches. |
+| The flag goes up | `e6cbbb84-f750-4bdf-9147-e71d7a1b3dfa` | `2253397d-6266-4633-9bf9-632bd84b6f72` | B: it climbs from frame 24 to the top by 52 and unfurls at 68, steadier than A. |
+| The slide unrolls | `381b4564-aced-437f-b0d4-26314352c49e` | `e2d0dc0c-10f1-4d53-b2e8-4957e0025759` | A: it unrolls from the railing opening from frame 32 and lands at 82, with no bounce, so it needs no cut. |
+| The pull back | `f498972a-49d6-4a58-9850-2fae718c6b87` | `e9fcbed4-45f1-476e-84bf-c19cb4879941` | A: B again runs bridges into empty sky before the trees arrive. |
+
+The eight clips made between the pictures without the foliage shadow (`motion/no-shadow/`, jobs `7d7247da-15b7-4281-8f46-c9effc03b71e`, `37cdbd54-db4a-484c-bd74-979e8e574708`, `3fab2fde-a680-4314-a47b-c68c5006091c`, `79c5faa3-864a-493a-9000-72b3ede4ba67`, `8fe4bd08-092f-4eff-abde-f6ddc77d2dc2`, `0e163dd7-c14d-4a92-aea5-82206c0a55c7`, `2520787c-bb06-40b7-a12a-14ae27de2948`, `fb6f4dd3-14ea-4cb9-adfd-805ca4d50d78`) were made before the maintainer asked for the shadow, and are not used. Finding 4 cost 217.75 credits: 57.75 for 21 picture takes and 160 for 16 clips. The film has spent 741.59; the account holds 183.41.
 
 **Stage 8, sound: the first mix (2026-11-15), approved ("great").** The maintainer said "go ahead" on the quote below. `node assembly.cjs sound` mixes the sound and joins it to the picture as `out/film.mp4` in a few seconds; a full render does both. The sound list is in `assembly-page.js` next to the clips, and `sound.cjs` mixes it. It measures -15.7 LUFS integrated, true peak -1.5 dBFS.
 

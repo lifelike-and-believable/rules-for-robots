@@ -2,14 +2,55 @@
   "fps": 24,
   "note": "The chosen take for each change, in story order, and the frames of it that the film uses. Each part is [first, end) in source frames. Two parts are joined by holding the first part's last frame for a quarter second and dissolving into the second, which cuts out what lies between.",
   "clips": [
-    { "beat": 2, "take": "02-box-a", "label": "the box drops in" },
-    { "beat": 3, "take": "03-pine-minimax-a", "label": "round tree to pine, ladder" },
-    { "beat": 4, "take": "04-slide-on-ladder-a", "label": "slide over the ladder", "parts": [[0, 56], [93, 124]], "why": "The slide lands at frame 55 where it finally rests, then bounces until frame 92; the maintainer found the bounce unnecessary and distracting." },
-    { "beat": 6, "take": "05-second-box-a", "label": "second box" },
-    { "beat": 8, "take": "06-sketch-a", "label": "the sketch draws itself" },
-    { "beat": 8, "take": "07-build-b", "label": "built to the sketch" },
-    { "beat": 9, "take": "08-flag-a", "label": "the flag goes up" },
-    { "beat": 11, "take": "09-slide-a", "label": "the slide unrolls", "parts": [[0, 73], [96, 124]], "why": "The slide reaches the grass at frame 72 where it finally rests, then bounces until frame 95; the second part keeps the flag moving." },
-    { "beat": 12, "take": "10-village-b", "label": "pull back to the village" }
+    {
+      "beat": 2,
+      "take": "02-box-a",
+      "label": "the box drops in"
+    },
+    {
+      "beat": 3,
+      "take": "03-pine-minimax-a",
+      "label": "round tree to pine, ladder"
+    },
+    {
+      "beat": 4,
+      "take": "04-slide-on-ladder-a",
+      "label": "slide over the ladder",
+      "parts": [
+        [0, 56],
+        [93, 124]
+      ],
+      "why": "The slide lands at frame 55 where it finally rests, then bounces until frame 92; the maintainer found the bounce unnecessary and distracting."
+    },
+    {
+      "beat": 6,
+      "take": "05-second-box-a",
+      "label": "second box"
+    },
+    {
+      "beat": 8,
+      "take": "06-sketch-a",
+      "label": "the sketch draws itself"
+    },
+    {
+      "beat": 8,
+      "take": "07-build-b",
+      "label": "built to the sketch"
+    },
+    {
+      "beat": 9,
+      "take": "08-flag-b",
+      "label": "the flag goes up"
+    },
+    {
+      "beat": 11,
+      "take": "09-slide-a",
+      "label": "the slide unrolls"
+    },
+    {
+      "beat": 12,
+      "take": "10-village-a",
+      "label": "pull back to the village"
+    }
   ]
 }

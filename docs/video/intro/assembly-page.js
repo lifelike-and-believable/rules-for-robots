@@ -53,10 +53,10 @@ const CLIPS = {
   '04-slide-on-ladder-a': { key: 18, at: ['addition', 1.1], speed: 1.2 },    // the slide comes down on "Added! One slide."
   '05-second-box-a': { key: 42, at: ['next-session', 3.35], speed: 1 },          // the second box pops in on "The treehouse."
   '06-sketch-a': { key: 8, at: ['asks', 3], speed: 2.4 },                // the sketch draws itself on "Here is a sketch."
-  '07-build-b': { key: 9, at: ['asks', 4.75], speed: 1.6 },              // built after "Approved."
-  '08-flag-a': { key: 30, at: ['decision', 2.2], speed: 1.3, loop: [70, 123] },   // the orange flag runs up once it is chosen
-  '09-slide-a': { key: 5, at: ['change', .5], speed: 1.6, loop: [80, 100] },   // the slide unrolls on "Add a slide."
-  '10-village-b': { key: 2, at: ['promise', .1], speed: 1.6 },             // the pull back to the village
+  '07-build-b': { key: 15, at: ['asks', 4.75], speed: 2 },              // built after "Approved."
+  '08-flag-b': { key: 24, at: ['decision', 2.2], speed: 1.6, loop: [80, 123] },   // the orange flag runs up once it is chosen
+  '09-slide-a': { key: 32, at: ['change', .6], speed: 1.5, loop: [90, 123] },   // the slide unrolls on "Add a slide."
+  '10-village-a': { key: 2, at: ['promise', .1], speed: 1.6 },             // the pull back to the village
 };
 const clipStart = (c) => BEATS.find((b) => b.name === c.at[0]).start + c.at[1];
 function frameOf(name, T) {
@@ -119,24 +119,24 @@ const BEATS = [
       return fade(1 - ease(prog(t, 0, .45)), turnCard(4)) + heading(t, 'It asks before it builds.')
         + talk([['agent', 'Before I build: who is it for?', .5], ['you', 'My kids. They love to climb.', 1.6], ['agent', 'Here is a sketch. Is this it?', 3.1], ['you', 'Approved.', 4.3]], t, true); } },
   // 9. Your decision: two flags offered, and the orange one runs up the pole.
-  { name: 'decision', dur: 3.5, draw: (t) => { pic('07-build-b'); pic('08-flag-a', ease(prog(t, 0, .25)));
+  { name: 'decision', dur: 3.5, draw: (t) => { pic('07-build-b'); pic('08-flag-b', ease(prog(t, 0, .25)));
       const flag = (x, fill, at) => pop(prog(t, at, .35), x + 50, 560, `<line x1="${x}" y1="500" x2="${x}" y2="640" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${x + 4} 504 C${x + 34} 492 ${x + 60} 520 ${x + 112} 502 L${x + 86} 530 L${x + 116} 556 C${x + 66} 552 ${x + 40} 574 ${x + 4} 558 Z" fill="${fill}"/>`);
       return heading(t, 'It asks you what only', 'you can decide.', INK) + talk([['agent', 'The flag: orange or violet?', .3], ['you', 'Orange.', 1.5]], t, true, 310)
         + fade(1 - ease(prog(t, 2, .35)), flag(480, O, .6) + flag(660, P, .75) + `<rect x="452" y="474" width="172" height="186" rx="18" fill="none" stroke="${O}" stroke-width="7" opacity="${ease(prog(t, 1.8, .3)).toFixed(3)}"/>`); } },
   // 10. The record.
-  { name: 'record', dur: 5, draw: (t) => { pic('08-flag-a');
+  { name: 'record', dur: 5, draw: (t) => { pic('08-flag-b');
       const row = (i, a, b) => rise(prog(t, 1.1 + i * .7, .35), `<circle cx="164" cy="${588 + i * 118}" r="10" fill="${O}"/>${txt(a, 194, 600 + i * 118, 38, INK)}${txt(b, 194, 644 + i * 118, 32, MUTED, 500)}`, 16);
       return heading(t, 'It writes down why.') + talk([['agent', 'Noted, so the next session\nknows too.', .3]], t, true)
         + pop(prog(t, .7, .4), 430, 610, `<g filter="url(#soft)"><rect x="114" y="452" width="640" height="340" rx="20" fill="#FFFFFF"/></g>${txt('Decisions', 150, 516, 38, INK)}`)
         + row(0, 'Flag: orange', 'Your choice.') + row(1, 'Ladder on the left', 'So the kids can climb up.'); } },
   // 11. A change: the slide unrolls, and nothing else moves.
-  { name: 'change', dur: 4.5, draw: (t) => { pic('08-flag-a'); pic('09-slide-a', ease(prog(t, 0, .3)));
+  { name: 'change', dur: 4.5, draw: (t) => { pic('08-flag-b'); pic('09-slide-a', ease(prog(t, 0, .3)));
       return talk([['you', 'Add a slide.', .1], ['agent', 'Added. Nothing else moved.', 1.4]], t, true) + (t > 2 ? heading(t - 2, 'A change is a change.', 'Not a restart.', SP) : ''); } },
   // 12. The promise: the view pulls back from the one treehouse to the village, and the motto arrives.
-  { name: 'promise', dur: 4.5, draw: (t) => { pic('09-slide-a'); pic('10-village-b', ease(prog(t, 0, .2)));
+  { name: 'promise', dur: 4.5, draw: (t) => { pic('09-slide-a'); pic('10-village-a', ease(prog(t, 0, .2)));
       return rise(prog(t, 1.4), txt('A skilled team building your biggest ideas,', 960, 121, 54, INK, 700, 'middle')) + rise(prog(t, 1.9), txt('the way you envision them.', 960, 189, 54, SP, 700, 'middle')); } },
   // 13. End: the motto stays at the top, and the name comes out below it with the guide line under it.
-  { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); pic('10-village-b', 1 - p);
+  { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); pic('10-village-a', 1 - p);
       placeMark('rules-for-robots', 413, 385, 150, ease(prog(t, .5, .4)));
       ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 552 + i * 78, 713, 64, ease(prog(t, 1.6 + i * .1, .35))));
       // The R winks with its whole body, as in the animatic.
@@ -179,18 +179,18 @@ const SOUNDS = [
   [beatAt('turn', 0), 'whoosh', -10],                            // the orange wipe
   [beatAt('turn', .38), 'bong_001', -8],                         // the R
   ...[8, 18, 28, 38, 48, 58, 68, 78, 88, 98].map((f, i) => [clipAt('06-sketch-a', f), i % 2 ? 'scratch_005' : 'scratch_004', -13]),   // the pencil
-  [clipAt('07-build-b', 12), 'impactWood_light_000', -7],        // built: the ladder
-  [clipAt('07-build-b', 30), 'impactWood_light_002', -7],        // the deck and railing
-  [clipAt('07-build-b', 52), 'impactWood_light_003', -6],        // the cabin
-  [clipAt('07-build-b', 62), 'impactWood_light_001', -6],        // the roof
+  [clipAt('07-build-b', 23), 'impactWood_light_000', -7],        // built: the ladder
+  [clipAt('07-build-b', 43), 'impactWood_light_002', -7],        // the deck and railing
+  [clipAt('07-build-b', 69), 'impactWood_light_003', -6],        // the cabin
+  [clipAt('07-build-b', 86), 'impactWood_light_001', -6],        // the roof
   [beatAt('decision', .6), 'pluck_002', -12], [beatAt('decision', .75), 'pluck_002', -12],   // two flags offered
   [beatAt('decision', 1.8), 'select_003', -9],                   // orange chosen
-  [clipAt('08-flag-a', 33), 'clothBelt', -10],                   // the flag runs up
-  [clipAt('08-flag-a', 66), 'cloth2', -8],                       // ...and unfurls
+  [clipAt('08-flag-b', 24), 'clothBelt', -10],                   // the flag runs up
+  [clipAt('08-flag-b', 68), 'cloth2', -8],                       // ...and unfurls
   [beatAt('record', .7), 'bookPlace1', -6],                      // the decisions card
   [beatAt('record', 1.1), 'tick_004', -10], [beatAt('record', 1.8), 'tick_004', -10],        // its rows
-  [clipAt('09-slide-a', 28), 'scroll_002', -8],                  // the slide unrolls
-  [clipAt('09-slide-a', 72), 'impactSoft_medium_001', -6],       // ...and settles on the grass
+  [clipAt('09-slide-a', 32), 'scroll_002', -8],                  // the slide unrolls
+  [clipAt('09-slide-a', 82), 'impactSoft_medium_001', -6],       // ...and settles on the grass
   [beatAt('promise', .05), 'whoosh-long', -12],                  // the pull back
   [beatAt('end', .5), 'drop_002', -8],                           // the mark
   ...[0, 1, 2].map((i) => [beatAt('end', 1.6 + i * .1), 'pluck_002', -14]),                // the three volume marks
