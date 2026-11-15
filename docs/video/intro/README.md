@@ -49,7 +49,8 @@ Not yet decided: how the scenes B does not show (the trouble half, the sketch, t
 | File | What it is |
 |---|---|
 | `animatic.html` | The proxy from before the look was chosen: the whole film at sketch quality, playable in a browser. `film-page.js` has replaced it as the source of the timing and the words. |
-| `motion/`, `motion/cuts.json`, `motion.cjs` | Stage 6: every motion take, the chosen take of each change with the frames the film uses, and the script that strings them into `out/motion-reel.mp4`. |
+| `motion/`, `motion/cuts.json`, `motion.cjs` | Stage 6: every motion take, the chosen take of each change with the frames the film uses, and the script that strings them into `out/motion-reel.mp4`. `cuts.cjs` reads the cuts for it and for assembly. |
+| `assembly.cjs`, `assembly-page.js`, `assembly-clips.cjs` | Stage 7: `node assembly.cjs` renders `out/assembly.mp4`, the clips under the animatic's words; `node assembly.cjs sheet` writes two frames of each beat. Where each clip sits in the film is its `CLIPS` entry in `assembly-page.js`. `assembly-clips.cjs` cuts the clips into frames once (again with `node assembly.cjs clips`), greys beats 2 to 6, and keeps the slide in colour by a mask of the slide's own shape in each frame. |
 | `frames.cjs` | Renders the animatic. `node frames.cjs sheet` writes one frame for each beat; `node frames.cjs render 20` writes every frame at 20 a second, for ffmpeg to encode. |
 | `art.cjs` | Builds the style frames as SVG from the takes and the words. `node art.cjs` writes them to `style/`. |
 | `kit.cjs` | Reads the takes: vector B with and without its slide, the idea's outline, and any other take as a scene. |
