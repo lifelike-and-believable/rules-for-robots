@@ -37,7 +37,11 @@ Rewrite plan phases: 25a (trials) complete; 25b (gate), 25c (state and change ch
 
 ## What is open
 
-### Right now (2026-11-14)
+### Right now (2026-11-15)
+
+- **Moving to the `RulesForRobots` organization.** The plan is [org-migration-plan.md](org-migration-plan.md), proposed and waiting for the maintainer's decisions (D1 to D6). Nothing has been transferred yet. Its first step is a throwaway trial of what GitHub redirects after a transfer.
+
+### Earlier (2026-11-14)
 
 - **8.0.0 is prepared and held:** draft pull request #272 (branch `release/8.0.0`). It removes the `process / tier` stub, makes the reusable workflow's `lasting-tutorials` default `fail`, adds `docs/migration-8.md`, turns Unreleased into 8.0.0 in the changelog, sets rfr-core to 8.0.0, and marks Phases 25 and 27 complete. Two existing tests change with those decisions, recorded under each spec's `unlocks:`, and wait for the maintainer's word: `test/process-change-kind.test.mjs` (AC-24, the stub is gone) and `test/tutorial-lasting-transition.test.mjs` (AC-15, default `fail`). Verify passed (1111 tests) on that branch.
 - **The maintainer is validating XR Studio In A Box (2026-11-14).** Their first report: "The system seems like it's working, but the tutorials themselves need a lot of work." What is wrong with them is being gathered; each problem becomes a fix in that repository (a revision of the tutorial, or a fix delivery when the product is wrong), and, where the cause is rfr's guidance or runner, a change here. 5 of its 12 task tutorials are `runner: manual`, because the runner cannot choose a file yet.
