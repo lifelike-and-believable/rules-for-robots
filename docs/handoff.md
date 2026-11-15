@@ -39,7 +39,7 @@ Rewrite plan phases: 25a (trials) complete; 25b (gate), 25c (state and change ch
 
 ### Right now (2026-11-15)
 
-- **Rebuilding in the `RulesForRobots` organization.** The plan is [rebuild-plan.md](rebuild-plan.md): new repositories by domain, one marketplace, and this repository frozen for features and archived once the last project moves. The maintainer answered D1 to D8 on 2026-11-15 (recommended answers, except Creation and Research are created now); the plan is approved when pull request #279 merges. Next: step 2, scaffolding the organization. Nothing has been created there yet.
+- **Rebuilding in the `RulesForRobots` organization.** The plan is [rebuild-plan.md](rebuild-plan.md): new repositories by domain, one marketplace, and this repository frozen for features and archived once the last project moves. The maintainer answered D1 to D8 on 2026-11-15 (recommended answers, except Creation and Research are created now); the plan is approved when pull request #279 merges. Next: step 2, scaffolding the organization. On 2026-11-15 the maintainer created the six repositories and is adding a branch ruleset to each (organization rulesets need GitHub Team). The scaffolding needs a new session with those repositories selected: rfr-core's MCP guard refused `add_repo` (claude-code-remote) from this one as an outside service. That is a misfire to fix in the new rfr-core (step 3): Claude Code's own session tools change the session, not another service.
 
 ### Earlier (2026-11-14)
 
