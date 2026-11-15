@@ -39,7 +39,7 @@ Rewrite plan phases: 25a (trials) complete; 25b (gate), 25c (state and change ch
 
 ### Right now (2026-11-15)
 
-- **Rebuilding in the `RulesForRobots` organization.** The plan is [rebuild-plan.md](rebuild-plan.md): new repositories by domain, one marketplace, and this repository frozen for features and archived once the last project moves. It is proposed and waiting for the maintainer's decisions (D1 to D8, pull request #279). Nothing has been created in the new organization yet.
+- **Rebuilding in the `RulesForRobots` organization.** The plan is [rebuild-plan.md](rebuild-plan.md): new repositories by domain, one marketplace, and this repository frozen for features and archived once the last project moves. The maintainer answered D1 to D8 on 2026-11-15 (recommended answers, except Creation and Research are created now); the plan is approved when pull request #279 merges. Next: step 2, scaffolding the organization. Nothing has been created there yet.
 
 ### Earlier (2026-11-14)
 

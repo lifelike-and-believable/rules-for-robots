@@ -1,6 +1,6 @@
 # Rebuild plan: Rules for Robots in the RulesForRobots organization
 
-Written 2026-11-15. Status: **proposed**. Nothing here is decided until the maintainer approves it; the decisions in section 10 each carry a recommended answer.
+Written 2026-11-15. Status: **decisions taken** on 2026-11-15 (section 10): the maintainer took the recommended answer for D1 to D7, and chose to create the Creation and Research repositories now (D8). The plan is approved when this pull request merges.
 
 The maintainer created the `RulesForRobots` organization as the home for everything rfr, and asked: if we were building this for the first time today, knowing what we know and with a clearer picture of what rfr is for, how would we build it, and what would we do differently? The organization should expect separate maintainers and specialised content (agents, skills, rules) for each domain, without being restructured as it grows, and should stay easy to use on large and small projects.
 
@@ -8,7 +8,7 @@ The answer in this plan is a rebuild, not a transfer: new repositories, built fr
 
 ## 1. What rfr is for
 
-A draft charter, for the maintainer to approve or rewrite. It goes at the top of the new front-door repository.
+The charter, approved as written on 2026-11-15 (D1). It goes at the top of the new front-door repository.
 
 > Rules for Robots lets one person direct agents through a whole project by approving decisions, never commands. The person approves what the work should be (a brief, a design, the documentation users will read) and whether the result is right. Agents do everything in between without asking. What must never happen is made impossible, not asked about; what must be true is checked by CI; who approved what is recorded in GitHub. It works for a weekend script and for a product with many features, and the same approach applies to software, to pictures and film, and to research.
 
@@ -41,8 +41,8 @@ RulesForRobots/
 ├── rules-for-robots              # The front door: charter, getting started, the marketplace
 ├── rules-for-robots-core         # rfr-core, rfr-process, rfr-feedback
 ├── rules-for-robots-engineering  # rfr-engineering, rfr-web, rfr-unreal, rfr-android
-├── rules-for-robots-creation     # When its first plugin is ready (section 8, step 7)
-├── rules-for-robots-research     # When there is something to put in it
+├── rules-for-robots-creation     # Created at step 2; its first plugin comes at step 7
+├── rules-for-robots-research     # Created at step 2; scope and first plugin to come
 └── rules-for-robots-legacy       # This repository, archived, once the last project moves
 ```
 
@@ -50,7 +50,7 @@ RulesForRobots/
 
 Claude Code lets one marketplace list plugins from any folder of any repository: a `git-subdir` source names a repository, a path, and a `ref` or `sha` ([marketplace reference](https://code.claude.com/docs/en/plugins/marketplace-reference.md)). So:
 
-- **Users see one marketplace and plugins.** `/plugin marketplace add RulesForRobots/rules-for-robots`, then install. Where a plugin lives is invisible to them.
+- **Users see one marketplace and plugins.** `/plugin marketplace add RulesForRobots/rules-for-robots`, then install from the `rfr` marketplace. Where a plugin lives is invisible to them.
 - **Moving a plugin is one line.** If `rfr-unreal` gains its own maintainers and a self-hosted runner, it moves to `rules-for-robots-unreal` and its marketplace entry changes. Nothing a user installed or wrote changes. That is what makes this structure stable: the plugin is the unit, and repositories are only where maintainers keep them.
 - **Dependencies are enforced.** A plugin declares `"dependencies": [{"name": "rfr-core", "version": "^1.0"}]`; Claude Code installs it and disables the dependent plugin if the range is not met. Ranges resolve against tags named `<plugin>--v<version>` in the dependency's repository ([dependencies](https://code.claude.com/docs/en/plugins/dependencies.md)). All rfr plugins stay in one marketplace, so no cross-marketplace allowlist is needed.
 
@@ -63,7 +63,7 @@ Claude Code lets one marketplace list plugins from any folder of any repository:
 | `rules-for-robots-core` | The domain-neutral plugins, the reusable workflows for the gate and process, `tools/` for rfr's maintainers (eval harness, session replay, attention report) | Core maintainers |
 | `rules-for-robots-<domain>` | That domain's plugins, its reusable workflows (such as Unreal Tier 1), its examples and eval cases | That domain's maintainers, by `CODEOWNERS` per plugin folder |
 
-A new domain repository is created when its first plugin is ready to build, from the same layout (section 4), and gets a mark through the brand's "Adding a volume" steps.
+Creation and Research are created at step 2 with the same layout (section 4) and a README stating their scope, so contributors can see where the work will go (D8). A later domain repository is created the same way and gets a mark through the brand's "Adding a volume" steps.
 
 ## 4. Inside every domain repository
 
@@ -158,19 +158,19 @@ One slice per pull request, as now. Each step ends with something working on a r
 1. **Approve this plan** (this pull request), including the charter and the decisions in section 10.
 2. **Scaffold the organization.**
    - Maintainer, in Settings: two-factor for members; base permission read; install the Claude GitHub App on the organization (cloud sessions need it), and the `rfr-agent` App where projects use the gate; an organization ruleset for `main` (pull request required, no force push, no deletion); default labels including `feedback`.
-   - Agent: create `.github` (profile, brand, community files) and the front door (charter, an empty marketplace on `main` and `latest`). Create `rules-for-robots-core` and `rules-for-robots-engineering` from the layout in section 4, with CI and the release workflow working on an empty plugin.
+   - Agent: create `.github` (profile, brand, community files) and the front door (charter, an empty marketplace on `main` and `latest`). Create `rules-for-robots-core` and `rules-for-robots-engineering` from the layout in section 4, with CI and the release workflow working on an empty plugin. Create `rules-for-robots-creation` and `rules-for-robots-research` from the same layout, each with a README stating its scope and no plugin yet.
 3. **Core, rules only.** `rfr-core` with its guards, `setup`, and rules. Try it on a throwaway repository, then on one real project at "rules only".
 4. **Core, full process.** `rfr-process` with the gate, state, and delivery run, and `rfr-engineering` as its first set of stages. Try the gate on a throwaway repository first, as in 25a.
 5. **Move XR Studio In A Box.** With `rfr-web`. Its settings switch marketplaces, its workflows switch `uses:` lines, and the next packet is delivered on the new plugins. This is the acceptance test of the rebuild, the same one 25f used: one approval, no interruptions, a preview and a tutorial at the end.
 6. **The other projects, one at a time.** Kettlebird website with `rfr-web`; Open3DPuppet with `rfr-unreal` (and `rfr-android` where a project needs it). Then the first stable release: tags, and the marketplace's `main` pinned to them.
-7. **Creation.** `rules-for-robots-creation` with `rfr-creation`, built from the logo and intro-film trials (#278): stages that lock each artifact before a costlier one, checks that are technical conformance only, and taste left to the person. It is the first domain that is not software, so it is the test that Core's engine is truly domain-neutral.
+7. **Creation.** `rfr-creation` in `rules-for-robots-creation`, built from the logo and intro-film trials (#278): stages that lock each artifact before a costlier one, checks that are technical conformance only, and taste left to the person. It is the first domain that is not software, so it is the test that Core's engine is truly domain-neutral.
 8. **Archive.** When no project uses the old marketplace: transfer this repository to the organization as `rules-for-robots-legacy` (links to it keep working through GitHub's redirect), archive it, and link it from the front door as the record of how rfr was made.
 
 ## 9. This repository until then
 
 - **Frozen for features.** Only fixes that a project still on it needs. New work goes to the new repositories.
 - **Open pull requests:** #272 (8.0.0) merges only if XR Studio In A Box's validation needs it before step 5; otherwise it closes, and its decisions carry into `rfr-process` 1.0.0. #274 (scoped hosting access, a Phase 28 spec) moves to `rules-for-robots-core` as a spec. #278 (the intro film and a process for films) is the seed of step 7; the film itself can finish here.
-- **The maintainer's machine** keeps the old marketplace, named `rules-for-robots`, until the last project moves. The new marketplace needs a different name so both can be installed at once (decision D3).
+- **The maintainer's machine** keeps the old marketplace, named `rules-for-robots`, until the last project moves. The new one is named `rfr` (D3), so both can be installed at once.
 
 ## 10. Decisions for the maintainer
 
@@ -184,6 +184,19 @@ One slice per pull request, as now. Each step ends with something working on a r
 | D6 | Git history in the new repositories | Start fresh. A carried-over file's first commit names its source path and commit in the archive | Import the history of each moved folder with `git filter-repo`: complete, but brings the mess along |
 | D7 | Does rfr develop itself through its own process? | Yes, at "full process" in Core and Engineering: rfr's specs are approved packets, and the gate applies to them. It is the best test of the product, and it replaces the spec-lock machinery rfr used on itself | Rules only, with the maintainer approving pull requests directly |
 | D8 | When to create Creation and Research | Creation at step 7; Research when there is a first plugin to put in it | Create both now, empty |
+
+### Answers, 2026-11-15
+
+| | Answer |
+|---|---|
+| D1 | Charter approved as written |
+| D2 | Full names: `rules-for-robots-<domain>` |
+| D3 | Marketplace `rfr` |
+| D4 | The engine is `rfr-process` in Core, domain-neutral |
+| D5 | Versions restart at 1.0.0 |
+| D6 | Fresh history; carried files cite their source |
+| D7 | rfr develops itself through its own full process |
+| D8 | Create Creation and Research now, at step 2 (the alternative) |
 
 ## 11. Not in this plan
 
