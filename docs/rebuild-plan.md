@@ -63,7 +63,7 @@ Claude Code lets one marketplace list plugins from any folder of any repository:
 | `rules-for-robots-core` | The domain-neutral plugins, the reusable workflows for the gate and process, `tools/` for rfr's maintainers (eval harness, session replay, attention report) | Core maintainers |
 | `rules-for-robots-<domain>` | That domain's plugins, its reusable workflows (such as Unreal Tier 1), its examples and eval cases | That domain's maintainers, by `CODEOWNERS` per plugin folder |
 
-Creation and Research are created at step 2 with the same layout (section 4) and a README stating their scope, so contributors can see where the work will go (D8). A later domain repository is created the same way and gets a mark through the brand's "Adding a volume" steps.
+Creation and Research are created at step 2 with the same layout (section 4) and a README stating their scope, so contributors can see where the work will go (D8). A later domain repository is created the same way, with the branch ruleset imported from an existing repository, and gets a mark through the brand's "Adding a volume" steps.
 
 ## 4. Inside every domain repository
 
@@ -157,7 +157,7 @@ One slice per pull request, as now. Each step ends with something working on a r
 
 1. **Approve this plan** (this pull request), including the charter and the decisions in section 10.
 2. **Scaffold the organization.**
-   - Maintainer, in Settings: two-factor for members; base permission read; install the Claude GitHub App on the organization (cloud sessions need it), and the `rfr-agent` App where projects use the gate; an organization ruleset for `main` (pull request required, no force push, no deletion); default labels including `feedback`.
+   - Maintainer, in Settings: two-factor for members; base permission read; install the Claude GitHub App on the organization (cloud sessions need it), and the `rfr-agent` App where projects use the gate; a branch ruleset on each repository's default branch (pull request required, no force push, no deletion), made once and copied to the others by exporting and importing its JSON, because organization rulesets are not enforced on the Free plan; default labels including `feedback`. When there are other maintainers, GitHub Team allows one organization ruleset instead.
    - Agent: create `.github` (profile, brand, community files) and the front door (charter, an empty marketplace on `main` and `latest`). Create `rules-for-robots-core` and `rules-for-robots-engineering` from the layout in section 4, with CI and the release workflow working on an empty plugin. Create `rules-for-robots-creation` and `rules-for-robots-research` from the same layout, each with a README stating its scope and no plugin yet.
 3. **Core, rules only.** `rfr-core` with its guards, `setup`, and rules. Try it on a throwaway repository, then on one real project at "rules only".
 4. **Core, full process.** `rfr-process` with the gate, state, and delivery run, and `rfr-engineering` as its first set of stages. Try the gate on a throwaway repository first, as in 25a.
