@@ -39,7 +39,7 @@ Rewrite plan phases: 25a (trials) complete; 25b (gate), 25c (state and change ch
 
 ### Right now (2026-11-15)
 
-- **Moving to the `RulesForRobots` organization.** The plan is [org-migration-plan.md](org-migration-plan.md), proposed and waiting for the maintainer's decisions (D1 to D6). Nothing has been transferred yet. Its first step is a throwaway trial of what GitHub redirects after a transfer.
+- **Rebuilding in the `RulesForRobots` organization.** The plan is [rebuild-plan.md](rebuild-plan.md): new repositories by domain, one marketplace, and this repository frozen for features and archived once the last project moves. It is proposed and waiting for the maintainer's decisions (D1 to D8, pull request #279). Nothing has been created in the new organization yet.
 
 ### Earlier (2026-11-14)
 
