@@ -39,8 +39,8 @@ const film = document.getElementById('film');
 film.innerHTML = `<defs>
   <filter id="soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="${INK}" flood-opacity=".16"/></filter>
   <clipPath id="clipA"><rect id="clipARect" x="0" y="0" width="1920" height="1080"/></clipPath>
-</defs><rect width="1920" height="1080" fill="${CREAM}"/><g id="pics"></g><g id="words"></g><g id="marks"></g>`;
-const pics = {}, words = document.getElementById('words');
+</defs><rect width="1920" height="1080" fill="${CREAM}"/><g id="pics"></g><g id="words"></g><g id="marks"></g><g id="over"></g>`;
+const pics = {}, words = document.getElementById('words'), over = document.getElementById('over');
 for (const file of IMAGES) { const name = file.replace(/\.\w+$/, ''), el = document.createElementNS('http://www.w3.org/2000/svg', 'image');
   el.setAttribute('href', 'animatic-layers/' + file); el.setAttribute('opacity', 0);
   if (name.startsWith('mark-')) document.getElementById('marks').appendChild(el);
@@ -114,6 +114,12 @@ const BEATS = [
   { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); show('10-village', 1 - p);
       placeMark('rules-for-robots', 413, 360, 150, ease(prog(t, .5, .4)));
       ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 552 + i * 78, 688, 64, ease(prog(t, 1.6 + i * .1, .35))));
+      // The R winks. Its eye is at (65, 58), radius 6.5, inside the mark's (9, 8.5) scale .64 group, and the mark is 150 wide here.
+      const k = 150 / 128, ex = 413 + (9 + 65 * .64) * k, ey = 360 + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k;
+      const shut = Math.sin(Math.PI * clamp((t - 4.1) / .45));
+      over.innerHTML = shut <= 0 ? '' : `<circle cx="${ex}" cy="${ey}" r="${(er + 1.2).toFixed(2)}" fill="${O}"/>` + (shut > .8
+        ? `<path d="M${ex - er * 1.3} ${ey - er * .2} Q${ex} ${ey + er * 1.1} ${ex + er * 1.3} ${ey - er * .2}" fill="none" stroke="${INK}" stroke-width="${(er * .55).toFixed(2)}" stroke-linecap="round"/>`
+        : `<ellipse cx="${ex}" cy="${ey}" rx="${er}" ry="${(er * (1 - shut)).toFixed(2)}" fill="${INK}"/>`);
       return txt('A skilled team building your biggest ideas,', 960, 96, 54, INK, 700, 'middle') + txt('the way you envision them.', 960, 164, 54, SP, 700, 'middle')
         + rise(prog(t, .5), txt('Rules for Robots', 593, 470, 104, INK))
         + rise(prog(t, 1), txt('A practical guide for people and agents who work together', 597, 530, 32, SP, 500))
@@ -125,6 +131,7 @@ let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
 window.__seek = (t) => { t = clamp(t, 0, acc - .001);
   for (const el of Object.values(pics)) { el.setAttribute('opacity', 0); el.removeAttribute('clip-path'); }
+  over.innerHTML = '';
   const b = BEATS.filter((x) => t >= x.start).pop();
   words.innerHTML = b.draw(t - b.start, b.dur); };
 window.__seek(0);
