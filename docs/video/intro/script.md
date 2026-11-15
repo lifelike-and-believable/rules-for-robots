@@ -22,7 +22,7 @@ The brief is in the [README](README.md): for people who already work with agents
 | 10 | The record | A card of decisions beside the treehouse. | Heading: It writes down why. Agent: Noted, so the next session knows too. Card: Flag: orange. Your choice. Ladder on the left. So the kids can climb up. | 5 | 26 |
 | 11 | A change | The slide unrolls from the deck to the grass. Nothing else moves. | You: Add a slide. Agent: Added. Nothing else moved. Heading: A change is a change. Not a restart. | 4.5 | 15 |
 | 12 | The promise | The view pulls back: one treehouse is one of five, each a different building of the same family, joined by bridges. | The motto: A skilled team building your biggest ideas, the way you envision them. | 4.5 | 12 |
-| 13 | End | The village gives way to the end card; the motto stays where it is and the name arrives above it. Then where to find it. | Rules for Robots. (The motto, already on screen.) Rules and plugins for Claude Code. github.com/RulesForRobots. (Yes, you may put the hammer down.) | 5.5 | 15 |
+| 13 | End | The village gives way to the end card; the motto stays at the top, and the name comes out below it. | (The motto, at the top.) Rules for Robots. A practical guide for people and agents who work together. github.com/RulesForRobots. Rules and plugins for Claude Code. (Yes, you may put the hammer down.) | 5.5 | 24 |
 | | | | **Total** | **64.5** | **237** |
 
 Every beat is at or under four words a second except the record (5.2) and the end (4.7), where the words are a list to glance at and not lines to read in turn.
@@ -40,6 +40,8 @@ Every beat is at or under four words a second except the record (5.2) and the en
 - **The motto.** The maintainer, on the promise line: "this should emerge as the Rules for Robots motto." Beat 12's line is the motto, and the film builds to it: it appears over the village and stays on screen as the end card forms around it, under the name. It replaces the end card's "A practical guide for people and agents who work together". The wording is the copywriter's top pick with the maintainer's word "envision", and is not yet approved as the motto.
 
 - **The turn's second line.** The maintainer: "take the copywriters advice for the turn's second line." It is "Rules for Robots gives you a whole team of them.", which leads to the team in the motto.
+
+- **End card, after the animatic.** The maintainer: "leave the motto at the top of the end slide when Rules for Robots comes out and put the 'practical guide...' text back under Rules for Robots".
 
 Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), and a 30-second cut is made at stage 10.
 

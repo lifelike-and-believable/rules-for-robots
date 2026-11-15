@@ -38,6 +38,19 @@ const MARKS = ['rules-for-robots', 'engineering', 'creation', 'research'];
     }, data);
     fs.writeFileSync(path.join(layers, p + '-slide.png'), Buffer.from(png.split(',')[1], 'base64'));
   }
+  {
+    const read = (p) => 'data:image/jpeg;base64,' + fs.readFileSync(path.join(design, p + '.jpg')).toString('base64');
+    const png = await cut.evaluate(async ([a, b]) => {
+      const load = async (src) => { const i = new Image(); i.src = src; await i.decode(); return i; };
+      const [ia, ib] = [await load(a), await load(b)], c = document.createElement('canvas'); c.width = ib.width; c.height = ib.height; const g = c.getContext('2d');
+      g.drawImage(ia, 0, 0); const A = g.getImageData(0, 0, c.width, c.height).data; g.clearRect(0, 0, c.width, c.height); g.drawImage(ib, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height), B = d.data, W = c.width, H = c.height;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4, diff = Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]);
+        B[i + 3] = x > W * .5 && y > H * .35 && diff > 90 ? 255 : 0; }
+      g.putImageData(d, 0, 0); return c.toDataURL('image/png');
+    }, [read('08-flag'), read('09-slide')]);
+    fs.writeFileSync(path.join(layers, '09-slide-diff.png'), Buffer.from(png.split(',')[1], 'base64'));
+  }
   await cut.close();
   const images = fs.readdirSync(layers);
   fs.writeFileSync(path.join(out, 'animatic.html'), `<!doctype html><html><head><meta charset="utf-8">${FONT}<style>html,body{margin:0;background:#000}svg{display:block}</style></head><body>

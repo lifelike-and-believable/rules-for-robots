@@ -19,16 +19,20 @@ const fade = (o, inner) => o <= 0 ? '' : `<g opacity="${clamp(o).toFixed(3)}">${
 const R = `<line x1="43.5" y1="34" x2="43.5" y2="23" stroke="${CREAM}" stroke-width="5"/><circle cx="43.5" cy="19" r="5.5" fill="${CREAM}"/><rect x="36" y="32" width="15" height="66" fill="${CREAM}"/><path d="M43.5 39.5 H68 a18.5 18.5 0 0 1 0 37 H43.5" fill="none" stroke="${CREAM}" stroke-width="15"/><polygon points="56,76 77,76 99,98 78,98" fill="${CREAM}"/><circle cx="65" cy="58" r="6.5" fill="${INK}"/>`;
 const face = (x, y, brand) => { const bar = (bx, by, w) => `<rect x="${bx}" y="${by}" width="${w}" height="8" rx="4"/>`;
   return brand ? `<svg x="${x}" y="${y}" width="76" height="76" viewBox="0 0 128 128"><rect width="128" height="128" rx="26" fill="${O}"/><path d="M0 26 A26 26 0 0 1 20 1 V127 A26 26 0 0 1 0 102 Z" fill="${SP}"/><g transform="translate(9 8.5) scale(.64)">${R}</g><g fill="${TI}">${bar(79, 29, 29)}${bar(79, 46, 29)}${bar(79, 63, 29)}${bar(32, 82, 76)}${bar(32, 97, 50)}</g></svg>`
-    : `<rect x="${x}" y="${y}" width="76" height="76" rx="16" fill="#A8A297"/><circle cx="${x + 26}" cy="${y + 34}" r="6" fill="#ECE7DF"/><circle cx="${x + 50}" cy="${y + 34}" r="6" fill="#ECE7DF"/>`; };
+    : `<rect x="${x}" y="${y}" width="76" height="76" rx="16" fill="#A8A297"/>`; };
 function bubble(who, s, y, p, brand, typed = 1) {
   if (p <= 0) return '';
-  const size = 34, pad = 28, h = 72, x = who === 'you' ? 110 : 200, w = Math.round(s.length * size * .56) + pad * 2;
-  const shown = s.slice(0, Math.ceil(s.length * clamp(typed)));
-  return pop(p, x + 40, y + 36, `<g filter="url(#soft)">${who === 'you' ? '' : face(x - 90, y - 2, brand)}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="36" fill="${who === 'you' ? INK : '#FFFFFF'}"/>${txt(shown, x + pad, y + 47, size, who === 'you' ? CREAM : INK, 500)}</g>`);
+  const size = 34, pad = 28, lines = s.split('\n'), h = 72 + 42 * (lines.length - 1), x = who === 'you' ? 110 : 200;
+  const w = Math.round(Math.max(...lines.map((l) => l.length)) * size * .56) + pad * 2;
+  let left = Math.ceil(s.length * clamp(typed));
+  const shown = lines.map((l) => { const part = l.slice(0, Math.max(0, left)); left -= l.length + 1; return part; });
+  return pop(p, x + 40, y + 36, `<g filter="url(#soft)">${who === 'you' ? '' : face(x - 90, y - 2, brand)}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="36" fill="${who === 'you' ? INK : '#FFFFFF'}"/>${shown.map((l, i) => txt(l, x + pad, y + 47 + 42 * i, size, who === 'you' ? CREAM : INK, 500)).join('')}</g>`);
 }
 // rows: [who, words, at]. Your words are typed as they arrive. Rows stack down from y0.
 const talk = (rows, t, brand, y0 = 290, gap = 88) => rows.map(([who, s, at], i) => bubble(who, s, y0 + i * gap, at < 0 ? 1 : prog(t, at, .35), brand, who === 'you' && at >= 0 ? prog(t, at + .1, Math.min(.9, s.length * .035)) : 1)).join('');
 const heading = (t, a, b, colourB, size = 60, atB = .45) => rise(prog(t, .1), txt(a, 110, 140, size, INK)) + (b ? rise(prog(t, atB), txt(b, 110, 140 + size * 1.15, size, colourB)) : '');
+// A picture of the slide alone over the flag picture: the slide arrives and nothing else changes.
+const slideIn = (p, scale = 1, cx = 960, cy = 540) => { show('08-flag', 1, scale, cx, cy); if (p > 0) { clipRect(0, 0, 1920, 1080 * p); show('09-slide-diff', 1, scale, cx, cy, 'clipA'); } };
 
 /* The page: pictures below, words above. */
 const film = document.getElementById('film');
@@ -57,32 +61,32 @@ const dissolve = (a, b, p, fn = show) => { fn(a, 1); fn(b, ease(p)); };
 const BEATS = [
   // 1. The idea.
   { name: 'idea', dur: 2.5, draw: (t) => { show('01-hill');
-      return heading(t, 'You have an idea.') + talk([['you', 'Build me a treehouse.', .7]], t, false); } },
+      return heading(t, 'You have an idea.') + talk([['you', 'Build me a treehouse.', .3]], t, false); } },
   // 2. Literal: the colour drains, and a box appears with no way up.
   { name: 'literal', dur: 4.5, draw: (t) => { show('01-hill'); show('01-hill-ash', ease(prog(t, 0, .6))); show('02-box-ash', ease(prog(t, .7, .3)));
-      return heading(t, 'Exactly what you said.', 'Not what you meant.', MUTED) + talk([['you', 'Build me a treehouse.', -1], ['agent', 'Done! One treehouse.', 1], ['you', 'How do I get up?', 2.6]], t, false); } },
+      return heading(t, 'Exactly what you said.', 'Not what you meant.', MUTED) + talk([['you', 'Build me a treehouse.', -1], ['agent', 'Done! One treehouse.', .9], ['you', 'How do I get up?', 2]], t, false); } },
   // 3. One change: everything changes, so the new picture wipes across.
   { name: 'one-change', dur: 5.5, draw: (t) => { show('02-box-ash'); const p = inout(prog(t, 1.3, .7)); clipRect(0, 0, 1920 * p, 1080); show('03-pine-ash', p > 0 ? 1 : 0, 1, 960, 540, 'clipA');
-      return heading(t, 'You ask for one change.', 'Everything else changes too.', MUTED) + talk([['you', 'Add a ladder.', .3], ['agent', 'Added! One ladder.', 1.5], ['you', 'Why is it a pine tree?', 3.2]], t, false); } },
+      return heading(t, 'You ask for one change.', 'Everything else changes too.', MUTED, 52) + talk([['you', 'Add a ladder.', .2], ['agent', 'Added! One ladder.', 1.3], ['you', 'Why is it a pine tree?', 2.7]], t, false); } },
   // 4. An addition: the slide, the one thing in colour, lands on the ladder.
   { name: 'addition', dur: 5, draw: (t) => { show('03-pine-ash'); ash('04-slide-on-ladder', ease(prog(t, 1.3, .3)));
-      return heading(t, 'You add what you forgot.', 'It gets bolted on.', MUTED) + talk([['you', 'And a slide.', .3], ['agent', 'Added! One slide.', 1.4], ['you', "It's blocking the ladder.", 2.9]], t, false); } },
+      return heading(t, 'You add what you forgot.', 'It gets bolted on.', MUTED) + talk([['you', 'And a slide.', .2], ['agent', 'Added! One slide.', 1.2], ['you', "It's blocking the ladder.", 2.3]], t, false); } },
   // 5. Micromanaging: one order, and the questions pile up.
   { name: 'micromanage', dur: 8, draw: (t) => { ash('04-slide-on-ladder');
       return heading(t, 'So you micromanage.', 'Now it asks about everything.', MUTED) + talk([['you', 'Ask before you change anything.', .6], ['agent', 'May I pick up the hammer?', 2.4], ['agent', 'May I use the hammer?', 3.7], ['agent', 'May I put the hammer down?', 5]], t, false); } },
   // 6. Next session: the conversation is wiped, and a second box appears.
-  { name: 'next-session', dur: 5.5, draw: (t) => { ash('04-slide-on-ladder'); ash('05-second-box', ease(prog(t, 4.2, .3)));
+  { name: 'next-session', dur: 5.5, draw: (t) => { ash('04-slide-on-ladder'); ash('05-second-box', ease(prog(t, 3.3, .4)));
       const gone = 1 - ease(prog(t, 0, .45)), line = ease(prog(t, .45, .4));
       const old = fade(gone, `<g transform="translate(0 ${(-60 * (1 - gone)).toFixed(1)})">${heading(9, 'So you micromanage.', 'Now it asks about everything.', MUTED)}${talk([['you', 'Ask before you change anything.', -1], ['agent', 'May I pick up the hammer?', -1], ['agent', 'May I use the hammer?', -1], ['agent', 'May I put the hammer down?', -1]], 9, false)}</g>`);
-      const divider = fade(line, `<line x1="110" y1="276" x2="${(110 + 470 * line).toFixed(1)}" y2="276" stroke="${MUTED}" stroke-width="3" stroke-dasharray="10 9"/>${txt('New session', 600, 286, 30, MUTED, 700)}`);
+      const divider = fade(line, `<line x1="110" y1="276" x2="${(110 + 470 * line).toFixed(1)}" y2="276" stroke="${MUTED}" stroke-width="3" stroke-dasharray="10 9"/>${txt('New session', 600, 288, 34, MUTED, 700)}`);
       return old + (t > .5 ? heading(t - .5, 'The next session,', 'it remembers nothing.', MUTED) : '') + divider
-        + talk([['you', "Let's keep going.", 1.2], ['agent', 'Sure! What are we working on?', 2.2], ['you', 'The treehouse.', 3.3], ['agent', 'Done! One treehouse.', 4.3]], t, false, 318, 84); } },
+        + talk([['you', "Let's keep going.", .9], ['agent', 'Sure! What are we working on?', 1.7], ['you', 'The treehouse.', 2.6], ['agent', 'Done! One treehouse.', 3.9]], t, false, 318, 84); } },
   // 7. The turn.
   { name: 'turn', dur: 4, draw: (t) => { ash('05-second-box'); const w = 1920 * inout(prog(t, 0, .5));
       return `<rect width="${w.toFixed(1)}" height="1080" fill="${O}"/><rect width="${Math.min(96, w).toFixed(1)}" height="1080" fill="${SP}"/>`
         + pop(prog(t, .35, .5), 1560, 520, `<circle cx="1560" cy="520" r="430" fill="#EB6A43" opacity=".55"/><g transform="translate(1166 196) scale(6.1)" filter="url(#soft)">${R}</g>`)
         + rise(prog(t, .45), txt('What you wanted', 190, 430, 110, CREAM), 40) + rise(prog(t, .9), txt('was a collaborator.', 190, 560, 110, TI), 40)
-        + rise(prog(t, 2.1), txt('Rules for Robots gives you a whole team of them.', 194, 700, 48, CREAM, 500), 24); } },
+        + rise(prog(t, 2), txt('Rules for Robots gives you', 194, 700, 60, CREAM, 500) + txt('a whole team of them.', 194, 774, 60, CREAM, 500), 24); } },
   // 8. It asks first: the hill, the sketch, then the treehouse built up to it.
   { name: 'asks', dur: 6.5, draw: (t) => { show('01-hill'); show('06-sketch', ease(prog(t, 3.2, .5)));
       const b = inout(prog(t, 4.9, .9)); clipRect(0, 1080 * (1 - b), 1920, 1080); show('07-bare-pole', b > 0 ? 1 : 0, 1, 960, 540, 'clipA');
@@ -92,30 +96,30 @@ const BEATS = [
   { name: 'decision', dur: 3.5, draw: (t) => { show('07-bare-pole'); show('08-flag', ease(prog(t, 2.2, .4)));
       const flag = (x, fill, at) => pop(prog(t, at, .35), x + 50, 560, `<line x1="${x}" y1="500" x2="${x}" y2="640" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${x + 4} 504 C${x + 34} 492 ${x + 60} 520 ${x + 112} 502 L${x + 86} 530 L${x + 116} 556 C${x + 66} 552 ${x + 40} 574 ${x + 4} 558 Z" fill="${fill}"/>`);
       return heading(t, 'It asks you what only', 'you can decide.', INK) + talk([['agent', 'The flag: orange or violet?', .3], ['you', 'Orange.', 1.5]], t, true, 310)
-        + flag(480, O, .6) + flag(660, P, .75) + `<rect x="452" y="474" width="172" height="186" rx="18" fill="none" stroke="${O}" stroke-width="7" opacity="${ease(prog(t, 1.8, .3)).toFixed(3)}"/>`; } },
+        + fade(1 - ease(prog(t, 2.7, .4)), flag(480, O, .6) + flag(660, P, .75) + `<rect x="452" y="474" width="172" height="186" rx="18" fill="none" stroke="${O}" stroke-width="7" opacity="${ease(prog(t, 1.8, .3)).toFixed(3)}"/>`); } },
   // 10. The record.
   { name: 'record', dur: 5, draw: (t) => { show('08-flag');
-      const row = (i, a, b) => rise(prog(t, 1.1 + i * .7, .35), `<circle cx="164" cy="${548 + i * 118}" r="10" fill="${O}"/>${txt(a, 194, 560 + i * 118, 38, INK)}${txt(b, 194, 604 + i * 118, 32, MUTED, 500)}`, 16);
-      return heading(t, 'It writes down why.') + talk([['agent', 'Noted, so the next session knows too.', .3]], t, true)
-        + pop(prog(t, .7, .4), 430, 570, `<g filter="url(#soft)"><rect x="114" y="412" width="640" height="340" rx="20" fill="#FFFFFF"/></g>${txt('Decisions', 150, 476, 38, INK)}`)
+      const row = (i, a, b) => rise(prog(t, 1.1 + i * .7, .35), `<circle cx="164" cy="${588 + i * 118}" r="10" fill="${O}"/>${txt(a, 194, 600 + i * 118, 38, INK)}${txt(b, 194, 644 + i * 118, 32, MUTED, 500)}`, 16);
+      return heading(t, 'It writes down why.') + talk([['agent', 'Noted, so the next session\nknows too.', .3]], t, true)
+        + pop(prog(t, .7, .4), 430, 610, `<g filter="url(#soft)"><rect x="114" y="452" width="640" height="340" rx="20" fill="#FFFFFF"/></g>${txt('Decisions', 150, 516, 38, INK)}`)
         + row(0, 'Flag: orange', 'Your choice.') + row(1, 'Ladder on the left', 'So the kids can climb up.'); } },
   // 11. A change: the slide arrives, and nothing else moves.
-  { name: 'change', dur: 4.5, draw: (t) => { show('08-flag'); const p = inout(prog(t, 1.2, .9)); clipRect(1100, 480, 820, 600 * p); show('09-slide', p > 0 ? 1 : 0, 1, 960, 540, 'clipA');
-      return talk([['you', 'Add a slide.', .3], ['agent', 'Added. Nothing else moved.', 2]], t, true) + (t > 2.6 ? heading(t - 2.6, 'A change is a change.', 'Not a restart.', SP) : ''); } },
+  { name: 'change', dur: 4.5, draw: (t) => { slideIn(inout(prog(t, .8, .9)));
+      return talk([['you', 'Add a slide.', .1], ['agent', 'Added. Nothing else moved.', 1.4]], t, true) + (t > 2 ? heading(t - 2, 'A change is a change.', 'Not a restart.', SP) : ''); } },
   // 12. The promise: the view pulls back from the one treehouse to the village, and the motto arrives.
   { name: 'promise', dur: 4.5, draw: (t) => { const p = inout(prog(t, 0, 1.4));
-      show('09-slide', 1 - ease(prog(t, .5, .7)), 1 - .45 * p, 1290, 560); show('10-village', ease(prog(t, .2, .8)), 2.1 - 1.1 * p, 905, 640);
+      const o = 1 - ease(prog(t, .5, .7)); if (o > 0) { show('08-flag', o, 1 - .45 * p, 1290, 560); clipRect(0, 0, 1920, 1080); show('09-slide-diff', o, 1 - .45 * p, 1290, 560, 'clipA'); } show('10-village', ease(prog(t, .2, .8)), 2.1 - 1.1 * p, 905, 640);
       return rise(prog(t, 1.4), txt('A skilled team building your biggest ideas,', 960, 96, 54, INK, 700, 'middle')) + rise(prog(t, 1.9), txt('the way you envision them.', 960, 164, 54, SP, 700, 'middle')); } },
-  // 13. End: the motto stays and the end card forms around it.
+  // 13. End: the motto stays at the top, and the name comes out below it with the guide line under it.
   { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); show('10-village', 1 - p);
-      const y1 = 96 + (520 - 96) * p, y2 = 164 + (582 - 164) * p;
-      placeMark('rules-for-robots', 470, 300, 150, ease(prog(t, .5, .4)));
-      ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 720 + i * 78, 668, 64, ease(prog(t, 1.6 + i * .1, .35))));
-      return txt('A skilled team building your biggest ideas,', 960, y1, 46, INK, 500, 'middle') + txt('the way you envision them.', 960, y2, 46, SP, 500, 'middle')
-        + rise(prog(t, .5), txt('Rules for Robots', 650, 410, 104, INK))
-        + rise(prog(t, 1.5), txt('Rules and plugins for Claude Code.', 960, 650, 30, MUTED, 500, 'middle'))
-        + rise(prog(t, 1.6), txt('github.com/RulesForRobots', 970, 716, 40, INK, 700))
-        + rise(prog(t, 2.6), txt('(Yes, you may put the hammer down.)', 960, 900, 38, MUTED, 500, 'middle')); } },
+      placeMark('rules-for-robots', 413, 360, 150, ease(prog(t, .5, .4)));
+      ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 552 + i * 78, 688, 64, ease(prog(t, 1.6 + i * .1, .35))));
+      return txt('A skilled team building your biggest ideas,', 960, 96, 54, INK, 700, 'middle') + txt('the way you envision them.', 960, 164, 54, SP, 700, 'middle')
+        + rise(prog(t, .5), txt('Rules for Robots', 593, 470, 104, INK))
+        + rise(prog(t, 1), txt('A practical guide for people and agents who work together', 597, 530, 32, SP, 500))
+        + rise(prog(t, 1.6), txt('github.com/RulesForRobots', 802, 734, 40, INK, 700))
+        + rise(prog(t, 1.7), txt('Rules and plugins for Claude Code.', 960, 820, 36, '#4A3F38', 500, 'middle'))
+        + rise(prog(t, 2.6), txt('(Yes, you may put the hammer down.)', 960, 950, 38, MUTED, 500, 'middle')); } },
 ];
 let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
