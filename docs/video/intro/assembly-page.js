@@ -33,11 +33,20 @@ let heard = null;
 const talk = (rows, t, brand, y0 = 290, gap = 88) => (heard && rows.forEach(([who, s, at]) => at >= 0 && heard.push([at, who, s])), rows.map(([who, s, at], i) => bubble(who, s, y0 + i * gap, at < 0 ? 1 : prog(t, at, .35), brand, who === 'you' && at >= 0 ? prog(t, at + .1, Math.min(.9, s.length * .035)) : 1)).join(''));
 const heading = (t, a, b, colourB, size = 60, atB = .45) => rise(prog(t, .1), txt(a, 110, 140, size, INK)) + (b ? rise(prog(t, atB), txt(b, 110, 140 + size * 1.15, size, colourB)) : '');
 
-/* The page: two picture layers below, words above. */
+/* The shapes. The master is wide (16:9). In the vertical cut the words keep their size in a band at the top and the picture is a
+   square below; in the square cut the picture is the whole 16:9 frame along the bottom and the words above it are scaled to fit, which
+   keeps them the same size against the frame as in the master. The picture's place and crop are set by assembly.cjs; the turn card,
+   the motto, and the end card are laid out for each shape below. */
+/* global SHAPE */
+const LAYOUTS = { wide: { W: 1920, H: 1080, col: 1 }, vertical: { W: 1080, H: 1920, col: 1 }, square: { W: 1080, H: 1080, col: .58 } };
+const L = LAYOUTS[typeof SHAPE === 'string' ? SHAPE : 'wide'], WIDE = L.W === 1920, TALL = L.H > L.W;
+/* The page: two picture layers below, words above. Full-frame drawing (the turn card, the motto, the end card) goes in TOP, above the
+   words, or UNDER, below them; the words go in a column that is scaled in the square cut. */
+let TOP = '', UNDER = '';
 const film = document.getElementById('film');
 film.innerHTML = `<defs><filter id="soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="${INK}" flood-opacity=".16"/></filter></defs>
-<g id="words"></g><g id="marks"></g><g id="over"></g>`;
-const words = document.getElementById('words'), over = document.getElementById('over'), layers = [...document.querySelectorAll('img.pic')];
+<g id="under"></g><g id="col"${L.col !== 1 ? ` transform="scale(${L.col})"` : ''}><g id="words"></g></g><g id="top"></g><g id="marks"></g><g id="over"></g>`;
+const words = document.getElementById('words'), topG = document.getElementById('top'), underG = document.getElementById('under'), over = document.getElementById('over'), layers = [...document.querySelectorAll('img.pic')];
 const marks = {};
 for (const m of ['rules-for-robots', 'engineering', 'creation', 'research']) { const el = document.createElementNS('http://www.w3.org/2000/svg', 'image');
   el.setAttribute('href', `assembly-layers/mark-${m}.svg`); el.setAttribute('opacity', 0); document.getElementById('marks').appendChild(el); marks[m] = el; }
@@ -83,12 +92,26 @@ function sessionWords(t) {
     + talk([['you', "Let's keep going.", .9], ['agent', 'Sure! What are we working on?', 1.7], ['you', 'The treehouse.', 2.6], ['agent', 'Done! One treehouse.', 3.9]], t, false, 318, 84);
 }
 // The turn card: the orange wipe, the R, and the two lines. Beat 8 fades it out whole as the colour comes back.
-function turnCard(t) { const w = 1920 * inout(prog(t, 0, .5));
-  return `<rect width="${w.toFixed(1)}" height="1080" fill="${O}"/><rect width="${Math.min(96, w).toFixed(1)}" height="1080" fill="${SP}"/>`
-    + pop(prog(t, .35, .5), 1560, 520, `<circle cx="1560" cy="520" r="430" fill="#EB6A43" opacity=".55"/><g transform="translate(1166 196) scale(6.1)" filter="url(#soft)">${R}</g>`)
-    + rise(prog(t, .45), txt('What you wanted', 190, 430, 110, CREAM), 40) + rise(prog(t, .9), txt('was a collaborator.', 190, 560, 110, INK), 40)
-    + rise(prog(t, 1.5), txt('Rules for Robots gives you', 194, 700, 60, CREAM, 500) + txt('a whole team of them.', 194, 774, 60, CREAM, 500), 24);
+const TURN = WIDE ? { spine: 96, cx: 1560, cy: 520, r: 430, s: 6.1, x: 190, y1: 430, y2: 560, big: 110, sx: 194, sy1: 700, sy2: 774, small: 60 }
+  : TALL ? { spine: 72, cx: 540, cy: 1340, r: 400, s: 5.4, x: 110, y1: 420, y2: 520, big: 84, sx: 114, sy1: 660, sy2: 728, small: 52 }
+  : { spine: 56, cx: 820, cy: 800, r: 230, s: 3.1, x: 96, y1: 250, y2: 335, big: 72, sx: 100, sy1: 450, sy2: 500, small: 40 };
+function turnCard(t) { const c = TURN, w = L.W * inout(prog(t, 0, .5));
+  return `<rect width="${w.toFixed(1)}" height="${L.H}" fill="${O}"/><rect width="${Math.min(c.spine, w).toFixed(1)}" height="${L.H}" fill="${SP}"/>`
+    + pop(prog(t, .35, .5), c.cx, c.cy, `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="#EB6A43" opacity=".55"/><g transform="translate(${(c.cx - 64.6 * c.s).toFixed(1)} ${(c.cy - 53.1 * c.s).toFixed(1)}) scale(${c.s})" filter="url(#soft)">${R}</g>`)
+    + rise(prog(t, .45), txt('What you wanted', c.x, c.y1, c.big, CREAM), 40) + rise(prog(t, .9), txt('was a collaborator.', c.x, c.y2, c.big, INK), 40)
+    + rise(prog(t, 1.5), txt('Rules for Robots gives you', c.sx, c.sy1, c.small, CREAM, 500) + txt('a whole team of them.', c.sx, c.sy2, c.small, CREAM, 500), 24);
 }
+// The motto: two lines across the wide frame, three in the narrow ones, the last in the darker orange.
+const MOTTO = WIDE ? [[['A skilled team building your biggest ideas,', 121]], [['the way you envision them.', 189]], 54]
+  : TALL ? [[['A skilled team building', 330], ['your biggest ideas,', 400]], [['the way you envision them.', 470]], 56]
+  : [[['A skilled team building', 110], ['your biggest ideas,', 160]], [['the way you envision them.', 210]], 42];
+const motto = (p1, p2) => { const [a, b, size] = MOTTO;
+  return rise(p1, a.map(([s2, y]) => txt(s2, L.W / 2, y, size, INK, 700, 'middle')).join('')) + rise(p2, b.map(([s2, y]) => txt(s2, L.W / 2, y, size, SP, 700, 'middle')).join('')); };
+// The end card: [x, y, size, anchor] for each line, the mark as [x, y, size], and the volume marks as [first x, step, y, size].
+// The wide card puts the name beside the mark; the narrow ones stack it under the mark.
+const END = WIDE ? { mark: [413, 385, 150], vols: [552, 78, 713, 64], name: [593, 495, 104, 'start'], guide: [597, 555, 32, 'start'], url: [802, 759, 40, 'start'], plain: [960, 845, 36, 'middle'], hammer: [960, 975, 38, 'middle'] }
+  : TALL ? { mark: [465, 620, 150], vols: [430, 78, 1040, 64], name: [540, 890, 104, 'middle'], guide: [540, 948, 30, 'middle'], url: [540, 1200, 40, 'middle'], plain: [540, 1280, 36, 'middle'], hammer: [540, 1450, 38, 'middle'] }
+  : { mark: [480, 250, 120], vols: [450, 64, 560, 52], name: [540, 465, 84, 'middle'], guide: [540, 512, 25, 'middle'], url: [540, 700, 34, 'middle'], plain: [540, 760, 30, 'middle'], hammer: [540, 900, 32, 'middle'] };
 // Draw without noting bubbles for the sound list (for words repeated from an earlier beat).
 const quiet = (fn) => { const h = heard; heard = null; const r = fn(); heard = h; return r; };
 
@@ -113,10 +136,10 @@ const BEATS = [
       return sessionWords(t); } },
   // 7. The turn.
   { name: 'turn', dur: 4, draw: (t) => { pic('05-second-box-a-ash');
-      return quiet(() => sessionWords(5.5)) + turnCard(t); } },
+      TOP += turnCard(t); return quiet(() => sessionWords(5.5)); } },
   // 8. It asks first: the hill, the sketch drawing itself, then the treehouse built to it.
   { name: 'asks', dur: 6.5, draw: (t) => { pic('06-sketch-a'); pic('07-build-b', ease(prog(t, 4.6, .15)));
-      return fade(1 - ease(prog(t, 0, .45)), turnCard(4)) + heading(t, 'It asks before it builds.')
+      UNDER += fade(1 - ease(prog(t, 0, .45)), turnCard(4)); return heading(t, 'It asks before it builds.')
         + talk([['agent', 'Before I build: who is it for?', .5], ['you', 'My kids. They love to climb.', 1.6], ['agent', 'Here is a sketch. Is this it?', 3.1], ['you', 'Approved.', 4.3]], t, true); } },
   // 9. Your decision: two flags offered, and the orange one runs up the pole.
   { name: 'decision', dur: 3.5, draw: (t) => { pic('07-build-b'); pic('08-flag-b', ease(prog(t, 0, .25)));
@@ -134,26 +157,27 @@ const BEATS = [
       return talk([['you', 'Add a slide.', .1], ['agent', 'Added. Nothing else moved.', 1.4]], t, true) + (t > 2 ? heading(t - 2, 'A change is a change.', 'Not a restart.', SP) : ''); } },
   // 12. The promise: the view pulls back from the one treehouse to the village, and the motto arrives.
   { name: 'promise', dur: 4.5, draw: (t) => { pic('09-slide-a'); pic('10-village-a', ease(prog(t, 0, .2)));
-      return rise(prog(t, 1.4), txt('A skilled team building your biggest ideas,', 960, 121, 54, INK, 700, 'middle')) + rise(prog(t, 1.9), txt('the way you envision them.', 960, 189, 54, SP, 700, 'middle')); } },
+      TOP += motto(prog(t, 1.4), prog(t, 1.9)); return ''; } },
   // 13. End: the motto stays at the top, and the name comes out below it with the guide line under it.
   { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); pic('10-village-a', 1 - p);
-      placeMark('rules-for-robots', 413, 385, 150, ease(prog(t, .5, .4)));
-      ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 552 + i * 78, 713, 64, ease(prog(t, 1.6 + i * .1, .35))));
-      // The R winks with its whole body, as in the animatic.
-      const k = 150 / 128, ex = 413 + (9 + 65 * .64) * k, ey = 385 + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k, w = t - 3.9;
+      const E = END, [mx, my, ms] = E.mark;
+      placeMark('rules-for-robots', mx, my, ms, ease(prog(t, .5, .4)));
+      ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, E.vols[0] + i * E.vols[1], E.vols[2], E.vols[3], ease(prog(t, 1.6 + i * .1, .35))));
+      // The R winks with its whole body, as in the animatic. Its eye is at (65, 58), radius 6.5, inside the mark's (9, 8.5) scale .64
+      // group; the mark pivots on the middle of its base, and its jumps scale with its size.
+      const k = ms / 128, ex = mx + (9 + 65 * .64) * k, ey = my + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k, w = t - 3.9, px = mx + ms / 2, py = my + ms;
       const [sx, sy, rot, dy] = wink(w), shut = w < .25 ? 0 : w < .31 ? (w - .25) / .06 : w < .6 ? 1 : w < .68 ? 1 - (w - .6) / .08 : 0;
-      const body = w <= 0 || w >= 1.2 ? '' : `translate(488 535) translate(0 ${dy.toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-488 -535)`;
+      const body = w <= 0 || w >= 1.2 ? '' : `translate(${px} ${py}) translate(0 ${(dy * ms / 150).toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(${-px} ${-py})`;
       if (body) marks['rules-for-robots'].setAttribute('transform', body);
       over.setAttribute('transform', body);
       over.innerHTML = shut <= 0 ? '' : `<circle cx="${ex}" cy="${ey}" r="${(er + 1.6).toFixed(2)}" fill="${O}"/>` + (shut > .7
         ? `<path d="M${ex - er * 1.6} ${ey - er * .5} Q${ex} ${ey + er * 1.4} ${ex + er * 1.6} ${ey - er * .5}" fill="none" stroke="${INK}" stroke-width="${(er * .75).toFixed(2)}" stroke-linecap="round"/>`
         : `<ellipse cx="${ex}" cy="${ey}" rx="${er}" ry="${(er * (1 - shut)).toFixed(2)}" fill="${INK}"/>`);
-      return txt('A skilled team building your biggest ideas,', 960, 121, 54, INK, 700, 'middle') + txt('the way you envision them.', 960, 189, 54, SP, 700, 'middle')
-        + rise(prog(t, .5), txt('Rules for Robots', 593, 495, 104, INK))
-        + rise(prog(t, 1), txt('A practical guide for people and agents who work together', 597, 555, 32, SP, 500))
-        + rise(prog(t, 1.6), txt('github.com/RulesForRobots', 802, 759, 40, INK, 700))
-        + rise(prog(t, 1.7), txt('Rules and plugins for Claude Code.', 960, 845, 36, '#4A3F38', 500, 'middle'))
-        + rise(prog(t, 2.6), txt('(Yes, you may put the hammer down.)', 960, 975, 38, MUTED, 500, 'middle')); } },
+      const line = ([x, y, size, anchor], at, s2, fill, weight) => rise(prog(t, at), txt(s2, x, y, size, fill, weight, anchor));
+      TOP += motto(1, 1) + line(E.name, .5, 'Rules for Robots', INK, 700) + line(E.guide, 1, 'A practical guide for people and agents who work together', SP, 500)
+        + line(E.url, 1.6, 'github.com/RulesForRobots', INK, 700) + line(E.plain, 1.7, 'Rules and plugins for Claude Code.', '#4A3F38', 500)
+        + line(E.hammer, 2.6, '(Yes, you may put the hammer down.)', MUTED, 500);
+      return ''; } },
 ];
 let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
@@ -207,11 +231,14 @@ window.__ready = Promise.all([document.fonts.ready, ...Object.values(marks).map(
 // Draw the moment t: the words at once, and the pictures once their frames are decoded.
 window.__seek = async (t) => { t = clamp(t, 0, acc - .001); NOW = t; shown = [];
   for (const el of Object.values(marks)) { el.setAttribute('opacity', 0); el.removeAttribute('transform'); }
-  over.innerHTML = ''; over.removeAttribute('transform');
+  over.innerHTML = ''; over.removeAttribute('transform'); TOP = ''; UNDER = '';
   const b = BEATS.filter((x) => t >= x.start).pop();
   const html = b.draw(t - b.start, b.dur);
   const srcs = shown.map(([name]) => `assembly-layers/clips/${name}/${String(frameOf(name, NOW)).padStart(4, '0')}.jpg`);
+  // Where a narrow box crops the picture (the vertical cut): right of centre, to keep the tree and its sun, and, during the pull back,
+  // gliding to the village's centre treehouse. As a percentage of the picture's width that does not fit.
+  const focus = shown.map(([name]) => { if (!name.startsWith('10-village')) return 75; const f = frameOf(name, NOW), n = FRAMES[name]; return 75 - 32 * clamp((f - 1) / (n - 1)); });
   await Promise.all(layers.map(async (img, i) => { if (!srcs[i]) { img.style.opacity = 0; return; }
     if (img.getAttribute('src') !== srcs[i]) { img.src = srcs[i]; await img.decode().catch(() => {}); }
-    img.style.opacity = shown[i][1].toFixed(3); }));
-  words.innerHTML = html; };
+    img.style.opacity = shown[i][1].toFixed(3); img.style.objectPosition = `${focus[i].toFixed(1)}% 50%`; }));
+  words.innerHTML = html; topG.innerHTML = TOP; underG.innerHTML = UNDER; };
