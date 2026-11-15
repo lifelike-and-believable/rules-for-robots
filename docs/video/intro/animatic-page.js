@@ -58,6 +58,12 @@ const placeMark = (name, x, y, s, opacity) => { const el = pics['mark-' + name];
 const ash = (name, o = 1) => { show(name + '-ash', o); if (pics[name + '-slide']) show(name + '-slide', o); };
 const dissolve = (a, b, p, fn = show) => { fn(a, 1); fn(b, ease(p)); };
 
+const WINK = [[0, 1, 1, 0, 0], [.14, 1.2, .76, 0, 0], [.3, .84, 1.24, -8, -26], [.46, .88, 1.16, -5, -14], [.6, 1.16, .84, 0, 0], [.75, .94, 1.07, 0, 0], [.9, 1.04, .96, 0, 0], [1.05, .99, 1.01, 0, 0], [1.2, 1, 1, 0, 0]];
+function wink(w) { if (w <= 0 || w >= 1.2) return [1, 1, 0, 0];
+  let i = 0; while (WINK[i + 1][0] < w) i++;
+  const [t0, ...a] = WINK[i], [t1, ...b] = WINK[i + 1], p = inout((w - t0) / (t1 - t0));
+  return a.map((v, j) => v + (b[j] - v) * p); }
+
 const BEATS = [
   // 1. The idea.
   { name: 'idea', dur: 2.5, draw: (t) => { show('01-hill');
@@ -114,11 +120,16 @@ const BEATS = [
   { name: 'end', dur: 5.5, draw: (t) => { const p = inout(prog(t, 0, .7)); show('10-village', 1 - p);
       placeMark('rules-for-robots', 413, 360, 150, ease(prog(t, .5, .4)));
       ['engineering', 'creation', 'research'].forEach((m, i) => placeMark(m, 552 + i * 78, 688, 64, ease(prog(t, 1.6 + i * .1, .35))));
-      // The R winks. Its eye is at (65, 58), radius 6.5, inside the mark's (9, 8.5) scale .64 group, and the mark is 150 wide here.
-      const k = 150 / 128, ex = 413 + (9 + 65 * .64) * k, ey = 360 + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k;
-      const shut = Math.sin(Math.PI * clamp((t - 4.1) / .45));
-      over.innerHTML = shut <= 0 ? '' : `<circle cx="${ex}" cy="${ey}" r="${(er + 1.2).toFixed(2)}" fill="${O}"/>` + (shut > .8
-        ? `<path d="M${ex - er * 1.3} ${ey - er * .2} Q${ex} ${ey + er * 1.1} ${ex + er * 1.3} ${ey - er * .2}" fill="none" stroke="${INK}" stroke-width="${(er * .55).toFixed(2)}" stroke-linecap="round"/>`
+      // The R winks with its whole body: it squashes, springs up and leans as the eye shuts, lands in a squash, and
+      // wobbles back to rest, pivoting on the middle of its base. Its eye is at (65, 58), radius 6.5, inside the mark's
+      // (9, 8.5) scale .64 group; the mark is 150 wide here.
+      const k = 150 / 128, ex = 413 + (9 + 65 * .64) * k, ey = 360 + (8.5 + 58 * .64) * k, er = 6.5 * .64 * k, w = t - 3.9;
+      const [sx, sy, rot, dy] = wink(w), shut = w < .25 ? 0 : w < .31 ? (w - .25) / .06 : w < .6 ? 1 : w < .68 ? 1 - (w - .6) / .08 : 0;
+      const body = w <= 0 || w >= 1.2 ? '' : `translate(488 510) translate(0 ${dy.toFixed(2)}) rotate(${rot.toFixed(2)}) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-488 -510)`;
+      if (body) pics['mark-rules-for-robots'].setAttribute('transform', body);
+      over.setAttribute('transform', body);
+      over.innerHTML = shut <= 0 ? '' : `<circle cx="${ex}" cy="${ey}" r="${(er + 1.6).toFixed(2)}" fill="${O}"/>` + (shut > .7
+        ? `<path d="M${ex - er * 1.6} ${ey - er * .5} Q${ex} ${ey + er * 1.4} ${ex + er * 1.6} ${ey - er * .5}" fill="none" stroke="${INK}" stroke-width="${(er * .75).toFixed(2)}" stroke-linecap="round"/>`
         : `<ellipse cx="${ex}" cy="${ey}" rx="${er}" ry="${(er * (1 - shut)).toFixed(2)}" fill="${INK}"/>`);
       return txt('A skilled team building your biggest ideas,', 960, 96, 54, INK, 700, 'middle') + txt('the way you envision them.', 960, 164, 54, SP, 700, 'middle')
         + rise(prog(t, .5), txt('Rules for Robots', 593, 470, 104, INK))
@@ -131,7 +142,7 @@ let acc = 0; for (const b of BEATS) { b.start = acc; acc += b.dur; }
 window.__total = acc; window.__beats = BEATS.map((b) => [b.name, b.start, b.dur]);
 window.__seek = (t) => { t = clamp(t, 0, acc - .001);
   for (const el of Object.values(pics)) { el.setAttribute('opacity', 0); el.removeAttribute('clip-path'); }
-  over.innerHTML = '';
+  over.innerHTML = ''; over.removeAttribute('transform'); if (pics['mark-rules-for-robots']) pics['mark-rules-for-robots'].removeAttribute('transform');
   const b = BEATS.filter((x) => t >= x.start).pop();
   words.innerHTML = b.draw(t - b.start, b.dur); };
 window.__seek(0);

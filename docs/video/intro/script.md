@@ -43,7 +43,7 @@ Every beat is at or under four words a second except the record (5.2) and the en
 
 - **End card, after the animatic.** The maintainer: "leave the motto at the top of the end slide when Rules for Robots comes out and put the 'practical guide...' text back under Rules for Robots".
 
-- **The wink.** The maintainer: "maybe the R in the last slide could wink at the end?" After the hammer line, the eye of the R in the mark closes into an arc and opens again.
+- **The wink.** The maintainer: "maybe the R in the last slide could wink at the end?" After the hammer line, the eye of the R in the mark closes into an arc and opens again. Then: "The wink needs to be a much more cartoon-y squash-and-stretch action. A whole body kind of wink, so it reads from a distance". The whole mark squashes, springs up and leans as the eye shuts, lands in a squash, and wobbles to rest.
 
 Decided earlier: the master runs about 60 seconds ("60 seconds sounds good"), and a 30-second cut is made at stage 10.
 
