@@ -4,7 +4,7 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270, #277.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270, #277, #280.
 
 ### Changed
 
