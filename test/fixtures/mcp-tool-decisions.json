@@ -602,6 +602,42 @@
    "decision": "allow"
   },
   {
+   "tool": "mcp__unreal__GetStatus",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal__SpawnMeshAt",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal__RemoveCutout",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal__RunConsoleCommand",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal__call_tool",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal-audit__connection_status",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal-audit__select_target",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unreal-audit__plugin_call",
+   "decision": "allow"
+  },
+  {
+   "tool": "mcp__unrealengine_docs__delete_page",
+   "decision": "refuse"
+  },
+  {
    "tool": "mcp__plugin_pdf-viewer_pdf__display_pdf",
    "decision": "allow"
   },
