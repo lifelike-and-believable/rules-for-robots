@@ -8,6 +8,10 @@ Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265,
 
 ### Changed
 
+- **Unreal editor MCP servers count as local.** `rfr-core`, in the next release. The MCP guard refused every Unreal editor bridge tool whose name did not read as a read, including `GetStatus` on `unreal` and `connection_status` on `unreal-audit`. Those servers drive an editor on this machine, so the guard now treats `unreal` and `unreal-audit` like the local browser and canvases, and allows all of their tools.
+
+  Adopters: nothing to do.
+
 - **Making things in outside services a project declares** (unattended AC-10). `rfr-core`, in the next release. The MCP guard refused every change in another service, which stopped a project from generating a picture, a video, or a sound for itself.
   - A project lists the services it makes things in as `"services"` in `.claude/rfr.json`. An entry is the name of the service's MCP server, or an object with that `name` and what the project records about it, such as what it is `for` and the `limits` on its use. There, a tool that generates, creates, edits, or uploads is no longer refused.
   - Deleting, sharing, publishing, sending, inviting, buying, renting, licensing, transferring, and deploying are still refused there, and every change on a service that is not declared is refused as before.

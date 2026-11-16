@@ -30,7 +30,9 @@ export function onlyReads(action) {
 
 // Servers whose tools act on this machine only: a local test browser, a PDF viewer, and drawing
 // canvases. A browser on a public site could submit a form; the maintainer accepted that (2026-11-13).
-const LOCAL_SERVER = /(^|_)(playwright|pdf[-_]viewer|tldraw|draw_io)(_|$)/i;
+// The Unreal editor bridges (unreal, unreal-audit) drive an editor running on this machine; every tool
+// on them is allowed, including the ones that change the open level or project (maintainer, 2026-11-16).
+const LOCAL_SERVER = /(^|_)(playwright|pdf[-_]viewer|tldraw|draw_io|unreal|unreal[-_]audit)(_|$)/i;
 
 // This session's own tools on claude-code-remote: reading another repository (add_repo for read, and
 // marking its clone ready), a reminder back into this session, its own webhook, and the port of a server
