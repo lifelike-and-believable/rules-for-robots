@@ -489,6 +489,13 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 - **27e:** organised user documentation: a folder and an overview for each area of the product, one start page, every page reachable, `covers:` for what a page applies to, and the help published with the product. Added 2026-11-13 from the maintainer's feedback; its four decisions (D8 to D11) were approved the same day, each as recommended (#256). Done (#259): the shape rules apply once a project has a start page or an overview, and are warnings through the reusable workflow until 27d.
 - **27d:** XR Studio In A Box moved onto it, with its user documentation organised into areas, and slices 2 to 4 validated from a preview. Built there on 2026-11-14 (its #365, #369, #370), started by the merge-triggered workflow; the reusable workflow's `lasting-tutorials` default is still `warn` for other adopters. Waiting on the lead: connecting previews, and validating slices 2 to 4.
 
+### Phase 28: Freestyle (planned)
+Spec: [docs/specs/freestyle.md](docs/specs/freestyle.md) (written 2026-11-17 at the maintainer's request; its six decisions wait for the maintainer).
+
+Quick experiments, brainstorms, and throwaway projects without the process. A freestyle project does not adopt rfr-process; a freestyle branch in a project that does is declared by a committed note, is told the process is off, gets no pull request, and cannot merge. What it finds reaches the product through a packet. No guard changes, so it does not wait for 25f.
+
+- **28a:** the freestyle note, script, and skill; the session-start lines; the change check and open-pull-request rules; the setup answer and the guide.
+
 ## 11. Milestones
 
 | Milestone | Contents | Status | Pull requests |
