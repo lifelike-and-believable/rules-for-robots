@@ -493,9 +493,10 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 Spec: [docs/specs/freestyle.md](docs/specs/freestyle.md) (written 2026-11-17 at the maintainer's request; its six decisions wait for the maintainer).
 Pull requests: #281 (spec).
 
-Quick experiments, brainstorms, and throwaway projects without the process. A freestyle project does not adopt rfr-process; a freestyle branch in a project that does is declared by a committed note, is told the process is off, gets no pull request, and cannot merge. What it finds reaches the product through a packet. No guard changes, so it does not wait for 25f.
+Quick experiments, brainstorms, and throwaway projects in a local folder with no repository. The process is already silent there; freestyle lets the person's own list of services in `~/.claude/rfr.json` make things, makes deletes recoverable with a local git history, and records what was found in `FREESTYLE.md`, with a short route to a real project.
 
-- **28a:** the freestyle note, script, and skill; the session-start lines; the change check and open-pull-request rules; the setup answer and the guide.
+- **28a:** freestyle folders: the services list, the delete context, the `freestyle` skill in rfr-core, and the guide.
+- **28b (only if needed):** a freestyle branch inside a project that uses rfr-process, which cannot merge.
 
 ## 11. Milestones
 
