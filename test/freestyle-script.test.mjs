@@ -67,6 +67,31 @@ test('freestyle#AC-5: the folder name is lower case, with other characters as si
   assert.equal(path.dirname(r.stdout.trim()), w.scratch);
 });
 
+test('freestyle#AC-5: letters and digits from any script are kept in the folder name', () => {
+  const w = world();
+  const r = w.run(['start', 'Café Ünïcode 実験 42']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.trim(), path.join(w.scratch, 'café-ünïcode-実験-42'));
+  assert.ok(fs.existsSync(path.join(r.stdout.trim(), 'FREESTYLE.md')));
+});
+
+test('freestyle#AC-5: start warns, keeping the folder, when the new folder is not freestyle', () => {
+  // The first root holds docs/product/process.yml, so nothing under it is freestyle.
+  const w = world();
+  fs.mkdirSync(path.join(w.scratch, 'docs', 'product'), { recursive: true });
+  fs.writeFileSync(path.join(w.scratch, 'docs', 'product', 'process.yml'), 'mode: solo\n');
+  const r = w.run(['start', 'spike']);
+  assert.equal(r.status, 0, r.stderr);
+  const dir = path.join(w.scratch, 'spike');
+  assert.equal(r.stdout.trim(), dir);
+  assert.ok(fs.existsSync(path.join(dir, 'FREESTYLE.md')), 'the folder is kept');
+  assert.match(r.stderr.trim(), /^rfr-core freestyle: warning: .*not a freestyle folder.*process\.yml/);
+  assert.equal(r.stderr.trim().split('\n').length, 1, 'one line');
+  // A freestyle folder gets no warning.
+  const fine = world();
+  assert.equal(fine.run(['start', 'spike']).stderr, '');
+});
+
 test('freestyle#AC-5: a root written with ~ is used from the home folder, and made if it does not exist', () => {
   const w = world({ roots: ['~/experiments'] });
   const r = w.run(['start', 'sketch']);

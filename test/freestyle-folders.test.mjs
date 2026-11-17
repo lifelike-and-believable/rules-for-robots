@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freestyleRoots, isFreestyle, parseRoots, projectFolder } from '../plugins/core/scripts/freestyle-lib.mjs';
+import { freestyleRoots, isFreestyle, parseRoots, projectFolder, within } from '../plugins/core/scripts/freestyle-lib.mjs';
 
 // roots: undefined lists the scratch folder, null writes no settings file.
 function setup(roots) {
@@ -89,9 +89,75 @@ test('freestyle#AC-1: a folder with docs/product/process.yml under a root is a r
   fs.mkdirSync(path.join(project, 'docs', 'product'), { recursive: true });
   fs.writeFileSync(path.join(project, 'docs', 'product', 'process.yml'), 'mode: solo\n');
   assert.equal(isFreestyle(project, { home: t.home }), false);
-  assert.equal(isFreestyle(t.folder('scratch/real/src'), { home: t.home }), true, 'without git the project folder is the folder itself');
+  assert.equal(isFreestyle(t.folder('scratch/real/src'), { home: t.home }), false, 'without git, a folder above the session folder, up to the root, with process.yml counts too');
+  assert.equal(isFreestyle(t.folder('scratch/real/src/deep/er'), { home: t.home }), false, 'however deep');
   t.git(project, 'init', '-q');
   assert.equal(isFreestyle(path.join(project, 'src'), { home: t.home }), false, 'with git the project folder is the top level, which has process.yml');
+  assert.equal(isFreestyle(t.folder('scratch/other'), { home: t.home }), true, 'a sibling folder is not affected');
+});
+
+test('freestyle#AC-1: process.yml in the root itself means nothing under it is freestyle', () => {
+  const t = setup();
+  fs.mkdirSync(path.join(t.scratch, 'docs', 'product'), { recursive: true });
+  fs.writeFileSync(path.join(t.scratch, 'docs', 'product', 'process.yml'), 'mode: solo\n');
+  assert.equal(isFreestyle(t.folder('scratch/idea'), { home: t.home }), false);
+});
+
+test('freestyle#AC-1: when the folder or one above it has .git and git fails on it, the folder is not freestyle', () => {
+  const t = setup();
+  // A .git file that points nowhere: git cannot read the repository.
+  const broken = t.folder('scratch/broken');
+  fs.writeFileSync(path.join(broken, '.git'), 'gitdir: /no/such/place\n');
+  assert.equal(isFreestyle(broken, { home: t.home }), false, 'in the folder');
+  assert.equal(isFreestyle(t.folder('scratch/broken/src'), { home: t.home }), false, 'in a folder above');
+  // An empty .git folder is not a repository git can read either.
+  const empty = t.folder('scratch/empty-git');
+  fs.mkdirSync(path.join(empty, '.git'));
+  assert.equal(isFreestyle(empty, { home: t.home }), false);
+  assert.equal(isFreestyle(t.folder('scratch/fine'), { home: t.home }), true, 'a folder with no .git is still freestyle');
+});
+
+test('freestyle#AC-1: a settings file that is a symbolic link, or has another hard link, lists no roots', () => {
+  const t = setup([]);
+  const file = path.join(t.home, '.claude', 'rfr.json');
+  const idea = t.folder('scratch/idea');
+  // The person's own file, a plain file, lists the root.
+  t.settings({ freestyle: [t.scratch] });
+  assert.equal(isFreestyle(idea, { home: t.home }), true);
+  // A second hard link: whoever can write the other name can rewrite the settings.
+  const other = path.join(t.base, 'r.json');
+  fs.linkSync(file, other);
+  assert.deepEqual(freestyleRoots({ home: t.home }), []);
+  assert.equal(isFreestyle(idea, { home: t.home }), false, 'hard linked');
+  fs.rmSync(other);
+  assert.equal(isFreestyle(idea, { home: t.home }), true, 'the link removed, a plain file again');
+  // A symbolic link to a file elsewhere.
+  const mine = path.join(t.base, 'mine.json');
+  fs.writeFileSync(mine, JSON.stringify({ freestyle: [t.scratch] }));
+  fs.rmSync(file);
+  try {
+    fs.symlinkSync(mine, file);
+  } catch {
+    return; // Symbolic links need a privilege on some Windows machines; nothing more to check there.
+  }
+  assert.deepEqual(freestyleRoots({ home: t.home }), []);
+  assert.equal(isFreestyle(idea, { home: t.home }), false, 'a symbolic link');
+});
+
+test('freestyle#AC-1: a settings file that starts with a UTF-8 byte order mark is read', () => {
+  const t = setup([]);
+  t.settings(`\uFEFF${JSON.stringify({ freestyle: [t.scratch] })}`);
+  assert.deepEqual(freestyleRoots({ home: t.home }), [t.scratch]);
+  assert.equal(isFreestyle(t.folder('scratch/idea'), { home: t.home }), true);
+});
+
+test('freestyle#AC-1: a folder whose name starts with two dots is inside the root', () => {
+  const t = setup();
+  assert.equal(isFreestyle(t.folder('scratch/..hid'), { home: t.home }), true);
+  assert.equal(within(path.join(t.scratch, '..hid', 'x'), t.scratch), true);
+  assert.equal(within(path.join(t.scratch, '..', 'x'), t.scratch), false);
+  assert.equal(within('D:\\Exp\\..hid', 'D:\\Exp', 'win32'), true);
+  assert.equal(within('D:\\Other', 'D:\\Exp', 'win32'), false);
 });
 
 test('freestyle#AC-1: a git repository with a remote under a root is not freestyle; one without a remote is', () => {
@@ -100,7 +166,9 @@ test('freestyle#AC-1: a git repository with a remote under a root is not freesty
   t.git(repo, 'init', '-q');
   const sub = t.folder('scratch/cloned/src');
   assert.equal(isFreestyle(sub, { home: t.home }), true, 'git with no remote');
-  assert.equal(projectFolder(sub), repo);
+  // Both in their real form: on Windows os.tmpdir() can give an 8.3 short name (RUNNER~1), and git
+  // gives the long one.
+  assert.equal(fs.realpathSync.native(projectFolder(sub)), fs.realpathSync.native(repo));
   t.git(repo, 'remote', 'add', 'origin', 'https://example.invalid/cloned.git');
   assert.equal(isFreestyle(repo, { home: t.home }), false);
   assert.equal(isFreestyle(sub, { home: t.home }), false);

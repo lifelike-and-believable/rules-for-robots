@@ -165,6 +165,14 @@ test('freestyle#AC-2: the delivery Stop hook does not hold a session in a freest
   standsDown(w, path.join(PROCESS, 'delivery.mjs'), cwd => ({ hook_event_name: 'Stop', cwd }), /"decision":"block".*the delivery run on feature\/try is not finished/, { logs: false, prepare });
 });
 
+// The body of main, up to the closing brace at the start of a line.
+function mainBody(text) {
+  const start = text.indexOf('async function main');
+  if (start === -1) return '';
+  const end = text.indexOf('\n}', start);
+  return text.slice(start, end === -1 ? undefined : end);
+}
+
 test('freestyle#AC-2: every hook script of every plugin checks for a freestyle folder before anything else', () => {
   const plugins = ['core', 'process', 'web', 'unreal', 'android'];
   const scripts = new Set();
@@ -185,8 +193,17 @@ test('freestyle#AC-2: every hook script of every plugin checks for a freestyle f
     const text = fs.readFileSync(script, 'utf8');
     const rel = path.relative(ROOT, script);
     assert.match(text, /import \{[^}]*\bisFreestyle\b[^}]*\} from '\.\/freestyle-lib\.mjs';/, `${rel} imports isFreestyle`);
-    const main = text.slice(text.indexOf('async function main'));
-    assert.ok(main.length > 0 && /\bisFreestyle\(/.test(main), `${rel} calls isFreestyle in main`);
+    const main = mainBody(text);
+    assert.ok(main.length > 0, `${rel} has an async function main`);
+    // Every hook finds the session's folder the same way: input.cwd, then CLAUDE_PROJECT_DIR, then
+    // the process's own folder.
+    const check = main.indexOf('isFreestyle(sessionFolder(input))');
+    assert.ok(check !== -1, `${rel} calls isFreestyle(sessionFolder(input)) in main`);
+    // Nothing that decides, adds context, or logs comes before the check.
+    for (const call of ['deny(', 'ask(', 'inform(', 'defer(', 'logDecision(', 'appendGuardLog(', 'process.stdout.write']) {
+      const at = main.indexOf(call);
+      assert.ok(at === -1 || at > check, `${rel} calls ${call} before isFreestyle`);
+    }
     assert.ok(fs.existsSync(path.join(path.dirname(script), 'freestyle-lib.mjs')), `${rel} has freestyle-lib.mjs beside it`);
   }
 });

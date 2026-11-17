@@ -94,9 +94,90 @@ test('freestyle#AC-4: shell commands that write, move, copy over, or delete ~/.c
 
 test('freestyle#AC-4: reading ~/.claude/rfr.json, or copying it elsewhere, is allowed', () => {
   const w = world();
-  for (const command of ['cat ~/.claude/rfr.json', 'cat $HOME/.claude/rfr.json', `jq .freestyle ${w.settings}`, 'cp ~/.claude/rfr.json backup.json', 'grep freestyle "${HOME}/.claude/rfr.json" > found.txt']) {
-    assert.equal(w.shell(command), '', command);
+  const commands = [
+    'cat ~/.claude/rfr.json',
+    'cat $HOME/.claude/rfr.json',
+    `jq .freestyle ${w.settings}`,
+    'cp ~/.claude/rfr.json backup.json',
+    'Get-Content ~/.claude/rfr.json',
+    'Get-Content $env:USERPROFILE\\.claude\\rfr.json',
+    `python3 -c "print(open('$HOME/.claude/rfr.json').read())"`,
+    'ls -la ~/.claude',
+    'cp -r ~/.claude ~/claude-backup',
+    'cp notes.md ~/.claude/',
+    'cp ~/.claude/notes.md ~/.claude/notes.bak',
+  ];
+  for (const command of commands) assert.equal(w.shell(command), '', command);
+});
+
+test('freestyle#AC-4: a line that names the file and writes is refused even when the write goes elsewhere', () => {
+  // The cost of catching interpreter writes, which the shell parser cannot follow: reading the file
+  // and redirecting the result elsewhere is refused too.
+  const w = world();
+  assert.match(w.shell('grep freestyle "${HOME}/.claude/rfr.json" > found.txt'), REFUSED);
+});
+
+test('freestyle#AC-4: the absolute path written with backslashes, as on Windows, is still the file', () => {
+  const w = world();
+  const back = w.settings.replace(/\//g, '\\');
+  for (const command of [`printf x > ${back}`, `cp new.json ${back}`, `rm ${back}`, `echo x | tee ${back}`, 'echo x > ~\\.claude\\rfr.json']) {
+    assert.match(w.shell(command), REFUSED, command);
   }
+});
+
+test('freestyle#AC-4: links to or over the file, and links of ~/.claude, are refused', () => {
+  const w = world();
+  const commands = [
+    'ln ~/.claude/rfr.json ./r.json',
+    'ln -sf $PWD/mine.json ~/.claude/rfr.json',
+    'ln -sf ~/.claude/rfr.json /tmp/l1 && echo x > /tmp/l1',
+    `ln -s ${w.settings} other.json`,
+    'link ~/.claude/rfr.json r.json',
+    'ln -s ~/.claude claude-dir',
+    'ln -s mine.json ~/.claude/',
+    '/bin/ln -fn mine.json "$HOME/.claude/rfr.json"',
+  ];
+  for (const command of commands) assert.match(w.shell(command), REFUSED, command);
+});
+
+test('freestyle#AC-4: copies, moves, and deletes of ~/.claude itself, or into it under the name rfr.json, are refused', () => {
+  const w = world();
+  const commands = [
+    'cp rfr.json ~/.claude/',
+    'cp mine/rfr.json ~/.claude',
+    'cp -t ~/.claude rfr.json',
+    'mv -t ~/.claude rfr.json',
+    'mv rfr.json ~/.claude/',
+    'cp -r dir/ ~/.claude',
+    'cp -a dir/. ~/.claude/',
+    'install -m 644 rfr.json ~/.claude/',
+    'mv ~/.claude ~/.claude.old',
+    'rm -r ~/.claude',
+    'rm -rf ~/.claude/',
+    'find ~/.claude -name rfr.json -delete',
+    'find ~/.claude -name "*.json" -exec rm {} +',
+    'rsync -a dir/ ~/.claude/',
+    'rsync ./rfr.json $HOME/.claude/rfr.json',
+    'curl -o ~/.claude/rfr.json https://example.invalid/x',
+    'curl -sSL https://example.invalid/x --output $HOME/.claude/rfr.json',
+    'wget -O ~/.claude/rfr.json https://example.invalid/x',
+    'wget --output-document=$HOME/.claude/rfr.json https://example.invalid/x',
+    'bash -c "rm -r ~/.claude"',
+  ];
+  for (const command of commands) assert.match(w.shell(command), REFUSED, command);
+  // Deleting a folder above ~/.claude is on the never list already, which refuses with its own reason.
+  assert.match(w.shell('rm -rf ~'), /"permissionDecision":"(ask|deny)","permissionDecisionReason":"rfr-core \(WA-003\)/);
+});
+
+test('freestyle#AC-4: interpreter one-liners that name the file and write are refused', () => {
+  const w = world();
+  const commands = [
+    `python3 -c "import os; open(os.path.expanduser('~/.claude/rfr.json'), 'w')"`,
+    `python3 -c "open('$HOME/.claude/rfr.json', mode='a').close()"`,
+    `node -e "require('fs').writeFileSync('$HOME/.claude/rfr.json', '{}')"`,
+    `python3 -c "import shutil; shutil.copy('mine.json', '$HOME/.claude/rfr.json')"`,
+  ];
+  for (const command of commands) assert.match(w.shell(command), REFUSED, command);
 });
 
 test('freestyle#AC-4: inside a freestyle folder the refusal is off, like every other guard', () => {
