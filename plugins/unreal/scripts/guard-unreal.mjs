@@ -5,6 +5,7 @@
 // not run it. Requiring Quit is simpler than knowing which commands exit on their own, and always
 // safe.
 import { fileURLToPath } from 'node:url';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { deny, readInput, refuseReason } from './lib.mjs';
 
 export function execCmdsWithoutQuit(command) {
@@ -21,6 +22,8 @@ export function decideUnreal(command) {
 
 async function main() {
   const input = await readInput();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(sessionFolder(input))) return;
   const result = decideUnreal(input?.tool_input?.command);
   if (result) deny(result.reason);
 }

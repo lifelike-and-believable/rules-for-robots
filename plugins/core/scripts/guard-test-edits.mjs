@@ -10,6 +10,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ask, askReason, canonical, deferredTestContext, defer, existedAtBase, guardSettings, readInput, textAtBase } from './lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { classifyTestChange } from './lib/test-diff.mjs';
 import { unlockedBy } from './spec-unlocks.mjs';
 
@@ -106,6 +107,8 @@ export function decideEdit(input) {
 
 async function main() {
   const input = await readInput();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(sessionFolder(input))) return;
   const decision = decideEdit(input);
   if (decision?.decision === 'defer') defer(decision.reason);
   else if (decision) ask(decision.reason);

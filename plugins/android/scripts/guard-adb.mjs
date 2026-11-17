@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { ask, askReason, readInput } from './lib.mjs';
 import { parseCommand } from './shell-writes.mjs';
 
@@ -184,6 +185,8 @@ export function decideAdb(command, { cwd = process.cwd(), env = process.env, set
 
 async function main() {
   const input = await readInput();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(sessionFolder(input))) return;
   const result = decideAdb(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result) ask(result.reason);
 }

@@ -4,6 +4,7 @@
 // an error here never fails the session.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { processNext } from './lib/process.mjs';
 
 async function main() {
@@ -12,6 +13,8 @@ async function main() {
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* no input */ }
   const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(sessionFolder(input))) return;
   let next = null;
   try { next = processNext(root); } catch { next = null; }
   if (next?.text) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: next.text } }));

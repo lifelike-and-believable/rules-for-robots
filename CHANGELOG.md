@@ -4,9 +4,17 @@ All notable changes to the rule set and the `rfr-core` plugin. The rule set and 
 
 ## [Unreleased]
 
-Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270, #277.
+Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265, #267, #268, #269, #270, #277, #281.
 
 ### Changed
+
+- **Freestyle folders** (Phase 28a; freestyle AC-1 to AC-8). `rfr-core`, in the next release; `rfr-process` 2.16.0, `rfr-web` 3.2.0, `rfr-unreal` 3.2.0, `rfr-android` 0.5.0. For quick experiments, brainstorms, and throwaway projects in a local folder.
+  - The person lists freestyle roots in their own `~/.claude/rfr.json`, as `"freestyle": ["~/scratch"]`. A folder under a root is freestyle unless it has a git remote, git fails on its `.git`, or it or a folder above it up to the root has `docs/product/process.yml`. A settings file that is a symbolic link or has a second hard link lists no roots.
+  - In a freestyle folder every rfr hook in every plugin does nothing, so only Claude Code's own settings and permission mode apply.
+  - Outside freestyle folders, rfr-core refuses an agent's write, move, copy over, link, or delete of `~/.claude/rfr.json`, or a move, delete, or link of `~/.claude` itself, through the file tools or a shell command, so a session cannot make a folder freestyle for itself.
+  - `/rfr-core:freestyle` starts an experiment in a new folder under the first root, with a `FREESTYLE.md` note, and `end` records what was found and how to turn it into a project. The setup skill offers freestyle when asked to set up an experiment.
+
+  Adopters: nothing to do. To use freestyle, list your experiment folders under `freestyle` in `~/.claude/rfr.json`.
 
 - **Making things in outside services a project declares** (unattended AC-10). `rfr-core`, in the next release. The MCP guard refused every change in another service, which stopped a project from generating a picture, a video, or a sound for itself.
   - A project lists the services it makes things in as `"services"` in `.claude/rfr.json`. An entry is the name of the service's MCP server, or an object with that `name` and what the project records about it, such as what it is `for` and the `limits` on its use. There, a tool that generates, creates, edits, or uploads is no longer refused.

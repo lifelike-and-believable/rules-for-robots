@@ -4,6 +4,7 @@
 // preview deployments pass through, except reads that return credentials or decrypted
 // environment variables, and filter_project_envs when it is asked to decrypt.
 import { fileURLToPath } from 'node:url';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { ask, askReason, readInput } from './lib.mjs';
 
 const READ_PREFIXES = ['get_', 'list_', 'search_', 'read_', 'count_', 'aggregate_', 'filter_', 'status', 'web_fetch', 'artifact_query'];
@@ -79,6 +80,8 @@ export function decideVercel(input) {
 
 async function main() {
   const input = await readInput();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(sessionFolder(input))) return;
   const result = decideVercel(input);
   if (result) ask(result.reason);
 }

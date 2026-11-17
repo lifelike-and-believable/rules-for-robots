@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// PreToolUse (Edit|Write|MultiEdit|NotebookEdit): when the project's AGENTS.md lists the
+// PreToolUse (Edit|Write|MultiEdit|NotebookEdit): refuse an edit of the person's own settings file,
+// ~/.claude/rfr.json, which lists their freestyle folders (freestyle AC-4). And when the project's AGENTS.md lists the
 // paths it owns ("## Owned paths"), refuse, with a next step (guard tiers tier 2), an edit to a file in the project that
 // is not on the list (#47). Upstream code changed downstream is overwritten at the next
 // integration, and the agent can act on the refusal itself. Files outside the project, and projects without the list, are left alone.
@@ -8,6 +9,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deny, readInput, refuseReason } from './lib.mjs';
 import { isOwned, parseOwnedPaths } from './owned-paths.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
+import { isPersonSettings, settingsReason } from './settings-guard.mjs';
 
 // Returns the project-relative path when the edit needs approval, otherwise null.
 export function outsideOwnedPaths(file, projectDir, cwd = projectDir) {
@@ -30,7 +33,14 @@ export const ownedPathsReason = rel => refuseReason({
 async function main() {
   const input = await readInput();
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? input?.cwd ?? process.cwd();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(sessionFolder(input))) return;
   const file = input?.tool_input?.file_path ?? input?.tool_input?.notebook_path;
+  // The person's own settings, which list their freestyle folders (freestyle AC-4).
+  if (isPersonSettings(file, { cwd: input?.cwd ?? projectDir })) {
+    deny(settingsReason);
+    return;
+  }
   const rel = outsideOwnedPaths(file, projectDir, input?.cwd ?? projectDir);
   if (rel) {
     deny(ownedPathsReason(rel));

@@ -19,6 +19,10 @@ When you review or write a change, ask what else in the product it touches beyon
 
 Start the process in a git repository, before the first artifact is written. Approval is a merged pull request, so drafts written in a plain folder have no history and no way to be approved until they are moved. If there is no repository yet, create one (`git init`, then a remote), and make the first commit with `process.yml`, the workflow, and the artifacts as drafts (`status: draft`) on the default branch: that commit is set-up, not an approval, needs no pull request, and the approvals job skips it because it has no parent. If the repository already has commits, add the drafts in a pull request instead. From then on every change goes through a pull request, and the pull request that sets an artifact to `approved` is its approval.
 
+## Before you start: experiments
+
+The process is for work that will reach a product. For a quick experiment, brainstorm, or throwaway project, use freestyle instead: the person lists a folder in `~/.claude/rfr.json`, and rfr does nothing there. Do not set up the process in an experiment. See the [rfr-core README](../../core/README.md#freestyle) for how to list roots and how an experiment becomes a project.
+
 ## Before you start: the size tier
 
 Pick the tier before writing anything: it decides where you start. A pull request that changes source must belong to a feature with an approved spec, or say `Change: fix` or `Change: trivial` at the end of a commit message; the `process / change` check holds it to that claim (a fix changes a test and adds no source file; a trivial change adds no source file and touches no `public-api` path).
