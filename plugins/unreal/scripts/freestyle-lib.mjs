@@ -63,12 +63,21 @@ export function projectFolder(dir) {
 
 // A path in its real form (symlinks resolved, so macOS's /tmp is /private/tmp), as written when it
 // does not exist.
+// A path that does not exist yet keeps its missing tail on the real form of the part that does, so a
+// Windows short name (RUNNER~1) in its existing part still matches the long name.
 function real(p, platform) {
   if (platform !== process.platform) return p;
-  try {
-    return fs.realpathSync.native(p);
-  } catch {
-    return p;
+  const rest = [];
+  let head = nodePath.resolve(p);
+  for (;;) {
+    try {
+      return nodePath.join(fs.realpathSync.native(head), ...rest);
+    } catch {
+      const parent = nodePath.dirname(head);
+      if (parent === head) return p;
+      rest.unshift(nodePath.basename(head));
+      head = parent;
+    }
   }
 }
 
