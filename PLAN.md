@@ -490,7 +490,7 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 - **27d:** XR Studio In A Box moved onto it, with its user documentation organised into areas, and slices 2 to 4 validated from a preview. Built there on 2026-11-14 (its #365, #369, #370), started by the merge-triggered workflow; the reusable workflow's `lasting-tutorials` default is still `warn` for other adopters. Waiting on the lead: connecting previews, and validating slices 2 to 4.
 
 ### Phase 28: Freestyle (planned)
-Spec: [docs/specs/freestyle.md](docs/specs/freestyle.md) (written 2026-11-17 at the maintainer's request; its six decisions wait for the maintainer).
+Spec: [docs/specs/freestyle.md](docs/specs/freestyle.md) (written 2026-11-17 at the maintainer's request; its six decisions approved on 2026-11-17, each as recommended).
 Pull requests: #281 (spec).
 
 Quick experiments, brainstorms, and throwaway projects in local folders, where rfr does nothing and only Claude Code's defaults apply. The person lists their experiment folders once in `~/.claude/rfr.json`, which agents may not write; every rfr hook stands down inside them. An experiment that works becomes a project through setup and bootstrap.

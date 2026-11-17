@@ -10,7 +10,7 @@ Sometimes the person wants to try an idea quickly: a brainstorm that ends in a r
 - "This work would mostly be for 'no-repo' scenarios. just a local folder."
 - "Freestyle projects should impose no additional restrictions that claude code does not restrict by default."
 
-Nothing here is built, and its decisions wait for the maintainer.
+The maintainer approved its six decisions on 2026-11-17, each as recommended ("approve all decisions as recommended, build 28a"). The `status` field stays `draft` until every `test:` criterion has a citing test.
 
 ## Problem
 
@@ -78,9 +78,9 @@ An earlier draft proposed an experiment branch inside a project that uses rfr-pr
 
 ## Decisions
 
-Waiting for the maintainer. Each has a recommendation. The earlier draft's decisions on a freestyle services list and on running `git init` are gone: with no rfr restrictions, neither is needed.
+Approved by the maintainer on 2026-11-17, each as recommended. The earlier draft's decisions on a freestyle services list and on running `git init` are gone: with no rfr restrictions, neither is needed.
 
-| # | Decision | Recommended | The alternative, and what it costs |
+| # | Decision | Decided | The alternative, and what it costs |
 |---|---|---|---|
 | D1 | How is a folder made freestyle? | Roots the person lists in `~/.claude/rfr.json`, which agents may not write (AC-1, AC-4). Set once; every experiment goes under a root. | Worked out from the folder (no remote, no `process.yml`): nothing to set up, but an agent in a real project can remove its remote unrefused and lose every guard. Or an environment variable when starting Claude Code: an agent cannot set it, but the desktop app has no easy way to pass one. |
 | D2 | Is the formatter off too? | Yes. "rfr does nothing" is one rule with no exceptions to remember. | Keep it: it restricts nothing and keeps code tidy, but rfr then still changes files the person did not ask it to touch. |
