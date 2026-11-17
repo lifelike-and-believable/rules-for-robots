@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isFreestyle } from './freestyle-lib.mjs';
 import { readInput } from './lib.mjs';
 
 const PRETTIER_EXT = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts', '.css', '.scss', '.json', '.md', '.mdx', '.astro', '.html', '.yaml', '.yml']);
@@ -119,6 +120,8 @@ export function formatPending(input, projectDir) {
 async function main() {
   const input = await readInput();
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? input?.cwd ?? process.cwd();
+  // In a freestyle folder rfr does nothing, the formatter included (freestyle AC-2, D2).
+  if (isFreestyle(projectDir)) return;
   const event = input?.hook_event_name;
   // A SubagentStop without agent_id comes from Claude Code's internal helpers; formatting
   // then would touch the main agent's files mid-turn.

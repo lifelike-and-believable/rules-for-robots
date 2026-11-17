@@ -9,6 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
+import { isFreestyle } from './freestyle-lib.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -16,6 +17,7 @@ import { commandWords, commandsWithDirs, executedText, innerScripts, resolveFrom
 
 export { commandsWithDirs, executedText, resolveFromShell };
 import { approveReason, commandApprovesPr, unreadReason } from './pr-approval.mjs';
+import { commandWritesSettings, settingsReason } from './settings-guard.mjs';
 
 // [pattern, action, kind, rule, why, instead]: why a person must decide, and what the agent can do
 // if the person says no (guard tiers AC-3).
@@ -183,6 +185,8 @@ const SNAPSHOT_REASON = /(^|[\s;&|(])RFR_SNAPSHOT_REASON=(?:"[^"]+"|'[^']+'|[^\s
 // docs/specs/unattended.md).
 export function decideCommand(command, { cwd, settings, snapshot = takeSnapshots } = {}) {
   if (typeof command !== 'string') return null;
+  // The person's own settings, which list their freestyle folders, are theirs to change (freestyle AC-4).
+  if (commandWritesSettings(command, { cwd: cwd ?? process.cwd() })) return { decision: 'deny', reason: settingsReason };
   // Approving a pull request is refused before anything else (github-gate AC-9).
   const approves = commandApprovesPr(command);
   if (approves) return { decision: 'deny', reason: approves === 'approve' ? approveReason : unreadReason };
@@ -775,6 +779,8 @@ export function findRisk(command, options) {
 
 async function main() {
   const input = await readInput();
+  // In a freestyle folder rfr does nothing (freestyle AC-2).
+  if (isFreestyle(input?.cwd ?? process.cwd())) return;
   const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result?.decision === 'deny') deny(result.reason);
   else if (result?.decision === 'inform' || result?.decision === 'defer') {

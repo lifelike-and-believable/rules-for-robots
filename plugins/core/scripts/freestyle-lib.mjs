@@ -1,0 +1,106 @@
+// Freestyle folders (docs/specs/freestyle.md): local folders where rfr does nothing, so that only
+// Claude Code's own defaults apply. The person lists the roots in their own settings file,
+// ~/.claude/rfr.json ({ "freestyle": ["~/scratch", "D:/experiments"] }), which agents may not write
+// (AC-4). A folder is freestyle when its project folder (the git top level, or the folder itself
+// without git) is a root or inside one, unless it has docs/product/process.yml or its git has a
+// remote: both mean a real project was put there (AC-1, D3). Every rfr hook returns at once in a
+// freestyle folder (AC-2). The build copies this file into each plugin with hooks (AC-3).
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import nodePath from 'node:path';
+
+const pathFor = platform => (platform === 'win32' ? nodePath.win32 : nodePath.posix);
+
+// The person's own settings file, on this machine.
+export function settingsFile({ home = os.homedir() } = {}) {
+  return nodePath.join(home, '.claude', 'rfr.json');
+}
+
+// The roots in a parsed settings file: each "freestyle" entry with a leading ~ expanded from the
+// home folder, kept only when that gives an absolute path, and resolved.
+export function parseRoots(json, { home = os.homedir(), platform = process.platform } = {}) {
+  const p = pathFor(platform);
+  if (!json || typeof json !== 'object' || !Array.isArray(json.freestyle)) return [];
+  const roots = [];
+  for (const entry of json.freestyle) {
+    if (typeof entry !== 'string' || !entry.trim()) continue;
+    const raw = entry.trim();
+    const expanded = raw === '~' ? home : /^~[\\/]/.test(raw) ? p.join(home, raw.slice(2)) : raw;
+    if (!p.isAbsolute(expanded)) continue;
+    roots.push(p.resolve(expanded));
+  }
+  return roots;
+}
+
+// The roots the person lists in ~/.claude/rfr.json; [] when the file is missing or cannot be read.
+export function freestyleRoots({ home = os.homedir(), platform = process.platform } = {}) {
+  try {
+    return parseRoots(JSON.parse(fs.readFileSync(settingsFile({ home }), 'utf8')), { home, platform });
+  } catch {
+    return [];
+  }
+}
+
+function git(dir, args) {
+  const r = spawnSync('git', args, { cwd: dir, encoding: 'utf8', timeout: 5000 });
+  return r.error || r.status !== 0 ? null : r.stdout.trim();
+}
+
+// The project folder: the git top level of dir, or dir itself when it is not in a repository.
+export function projectFolder(dir) {
+  const abs = nodePath.resolve(dir);
+  const top = fs.existsSync(abs) ? git(abs, ['rev-parse', '--show-toplevel']) : null;
+  return top ? nodePath.resolve(top) : abs;
+}
+
+// A path in its real form (symlinks resolved, so macOS's /tmp is /private/tmp), as written when it
+// does not exist.
+function real(p, platform) {
+  if (platform !== process.platform) return p;
+  try {
+    return fs.realpathSync.native(p);
+  } catch {
+    return p;
+  }
+}
+
+// Whether child is root or inside it; case-insensitive on Windows and macOS.
+export function within(child, root, platform = process.platform) {
+  const p = pathFor(platform);
+  const fold = platform === 'win32' || platform === 'darwin' ? s => s.toLowerCase() : s => s;
+  const rel = p.relative(fold(real(root, platform)), fold(real(child, platform)));
+  return rel === '' || (!rel.startsWith('..') && !p.isAbsolute(rel));
+}
+
+// The root a folder is in, or null.
+export function rootOf(dir, { home = os.homedir(), platform = process.platform } = {}) {
+  return freestyleRoots({ home, platform }).find(root => within(dir, root, platform)) ?? null;
+}
+
+// Whether dir is a freestyle folder (AC-1). Any error means it is not.
+export function isFreestyle(dir, { home = os.homedir(), platform = process.platform } = {}) {
+  try {
+    if (typeof dir !== 'string' || !dir) return false;
+    const p = pathFor(platform);
+    const roots = freestyleRoots({ home, platform });
+    // Most people list no roots, and most folders are in none: no git call for them.
+    if (!roots.length) return false;
+    const abs = p.resolve(dir);
+    if (!roots.some(root => within(abs, root, platform))) return false;
+    const project = platform === process.platform ? projectFolder(abs) : abs;
+    if (!roots.some(root => within(project, root, platform))) return false;
+    if (fs.existsSync(p.join(project, 'docs', 'product', 'process.yml'))) return false;
+    if (fs.existsSync(project) && git(project, ['rev-parse', '--git-dir']) !== null) {
+      const remotes = git(project, ['remote']);
+      if (remotes === null || remotes !== '') return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// The folder a hook's session works in: the input's cwd, else CLAUDE_PROJECT_DIR, else the
+// process's own folder.
+export const sessionFolder = input => (typeof input?.cwd === 'string' && input.cwd) || process.env.CLAUDE_PROJECT_DIR || process.cwd();

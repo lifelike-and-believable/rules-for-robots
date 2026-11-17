@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { isFreestyle } from './freestyle-lib.mjs';
 import { buildSteps, criteriaRows, decisionFiles, defaultBranchRef, featureFamily, linksBehind, loadArtifacts, parseArtifact, processNext, readConfig, refTree, renderNext, stageOf, stepRecords, tryItLines, tutorialTitle, workingTree } from './lib/process.mjs';
 import { isTestOrBaseline } from './lib/test-paths.mjs';
 
@@ -429,7 +430,11 @@ async function main(argv) {
   for await (const chunk of process.stdin) raw += chunk;
   let input = {};
   try { input = JSON.parse(raw || '{}'); } catch { /* no input */ }
-  try { stop(process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd()); } catch { /* never fail the session */ }
+  const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  // In a freestyle folder rfr does nothing (freestyle AC-2). Only the Stop hook: the commands above
+  // are run on purpose.
+  if (isFreestyle(root)) return;
+  try { stop(root); } catch { /* never fail the session */ }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main(process.argv.slice(2)).catch(() => {});
