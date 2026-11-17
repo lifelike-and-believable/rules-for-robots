@@ -7,7 +7,7 @@
 // (bash -c, $(...)), Windows executable names, package runners, and Vercel's global options.
 // "ask" is a refusal the agent acts on, with no prompt.
 import { fileURLToPath } from 'node:url';
-import { isFreestyle } from './freestyle-lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { ask, askReason, readInput } from './lib.mjs';
 import { commandWords, commandsWithDirs, executedText, innerScripts, runnerTarget } from './command-words.mjs';
 
@@ -87,7 +87,7 @@ export function decideWebCommand(command, { cwd = process.cwd() } = {}) {
 async function main() {
   const input = await readInput();
   // In a freestyle folder rfr does nothing (freestyle AC-2).
-  if (isFreestyle(input?.cwd ?? process.cwd())) return;
+  if (isFreestyle(sessionFolder(input))) return;
   const result = decideWebCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result) ask(result.reason);
 }

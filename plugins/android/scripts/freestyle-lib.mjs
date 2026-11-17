@@ -3,8 +3,9 @@
 // Claude Code's own defaults apply. The person lists the roots in their own settings file,
 // ~/.claude/rfr.json ({ "freestyle": ["~/scratch", "D:/experiments"] }), which agents may not write
 // (AC-4). A folder is freestyle when its project folder (the git top level, or the folder itself
-// without git) is a root or inside one, unless it has docs/product/process.yml or its git has a
-// remote: both mean a real project was put there (AC-1, D3). Every rfr hook returns at once in a
+// without git) is a root or inside one, unless it or a folder above it, up to the root, has
+// docs/product/process.yml, or its git has a remote: both mean a real project was put there (AC-1,
+// D3). When git fails on a .git, the folder is not freestyle. Every rfr hook returns at once in a
 // freestyle folder (AC-2). The build copies this file into each plugin with hooks (AC-3).
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -35,9 +36,14 @@ export function parseRoots(json, { home = os.homedir(), platform = process.platf
 }
 
 // The roots the person lists in ~/.claude/rfr.json; [] when the file is missing or cannot be read.
+// The person's own file is a plain file, so a symbolic link, or a file with another hard link, lists
+// no roots: either would let whoever can write the other name rewrite the settings.
 export function freestyleRoots({ home = os.homedir(), platform = process.platform } = {}) {
   try {
-    return parseRoots(JSON.parse(fs.readFileSync(settingsFile({ home }), 'utf8')), { home, platform });
+    const file = settingsFile({ home });
+    if (fs.lstatSync(file).isSymbolicLink() || fs.statSync(file).nlink > 1) return [];
+    const text = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
+    return parseRoots(JSON.parse(text), { home, platform });
   } catch {
     return [];
   }
@@ -71,7 +77,7 @@ export function within(child, root, platform = process.platform) {
   const p = pathFor(platform);
   const fold = platform === 'win32' || platform === 'darwin' ? s => s.toLowerCase() : s => s;
   const rel = p.relative(fold(real(root, platform)), fold(real(child, platform)));
-  return rel === '' || (!rel.startsWith('..') && !p.isAbsolute(rel));
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${p.sep}`) && !p.isAbsolute(rel));
 }
 
 // The root a folder is in, or null.
@@ -79,27 +85,49 @@ export function rootOf(dir, { home = os.homedir(), platform = process.platform }
   return freestyleRoots({ home, platform }).find(root => within(dir, root, platform)) ?? null;
 }
 
-// Whether dir is a freestyle folder (AC-1). Any error means it is not.
-export function isFreestyle(dir, { home = os.homedir(), platform = process.platform } = {}) {
+// Whether dir, or a folder above it, has a .git (a folder or a file).
+function underGit(dir, p) {
+  for (let at = dir; ; at = p.dirname(at)) {
+    if (fs.existsSync(p.join(at, '.git'))) return true;
+    if (p.dirname(at) === at) return false;
+  }
+}
+
+// Why dir is not a freestyle folder (AC-1), or null when it is. Any error means it is not.
+export function notFreestyleReason(dir, { home = os.homedir(), platform = process.platform } = {}) {
   try {
-    if (typeof dir !== 'string' || !dir) return false;
+    if (typeof dir !== 'string' || !dir) return 'no folder was given';
     const p = pathFor(platform);
     const roots = freestyleRoots({ home, platform });
     // Most people list no roots, and most folders are in none: no git call for them.
-    if (!roots.length) return false;
+    if (!roots.length) return 'no freestyle roots are listed in ~/.claude/rfr.json';
     const abs = p.resolve(dir);
-    if (!roots.some(root => within(abs, root, platform))) return false;
-    const project = platform === process.platform ? projectFolder(abs) : abs;
-    if (!roots.some(root => within(project, root, platform))) return false;
-    if (fs.existsSync(p.join(project, 'docs', 'product', 'process.yml'))) return false;
-    if (fs.existsSync(project) && git(project, ['rev-parse', '--git-dir']) !== null) {
-      const remotes = git(project, ['remote']);
-      if (remotes === null || remotes !== '') return false;
+    if (!roots.some(root => within(abs, root, platform))) return 'it is not under a root listed in ~/.claude/rfr.json';
+    // docs/product/process.yml in the folder or any folder above it, up to the outermost root.
+    for (let at = abs; roots.some(root => within(at, root, platform)); at = p.dirname(at)) {
+      if (fs.existsSync(p.join(at, 'docs', 'product', 'process.yml'))) return `${p.join(at, 'docs', 'product', 'process.yml')} makes it a real project`;
+      if (p.dirname(at) === at) break;
     }
-    return true;
+    // Git is asked only on this machine, and only when there is a .git; when git fails on one, the
+    // folder is not freestyle.
+    if (platform !== process.platform || !fs.existsSync(abs) || !underGit(abs, p)) return null;
+    const top = git(abs, ['rev-parse', '--show-toplevel']);
+    if (top === null) return 'git cannot read the repository it is in';
+    const project = nodePath.resolve(top);
+    if (!roots.some(root => within(project, root, platform))) return `its git top level, ${project}, is not under a root`;
+    if (fs.existsSync(p.join(project, 'docs', 'product', 'process.yml'))) return `${p.join(project, 'docs', 'product', 'process.yml')} makes it a real project`;
+    const remotes = git(project, ['remote']);
+    if (remotes === null) return 'git cannot list the remotes of the repository it is in';
+    if (remotes !== '') return 'its git has a remote, so it is a real project';
+    return null;
   } catch {
-    return false;
+    return 'it could not be checked';
   }
+}
+
+// Whether dir is a freestyle folder (AC-1).
+export function isFreestyle(dir, options) {
+  return notFreestyleReason(dir, options) === null;
 }
 
 // The folder a hook's session works in: the input's cwd, else CLAUDE_PROJECT_DIR, else the

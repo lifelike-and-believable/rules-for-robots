@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deny, readInput, refuseReason } from './lib.mjs';
 import { isOwned, parseOwnedPaths } from './owned-paths.mjs';
-import { isFreestyle } from './freestyle-lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { isPersonSettings, settingsReason } from './settings-guard.mjs';
 
 // Returns the project-relative path when the edit needs approval, otherwise null.
@@ -34,7 +34,7 @@ async function main() {
   const input = await readInput();
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? input?.cwd ?? process.cwd();
   // In a freestyle folder rfr does nothing (freestyle AC-2).
-  if (isFreestyle(projectDir)) return;
+  if (isFreestyle(sessionFolder(input))) return;
   const file = input?.tool_input?.file_path ?? input?.tool_input?.notebook_path;
   // The person's own settings, which list their freestyle folders (freestyle AC-4).
   if (isPersonSettings(file, { cwd: input?.cwd ?? projectDir })) {

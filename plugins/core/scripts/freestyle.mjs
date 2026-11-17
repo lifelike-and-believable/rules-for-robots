@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { freestyleRoots, isFreestyle, projectFolder, rootOf } from './freestyle-lib.mjs';
+import { freestyleRoots, isFreestyle, notFreestyleReason, projectFolder, rootOf } from './freestyle-lib.mjs';
 
 const USAGE = 'usage: node freestyle.mjs start "<what to try>" | end';
 const NO_ROOTS = 'no freestyle folders are listed. Ask the person to add one to "freestyle" in their own ~/.claude/rfr.json, for example { "freestyle": ["~/scratch"] }, then run this again';
@@ -18,11 +18,11 @@ const NO_ROOTS = 'no freestyle folders are listed. Ask the person to add one to 
 class Refusal extends Error {}
 const refuse = message => { throw new Refusal(message); };
 
-// The folder name for an experiment: lower case, each run of other characters a hyphen, trimmed,
-// and at most 48 characters.
+// The folder name for an experiment: lower case, letters and digits from any script, each run of
+// other characters a hyphen, trimmed, and at most 48 characters.
 export function slug(text) {
   const trim = s => s.replace(/^-+|-+$/g, '');
-  return trim(trim(String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-')).slice(0, 48));
+  return trim([...trim(String(text).normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-'))].slice(0, 48).join(''));
 }
 
 const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -88,7 +88,13 @@ export function end(dir, { home } = {}) {
 function main(argv) {
   const [command, ...rest] = argv;
   try {
-    if (command === 'start') console.log(start(rest.join(' ')));
+    if (command === 'start') {
+      const dir = start(rest.join(' '));
+      console.log(dir);
+      // The folder is made either way; say when rfr will still apply in it.
+      const why = notFreestyleReason(dir);
+      if (why) process.stderr.write(`rfr-core freestyle: warning: ${dir} is not a freestyle folder, so rfr applies there in full: ${why}. The folder is kept; move it, or tell the person, before working in it\n`);
+    }
     else if (command === 'end') console.log(end(process.cwd()));
     else refuse(USAGE);
   } catch (error) {

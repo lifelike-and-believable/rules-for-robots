@@ -9,7 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { appendGuardLog, ask, askReason, canonical, defer, deferredTestContext, deny, existedAtBase, guardLogEnabled, guardSettings, inform, readInput, refuseReason } from './lib.mjs';
-import { isFreestyle } from './freestyle-lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { pruneSnapshots, snapshotStashes, snapshotTree } from './snapshot.mjs';
 import { isTestPath } from './guard-test-edits.mjs';
 import { parseCommand, writeTargetEntries } from './shell-writes.mjs';
@@ -780,7 +780,7 @@ export function findRisk(command, options) {
 async function main() {
   const input = await readInput();
   // In a freestyle folder rfr does nothing (freestyle AC-2).
-  if (isFreestyle(input?.cwd ?? process.cwd())) return;
+  if (isFreestyle(sessionFolder(input))) return;
   const result = decideCommand(input?.tool_input?.command, { cwd: input?.cwd ?? process.cwd() });
   if (result?.decision === 'deny') deny(result.reason);
   else if (result?.decision === 'inform' || result?.decision === 'defer') {

@@ -9,9 +9,9 @@ Pull requests: #251, #252, #255, #257, #258, #259, #261, #262, #263, #264, #265,
 ### Changed
 
 - **Freestyle folders** (Phase 28a; freestyle AC-1 to AC-8). `rfr-core`, in the next release; `rfr-process` 2.16.0, `rfr-web` 3.2.0, `rfr-unreal` 3.2.0, `rfr-android` 0.5.0. For quick experiments, brainstorms, and throwaway projects in a local folder.
-  - The person lists freestyle roots in their own `~/.claude/rfr.json`, as `"freestyle": ["~/scratch"]`. A folder under a root is freestyle unless it has a git remote or `docs/product/process.yml`.
+  - The person lists freestyle roots in their own `~/.claude/rfr.json`, as `"freestyle": ["~/scratch"]`. A folder under a root is freestyle unless it has a git remote, git fails on its `.git`, or it or a folder above it up to the root has `docs/product/process.yml`. A settings file that is a symbolic link or has a second hard link lists no roots.
   - In a freestyle folder every rfr hook in every plugin does nothing, so only Claude Code's own settings and permission mode apply.
-  - Outside freestyle folders, rfr-core refuses an agent's write, move, copy over, or delete of `~/.claude/rfr.json`, through the file tools or a shell command, so a session cannot make a folder freestyle for itself.
+  - Outside freestyle folders, rfr-core refuses an agent's write, move, copy over, link, or delete of `~/.claude/rfr.json`, or a move, delete, or link of `~/.claude` itself, through the file tools or a shell command, so a session cannot make a folder freestyle for itself.
   - `/rfr-core:freestyle` starts an experiment in a new folder under the first root, with a `FREESTYLE.md` note, and `end` records what was found and how to turn it into a project. The setup skill offers freestyle when asked to set up an experiment.
 
   Adopters: nothing to do. To use freestyle, list your experiment folders under `freestyle` in `~/.claude/rfr.json`.

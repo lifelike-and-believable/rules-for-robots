@@ -9,7 +9,7 @@
 // prompts for the rest is the session's permission mode. It is the refusal half of the default-allow
 // hook that rewrite plan 25e removed.
 import { fileURLToPath } from 'node:url';
-import { isFreestyle } from './freestyle-lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { ask, askReason, declaredServices, readInput } from './lib.mjs';
 
 const MCP_TOOL = /^mcp__(.+?)__(.+)$/;
@@ -77,7 +77,7 @@ export function mcpNever(input, services) {
 async function main() {
   const input = await readInput();
   // In a freestyle folder rfr does nothing (freestyle AC-2).
-  if (isFreestyle(input?.cwd || process.cwd())) return;
+  if (isFreestyle(sessionFolder(input))) return;
   const reason = mcpNever(input);
   if (reason) ask(reason);
 }

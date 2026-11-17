@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { isFreestyle } from './freestyle-lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { buildSteps, criteriaRows, decisionFiles, defaultBranchRef, featureFamily, linksBehind, loadArtifacts, parseArtifact, processNext, readConfig, refTree, renderNext, stageOf, stepRecords, tryItLines, tutorialTitle, workingTree } from './lib/process.mjs';
 import { isTestOrBaseline } from './lib/test-paths.mjs';
 
@@ -433,7 +433,7 @@ async function main(argv) {
   const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   // In a freestyle folder rfr does nothing (freestyle AC-2). Only the Stop hook: the commands above
   // are run on purpose.
-  if (isFreestyle(root)) return;
+  if (isFreestyle(sessionFolder(input))) return;
   try { stop(root); } catch { /* never fail the session */ }
 }
 

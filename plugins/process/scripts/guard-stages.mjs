@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isFreestyle } from './freestyle-lib.mjs';
+import { isFreestyle, sessionFolder } from './freestyle-lib.mjs';
 import { approvedOnDefaultBranch, loadArtifacts, parseArtifact, readConfig, requiredUpstream, stageOf, workingTree } from './lib/process.mjs';
 
 const NAMES = { stories: 'approved user stories', design: 'an approved design', 'user-docs': 'approved user documentation' };
@@ -72,7 +72,7 @@ async function main() {
   try { input = JSON.parse(raw || '{}'); } catch { /* nothing to check */ }
   const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   // In a freestyle folder rfr does nothing (freestyle AC-2).
-  if (isFreestyle(root)) return;
+  if (isFreestyle(sessionFolder(input))) return;
   let reason = null;
   try { reason = decideStage(input, root); } catch { reason = null; }
   if (reason) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } }));
