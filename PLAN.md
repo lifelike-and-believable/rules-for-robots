@@ -491,6 +491,7 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 
 ### Phase 28: Freestyle (planned)
 Spec: [docs/specs/freestyle.md](docs/specs/freestyle.md) (written 2026-11-17 at the maintainer's request; its six decisions wait for the maintainer).
+Pull requests: #281 (spec).
 
 Quick experiments, brainstorms, and throwaway projects without the process. A freestyle project does not adopt rfr-process; a freestyle branch in a project that does is declared by a committed note, is told the process is off, gets no pull request, and cannot merge. What it finds reaches the product through a packet. No guard changes, so it does not wait for 25f.
 
