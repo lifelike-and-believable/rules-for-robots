@@ -37,7 +37,22 @@ The three Haiku agents gather or run things and return text copied from tools. T
 | `/rfr-core:security-audit` | Scanners, entry points, agent tooling risks | User or Claude |
 | `/rfr-core:write-adr` | One-page architecture decision record | User or Claude |
 | `/rfr-core:release` | Version, changelog, verify, tag after confirmation | User only |
+| `/rfr-core:freestyle start "<what to try>"` or `end` | Start or end a freestyle experiment in a folder where rfr does nothing | User only |
 | `/rfr-core:decisions [issue and answer]` | The decision queue: questions agents left for the project lead as `needs-lead` issues, each with options, a default, and the date it takes effect; apply answers and due defaults | User or Claude |
+
+## Freestyle
+
+Freestyle is for quick experiments, brainstorms, and throwaway projects in a plain local folder. In a freestyle folder rfr does nothing: no guards, no formatter, no process hooks. Only Claude Code's own settings and permission mode apply.
+
+The person lists freestyle roots in `~/.claude/rfr.json`; every folder under a root is freestyle:
+
+```json
+{ "freestyle": ["~/experiments"] }
+```
+
+A folder with a git remote or a `docs/product/process.yml` is not freestyle, even under a root, because it is a real project. Agents may not write `~/.claude/rfr.json`, and never start freestyle to get past a guard. `/rfr-core:freestyle start "<what to try>"` creates a folder under the first root with a `FREESTYLE.md` for notes. `/rfr-core:freestyle end` records the findings.
+
+To turn an experiment into a project, move the folder out of the root (or add a git remote), create the repository, then run `/rfr-process:setup` and `/rfr-process:bootstrap`. See the [spec](../../docs/specs/freestyle.md).
 
 ## Hooks
 
