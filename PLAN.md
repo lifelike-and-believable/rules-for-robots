@@ -493,9 +493,9 @@ A tutorial is user documentation that runs: named for the task, the same on a lo
 Spec: [docs/specs/freestyle.md](docs/specs/freestyle.md) (written 2026-11-17 at the maintainer's request; its six decisions wait for the maintainer).
 Pull requests: #281 (spec).
 
-Quick experiments, brainstorms, and throwaway projects in a local folder with no repository. The process is already silent there; freestyle lets the person's own list of services in `~/.claude/rfr.json` make things, makes deletes recoverable with a local git history, and records what was found in `FREESTYLE.md`, with a short route to a real project.
+Quick experiments, brainstorms, and throwaway projects in local folders, where rfr does nothing and only Claude Code's defaults apply. The person lists their experiment folders once in `~/.claude/rfr.json`, which agents may not write; every rfr hook stands down inside them. An experiment that works becomes a project through setup and bootstrap.
 
-- **28a:** freestyle folders: the services list, the delete context, the `freestyle` skill in rfr-core, and the guide.
+- **28a:** freestyle roots, every hook standing down in them, the refusal to write the person's settings file, the `freestyle` skill, and the guide.
 - **28b (only if needed):** a freestyle branch inside a project that uses rfr-process, which cannot merge.
 
 ## 11. Milestones

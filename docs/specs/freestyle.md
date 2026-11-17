@@ -4,107 +4,105 @@ status: draft
 
 # Freestyle
 
-Sometimes the person wants to try an idea quickly: a brainstorm that ends in a rough prototype, a spike to see whether a library does what it claims, a throwaway project to learn a tool, a set of images to look at. The process exists so that what reaches a product was approved first, and for this kind of work it is pure cost. This spec adds **freestyle**: work in a local folder, with no repository on GitHub, where rfr keeps its safety guards and drops everything else. Proposed as Phase 28 of `PLAN.md`, at the maintainer's request on 2026-11-17: "rfr needs a 'freestyle' option ... for quick experiments, brainstorms, throwaway projects, etc. where we forego the standard process temporarily in order to just try out ideas quickly", and "this work would mostly be for 'no-repo' scenarios. just a local folder." Nothing here is built, and its decisions wait for the maintainer.
+Sometimes the person wants to try an idea quickly: a brainstorm that ends in a rough prototype, a spike to see whether a library does what it claims, a throwaway project to learn a tool, a set of images to look at. The process exists so that what reaches a product was approved first, and for this kind of work it is pure cost. This spec adds **freestyle**: local folders where rfr does nothing at all, so that only Claude Code's own defaults apply. Proposed as Phase 28 of `PLAN.md`, from the maintainer on 2026-11-17:
+
+- "rfr needs a 'freestyle' option ... for quick experiments, brainstorms, throwaway projects, etc. where we forego the standard process temporarily in order to just try out ideas quickly."
+- "This work would mostly be for 'no-repo' scenarios. just a local folder."
+- "Freestyle projects should impose no additional restrictions that claude code does not restrict by default."
+
+Nothing here is built, and its decisions wait for the maintainer.
 
 ## Problem
 
-rfr's plugins are installed for the person, so their hooks run in every folder Claude Code opens, including a scratch folder on the desktop. What happens there today was checked on 2026-11-17 by running each hook against a plain folder with no git:
+rfr's plugins are installed for the person, so their hooks run in every folder Claude Code opens, including a scratch folder on the desktop. Each hook was run against a plain folder with no git on 2026-11-17:
 
-1. **The process is already out of the way.** The stage guard and the session-start state are silent without `docs/product/process.yml`, and the delivery stop check acts only during a delivery run.
-2. **Outside services are closed, with no way to open them.** The MCP guard refused both `generate_image` through Higgsfield and `create_file` through Google Drive, even with `.claude/rfr.json` listing Higgsfield. A service counts only "as merged to the default branch", and its refusal says to add it in a pull request. A folder with no repository has neither, so a brainstorm cannot make an image, a video, or a document at all.
-3. **A delete cannot be undone.** In a repository, `rm -rf build notes.md` goes ahead and the agent is told how to restore the files, because a snapshot commit is taken first. In a plain folder the same command goes ahead silently and the files are gone: the snapshot is a git commit, so there is none.
-4. **Some messages talk about things that are not there.** Weakening an existing test goes ahead with a note that "the pull request decides", and there will be no pull request.
-5. **Nothing records what was tried or found**, so when the folder is deleted or forgotten, what was learned goes with it. And a folder that turns out to be worth keeping has no clear way into the process.
+1. The process hooks are silent there already: the stage guard and the session-start state need `docs/product/process.yml`.
+2. rfr-core's guards are not. The MCP guard refused both `generate_image` through Higgsfield and `create_file` through Google Drive, and its remedy (declare the service in a pull request) cannot be followed without a repository. The never list, the pull request approval guard, the test-edit and owned-path guards, and the formatter all still run, and rfr-web's, rfr-unreal's, and rfr-android's guards would too.
+
+So today rfr adds restrictions in a scratch folder that Claude Code does not, and some of them cannot be lifted there at all.
 
 ## User stories
 
-- As a person with an idea, I want to try it in a local folder without the process, so that I find out quickly whether it is worth more.
-- As that person, I want the agent to make images, video, or documents in the services I use for this kind of work, without being asked each time and without a repository to declare them in.
-- As that person, I want a delete to be recoverable, so that a quick experiment cannot lose work.
-- As that person, I want what the experiment found written down, and, if it is worth keeping, a short way from the folder to a real project.
-- As an agent, I want to be told that this folder is freestyle, so that I build the experiment instead of asking for documents that do not apply.
+- As a person with an idea, I want to try it in a local folder with Claude Code as it comes, with nothing from rfr in the way, so that I find out quickly whether it is worth more.
+- As that person, I want to say once where my experiments live, so that I do not set anything up for each one.
+- As the maintainer, I want an agent never to be able to make a real project freestyle, since freestyle removes every rfr guard.
+- As that person, I want a short way from an experiment that worked to a real project.
 
 ## Design
 
 ### What a freestyle folder is
 
-A folder is **freestyle** when it has no `docs/product/process.yml` and is not a repository with a remote: either it has no git at all, or its git has no remote. Nothing has to be declared, and an agent cannot make a real project freestyle, because a repository cloned from GitHub has a remote.
+The person lists one or more **freestyle roots** in their own settings file, `~/.claude/rfr.json`:
 
-### Starting one
+```json
+{ "freestyle": ["~/scratch", "D:/experiments"] }
+```
 
-`/rfr-core:freestyle <what to try>`, when the person asks for it:
+A folder is freestyle when its project folder (the git top level, or the folder Claude Code opened when there is no git) is a root or inside one, unless it has `docs/product/process.yml` or its git has a remote. Those two exceptions catch a real project cloned or copied into a root by mistake; they are not a defence against an agent, because inside a root the agent is already unrestricted.
 
-1. Runs `git init` in the folder if it has no git, so that deletes can be snapshotted and undone. Nothing is pushed and no remote is added; the git history is only an undo history.
-2. Writes `FREESTYLE.md` at the top of the folder: what is being tried, the date, and an empty `## Findings`.
-3. Says, in a few lines, what still applies and what does not (below).
+Freestyle cannot be worked out from the folder alone. On 2026-11-17 the command guard allowed `git remote remove origin`, `git config --unset remote.origin.url`, `rm -rf .git`, and `rm docs/product/process.yml`, so a rule such as "no remote means freestyle" would let an agent in a real project remove every rfr guard with one command. The declaration has to be the person's, in a place the agent cannot write.
 
-A freestyle folder works without the skill too; the skill only adds the undo history and the note.
+### In a freestyle folder, rfr does nothing
 
-### What still applies, and what does not
+Every rfr hook in every plugin returns at once, with no decision, no added context, and no log line: rfr-core's guards and formatter, rfr-process's stage guard, session-start state, and stop check, and the guards in rfr-web, rfr-unreal, and rfr-android. What remains is exactly what Claude Code does by default with the person's own settings and permission mode.
 
-| Area | In a freestyle folder |
-|---|---|
-| The process (stages, specs, tutorials, the change check, delivery runs) | Off. It already is without `process.yml`. |
-| The never list (destructive or outward commands) | On, unchanged. |
-| Deletes | Go ahead, after a snapshot, when the folder has git. Without git, the agent is told the files cannot be restored and to move them aside instead. |
-| Outside services | Making things is allowed in the services the person lists for freestyle work in `~/.claude/rfr.json`. Deleting, sharing, publishing, sending, and buying are still refused everywhere. |
-| Approving or merging pull requests | Still refused; there are none here anyway. |
-| Weakening an existing test | Goes ahead, with a note to say so in the report and no mention of a pull request. |
-| Owned paths, formatting | Unchanged. |
+rfr's skills and agents stay installed and can be used when the person asks for them; nothing runs on its own.
 
-### The person's freestyle services
+### Protecting the declaration
 
-`~/.claude/rfr.json` may hold `"services"`, in the same form as a project's: a name, or an object with a name, what it is for, and its limits. This list is the person's own, written once by them; Claude Code asks before an agent writes inside `~/.claude`, so a session cannot add to it quietly. It applies only in freestyle folders. A project with a remote keeps using its own list, as merged to its default branch, and ignores this one.
+Outside freestyle folders, rfr-core refuses an agent's write to `~/.claude/rfr.json`, whether through the file tools or a shell command, with a reason that says the file is the person's own settings and to tell them what to change. This is the one new restriction, and it applies only where rfr's guards already apply. Inside a freestyle folder it is off like everything else, which is acceptable: an agent there is already unrestricted, and widening the roots would only free other folders under the person's own scratch locations if they were listed. The person edits the file themselves, or asks in a session and approves the change Claude Code shows.
 
-### Ending one, or keeping it
+### Starting, ending, and keeping an experiment
 
-`/rfr-core:freestyle end` fills in `## Findings`: what worked, what did not, what it would take to do properly. It then offers two ways on: leave the folder as it is, or make it a project. Making it a project is the existing route: create the repository and push, then `/rfr-process:setup` and `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from what is there, `FREESTYLE.md` included. From then on the folder has a remote and is no longer freestyle.
+`/rfr-core:freestyle <what to try>`, when the person asks for it, creates a folder under the first root, named from the text, writes `FREESTYLE.md` in it (what is being tried, the date, an empty `## Findings`), and says to open a session there. It is a convenience: any folder under a root is freestyle without it. With no roots listed, it says how to add one and does nothing else.
+
+`/rfr-core:freestyle end` fills in `## Findings` and offers the way to a real project: move the folder out of the root (or add a remote), create the repository, then `/rfr-process:setup` and `/rfr-process:bootstrap`, which drafts the concept, requirements, and personas from what is there, `FREESTYLE.md` included. From then on rfr applies in full.
 
 ### Later, if wanted: a freestyle branch in a real project
 
-The first version of this spec, written before the maintainer said the work is mostly local folders, proposed an experiment branch inside a project that uses rfr-process: a committed note `docs/freestyle/<branch>.md` would tell the session the process is off there, `rfr-open-pr.yml` would open no pull request for it, and `process / change` would refuse to merge it, so it would need no approval. It is kept here as slice 28b, to build only if experiments inside a real project turn out to be needed. The same thing can be had today by copying the project into a local folder.
+An earlier draft proposed an experiment branch inside a project that uses rfr-process, which could not merge. It is kept as slice 28b, to build only if experiments inside a real project turn out to be needed. Copying the project into a freestyle root does the same today.
 
 ## Acceptance criteria
 
 | ID | Criterion | Verification |
 |---|---|---|
-| AC-1 | `isFreestyle(dir)` is true when the folder has no `docs/product/process.yml` at its top and either is in no git repository or its repository has no remote; false otherwise. The top is the git top level, or the project folder when there is no git. | test: no git; git with no remote; git with a remote; each with and without `process.yml`. |
-| AC-2 | The MCP guard, in a freestyle folder, allows a tool that makes or changes something in a service named in `"services"` in `~/.claude/rfr.json`, and refuses it for any other service, with a reason that names that file instead of a pull request. Deleting, sharing, publishing, sending, and buying are refused as before. Outside a freestyle folder the guard's decisions are unchanged, and the user-level list is never read there. | test: each case in a freestyle folder; the same calls in a repository with a remote, with and without a user-level list. |
-| AC-3 | The command guard, in a folder with no git, adds context to a command that deletes existing files saying they cannot be restored and to move them aside instead; it still allows the command. In a git folder, with or without a remote, behaviour is unchanged. | test: the delete in a plain folder and in a git folder. |
-| AC-4 | The existing-test context in a freestyle folder says to name the change in the report and does not mention a pull request. Elsewhere the text is unchanged. | test: both texts. |
-| AC-5 | `freestyle.mjs start "<what to try>"` runs `git init` when the folder has no git, writes `FREESTYLE.md` with the text, the date, and an empty `## Findings`, and adds no remote. It refuses, saying why, in a folder that is not freestyle, with no text, or when `FREESTYLE.md` already exists. | test: each case, in temporary folders. |
-| AC-6 | `freestyle.mjs end` refuses without `FREESTYLE.md`, and otherwise prints the findings section to fill in and the two ways on. It changes nothing itself. | test: with and without the note. |
-| AC-7 | The `freestyle` skill starts freestyle only when the person asks for it, in a slash command or in plain words, and says what still applies in at most 8 lines. | review: the skill file. |
-| AC-8 | The rfr-core README and the process guide say what a freestyle folder is, what is off and on, how to list freestyle services, and how to turn the folder into a project. The setup skill, asked to set up a folder the person calls an experiment, offers freestyle instead. | review: the README, the guide, and the setup skill. |
-| AC-9 | The session replay (`evals/session-replay/replay-commands.mjs`) shows no changed decision on the maintainer's sessions, all of which are in repositories with a remote. | review: the replay output in the pull request. |
+| AC-1 | `isFreestyle(dir)` is true when `~/.claude/rfr.json` lists a root that is the project folder or contains it (after expanding `~`, resolving the path, and comparing case-insensitively on Windows and macOS), the project folder has no `docs/product/process.yml`, and its git, if any, has no remote. It is false when the file is missing, unreadable, or has no `freestyle` list, and for a root that is not an absolute path after expansion. | test: inside, outside, and at a root; nested git; a remote; `process.yml`; `~`; Windows paths and case; a bad file; a relative root. |
+| AC-2 | In a freestyle folder every hook in rfr-core, rfr-process, rfr-web, rfr-unreal, and rfr-android exits with no output and writes no log line, for every input that would otherwise refuse, ask, defer, add context, or format. Outside, each hook's output is unchanged. | test: each hook script, with a refused or noted input, in a freestyle folder and in a repository with a remote. |
+| AC-3 | Each plugin uses the same `isFreestyle`, copied into it by `npm run build` from one source, as `process.mjs` is; `npm run build:check` fails when a copy differs. | test: the build check with a changed copy. |
+| AC-4 | Outside freestyle folders, rfr-core refuses an Edit, Write, or MultiEdit of `~/.claude/rfr.json`, and a shell command that writes, moves, copies over, or deletes it, with a reason that says it is the person's settings and to tell them what to change. Reading it is allowed. | test: each tool; shell forms (`>`, `tee`, `sed -i`, `mv`, `cp`, `rm`), with `~`, `$HOME`, and the absolute path. |
+| AC-5 | `freestyle.mjs start "<what to try>"` creates a new folder under the first root, named from the text, with `FREESTYLE.md` holding the text, the date, and an empty `## Findings`, and prints its path. It refuses, saying what to do, with no roots, with no text, or when the folder exists. | test: each case, with a temporary home folder. |
+| AC-6 | `freestyle.mjs end` refuses outside a freestyle folder or without `FREESTYLE.md`, and otherwise prints the findings section and the way to a real project. It changes nothing itself. | test: each case. |
+| AC-7 | The `freestyle` skill runs only when the person asks for it, and its description says that an agent never adds a root or starts freestyle to get past a guard. | review: the skill file. |
+| AC-8 | The rfr-core README and the process guide say what freestyle is, that rfr does nothing there, how to list roots, and how to turn an experiment into a project. The setup skill, asked to set up a folder the person calls an experiment, offers freestyle instead. | review: the README, the guide, and the setup skill. |
+| AC-9 | The session replay (`evals/session-replay/replay-commands.mjs`) shows no changed decision on the maintainer's sessions, none of which is in a freestyle root. | review: the replay output in the pull request. |
 
 ## Decisions
 
-Waiting for the maintainer. Each has a recommendation.
+Waiting for the maintainer. Each has a recommendation. The earlier draft's decisions on a freestyle services list and on running `git init` are gone: with no rfr restrictions, neither is needed.
 
 | # | Decision | Recommended | The alternative, and what it costs |
 |---|---|---|---|
-| D1 | What makes a folder freestyle? | No `process.yml` and no remote, worked out each time (AC-1). Nothing to declare, and a clone of a real project can never be freestyle. | A marker file the person writes: explicit, but an agent can write it too, so it proves nothing, and a forgotten one leaves a real project half outside its rules. |
-| D2 | Where are freestyle services approved? | A list in `~/.claude/rfr.json`, written once by the person, read only in freestyle folders. | A list in each folder's `.claude/rfr.json`: closer to the work, but the agent writes the folder, so the list would be the agent's own approval. Or no services in freestyle at all: safe, and a brainstorm cannot make a picture. |
-| D3 | Does starting freestyle run `git init`? | Yes, with no remote: deletes become recoverable, and git is otherwise invisible. | No git: a plain folder stays plain, and every delete is final; the guard can only say so. |
-| D4 | Which plugin holds freestyle? | rfr-core, since a freestyle folder uses no part of rfr-process and may not have it installed. | rfr-process, beside the rest of the process: but then the person needs rfr-process for the one kind of work that does not use it. |
-| D5 | Does it wait for 25f? | No. It changes the MCP and command guards only in folders with no remote, and the replay of the maintainer's sessions (AC-9) shows that nothing else changes. | Wait for 25f, as other guard changes do: safer by rule, and freestyle is blocked for however long 25f takes. |
-| D6 | Build the freestyle branch in a real project (28b)? | Not now. Copying a project to a local folder does the same for the rare case; build 28b only if that proves too clumsy. | Build it with 28a: covers experiments inside a gated project, at the cost of a new rule in the change check and the open-pull-request workflow. |
+| D1 | How is a folder made freestyle? | Roots the person lists in `~/.claude/rfr.json`, which agents may not write (AC-1, AC-4). Set once; every experiment goes under a root. | Worked out from the folder (no remote, no `process.yml`): nothing to set up, but an agent in a real project can remove its remote unrefused and lose every guard. Or an environment variable when starting Claude Code: an agent cannot set it, but the desktop app has no easy way to pass one. |
+| D2 | Is the formatter off too? | Yes. "rfr does nothing" is one rule with no exceptions to remember. | Keep it: it restricts nothing and keeps code tidy, but rfr then still changes files the person did not ask it to touch. |
+| D3 | Is a folder with a remote or `process.yml` under a root still freestyle? | No: both mean a real project was put there, probably by mistake. | Yes: a root is entirely the person's to decide, and a mistaken clone loses its guards. |
+| D4 | Which plugin holds freestyle? | rfr-core holds `isFreestyle` and the skill; the build copies the function into each plugin (AC-3). | Each plugin reads the setting on its own: no build step, and five copies that can drift. |
+| D5 | Does it wait for 25f? | No. It changes behaviour only in roots the person lists, plus the refusal to write their settings file, and the replay of their sessions (AC-9) shows nothing else changes. | Wait for 25f, as other guard changes do: safer by rule, and freestyle waits for however long 25f takes. |
+| D6 | Build the freestyle branch in a real project (28b)? | Not now; copying the project into a root does the same for the rare case. | Build it with 28a: covers experiments inside a gated project, at the cost of a new rule in the change check and the open-pull-request workflow. |
 
 ## Scope
 
-- In (28a): `isFreestyle`; the MCP guard's freestyle services; the command guard's delete context with no git; the test-edit wording; the `freestyle` script and skill in rfr-core; the README, guide, and setup skill text; the replay.
+- In (28a): `isFreestyle` and its copies; every hook standing down in freestyle; the refusal to write `~/.claude/rfr.json`; the `freestyle` script and skill; the README, guide, and setup skill text; the replay.
 - Later (28b, D6): the freestyle branch in a project that uses rfr-process.
-- Out: relaxing the never list or the pull request approval guard anywhere; a freestyle mode for a repository with a remote.
+- Out: changing what Claude Code itself allows or asks in a freestyle folder, which is the person's settings and permission mode.
 
 ## APIs and assumptions
 
 - The process hooks are silent without `docs/product/process.yml` (`process-next.mjs`, `guard-stages.mjs`); checked on 2026-11-17.
-- `declaredServices` returns no services outside a git repository, and reads a project's list only as it stands on the default branch (`plugins/core/scripts/lib.mjs`); checked on 2026-11-17 against a plain folder.
-- The snapshot before a destructive command is a git commit (`plugins/core/scripts/snapshot.mjs`), so a folder with no git has none.
-- Claude Code asks before writing to `~/.claude`, as it does for a project's `.claude` folder (Phase 1 finding). Assumed for the user-level folder; to check in 28a before relying on it in D2.
-- `git remote` with no output is how "no remote" is read; a remote added by hand later makes the folder a project.
+- rfr-core's guards run with or without git, and the MCP guard refuses outside services in a plain folder (`plugins/core/scripts/lib.mjs`, `declaredServices`); checked on 2026-11-17.
+- The command guard allows removing a remote, unsetting its address, deleting `.git`, and deleting `process.yml`; checked on 2026-11-17. This is why D1 does not infer freestyle from the folder.
+- Hooks get the session's working folder in their input (`cwd`) and `CLAUDE_PROJECT_DIR` in their environment, and run as the person's user, so they can read `~/.claude/rfr.json`.
+- `plugins/core/scripts/shell-writes.mjs` already finds the files a shell command writes, which AC-4 reuses.
 
 ## Delivery
 
-One slice, 28a, after the decisions are approved: AC-1 to AC-6 tests first, then the code; AC-7 and AC-8 as text; the replay for AC-9 in the pull request. rfr-core's `version` is bumped, and the changelog entry ends "Adopters: nothing to do. To let freestyle folders make things in a service, list it under `services` in `~/.claude/rfr.json`."
+One slice, 28a, after the decisions are approved: AC-1 to AC-6 tests first, then the code; AC-7 and AC-8 as text; the replay for AC-9 in the pull request. Every plugin with a hook gets a `version` bump, and the changelog entry ends "Adopters: nothing to do. To use freestyle, list your experiment folders under `freestyle` in `~/.claude/rfr.json`."
